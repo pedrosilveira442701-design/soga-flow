@@ -10,7 +10,7 @@ interface FunnelChartProps {
   title?: string;
 }
 
-const COLORS = ["#2E90FA", "#1570EF", "#0F60D9", "#0D52C3", "#0B44AD"];
+const COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#06b6d4", "#22c55e"];
 
 export function FunnelChart({ data, title = "Funil de Vendas" }: FunnelChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {

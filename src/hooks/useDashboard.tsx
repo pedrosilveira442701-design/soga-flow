@@ -206,23 +206,24 @@ export function useDashboard() {
     }));
   }, [timelinePropostas, now]);
 
-  // Calcular dados de funil
+  // Calcular dados de funil com novas etapas
   const funnelData = useMemo((): FunnelData[] => {
-    const stages = ["novo", "contato", "qualificado", "proposta", "ganho"];
-    const stageLabels = ["Novo", "Contato", "Qualificado", "Proposta", "Ganho"];
+    const stages = ["contato", "visita_agendada", "proposta", "contrato", "execucao", "finalizado"];
+    const stageLabels = ["Contato", "Visita Agendada", "Proposta", "Contrato", "Em Execução", "Finalizado"];
     
     const counts = stages.map(stage => 
       leads.filter(l => l.estagio === stage).length
     );
 
+    // Total de leads no início do funil para calcular taxa de conversão
+    const totalInicial = counts[0] || 1;
+
     return stages.map((stage, index) => ({
       stage: stageLabels[index],
       count: counts[index],
-      conversionRate: index === 0 
-        ? 100 
-        : counts[0] > 0 
-          ? Math.round((counts[index] / counts[0]) * 100)
-          : 0,
+      conversionRate: totalInicial > 0 
+        ? Math.round((counts[index] / totalInicial) * 100)
+        : 0,
     }));
   }, [leads]);
 
