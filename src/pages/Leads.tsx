@@ -25,7 +25,8 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
 };
 
 export default function Leads() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
@@ -33,13 +34,35 @@ export default function Leads() {
 
   const handleCreateLead = async (values: any) => {
     await createLead.mutateAsync({
-      ...values,
+      cliente_id: values.cliente_id,
+      tipo_piso: values.tipo_piso,
       valor_potencial: parseFloat(values.valor_potencial),
-      estagio: "novo",
+      origem: values.origem || null,
+      responsavel: values.responsavel || null,
+      estagio: values.estagio,
       user_id: user?.id,
       ultima_interacao: new Date().toISOString(),
     });
-    setDialogOpen(false);
+    setCreateDialogOpen(false);
+  };
+
+  const handleUpdateLead = async (values: any) => {
+    if (!selectedLead) return;
+    
+    await updateLead.mutateAsync({
+      id: selectedLead.id,
+      updates: {
+        cliente_id: values.cliente_id,
+        tipo_piso: values.tipo_piso,
+        valor_potencial: parseFloat(values.valor_potencial),
+        origem: values.origem || null,
+        responsavel: values.responsavel || null,
+        estagio: values.estagio,
+        ultima_interacao: new Date().toISOString(),
+      },
+    });
+    setEditDialogOpen(false);
+    setDetailsOpen(false);
   };
 
   const handleStageChange = async (leadId: string, newStage: any) => {
@@ -52,9 +75,9 @@ export default function Leads() {
   };
 
   const handleEditLead = (lead: Lead) => {
+    setSelectedLead(lead);
     setDetailsOpen(false);
-    // TODO: Implementar formulário de edição
-    console.log("Edit lead:", lead);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteLead = async (leadId: string) => {
@@ -82,7 +105,7 @@ export default function Leads() {
           </p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
@@ -99,6 +122,7 @@ export default function Leads() {
             <LeadForm
               onSubmit={handleCreateLead}
               isLoading={createLead.isPending}
+              mode="create"
             />
           </DialogContent>
         </Dialog>
@@ -110,6 +134,33 @@ export default function Leads() {
         onStageChange={handleStageChange}
         onCardClick={handleCardClick}
       />
+
+      {/* Edit Lead Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Lead</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do lead
+            </DialogDescription>
+          </DialogHeader>
+          {selectedLead && (
+            <LeadForm
+              onSubmit={handleUpdateLead}
+              isLoading={updateLead.isPending}
+              mode="edit"
+              initialData={{
+                cliente_id: selectedLead.cliente_id || "",
+                tipo_piso: selectedLead.tipo_piso || "",
+                valor_potencial: selectedLead.valor_potencial?.toString() || "",
+                origem: selectedLead.origem || "",
+                responsavel: selectedLead.responsavel || "",
+                estagio: selectedLead.estagio,
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Lead Details Dialog */}
       <LeadDetailsDialog

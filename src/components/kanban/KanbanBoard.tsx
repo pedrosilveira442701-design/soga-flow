@@ -33,9 +33,9 @@ interface KanbanBoardProps {
 const STAGES = [
   { id: "novo", title: "Novo", color: "novo" },
   { id: "contato", title: "Contato", color: "contato" },
-  { id: "qualificado", title: "Qualificado", color: "qualificado" },
-  { id: "proposta", title: "Proposta", color: "proposta" },
-  { id: "ganho", title: "Ganho", color: "ganho" },
+  { id: "negociacao", title: "Negociação", color: "qualificado" },
+  { id: "proposta_enviada", title: "Proposta Enviada", color: "proposta" },
+  { id: "fechado_ganho", title: "Fechado Ganho", color: "ganho" },
 ] as const;
 
 function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {

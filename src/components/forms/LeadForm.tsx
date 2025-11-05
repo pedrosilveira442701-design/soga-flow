@@ -23,10 +23,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 const leadFormSchema = z.object({
   cliente_id: z.string().min(1, "Selecione um cliente"),
-  tipo_piso: z.string().min(1, "Informe o tipo de piso"),
+  tipo_piso: z.string().trim().min(1, "Informe o tipo de piso").max(100, "Máximo 100 caracteres"),
   valor_potencial: z.string().min(1, "Informe o valor potencial"),
-  origem: z.string().optional(),
-  responsavel: z.string().optional(),
+  origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+  responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+  estagio: z.enum(["novo", "contato", "negociacao", "proposta_enviada", "fechado_ganho", "perdido"]),
 });
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
@@ -34,17 +35,20 @@ type LeadFormValues = z.infer<typeof leadFormSchema>;
 interface LeadFormProps {
   onSubmit: (values: LeadFormValues) => void;
   isLoading?: boolean;
+  initialData?: Partial<LeadFormValues>;
+  mode?: "create" | "edit";
 }
 
-export function LeadForm({ onSubmit, isLoading }: LeadFormProps) {
+export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       cliente_id: "",
       tipo_piso: "",
       valor_potencial: "",
       origem: "",
       responsavel: "",
+      estagio: "novo",
     },
   });
 
@@ -64,6 +68,32 @@ export function LeadForm({ onSubmit, isLoading }: LeadFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="estagio"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estágio</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estágio" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="contato">Contato</SelectItem>
+                  <SelectItem value="negociacao">Negociação</SelectItem>
+                  <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
+                  <SelectItem value="fechado_ganho">Fechado Ganho</SelectItem>
+                  <SelectItem value="perdido">Perdido</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="cliente_id"
@@ -152,7 +182,10 @@ export function LeadForm({ onSubmit, isLoading }: LeadFormProps) {
 
         <div className="flex gap-3 justify-end pt-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Criando..." : "Criar Lead"}
+            {isLoading 
+              ? (mode === "edit" ? "Salvando..." : "Criando...") 
+              : (mode === "edit" ? "Salvar Alterações" : "Criar Lead")
+            }
           </Button>
         </div>
       </form>
