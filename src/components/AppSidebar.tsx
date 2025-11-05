@@ -9,7 +9,10 @@ import {
   Target,
   Calendar,
   FolderOpen,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -37,6 +40,7 @@ const menuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
   return (
     <Sidebar className="border-r border-sidebar-border">
@@ -76,6 +80,28 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <div className="mt-auto p-4 space-y-3">
+          {open && (
+            <div className="text-xs text-muted-foreground truncate">
+              {user?.email}
+            </div>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-start" 
+            onClick={() => signOut()}
+          >
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            {open && <span className="ml-2">Sair</span>}
+          </Button>
+          {open && (
+            <div className="text-xs text-muted-foreground">
+              Só Garagens Hub v1.0
+            </div>
+          )}
+        </div>
       </SidebarContent>
     </Sidebar>
   );

@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
 import Leads from "./pages/Leads";
@@ -14,6 +16,7 @@ import Metas from "./pages/Metas";
 import Visitas from "./pages/Visitas";
 import Arquivos from "./pages/Arquivos";
 import NotFound from "./pages/NotFound";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -23,18 +26,21 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
-          <Route path="/clientes" element={<DashboardLayout><Clientes /></DashboardLayout>} />
-          <Route path="/leads" element={<DashboardLayout><Leads /></DashboardLayout>} />
-          <Route path="/propostas" element={<DashboardLayout><Propostas /></DashboardLayout>} />
-          <Route path="/contratos" element={<DashboardLayout><Contratos /></DashboardLayout>} />
-          <Route path="/financeiro" element={<DashboardLayout><Financeiro /></DashboardLayout>} />
-          <Route path="/metas" element={<DashboardLayout><Metas /></DashboardLayout>} />
-          <Route path="/visitas" element={<DashboardLayout><Visitas /></DashboardLayout>} />
-          <Route path="/arquivos" element={<DashboardLayout><Arquivos /></DashboardLayout>} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/clientes" element={<ProtectedRoute><DashboardLayout><Clientes /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/leads" element={<ProtectedRoute><DashboardLayout><Leads /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/propostas" element={<ProtectedRoute><DashboardLayout><Propostas /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/contratos" element={<ProtectedRoute><DashboardLayout><Contratos /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/financeiro" element={<ProtectedRoute><DashboardLayout><Financeiro /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/metas" element={<ProtectedRoute><DashboardLayout><Metas /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/visitas" element={<ProtectedRoute><DashboardLayout><Visitas /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/arquivos" element={<ProtectedRoute><DashboardLayout><Arquivos /></DashboardLayout></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
