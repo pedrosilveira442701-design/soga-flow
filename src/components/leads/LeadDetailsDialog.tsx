@@ -28,13 +28,16 @@ import {
   MapPin,
   DollarSign,
   User,
-  Calendar,
+  Calendar as CalendarIcon,
   TrendingUp,
   Clock,
   MessageSquare,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Database } from "@/integrations/supabase/types";
+import { VisitaForm } from "@/components/forms/VisitaForm";
+import { useVisitas } from "@/hooks/useVisitas";
+import { toast } from "sonner";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
   clientes?: {
@@ -78,6 +81,8 @@ export function LeadDetailsDialog({
   onDelete,
 }: LeadDetailsDialogProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [visitaDialogOpen, setVisitaDialogOpen] = useState(false);
+  const { createVisita } = useVisitas();
 
   if (!lead) return null;
 
@@ -102,6 +107,34 @@ export function LeadDetailsDialog({
         "_blank"
       );
     }
+  };
+
+  const handleAgendarVisita = (data: any) => {
+    createVisita.mutate(data, {
+      onSuccess: () => {
+        setVisitaDialogOpen(false);
+        toast.success('Visita agendada com sucesso!');
+      },
+    });
+  };
+
+  const getInitialVisitaData = () => {
+    if (!lead.cliente_id) return {};
+    
+    // Sugerir tipo de visita baseado no estágio do lead
+    let tipoSugerido = 'orcamento';
+    if (lead.estagio === 'novo' || lead.estagio === 'contato') {
+      tipoSugerido = 'medicao';
+    } else if (lead.estagio === 'negociacao' || lead.estagio === 'proposta_enviada') {
+      tipoSugerido = 'orcamento';
+    }
+
+    return {
+      cliente_id: lead.cliente_id,
+      marcacao_tipo: tipoSugerido,
+      assunto: `Visita - ${lead.tipo_piso || 'Lead'}`,
+      responsavel: lead.responsavel || '',
+    };
   };
 
   return (
@@ -257,7 +290,7 @@ export function LeadDetailsDialog({
                   <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-muted border-2 border-background" />
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="text-caption font-medium">
                         Lead Criado
                       </span>
@@ -286,10 +319,23 @@ export function LeadDetailsDialog({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex gap-3"
+              className="flex flex-wrap gap-3"
             >
+              {lead.cliente_id && (
+                <Button
+                  onClick={() => setVisitaDialogOpen(true)}
+                  className="flex-1 gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  Agendar Visita
+                </Button>
+              )}
               {lead.clientes?.telefone && (
-                <Button onClick={handleWhatsApp} className="flex-1 gap-2">
+                <Button
+                  onClick={handleWhatsApp}
+                  className="flex-1 gap-2"
+                  variant={lead.cliente_id ? "outline" : "default"}
+                >
                   <MessageSquare className="h-4 w-4" />
                   WhatsApp
                 </Button>
@@ -328,6 +374,23 @@ export function LeadDetailsDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Agendar Visita Dialog */}
+      <Dialog open={visitaDialogOpen} onOpenChange={setVisitaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agendar Visita</DialogTitle>
+            <DialogDescription>
+              Agende uma visita para o lead {lead?.clientes?.nome}
+            </DialogDescription>
+          </DialogHeader>
+          <VisitaForm
+            visita={getInitialVisitaData() as any}
+            onSubmit={handleAgendarVisita}
+            isLoading={createVisita.isPending}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
