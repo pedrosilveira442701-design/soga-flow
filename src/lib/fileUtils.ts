@@ -33,7 +33,6 @@ export const ENTIDADES = [
   { value: 'geral', label: 'Geral' },
 ] as const;
 
-export const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 export const MAX_FILES_PER_UPLOAD = 10;
 
 export const ALLOWED_MIME_TYPES = [
@@ -52,13 +51,6 @@ export const ALLOWED_MIME_TYPES = [
 ];
 
 export function validateFile(file: File): FileValidationResult {
-  if (file.size > MAX_FILE_SIZE) {
-    return {
-      valid: false,
-      error: `Arquivo muito grande. Tamanho máximo: ${formatFileSize(MAX_FILE_SIZE)}`,
-    };
-  }
-
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     return {
       valid: false,
@@ -127,6 +119,20 @@ export function isPdfFile(fileName: string): boolean {
 export function sanitizeFileName(fileName: string): string {
   // Remove caracteres especiais perigosos
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+export function getFileSizeWarning(bytes: number): string | null {
+  const GB = 1024 * 1024 * 1024;
+  
+  if (bytes > 5 * GB) {
+    return "⚠️ Arquivo muito grande (>5GB) - considere usar uma conexão estável";
+  }
+  
+  if (bytes > 1 * GB) {
+    return "⚠️ Arquivo grande - o upload pode demorar dependendo da sua conexão";
+  }
+  
+  return null;
 }
 
 export function generateStoragePath(

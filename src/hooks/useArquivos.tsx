@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { generateStoragePath, validateFile } from "@/lib/fileUtils";
+import { generateStoragePath, validateFile, getFileSizeWarning } from "@/lib/fileUtils";
 
 export interface Arquivo {
   id: string;
@@ -47,6 +47,24 @@ export interface UploadFileData {
   nome?: string;
 }
 
+// Hook separado para buscar arquivos por entidade
+export function useArquivosByEntidade(entidade: string, entidadeId: string) {
+  return useQuery({
+    queryKey: ["arquivos", entidade, entidadeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("arquivos")
+        .select("*")
+        .eq("entidade", entidade)
+        .eq("entidade_id", entidadeId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Arquivo[];
+    },
+  });
+}
+
 export function useArquivos(filters?: ArquivoFilters) {
   const queryClient = useQueryClient();
 
@@ -89,24 +107,6 @@ export function useArquivos(filters?: ArquivoFilters) {
     },
   });
 
-  // Busca arquivos por entidade específica
-  const useArquivosByEntidade = (entidade: string, entidadeId: string) => {
-    return useQuery({
-      queryKey: ["arquivos", entidade, entidadeId],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from("arquivos")
-          .select("*")
-          .eq("entidade", entidade)
-          .eq("entidade_id", entidadeId)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        return data as Arquivo[];
-      },
-    });
-  };
-
   // KPIs
   const { data: kpis } = useQuery({
     queryKey: ["arquivos-kpis"],
@@ -147,6 +147,12 @@ export function useArquivos(filters?: ArquivoFilters) {
       const validation = validateFile(file);
       if (!validation.valid) {
         throw new Error(validation.error);
+      }
+
+      // Aviso para arquivos grandes (não bloqueia)
+      const sizeWarning = getFileSizeWarning(file.size);
+      if (sizeWarning) {
+        console.log(sizeWarning);
       }
 
       // Obter usuário atual
@@ -301,6 +307,5 @@ export function useArquivos(filters?: ArquivoFilters) {
     downloadArquivo,
     getSignedUrl,
     renameArquivo,
-    useArquivosByEntidade,
   };
 }

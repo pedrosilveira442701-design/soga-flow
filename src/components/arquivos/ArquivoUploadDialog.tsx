@@ -24,7 +24,9 @@ import { useContratos } from "@/hooks/useContratos";
 import { usePropostas } from "@/hooks/usePropostas";
 import { useLeads } from "@/hooks/useLeads";
 import { useVisitas } from "@/hooks/useVisitas";
-import { TIPOS_ARQUIVO, ENTIDADES, MAX_FILES_PER_UPLOAD } from "@/lib/fileUtils";
+import { TIPOS_ARQUIVO, ENTIDADES, MAX_FILES_PER_UPLOAD, getFileSizeWarning } from "@/lib/fileUtils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 import { Check, Upload, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -207,15 +209,17 @@ export function ArquivoUploadDialog({
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              {selectedFiles.map((file, index) => (
-                <div key={index} className="p-4 border rounded-lg space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium">{file.file.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(file.file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
+              {selectedFiles.map((file, index) => {
+                const sizeWarning = getFileSizeWarning(file.file.size);
+                return (
+                  <div key={index} className="p-4 border rounded-lg space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium">{file.file.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -228,6 +232,14 @@ export function ArquivoUploadDialog({
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  {sizeWarning && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Arquivo Grande</AlertTitle>
+                      <AlertDescription>{sizeWarning}</AlertDescription>
+                    </Alert>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -308,7 +320,8 @@ export function ArquivoUploadDialog({
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
 
               <div className="flex gap-3 justify-end">
                 <Button variant="outline" onClick={() => setStep(1)}>

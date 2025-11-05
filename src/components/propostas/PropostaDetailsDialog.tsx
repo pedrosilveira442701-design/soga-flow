@@ -45,6 +45,8 @@ import ProposalForm from "@/components/forms/ProposalForm";
 import { ContratoForm } from "@/components/forms/ContratoForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import ArquivosList from "@/components/arquivos/ArquivosList";
+import { Paperclip } from "lucide-react";
 
 interface PropostaDetailsDialogProps {
   proposta: Proposta | null;
@@ -315,6 +317,20 @@ export default function PropostaDetailsDialog({
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Seção de Arquivos */}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-semibold">Anexos da Proposta</h3>
+              </div>
+              <ArquivosList 
+                entidade="proposta"
+                entidadeId={proposta.id}
+                showUpload={true}
+                compact={false}
+              />
             </div>
           </div>
         </DialogContent>

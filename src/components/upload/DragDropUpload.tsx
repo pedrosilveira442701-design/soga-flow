@@ -91,7 +91,7 @@ export function DragDropUpload({
             Arraste arquivos ou clique para selecionar
           </p>
           <p className="text-caption text-muted-foreground">
-            Máximo de {maxFiles} arquivos
+            Sem limite de tamanho • Máximo de {maxFiles} arquivos por vez
           </p>
         </label>
       </div>
