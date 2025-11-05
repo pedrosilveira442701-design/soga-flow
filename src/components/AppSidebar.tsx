@@ -10,6 +10,7 @@ import {
   Calendar,
   FolderOpen,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import { motion } from "framer-motion";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Leads", url: "/leads", icon: Target },
   { title: "Propostas", url: "/propostas", icon: FileText },
