@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -33,6 +34,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { motion } from "framer-motion";
+import { useFinanceiro } from "@/hooks/useFinanceiro";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -51,6 +53,7 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
   const { signOut, user } = useAuth();
+  const { kpis } = useFinanceiro();
 
   const getUserInitials = (email?: string) => {
     if (!email) return "U";
@@ -136,10 +139,22 @@ export function AppSidebar() {
                               <TooltipTrigger asChild>{itemContent}</TooltipTrigger>
                               <TooltipContent side="right" className="text-body">
                                 {item.title}
+                                {item.title === "Financeiro" && kpis.atrasadas > 0 && (
+                                  <Badge variant="destructive" className="ml-2">
+                                    {kpis.atrasadas}
+                                  </Badge>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
-                            itemContent
+                            <div className="flex items-center w-full">
+                              {itemContent}
+                              {item.title === "Financeiro" && kpis.atrasadas > 0 && (
+                                <Badge variant="destructive" className="ml-auto">
+                                  {kpis.atrasadas}
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>

@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, FileSignature, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
+import { FileText, UserPlus, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
+import { ProximosVencimentos } from "@/components/financeiro/ProximosVencimentos";
 
 const kpiData = [
   {
@@ -97,6 +98,9 @@ export default function Dashboard() {
         <TimelineChart data={timelineData} />
         <FunnelChart data={funnelData} />
       </div>
+
+      {/* Row 3: Próximos Vencimentos */}
+      <ProximosVencimentos />
     </div>
   );
 }
