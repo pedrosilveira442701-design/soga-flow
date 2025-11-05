@@ -54,6 +54,31 @@ export interface BurndownData {
   acumulado_realizado: number;
 }
 
+export interface PerformanceByResponsibleData {
+  responsavel: string;
+  ciclo_medio_dias: number;
+  ticket_medio: number;
+  margem_media: number;
+  leads_count: number;
+  propostas_count: number;
+  taxa_conversao: number;
+}
+
+export interface ResponseSpeedData {
+  tempo_resposta_horas: number;
+  taxa_conversao: number;
+  leads_count: number;
+}
+
+export interface FloorTypeAnalysisData {
+  tipo_piso: string;
+  volume_m2: number;
+  ticket_medio: number;
+  margem_media: number;
+  propostas_count: number;
+  valor_total: number;
+}
+
 // Probabilidades por estágio (configuráveis futuramente)
 const STAGE_PROBABILITIES: Record<string, number> = {
   novo: 0.1,
@@ -447,6 +472,261 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     enabled: !!user,
   });
 
+  // Performance por Responsável
+  const { data: performanceData, isLoading: loadingPerformance } = useQuery({
+    queryKey: ["analytics", "performance", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // Buscar leads com responsável
+      let leadsQuery = supabase
+        .from("leads")
+        .select("responsavel, estagio, created_at, ultima_interacao, valor_potencial")
+        .eq("user_id", user.id)
+        .not("responsavel", "is", null);
+
+      if (filters.startDate) {
+        leadsQuery = leadsQuery.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        leadsQuery = leadsQuery.lte("created_at", filters.endDate.toISOString());
+      }
+
+      const { data: leads, error: leadsError } = await leadsQuery;
+      if (leadsError) throw leadsError;
+
+      // Buscar propostas
+      let propostasQuery = supabase
+        .from("propostas")
+        .select(`
+          valor_total,
+          liquido,
+          margem_pct,
+          data,
+          cliente_id,
+          clientes!inner(nome)
+        `)
+        .eq("user_id", user.id);
+
+      if (filters.startDate) {
+        propostasQuery = propostasQuery.gte("data", filters.startDate.toISOString().split("T")[0]);
+      }
+      if (filters.endDate) {
+        propostasQuery = propostasQuery.lte("data", filters.endDate.toISOString().split("T")[0]);
+      }
+
+      const { data: propostas, error: propostasError } = await propostasQuery;
+      if (propostasError) throw propostasError;
+
+      // Agrupar por responsável
+      const responsaveis = new Map<string, {
+        leads: typeof leads;
+        ciclos: number[];
+        valores: number[];
+        margens: number[];
+      }>();
+
+      leads.forEach((lead) => {
+        const resp = lead.responsavel || "Sem responsável";
+        if (!responsaveis.has(resp)) {
+          responsaveis.set(resp, { leads: [], ciclos: [], valores: [], margens: [] });
+        }
+        const data = responsaveis.get(resp)!;
+        data.leads.push(lead);
+
+        // Calcular ciclo (created_at até ultima_interacao)
+        if (lead.ultima_interacao) {
+          const created = new Date(lead.created_at);
+          const lastInteraction = new Date(lead.ultima_interacao);
+          const ciclo = Math.floor((lastInteraction.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+          data.ciclos.push(ciclo);
+        }
+
+        if (lead.valor_potencial) {
+          data.valores.push(parseFloat(String(lead.valor_potencial)));
+        }
+      });
+
+      // Adicionar dados de propostas (simplificado - associar por índice)
+      propostas.forEach((prop: any) => {
+        const valor = parseFloat(String(prop.valor_total || 0));
+        const margem = parseFloat(String(prop.margem_pct || 0));
+        
+        // Tentar associar ao primeiro responsável (simplificação)
+        const firstResp = Array.from(responsaveis.keys())[0];
+        if (firstResp && responsaveis.has(firstResp)) {
+          const data = responsaveis.get(firstResp)!;
+          data.valores.push(valor);
+          data.margens.push(margem);
+        }
+      });
+
+      const result: PerformanceByResponsibleData[] = Array.from(responsaveis.entries()).map(
+        ([responsavel, data]) => {
+          const ciclo_medio = data.ciclos.length > 0
+            ? data.ciclos.reduce((sum, c) => sum + c, 0) / data.ciclos.length
+            : 0;
+          const ticket_medio = data.valores.length > 0
+            ? data.valores.reduce((sum, v) => sum + v, 0) / data.valores.length
+            : 0;
+          const margem_media = data.margens.length > 0
+            ? data.margens.reduce((sum, m) => sum + m, 0) / data.margens.length
+            : 0;
+
+          const leads_fechados = data.leads.filter((l) => l.estagio === "fechado_ganho").length;
+          const taxa_conversao = data.leads.length > 0
+            ? (leads_fechados / data.leads.length) * 100
+            : 0;
+
+          return {
+            responsavel,
+            ciclo_medio_dias: parseFloat(ciclo_medio.toFixed(1)),
+            ticket_medio: parseFloat(ticket_medio.toFixed(2)),
+            margem_media: parseFloat(margem_media.toFixed(1)),
+            leads_count: data.leads.length,
+            propostas_count: data.valores.length,
+            taxa_conversao: parseFloat(taxa_conversao.toFixed(1)),
+          };
+        }
+      );
+
+      return result.sort((a, b) => b.leads_count - a.leads_count);
+    },
+    enabled: !!user,
+  });
+
+  // Velocidade de Resposta vs Conversão
+  const { data: responseSpeedData, isLoading: loadingResponseSpeed } = useQuery({
+    queryKey: ["analytics", "responseSpeed", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      let query = supabase
+        .from("leads")
+        .select("created_at, ultima_interacao, estagio")
+        .eq("user_id", user.id)
+        .not("ultima_interacao", "is", null);
+
+      if (filters.startDate) {
+        query = query.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        query = query.lte("created_at", filters.endDate.toISOString());
+      }
+
+      const { data: leads, error } = await query;
+      if (error) throw error;
+
+      // Agrupar por faixas de tempo de resposta
+      const buckets = [
+        { label: "0-1h", min: 0, max: 1, leads: [] as typeof leads },
+        { label: "1-4h", min: 1, max: 4, leads: [] as typeof leads },
+        { label: "4-24h", min: 4, max: 24, leads: [] as typeof leads },
+        { label: "1-3d", min: 24, max: 72, leads: [] as typeof leads },
+        { label: ">3d", min: 72, max: Infinity, leads: [] as typeof leads },
+      ];
+
+      leads.forEach((lead) => {
+        const created = new Date(lead.created_at);
+        const responded = new Date(lead.ultima_interacao!);
+        const hoursToRespond = (responded.getTime() - created.getTime()) / (1000 * 60 * 60);
+
+        for (const bucket of buckets) {
+          if (hoursToRespond >= bucket.min && hoursToRespond < bucket.max) {
+            bucket.leads.push(lead);
+            break;
+          }
+        }
+      });
+
+      const result: ResponseSpeedData[] = buckets
+        .filter((b) => b.leads.length > 0)
+        .map((bucket) => {
+          const fechados = bucket.leads.filter((l) => l.estagio === "fechado_ganho").length;
+          const taxa_conversao = (fechados / bucket.leads.length) * 100;
+
+          return {
+            tempo_resposta_horas: (bucket.min + bucket.max) / 2,
+            taxa_conversao: parseFloat(taxa_conversao.toFixed(1)),
+            leads_count: bucket.leads.length,
+          };
+        });
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
+  // Análise por Tipos de Piso
+  const { data: floorTypeData, isLoading: loadingFloorType } = useQuery({
+    queryKey: ["analytics", "floorType", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      let query = supabase
+        .from("propostas")
+        .select("tipo_piso, m2, valor_total, margem_pct")
+        .eq("user_id", user.id)
+        .not("tipo_piso", "is", null);
+
+      if (filters.startDate) {
+        query = query.gte("data", filters.startDate.toISOString().split("T")[0]);
+      }
+      if (filters.endDate) {
+        query = query.lte("data", filters.endDate.toISOString().split("T")[0]);
+      }
+      if (filters.tipoPiso && filters.tipoPiso !== "all") {
+        query = query.eq("tipo_piso", filters.tipoPiso);
+      }
+
+      const { data: propostas, error } = await query;
+      if (error) throw error;
+
+      // Agrupar por tipo de piso
+      const tipos = new Map<string, {
+        m2s: number[];
+        valores: number[];
+        margens: number[];
+      }>();
+
+      propostas.forEach((prop) => {
+        const tipo = prop.tipo_piso || "Não especificado";
+        if (!tipos.has(tipo)) {
+          tipos.set(tipo, { m2s: [], valores: [], margens: [] });
+        }
+        const data = tipos.get(tipo)!;
+        data.m2s.push(parseFloat(String(prop.m2 || 0)));
+        data.valores.push(parseFloat(String(prop.valor_total || 0)));
+        data.margens.push(parseFloat(String(prop.margem_pct || 0)));
+      });
+
+      const result: FloorTypeAnalysisData[] = Array.from(tipos.entries()).map(
+        ([tipo_piso, data]) => {
+          const volume_m2 = data.m2s.reduce((sum, m) => sum + m, 0);
+          const ticket_medio = data.valores.length > 0
+            ? data.valores.reduce((sum, v) => sum + v, 0) / data.valores.length
+            : 0;
+          const margem_media = data.margens.length > 0
+            ? data.margens.reduce((sum, m) => sum + m, 0) / data.margens.length
+            : 0;
+          const valor_total = data.valores.reduce((sum, v) => sum + v, 0);
+
+          return {
+            tipo_piso,
+            volume_m2: parseFloat(volume_m2.toFixed(2)),
+            ticket_medio: parseFloat(ticket_medio.toFixed(2)),
+            margem_media: parseFloat(margem_media.toFixed(1)),
+            propostas_count: data.valores.length,
+            valor_total: parseFloat(valor_total.toFixed(2)),
+          };
+        }
+      );
+
+      return result.sort((a, b) => b.valor_total - a.valor_total);
+    },
+    enabled: !!user,
+  });
+
   return {
     funnelData,
     loadingFunnel,
@@ -460,12 +740,21 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     loadingReceivables,
     burndownData,
     loadingBurndown,
+    performanceData,
+    loadingPerformance,
+    responseSpeedData,
+    loadingResponseSpeed,
+    floorTypeData,
+    loadingFloorType,
     isLoading:
       loadingFunnel ||
       loadingPipeline ||
       loadingScatter ||
       loadingWaterfall ||
       loadingReceivables ||
-      loadingBurndown,
+      loadingBurndown ||
+      loadingPerformance ||
+      loadingResponseSpeed ||
+      loadingFloorType,
   };
 }

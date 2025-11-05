@@ -6,6 +6,9 @@ import { ScatterChart } from "@/components/analytics/ScatterChart";
 import { WaterfallChart } from "@/components/analytics/WaterfallChart";
 import { ReceivablesChart } from "@/components/analytics/ReceivablesChart";
 import { BurndownChart } from "@/components/analytics/BurndownChart";
+import { PerformanceChart } from "@/components/analytics/PerformanceChart";
+import { ResponseSpeedChart } from "@/components/analytics/ResponseSpeedChart";
+import { FloorTypeChart } from "@/components/analytics/FloorTypeChart";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, TrendingUp, DollarSign } from "lucide-react";
@@ -25,6 +28,12 @@ export default function Analytics() {
     loadingReceivables,
     burndownData,
     loadingBurndown,
+    performanceData,
+    loadingPerformance,
+    responseSpeedData,
+    loadingResponseSpeed,
+    floorTypeData,
+    loadingFloorType,
   } = useAnalytics(filters);
 
   // Calcular KPIs principais
@@ -107,6 +116,15 @@ export default function Analytics() {
 
         {/* Burndown de Metas */}
         <BurndownChart data={burndownData} isLoading={loadingBurndown} />
+
+        {/* Performance por Responsável */}
+        <PerformanceChart data={performanceData} isLoading={loadingPerformance} />
+
+        {/* Velocidade de Resposta */}
+        <ResponseSpeedChart data={responseSpeedData} isLoading={loadingResponseSpeed} />
+
+        {/* Análise por Tipos de Piso */}
+        <FloorTypeChart data={floorTypeData} isLoading={loadingFloorType} />
       </div>
     </div>
   );
