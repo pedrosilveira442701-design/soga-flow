@@ -21,6 +21,8 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
 import { ParcelasManager } from "./ParcelasManager";
+import ArquivosList from "@/components/arquivos/ArquivosList";
+import { Paperclip } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -216,6 +218,22 @@ export function ContratoDetailsDialog({
 
           {/* Gerenciador de Parcelas */}
           <ParcelasManager contratoId={contrato.id} />
+
+          <Separator />
+
+          {/* Seção de Arquivos */}
+          <div className="rounded-lg border p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-semibold">Anexos do Contrato</h3>
+            </div>
+            <ArquivosList 
+              entidade="contrato"
+              entidadeId={contrato.id}
+              showUpload={true}
+              compact={false}
+            />
+          </div>
 
           <Separator />
 
