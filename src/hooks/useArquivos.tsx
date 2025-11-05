@@ -70,7 +70,7 @@ export function useArquivos(filters?: ArquivoFilters) {
         query = query.eq("entidade", filters.entidade);
       }
 
-      if (filters?.tipo) {
+      if (filters?.tipo && filters.tipo !== "todos") {
         query = query.eq("tipo", filters.tipo);
       }
 

@@ -35,7 +35,7 @@ export default function Arquivos() {
   const [filters, setFilters] = useState({
     search: "",
     entidade: "todos",
-    tipo: "",
+    tipo: "todos",
   });
 
   const { arquivos, isLoading, kpis, downloadArquivo, deleteArquivo } = useArquivos(filters);
@@ -157,14 +157,14 @@ export default function Arquivos() {
             <Select
               value={filters.tipo}
               onValueChange={(value) =>
-                setFilters((prev) => ({ ...prev, tipo: value }))
+                setFilters((prev) => ({ ...prev, tipo: value === "todos" ? "" : value }))
               }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Tipos</SelectItem>
+                <SelectItem value="todos">Todos os Tipos</SelectItem>
                 {TIPOS_ARQUIVO.map((t) => (
                   <SelectItem key={t.value} value={t.value}>
                     {t.label}
@@ -176,7 +176,7 @@ export default function Arquivos() {
             <Button
               variant="outline"
               onClick={() =>
-                setFilters({ search: "", entidade: "todos", tipo: "" })
+                setFilters({ search: "", entidade: "todos", tipo: "todos" })
               }
             >
               Limpar Filtros
