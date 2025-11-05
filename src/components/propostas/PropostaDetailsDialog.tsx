@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Proposta, usePropostas } from "@/hooks/usePropostas";
+import { useContratos } from "@/hooks/useContratos";
 import { 
   User, 
   Calendar, 
@@ -35,10 +36,15 @@ import {
   Trash2,
   MoreVertical,
   FileText,
+  FileCheck,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ProposalForm from "@/components/forms/ProposalForm";
+import { ContratoForm } from "@/components/forms/ContratoForm";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface PropostaDetailsDialogProps {
   proposta: Proposta | null;
@@ -53,7 +59,33 @@ export default function PropostaDetailsDialog({
 }: PropostaDetailsDialogProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showContratoDialog, setShowContratoDialog] = useState(false);
   const { updateStatus, deleteProposta, updateProposta } = usePropostas();
+  const { createContrato } = useContratos();
+
+  // Verificar se a proposta já tem contrato
+  const { data: contratoExistente, refetch: refetchContrato } = useQuery({
+    queryKey: ["contrato-proposta", proposta?.id],
+    queryFn: async () => {
+      if (!proposta?.id) return null;
+      
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("id, status")
+        .eq("proposta_id", proposta.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!proposta?.id && open,
+  });
+
+  useEffect(() => {
+    if (open && proposta?.id) {
+      refetchContrato();
+    }
+  }, [open, proposta?.id, refetchContrato]);
 
   if (!proposta) return null;
 
@@ -93,6 +125,19 @@ export default function PropostaDetailsDialog({
   const handleEdit = async (data: any) => {
     await updateProposta.mutateAsync({ ...data, id: proposta.id });
     setShowEditDialog(false);
+  };
+
+  const handleCreateContrato = async (data: any) => {
+    await createContrato(data);
+    setShowContratoDialog(false);
+    onOpenChange(false);
+  };
+
+  const handleViewContrato = () => {
+    if (contratoExistente?.id) {
+      // Navegar para a página de contratos e abrir o contrato específico
+      window.location.href = `/contratos?id=${contratoExistente.id}`;
+    }
   };
 
   return (
@@ -194,6 +239,45 @@ export default function PropostaDetailsDialog({
               </div>
             </div>
 
+            {/* Ação de Contrato */}
+            {proposta.status === "fechada" && (
+              <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+                {contratoExistente ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileCheck className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-semibold">Contrato Gerado</p>
+                        <p className="text-sm text-muted-foreground">
+                          Esta proposta já possui um contrato associado
+                        </p>
+                      </div>
+                    </div>
+                    <Button onClick={handleViewContrato} variant="outline">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Ver Contrato
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-semibold">Proposta Fechada</p>
+                        <p className="text-sm text-muted-foreground">
+                          Gere um contrato para formalizar esta venda
+                        </p>
+                      </div>
+                    </div>
+                    <Button onClick={() => setShowContratoDialog(true)}>
+                      <FileCheck className="h-4 w-4 mr-2" />
+                      Gerar Contrato
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Resumo Financeiro */}
             <div className="rounded-lg bg-muted/50 p-6 space-y-4">
               <h3 className="font-semibold text-lg mb-4">Resumo Financeiro</h3>
@@ -274,6 +358,30 @@ export default function PropostaDetailsDialog({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Gerar Contrato Dialog */}
+      <Dialog open={showContratoDialog} onOpenChange={setShowContratoDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerar Contrato da Proposta</DialogTitle>
+          </DialogHeader>
+          <ContratoForm
+            onSubmit={handleCreateContrato}
+            initialData={{
+              cliente_id: proposta.cliente_id,
+              proposta_id: proposta.id,
+              valor_negociado: Number(proposta.liquido),
+              cpf_cnpj: "",
+              forma_pagamento: "",
+              data_inicio: new Date().toISOString().split("T")[0],
+              numero_parcelas: 1,
+              dia_vencimento: 10,
+              observacoes: `Contrato gerado a partir da proposta de ${proposta.tipo_piso} - ${proposta.m2}m²`,
+            }}
+            mode="fromProposta"
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
