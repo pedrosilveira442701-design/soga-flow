@@ -9,12 +9,8 @@ import {
   TrendingUp,
   Calendar,
   FolderOpen,
-  LogOut,
   BarChart3,
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -29,14 +25,17 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { motion } from "framer-motion";
+import { Separator } from "@/components/ui/separator";
+import { motion, AnimatePresence } from "framer-motion";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { useMetas } from "@/hooks/useMetas";
 import { useVisitas } from "@/hooks/useVisitas";
+import { SearchCommand } from "./sidebar/SearchCommand";
+import { UserMenu } from "./sidebar/UserMenu";
+import { cn } from "@/lib/utils";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -54,215 +53,194 @@ const menuItems = [
 export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
-  const { signOut, user } = useAuth();
   const { kpis } = useFinanceiro();
   const { kpis: metasKpis } = useMetas({ status: 'ativa' });
   const { kpis: visitasKpis } = useVisitas();
 
-  const getUserInitials = (email?: string) => {
-    if (!email) return "U";
-    return email.substring(0, 2).toUpperCase();
+  const getBadgeForItem = (title: string) => {
+    if (title === "Financeiro" && kpis.atrasadas > 0) {
+      return { count: kpis.atrasadas, variant: "destructive" as const };
+    }
+    if (title === "Metas" && metasKpis.metasEmAlerta > 0) {
+      return { count: metasKpis.metasEmAlerta, variant: "destructive" as const };
+    }
+    if (title === "Visitas" && visitasKpis && (visitasKpis.visitasHoje > 0 || visitasKpis.visitasAtrasadas > 0)) {
+      return { count: visitasKpis.visitasHoje + visitasKpis.visitasAtrasadas, variant: "secondary" as const };
+    }
+    return null;
   };
 
   return (
     <TooltipProvider delayDuration={300}>
-      <motion.div
-        initial={false}
-        animate={{ width: open ? 240 : 80 }}
-        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      <Sidebar 
+        collapsible="icon"
+        className={cn(
+          "border-r bg-sidebar-background transition-all duration-200",
+          open ? "w-[280px]" : "w-[72px]"
+        )}
       >
-        <Sidebar className="border-r border-sidebar-border shadow-elev1">
-          <SidebarContent className="flex flex-col h-full">
-            {/* Logo/Header */}
-            <div className="px-16 py-24 flex items-center justify-center">
+        <SidebarContent className="flex flex-col h-full">
+          {/* Logo/Header */}
+          <div className="px-4 py-6 flex items-center justify-center min-h-[72px]">
+            <AnimatePresence mode="wait">
               {open ? (
-                <motion.h1
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15 }}
-                  className="text-h3 text-brand-primary"
+                <motion.div
+                  key="expanded"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.16 }}
+                  className="flex items-center gap-2"
                 >
-                  Só Garagens
-                </motion.h1>
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm">
+                    SG
+                  </div>
+                  <span className="text-lg font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    Só Garagens
+                  </span>
+                </motion.div>
               ) : (
-                <div className="text-h3 font-semibold text-brand-primary">SG</div>
+                <motion.div
+                  key="collapsed"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.16 }}
+                  className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm"
+                >
+                  SG
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
+          </div>
 
-            {/* Navigation */}
-            <SidebarGroup className="px-12">
+          <Separator className="opacity-50" />
+
+          {/* Search */}
+          {open && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.16, delay: 0.05 }}
+              className="px-3 py-3"
+            >
+              <SearchCommand />
+            </motion.div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex-1 px-3 py-2 overflow-y-auto">
+            <SidebarGroup>
               {open && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: 0.16 }}
                 >
-                  <SidebarGroupLabel className="text-caption text-brand-cost px-3 mb-8">
+                  <SidebarGroupLabel className="text-xs text-muted-foreground px-3 mb-2 uppercase tracking-wider">
                     Navegação
                   </SidebarGroupLabel>
                 </motion.div>
               )}
               <SidebarGroupContent>
-                <SidebarMenu className="space-y-4">
+                <SidebarMenu className="space-y-1">
                   {menuItems.map((item) => {
                     const isActive = location.pathname === item.url;
-                    const itemContent = (
-                      <NavLink
-                        to={item.url}
-                        className={`flex items-center gap-12 px-12 py-8 rounded-md transition-all duration-200 ${
-                          isActive
-                            ? "bg-brand-primary text-white shadow-elev2"
-                            : "hover:bg-brand-surface hover:shadow-elev1 hover:scale-[1.02]"
-                        }`}
-                        aria-label={item.title}
-                      >
-                        <item.icon
-                          className={`h-5 w-5 flex-shrink-0 ${
-                            isActive ? "opacity-100" : "icon-thin"
-                          }`}
-                          strokeWidth={1.5}
-                        />
-                        {open && (
-                          <motion.span
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.15 }}
-                            className="text-body"
-                          >
-                            {item.title}
-                          </motion.span>
-                        )}
-                      </NavLink>
-                    );
+                    const badge = getBadgeForItem(item.title);
 
                     return (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive}>
-                          {!open ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>{itemContent}</TooltipTrigger>
-                              <TooltipContent side="right" className="text-body">
-                                {item.title}
-                                {item.title === "Financeiro" && kpis.atrasadas > 0 && (
-                                  <Badge variant="destructive" className="ml-2">
-                                    {kpis.atrasadas}
-                                  </Badge>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <NavLink
+                              to={item.url}
+                              className={cn(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group",
+                                "hover:bg-sidebar-hover",
+                                isActive && "bg-sidebar-active text-sidebar-active-foreground shadow-sm",
+                                !isActive && "text-sidebar-foreground",
+                                !open && "justify-center"
+                              )}
+                            >
+                              {/* Active Indicator */}
+                              {isActive && (
+                                <motion.div
+                                  layoutId="sidebar-active"
+                                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-sidebar-active rounded-r-full"
+                                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                />
+                              )}
+
+                              <item.icon
+                                className={cn(
+                                  "h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                                  isActive ? "opacity-100" : "opacity-70"
                                 )}
-                                {item.title === "Metas" && metasKpis.metasEmAlerta > 0 && (
-                                  <Badge variant="destructive" className="ml-2">
-                                    {metasKpis.metasEmAlerta}
+                                strokeWidth={isActive ? 2 : 1.5}
+                              />
+                              
+                              {open && (
+                                <motion.span
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.16 }}
+                                  className="text-sm font-medium flex-1"
+                                >
+                                  {item.title}
+                                </motion.span>
+                              )}
+
+                              {open && badge && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                >
+                                  <Badge variant={badge.variant} className="h-5 min-w-[20px] px-1.5 text-xs">
+                                    {badge.count}
                                   </Badge>
-                                )}
-                                {item.title === "Visitas" && visitasKpis && (visitasKpis.visitasHoje > 0 || visitasKpis.visitasAtrasadas > 0) && (
-                                  <Badge variant="secondary" className="ml-2">
-                                    {visitasKpis.visitasHoje + visitasKpis.visitasAtrasadas}
-                                  </Badge>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : (
-                            <div className="flex items-center w-full">
-                              {itemContent}
-                              {item.title === "Financeiro" && kpis.atrasadas > 0 && (
-                                <Badge variant="destructive" className="ml-auto">
-                                  {kpis.atrasadas}
+                                </motion.div>
+                              )}
+                            </NavLink>
+                          </TooltipTrigger>
+                          {!open && (
+                            <TooltipContent side="right" className="flex items-center gap-2">
+                              <span>{item.title}</span>
+                              {badge && (
+                                <Badge variant={badge.variant} className="h-5 min-w-[20px] px-1.5 text-xs">
+                                  {badge.count}
                                 </Badge>
                               )}
-                              {item.title === "Metas" && metasKpis.metasEmAlerta > 0 && (
-                                <Badge variant="destructive" className="ml-auto">
-                                  {metasKpis.metasEmAlerta}
-                                </Badge>
-                              )}
-                              {item.title === "Visitas" && visitasKpis && (visitasKpis.visitasHoje > 0 || visitasKpis.visitasAtrasadas > 0) && (
-                                <Badge variant="secondary" className="ml-auto">
-                                  {visitasKpis.visitasHoje + visitasKpis.visitasAtrasadas}
-                                </Badge>
-                              )}
-                            </div>
+                            </TooltipContent>
                           )}
-                        </SidebarMenuButton>
+                        </Tooltip>
                       </SidebarMenuItem>
                     );
                   })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+          </div>
 
-            {/* User Section */}
-            <div className="mt-auto p-12 space-y-12 border-t border-sidebar-border">
-              {open ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex items-center gap-12"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="text-[11px] bg-brand-surface text-brand-ink">
-                      {getUserInitials(user?.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-caption text-brand-cost truncate">
-                      {user?.email}
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <div className="flex justify-center">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="text-[11px] bg-brand-surface text-brand-ink">
-                      {getUserInitials(user?.email)}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
+          <Separator className="opacity-50" />
 
-              {open ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start gap-8 hover:shadow-elev1"
-                  onClick={() => signOut()}
-                >
-                  <LogOut className="h-4 w-4 flex-shrink-0 icon-thin" strokeWidth={1.5} />
-                  <span className="text-body">Sair</span>
-                </Button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="w-full hover:shadow-elev1"
-                      onClick={() => signOut()}
-                      aria-label="Sair"
-                    >
-                      <LogOut className="h-4 w-4 icon-thin" strokeWidth={1.5} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="text-body">
-                    Sair
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {open && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.15 }}
-                  className="text-[11px] text-brand-cost text-center"
-                >
-                  v1.0.0
-                </motion.div>
-              )}
-            </div>
-          </SidebarContent>
-        </Sidebar>
-      </motion.div>
+          {/* User Section */}
+          <div className="p-3 space-y-2">
+            <UserMenu collapsed={!open} />
+            
+            {open && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.16, delay: 0.05 }}
+                className="text-xs text-muted-foreground text-center pt-2"
+              >
+                v1.0.0
+              </motion.div>
+            )}
+          </div>
+        </SidebarContent>
+      </Sidebar>
     </TooltipProvider>
   );
 }

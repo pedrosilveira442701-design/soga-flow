@@ -53,6 +53,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 210 92% 76%;
+    --sidebar-hover: 210 40% 98%;
+    --sidebar-active: 210 92% 57%;
+    --sidebar-active-foreground: 0 0% 100%;
 
     /* Brand Colors - Jony Ive Design System */
     --brand-primary: 210 92% 57%;        /* #2E90FA */
@@ -117,6 +120,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 18%;
     --sidebar-ring: 210 92% 76%;
+    --sidebar-hover: 217 33% 20%;
+    --sidebar-active: 210 92% 57%;
+    --sidebar-active-foreground: 0 0% 100%;
 
     --brand-surface: 222 47% 15%;
   }
