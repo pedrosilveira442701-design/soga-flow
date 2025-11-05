@@ -10,8 +10,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 [&_svg]:size-4",
-        primary: "rounded-full bg-[#2E90FA] text-white hover:bg-[#1570EF] shadow-[0_4px_10px_rgba(16,24,40,.08)] hover:shadow-[0_6px_14px_rgba(16,24,40,.12)] focus-visible:ring-[#84CAFF] [&_svg]:size-[18px]",
-        secondary: "rounded-full bg-[#EEF2F6] text-[#0F172A] hover:bg-[#E5EAF0] shadow-[0_1px_2px_rgba(16,24,40,.06)] hover:shadow-[0_2px_4px_rgba(16,24,40,.08)] focus-visible:ring-[#84CAFF] [&_svg]:size-[18px]",
+        primary: "rounded-full bg-gradient-to-r from-[#7C3AED] via-[#5B8DEF] to-[#2E90FA] text-white hover:shadow-[0_8px_20px_rgba(124,58,237,.4)] shadow-[0_4px_12px_rgba(124,58,237,.3)] focus-visible:ring-[#84CAFF] [&_svg]:size-[18px]",
+        secondary: "rounded-full bg-gradient-to-r from-[#7C3AED] via-[#5B8DEF] to-[#2E90FA] text-white hover:shadow-[0_6px_16px_rgba(124,58,237,.35)] shadow-[0_3px_10px_rgba(124,58,237,.25)] focus-visible:ring-[#84CAFF] [&_svg]:size-[18px]",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg [&_svg]:size-4",
         outline: "border-2 border-border bg-card hover:bg-accent hover:border-primary/20 shadow-sm hover:shadow-md rounded-lg [&_svg]:size-4",
         ghost: "hover:bg-accent hover:text-accent-foreground rounded-lg [&_svg]:size-4",
