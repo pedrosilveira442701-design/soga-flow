@@ -52,7 +52,7 @@ export default function ProposalForm({
   onSubmit,
   initialData,
 }: ProposalFormProps) {
-  const { clientes } = useClientes();
+  const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   
   const form = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
@@ -83,7 +83,7 @@ export default function ProposalForm({
     }).format(value);
   };
 
-  const selectedCliente = clientes.find(c => c.id === form.watch("cliente_id"));
+  const selectedCliente = clientes?.find(c => c.id === form.watch("cliente_id"));
   const tiposPiso = ["Porcelanato", "Vinílico", "Laminado", "Madeira", "Cerâmica", "Pedra Natural", "Outros"];
 
   return (
@@ -97,18 +97,24 @@ export default function ProposalForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingClientes}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
+                        <SelectValue placeholder={isLoadingClientes ? "Carregando clientes..." : "Selecione um cliente"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {clientes.map((cliente) => (
-                        <SelectItem key={cliente.id} value={cliente.id}>
-                          {cliente.nome} {cliente.cidade && `- ${cliente.cidade}`}
+                      {clientes.length === 0 ? (
+                        <SelectItem value="no-clients" disabled>
+                          Nenhum cliente cadastrado
                         </SelectItem>
-                      ))}
+                      ) : (
+                        clientes.map((cliente) => (
+                          <SelectItem key={cliente.id} value={cliente.id}>
+                            {cliente.nome} {cliente.cidade && `- ${cliente.cidade}`}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
