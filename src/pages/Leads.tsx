@@ -10,13 +10,25 @@ import {
 } from "@/components/ui/dialog";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
 import { useLeads } from "@/hooks/useLeads";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Database } from "@/integrations/supabase/types";
+
+type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
+  clientes?: {
+    nome: string;
+    telefone?: string;
+    endereco?: string;
+  } | null;
+};
 
 export default function Leads() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { leads, isLoading, createLead, updateLeadStage } = useLeads();
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any) => {
@@ -32,6 +44,21 @@ export default function Leads() {
 
   const handleStageChange = async (leadId: string, newStage: any) => {
     await updateLeadStage.mutateAsync({ id: leadId, stage: newStage });
+  };
+
+  const handleCardClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    setDetailsOpen(true);
+  };
+
+  const handleEditLead = (lead: Lead) => {
+    setDetailsOpen(false);
+    // TODO: Implementar formulário de edição
+    console.log("Edit lead:", lead);
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    await deleteLead.mutateAsync(leadId);
   };
 
   if (isLoading) {
@@ -78,7 +105,20 @@ export default function Leads() {
       </div>
 
       {/* Kanban Board */}
-      <KanbanBoard leads={leads} onStageChange={handleStageChange} />
+      <KanbanBoard 
+        leads={leads} 
+        onStageChange={handleStageChange}
+        onCardClick={handleCardClick}
+      />
+
+      {/* Lead Details Dialog */}
+      <LeadDetailsDialog
+        lead={selectedLead}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        onEdit={handleEditLead}
+        onDelete={handleDeleteLead}
+      />
     </div>
   );
 }

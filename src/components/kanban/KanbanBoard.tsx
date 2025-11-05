@@ -27,6 +27,7 @@ type LeadStage = Database["public"]["Enums"]["lead_stage"];
 interface KanbanBoardProps {
   leads: Lead[];
   onStageChange: (leadId: string, newStage: LeadStage) => void;
+  onCardClick: (lead: Lead) => void;
 }
 
 const STAGES = [
@@ -37,7 +38,7 @@ const STAGES = [
   { id: "ganho", title: "Ganho", color: "ganho" },
 ] as const;
 
-function SortableCard({ lead }: { lead: Lead }) {
+function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
   const {
     attributes,
     listeners,
@@ -68,12 +69,13 @@ function SortableCard({ lead }: { lead: Lead }) {
             window.open(`https://wa.me/${lead.clientes.telefone.replace(/\D/g, "")}`, "_blank");
           }
         }}
+        onClick={onClick}
       />
     </div>
   );
 }
 
-export function KanbanBoard({ leads, onStageChange }: KanbanBoardProps) {
+export function KanbanBoard({ leads, onStageChange, onCardClick }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   
   const sensors = useSensors(
@@ -127,7 +129,11 @@ export function KanbanBoard({ leads, onStageChange }: KanbanBoardProps) {
               color={stage.color}
             >
               {stageLeads.map((lead) => (
-                <SortableCard key={lead.id} lead={lead} />
+                <SortableCard 
+                  key={lead.id} 
+                  lead={lead} 
+                  onClick={() => onCardClick(lead)}
+                />
               ))}
             </KanbanColumn>
           );

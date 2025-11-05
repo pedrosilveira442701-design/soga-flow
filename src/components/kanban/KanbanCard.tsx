@@ -19,6 +19,7 @@ interface KanbanCardProps {
   onWhatsApp?: () => void;
   onAttachment?: () => void;
   onTask?: () => void;
+  onClick?: () => void;
 }
 
 export function KanbanCard({
@@ -30,6 +31,7 @@ export function KanbanCard({
   onWhatsApp,
   onAttachment,
   onTask,
+  onClick,
 }: KanbanCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -60,7 +62,14 @@ export function KanbanCard({
         damping: 28,
       }}
     >
-      <Card className="p-4 cursor-grab active:cursor-grabbing hover:shadow-elev2 transition-shadow">
+      <Card 
+        className="p-4 cursor-grab active:cursor-grabbing hover:shadow-elev2 transition-shadow"
+        onClick={(e) => {
+          if (onClick && !(e.target as HTMLElement).closest('button')) {
+            onClick();
+          }
+        }}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <h4 className="text-body font-medium text-foreground">{cliente}</h4>
