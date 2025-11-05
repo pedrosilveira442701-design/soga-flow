@@ -4,6 +4,7 @@ import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
 import { ProximosVencimentos } from "@/components/financeiro/ProximosVencimentos";
+import { ProximasVisitas } from "@/components/visitas/ProximasVisitas";
 
 const kpiData = [
   {
@@ -99,8 +100,11 @@ export default function Dashboard() {
         <FunnelChart data={funnelData} />
       </div>
 
-      {/* Row 3: Próximos Vencimentos */}
-      <ProximosVencimentos />
+      {/* Row 3: Widgets de Vencimentos e Visitas */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ProximosVencimentos />
+        <ProximasVisitas />
+      </div>
     </div>
   );
 }
