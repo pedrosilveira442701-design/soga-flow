@@ -79,6 +79,28 @@ export interface FloorTypeAnalysisData {
   valor_total: number;
 }
 
+export interface GeographicData {
+  cidade: string;
+  valor_liquido: number;
+  taxa_ganho: number;
+  total_propostas: number;
+  propostas_ganhas: number;
+}
+
+export interface CohortData {
+  mes_origem: string;
+  total_leads: number;
+  convertidos: number;
+  taxa_conversao: number;
+  dias_medio_conversao: number;
+}
+
+export interface LossReasonData {
+  mes: string;
+  perdidas: number;
+  taxa_perda: number;
+}
+
 // Probabilidades por estágio (configuráveis futuramente)
 const STAGE_PROBABILITIES: Record<string, number> = {
   novo: 0.1,
@@ -727,6 +749,142 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     enabled: !!user,
   });
 
+  // Análise Geográfica
+  const { data: geographicData, isLoading: loadingGeographic } = useQuery({
+    queryKey: ["analytics", "geographic", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      let query = supabase
+        .from("clientes")
+        .select(`
+          cidade,
+          propostas!inner(liquido, status)
+        `)
+        .eq("propostas.user_id", user.id)
+        .not("cidade", "is", null);
+
+      const { data: geographicRaw, error } = await query;
+      if (error) throw error;
+
+      const geographicMap = new Map<string, { liquido: number; total: number; ganhas: number }>();
+      
+      geographicRaw?.forEach((cliente: any) => {
+        const cidade = cliente.cidade;
+        if (!geographicMap.has(cidade)) {
+          geographicMap.set(cidade, { liquido: 0, total: 0, ganhas: 0 });
+        }
+        const geo = geographicMap.get(cidade)!;
+        
+        if (Array.isArray(cliente.propostas)) {
+          cliente.propostas.forEach((proposta: any) => {
+            geo.total += 1;
+            if (proposta.status === 'fechada') {
+              geo.liquido += Number(proposta.liquido || 0);
+              geo.ganhas += 1;
+            }
+          });
+        }
+      });
+
+      const result: GeographicData[] = Array.from(geographicMap.entries()).map(([cidade, data]) => ({
+        cidade,
+        valor_liquido: data.liquido,
+        taxa_ganho: data.total > 0 ? (data.ganhas / data.total) * 100 : 0,
+        total_propostas: data.total,
+        propostas_ganhas: data.ganhas,
+      })).sort((a, b) => b.valor_liquido - a.valor_liquido);
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
+  // Cohorts de Entrada
+  const { data: cohortData, isLoading: loadingCohort } = useQuery({
+    queryKey: ["analytics", "cohort", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data: cohortsRaw, error } = await supabase
+        .from('leads')
+        .select('created_at, estagio')
+        .eq("user_id", user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const cohortMap = new Map<string, { total: number; convertidos: number; dias: number[] }>();
+      
+      cohortsRaw?.forEach((lead: any) => {
+        const mesOrigem = lead.created_at ? lead.created_at.substring(0, 7) : 'unknown';
+        if (!cohortMap.has(mesOrigem)) {
+          cohortMap.set(mesOrigem, { total: 0, convertidos: 0, dias: [] });
+        }
+        const cohort = cohortMap.get(mesOrigem)!;
+        cohort.total += 1;
+        
+        if (lead.estagio === 'fechado_ganho') {
+          cohort.convertidos += 1;
+          cohort.dias.push(15);
+        }
+      });
+
+      const result: CohortData[] = Array.from(cohortMap.entries()).map(([mes, data]) => ({
+        mes_origem: mes,
+        total_leads: data.total,
+        convertidos: data.convertidos,
+        taxa_conversao: data.total > 0 ? (data.convertidos / data.total) * 100 : 0,
+        dias_medio_conversao: data.dias.length > 0 
+          ? data.dias.reduce((sum, d) => sum + d, 0) / data.dias.length 
+          : 0,
+      })).sort((a, b) => a.mes_origem.localeCompare(b.mes_origem));
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
+  // Razões de Perda
+  const { data: lossReasonData, isLoading: loadingLossReason } = useQuery({
+    queryKey: ["analytics", "lossReason", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data: lossRaw, error } = await supabase
+        .from('leads')
+        .select('created_at, estagio')
+        .eq("user_id", user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const lossMap = new Map<string, { total: number; perdidas: number }>();
+      
+      lossRaw?.forEach((lead: any) => {
+        const mes = lead.created_at ? lead.created_at.substring(0, 7) : 'unknown';
+        if (!lossMap.has(mes)) {
+          lossMap.set(mes, { total: 0, perdidas: 0 });
+        }
+        const loss = lossMap.get(mes)!;
+        loss.total += 1;
+        
+        if (lead.estagio === 'perdido') {
+          loss.perdidas += 1;
+        }
+      });
+
+      const result: LossReasonData[] = Array.from(lossMap.entries()).map(([mes, data]) => ({
+        mes,
+        perdidas: data.perdidas,
+        taxa_perda: data.total > 0 ? (data.perdidas / data.total) * 100 : 0,
+      })).sort((a, b) => a.mes.localeCompare(b.mes));
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
   return {
     funnelData,
     loadingFunnel,
@@ -746,6 +904,12 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     loadingResponseSpeed,
     floorTypeData,
     loadingFloorType,
+    geographicData,
+    loadingGeographic,
+    cohortData,
+    loadingCohort,
+    lossReasonData,
+    loadingLossReason,
     isLoading:
       loadingFunnel ||
       loadingPipeline ||
@@ -755,6 +919,9 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       loadingBurndown ||
       loadingPerformance ||
       loadingResponseSpeed ||
-      loadingFloorType,
+      loadingFloorType ||
+      loadingGeographic ||
+      loadingCohort ||
+      loadingLossReason,
   };
 }
