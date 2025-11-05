@@ -33,6 +33,27 @@ export interface ScatterDataPoint {
   cliente_nome: string;
 }
 
+export interface WaterfallData {
+  name: string;
+  value: number;
+  type: "increase" | "decrease" | "total";
+}
+
+export interface ReceivablesAgingData {
+  bucket: string;
+  valor: number;
+  count: number;
+  percentual: number;
+}
+
+export interface BurndownData {
+  mes: string;
+  meta: number;
+  realizado: number;
+  acumulado_meta: number;
+  acumulado_realizado: number;
+}
+
 // Probabilidades por estágio (configuráveis futuramente)
 const STAGE_PROBABILITIES: Record<string, number> = {
   novo: 0.1,
@@ -230,6 +251,202 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     enabled: !!user,
   });
 
+  // Waterfall de Margem
+  const { data: waterfallData, isLoading: loadingWaterfall } = useQuery({
+    queryKey: ["analytics", "waterfall", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      let query = supabase
+        .from("propostas")
+        .select("valor_total, liquido, custo_m2, m2")
+        .eq("user_id", user.id)
+        .not("valor_total", "is", null)
+        .not("liquido", "is", null);
+
+      if (filters.startDate) {
+        query = query.gte("data", filters.startDate.toISOString().split("T")[0]);
+      }
+      if (filters.endDate) {
+        query = query.lte("data", filters.endDate.toISOString().split("T")[0]);
+      }
+
+      const { data: propostas, error } = await query;
+      if (error) throw error;
+
+      // Calcular totais
+      const totalBruto = propostas.reduce(
+        (sum, p) => sum + parseFloat(String(p.valor_total || 0)),
+        0
+      );
+      const totalLiquido = propostas.reduce(
+        (sum, p) => sum + parseFloat(String(p.liquido || 0)),
+        0
+      );
+      const totalCusto = propostas.reduce(
+        (sum, p) => sum + parseFloat(String(p.custo_m2 || 0)) * parseFloat(String(p.m2 || 0)),
+        0
+      );
+      const descontos = totalBruto - totalLiquido - totalCusto;
+
+      const result: WaterfallData[] = [
+        { name: "Valor Bruto", value: totalBruto, type: "total" },
+        { name: "Descontos", value: -Math.abs(descontos), type: "decrease" },
+        { name: "Custos", value: -totalCusto, type: "decrease" },
+        { name: "Valor Líquido", value: totalLiquido, type: "total" },
+      ];
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
+  // Recebíveis Aging
+  const { data: receivablesData, isLoading: loadingReceivables } = useQuery({
+    queryKey: ["analytics", "receivables", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      let query = supabase
+        .from("financeiro_parcelas")
+        .select("vencimento, valor_liquido_parcela, status")
+        .eq("user_id", user.id)
+        .neq("status", "pago");
+
+      const { data: parcelas, error } = await query;
+      if (error) throw error;
+
+      const hoje = new Date();
+      const buckets = {
+        "1-15 dias": { min: 1, max: 15, valor: 0, count: 0 },
+        "16-30 dias": { min: 16, max: 30, valor: 0, count: 0 },
+        "31-60 dias": { min: 31, max: 60, valor: 0, count: 0 },
+        ">60 dias": { min: 61, max: Infinity, valor: 0, count: 0 },
+      };
+
+      parcelas.forEach((parcela) => {
+        const vencimento = new Date(parcela.vencimento);
+        const diasAtraso = Math.floor(
+          (hoje.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const valor = parseFloat(String(parcela.valor_liquido_parcela || 0));
+
+        for (const [bucketName, bucket] of Object.entries(buckets)) {
+          if (diasAtraso >= bucket.min && diasAtraso <= bucket.max) {
+            bucket.valor += valor;
+            bucket.count += 1;
+            break;
+          }
+        }
+      });
+
+      const totalValor = Object.values(buckets).reduce((sum, b) => sum + b.valor, 0);
+
+      const result: ReceivablesAgingData[] = Object.entries(buckets).map(
+        ([bucket, data]) => ({
+          bucket,
+          valor: data.valor,
+          count: data.count,
+          percentual: totalValor > 0 ? (data.valor / totalValor) * 100 : 0,
+        })
+      );
+
+      return result.filter((r) => r.count > 0);
+    },
+    enabled: !!user,
+  });
+
+  // Burndown de Metas
+  const { data: burndownData, isLoading: loadingBurndown } = useQuery({
+    queryKey: ["analytics", "burndown", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      // Buscar metas ativas
+      const { data: metas, error: metasError } = await supabase
+        .from("metas")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("tipo", "receita")
+        .order("periodo_inicio", { ascending: true });
+
+      if (metasError) throw metasError;
+
+      // Buscar contratos para calcular realizado
+      const { data: contratos, error: contratosError } = await supabase
+        .from("contratos")
+        .select("valor_negociado, data_inicio")
+        .eq("user_id", user.id)
+        .eq("status", "ativo");
+
+      if (contratosError) throw contratosError;
+
+      // Agrupar por mês
+      const monthlyData = new Map<string, { meta: number; realizado: number }>();
+
+      metas.forEach((meta) => {
+        const inicio = new Date(meta.periodo_inicio);
+        const fim = new Date(meta.periodo_fim);
+        const meses = Math.ceil(
+          (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30)
+        );
+        const metaMensal = parseFloat(String(meta.valor_alvo || 0)) / meses;
+
+        let currentDate = new Date(inicio);
+        while (currentDate <= fim) {
+          const key = `${currentDate.getFullYear()}-${String(
+            currentDate.getMonth() + 1
+          ).padStart(2, "0")}`;
+          if (!monthlyData.has(key)) {
+            monthlyData.set(key, { meta: 0, realizado: 0 });
+          }
+          const data = monthlyData.get(key)!;
+          data.meta += metaMensal;
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+      });
+
+      contratos.forEach((contrato) => {
+        const data_inicio = new Date(contrato.data_inicio);
+        const key = `${data_inicio.getFullYear()}-${String(
+          data_inicio.getMonth() + 1
+        ).padStart(2, "0")}`;
+        if (!monthlyData.has(key)) {
+          monthlyData.set(key, { meta: 0, realizado: 0 });
+        }
+        const data = monthlyData.get(key)!;
+        data.realizado += parseFloat(String(contrato.valor_negociado || 0));
+      });
+
+      // Converter para array e calcular acumulados
+      const sortedData = Array.from(monthlyData.entries())
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .slice(0, 12); // últimos 12 meses
+
+      let acumuladoMeta = 0;
+      let acumuladoRealizado = 0;
+
+      const result: BurndownData[] = sortedData.map(([mes, data]) => {
+        acumuladoMeta += data.meta;
+        acumuladoRealizado += data.realizado;
+
+        return {
+          mes: new Date(mes + "-01").toLocaleDateString("pt-BR", {
+            month: "short",
+            year: "2-digit",
+          }),
+          meta: data.meta,
+          realizado: data.realizado,
+          acumulado_meta: acumuladoMeta,
+          acumulado_realizado: acumuladoRealizado,
+        };
+      });
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
   return {
     funnelData,
     loadingFunnel,
@@ -237,6 +454,18 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     loadingPipeline,
     scatterData,
     loadingScatter,
-    isLoading: loadingFunnel || loadingPipeline || loadingScatter,
+    waterfallData,
+    loadingWaterfall,
+    receivablesData,
+    loadingReceivables,
+    burndownData,
+    loadingBurndown,
+    isLoading:
+      loadingFunnel ||
+      loadingPipeline ||
+      loadingScatter ||
+      loadingWaterfall ||
+      loadingReceivables ||
+      loadingBurndown,
   };
 }

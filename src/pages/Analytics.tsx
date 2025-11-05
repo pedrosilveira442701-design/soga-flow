@@ -3,6 +3,9 @@ import { AnalyticsFilters } from "@/components/analytics/AnalyticsFilters";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { PipelineChart } from "@/components/analytics/PipelineChart";
 import { ScatterChart } from "@/components/analytics/ScatterChart";
+import { WaterfallChart } from "@/components/analytics/WaterfallChart";
+import { ReceivablesChart } from "@/components/analytics/ReceivablesChart";
+import { BurndownChart } from "@/components/analytics/BurndownChart";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, TrendingUp, DollarSign } from "lucide-react";
@@ -16,6 +19,12 @@ export default function Analytics() {
     loadingPipeline,
     scatterData,
     loadingScatter,
+    waterfallData,
+    loadingWaterfall,
+    receivablesData,
+    loadingReceivables,
+    burndownData,
+    loadingBurndown,
   } = useAnalytics(filters);
 
   // Calcular KPIs principais
@@ -89,6 +98,15 @@ export default function Analytics() {
 
         {/* Scatter Preço x Margem */}
         <ScatterChart data={scatterData} isLoading={loadingScatter} />
+
+        {/* Waterfall de Margem */}
+        <WaterfallChart data={waterfallData} isLoading={loadingWaterfall} />
+
+        {/* Recebíveis Aging */}
+        <ReceivablesChart data={receivablesData} isLoading={loadingReceivables} />
+
+        {/* Burndown de Metas */}
+        <BurndownChart data={burndownData} isLoading={loadingBurndown} />
       </div>
     </div>
   );
