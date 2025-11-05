@@ -142,14 +142,14 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
             <div className="space-y-2">
               <Label>Origem</Label>
               <Select
-                value={filters.origem || ""}
-                onValueChange={(value) => onChange({ ...filters, origem: value || undefined })}
+                value={filters.origem || "all"}
+                onValueChange={(value) => onChange({ ...filters, origem: value === "all" ? undefined : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="all">Todas</SelectItem>
                   <SelectItem value="Site">Site</SelectItem>
                   <SelectItem value="Indicação">Indicação</SelectItem>
                   <SelectItem value="Telefone">Telefone</SelectItem>
@@ -164,14 +164,14 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
             <div className="space-y-2">
               <Label>Tipo de Piso</Label>
               <Select
-                value={filters.tipoPiso || ""}
-                onValueChange={(value) => onChange({ ...filters, tipoPiso: value || undefined })}
+                value={filters.tipoPiso || "all"}
+                onValueChange={(value) => onChange({ ...filters, tipoPiso: value === "all" ? undefined : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
                   <SelectItem value="Porcelanato">Porcelanato</SelectItem>
                   <SelectItem value="Cerâmica">Cerâmica</SelectItem>
                   <SelectItem value="Vinílico">Vinílico</SelectItem>
