@@ -1,7 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import InputMask from "react-input-mask";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -83,6 +82,38 @@ export function ClienteForm({
         },
   });
 
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    const match = cleaned.match(/^(\d{2})(\d{5})(\d{4})$/);
+    if (match) {
+      return `(${match[1]}) ${match[2]}-${match[3]}`;
+    }
+    const match2 = cleaned.match(/^(\d{2})(\d{4})(\d{4})$/);
+    if (match2) {
+      return `(${match[1]}) ${match2[2]}-${match2[3]}`;
+    }
+    return value;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
+    const value = e.target.value;
+    const cleaned = value.replace(/\D/g, "");
+    
+    if (cleaned.length <= 11) {
+      let formatted = "";
+      if (cleaned.length > 0) {
+        formatted = `(${cleaned.substring(0, 2)}`;
+        if (cleaned.length > 2) {
+          formatted += `) ${cleaned.substring(2, 7)}`;
+          if (cleaned.length > 7) {
+            formatted += `-${cleaned.substring(7, 11)}`;
+          }
+        }
+      }
+      onChange(formatted || "");
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -121,20 +152,14 @@ export function ClienteForm({
             <FormItem>
               <FormLabel>Telefone</FormLabel>
               <FormControl>
-                <InputMask
-                  mask="(99) 99999-9999"
+                <Input
+                  placeholder="(11) 98765-4321"
+                  type="tel"
                   value={field.value}
-                  onChange={field.onChange}
+                  onChange={(e) => handlePhoneChange(e, field.onChange)}
                   onBlur={field.onBlur}
-                >
-                  {(inputProps: any) => (
-                    <Input
-                      {...inputProps}
-                      placeholder="(11) 98765-4321"
-                      type="tel"
-                    />
-                  )}
-                </InputMask>
+                  name={field.name}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
