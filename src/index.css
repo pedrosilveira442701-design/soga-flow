@@ -17,9 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 210 92% 45%;
+    --primary: 210 92% 57%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 92% 38%;
+    --primary-hover: 210 92% 48%;
 
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
@@ -30,37 +30,47 @@ All colors MUST be HSL.
     --accent: 199 89% 48%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
+    --success: 145 63% 39%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 36 96% 57%;
     --warning-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 210 92% 45%;
+    --ring: 210 92% 76%;
 
-    --radius: 0.5rem;
+    --radius: 16px;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 210 92% 45%;
+    --sidebar-primary: 210 92% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 210 92% 45%;
+    --sidebar-ring: 210 92% 76%;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1);
+    /* Brand Colors - Jony Ive Design System */
+    --brand-primary: 210 92% 57%;        /* #2E90FA */
+    --brand-primary-hover: 210 92% 48%;  /* #1570EF */
+    --brand-ring: 210 92% 76%;           /* #84CAFF */
+    --brand-liquid: 145 63% 39%;         /* #12B76A */
+    --brand-cost: 220 9% 66%;            /* #9CA3AF */
+    --brand-danger: 4 90% 58%;           /* #F04438 */
+    --brand-warn: 36 96% 57%;            /* #FDB022 */
+    --brand-ink: 222 47% 11%;            /* #0F172A */
+    --brand-surface: 0 0% 100%;          /* #FFFFFF */
+
+    /* Shadows - Jony Ive Design System */
+    --shadow-elev1: 0 1px 2px rgba(16,24,40,.06);
+    --shadow-elev2: 0 4px 10px rgba(16,24,40,.08);
 
     /* Transitions */
-    --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
@@ -73,7 +83,7 @@ All colors MUST be HSL.
     --popover: 222 47% 15%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 92% 45%;
+    --primary: 210 92% 57%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 210 92% 52%;
 
@@ -86,27 +96,29 @@ All colors MUST be HSL.
     --accent: 199 89% 48%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
+    --success: 145 63% 39%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 36 96% 57%;
     --warning-foreground: 0 0% 100%;
 
     --border: 217 33% 18%;
     --input: 217 33% 18%;
-    --ring: 210 92% 45%;
+    --ring: 210 92% 76%;
 
     --sidebar-background: 222 47% 15%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 92% 45%;
+    --sidebar-primary: 210 92% 57%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 210 92% 45%;
+    --sidebar-ring: 210 92% 76%;
+
+    --brand-surface: 222 47% 15%;
   }
 }
 
@@ -117,12 +129,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   }
 
   /* Smooth transitions */
   button, a, input, select, textarea {
-    @apply transition-colors duration-200;
+    transition: var(--transition-smooth);
+  }
+
+  /* Focus ring - Jony Ive Design System */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--brand-ring));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 
   /* Custom scrollbar */
@@ -141,5 +159,38 @@ All colors MUST be HSL.
 
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
+  }
+}
+
+/* Typography - Jony Ive Design System */
+@layer components {
+  .text-h1 {
+    @apply text-[32px] leading-[38px] font-semibold;
+  }
+  
+  .text-h2 {
+    @apply text-[24px] leading-[30px] font-semibold;
+  }
+  
+  .text-h3 {
+    @apply text-[20px] leading-[28px] font-medium;
+  }
+  
+  .text-body {
+    @apply text-[16px] leading-[24px] font-normal;
+  }
+  
+  .text-caption {
+    @apply text-[13px] leading-[18px];
+  }
+  
+  .text-kpi {
+    @apply font-[600] tabular-nums;
+  }
+
+  /* Icon styling */
+  .icon-thin {
+    stroke-width: 1.5px;
+    color: hsl(var(--brand-ink) / 0.6);
   }
 }
