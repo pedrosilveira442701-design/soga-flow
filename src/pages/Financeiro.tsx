@@ -256,16 +256,16 @@ export default function Financeiro() {
               </div>
 
               <Select
-                value={filters.status}
+                value={filters.status || "todos"}
                 onValueChange={(value) =>
-                  setFilters({ ...filters, status: value as any })
+                  setFilters({ ...filters, status: value === "todos" ? "" : value as any })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="pago">Pago</SelectItem>
                   <SelectItem value="atrasado">Atrasado</SelectItem>
@@ -274,16 +274,16 @@ export default function Financeiro() {
               </Select>
 
               <Select
-                value={filters.formaPagamento}
+                value={filters.formaPagamento || "todas"}
                 onValueChange={(value) =>
-                  setFilters({ ...filters, formaPagamento: value })
+                  setFilters({ ...filters, formaPagamento: value === "todas" ? "" : value })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Forma de Pagamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="À Vista">À Vista</SelectItem>
                   <SelectItem value="Parcelado">Parcelado</SelectItem>
                   <SelectItem value="Financiado">Financiado</SelectItem>
