@@ -36,6 +36,7 @@ import {
 import { motion } from "framer-motion";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { useMetas } from "@/hooks/useMetas";
+import { useVisitas } from "@/hooks/useVisitas";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -56,6 +57,7 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { kpis } = useFinanceiro();
   const { kpis: metasKpis } = useMetas({ status: 'ativa' });
+  const { kpis: visitasKpis } = useVisitas();
 
   const getUserInitials = (email?: string) => {
     if (!email) return "U";
@@ -151,6 +153,11 @@ export function AppSidebar() {
                                     {metasKpis.metasEmAlerta}
                                   </Badge>
                                 )}
+                                {item.title === "Visitas" && visitasKpis && (visitasKpis.visitasHoje > 0 || visitasKpis.visitasAtrasadas > 0) && (
+                                  <Badge variant="secondary" className="ml-2">
+                                    {visitasKpis.visitasHoje + visitasKpis.visitasAtrasadas}
+                                  </Badge>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -164,6 +171,11 @@ export function AppSidebar() {
                               {item.title === "Metas" && metasKpis.metasEmAlerta > 0 && (
                                 <Badge variant="destructive" className="ml-auto">
                                   {metasKpis.metasEmAlerta}
+                                </Badge>
+                              )}
+                              {item.title === "Visitas" && visitasKpis && (visitasKpis.visitasHoje > 0 || visitasKpis.visitasAtrasadas > 0) && (
+                                <Badge variant="secondary" className="ml-auto">
+                                  {visitasKpis.visitasHoje + visitasKpis.visitasAtrasadas}
                                 </Badge>
                               )}
                             </div>
