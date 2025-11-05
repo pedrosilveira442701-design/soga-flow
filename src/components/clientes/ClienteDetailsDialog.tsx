@@ -47,6 +47,7 @@ import {
   Eye,
   CheckCircle,
   XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -73,6 +74,7 @@ export function ClienteDetailsDialog({
   onDelete,
 }: ClienteDetailsDialogProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedPropostaId, setSelectedPropostaId] = useState<string | null>(null);
   const { user } = useAuth();
 
   // Buscar contratos do cliente
@@ -94,6 +96,25 @@ export function ClienteDetailsDialog({
             data_pagamento
           )
         `)
+        .eq("cliente_id", cliente.id)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!cliente?.id && !!user && open,
+  });
+
+  // Buscar propostas do cliente
+  const { data: propostas = [], isLoading: isLoadingPropostas } = useQuery({
+    queryKey: ["propostas-cliente", cliente?.id],
+    queryFn: async () => {
+      if (!cliente?.id || !user) return [];
+
+      const { data, error } = await supabase
+        .from("propostas")
+        .select("*")
         .eq("cliente_id", cliente.id)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -148,6 +169,46 @@ export function ClienteDetailsDialog({
     { totalContratado: 0, totalPago: 0, totalPendente: 0, contratos: 0 }
   );
 
+  // Calcular estatísticas das propostas
+  const estatisticasPropostas = propostas.reduce(
+    (acc: any, proposta: any) => {
+      acc.total += 1;
+      acc.valorTotal += Number(proposta.liquido || 0);
+      
+      if (proposta.status === "aberta") {
+        acc.abertas += 1;
+        acc.valorAberto += Number(proposta.liquido || 0);
+      } else if (proposta.status === "fechada") {
+        acc.fechadas += 1;
+        acc.valorFechado += Number(proposta.liquido || 0);
+      } else if (proposta.status === "perdida") {
+        acc.perdidas += 1;
+        acc.valorPerdido += Number(proposta.liquido || 0);
+      }
+      
+      return acc;
+    },
+    {
+      total: 0,
+      abertas: 0,
+      fechadas: 0,
+      perdidas: 0,
+      valorTotal: 0,
+      valorAberto: 0,
+      valorFechado: 0,
+      valorPerdido: 0,
+    }
+  );
+
+  const taxaConversao =
+    estatisticasPropostas.total > 0
+      ? (estatisticasPropostas.fechadas / estatisticasPropostas.total) * 100
+      : 0;
+
+  const handleViewProposta = (propostaId: string) => {
+    window.location.href = `/propostas?id=${propostaId}`;
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -163,6 +224,19 @@ export function ClienteDetailsDialog({
         return <Badge className="bg-green-500">Concluído</Badge>;
       case "cancelado":
         return <Badge variant="destructive">Cancelado</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
+  const getPropostaStatusBadge = (status: string) => {
+    switch (status) {
+      case "aberta":
+        return <Badge variant="default">Aberta</Badge>;
+      case "fechada":
+        return <Badge className="bg-green-500">Fechada</Badge>;
+      case "perdida":
+        return <Badge variant="destructive">Perdida</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -186,8 +260,11 @@ export function ClienteDetailsDialog({
           </DialogHeader>
 
           <Tabs defaultValue="info" className="mt-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="propostas">
+                Propostas ({propostas.length})
+              </TabsTrigger>
               <TabsTrigger value="contratos">
                 Contratos ({contratos.length})
               </TabsTrigger>
@@ -319,6 +396,198 @@ export function ClienteDetailsDialog({
                     </Button>
                   )}
                 </div>
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="propostas">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                {isLoadingPropostas ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-32" />
+                    <Skeleton className="h-64" />
+                  </div>
+                ) : propostas.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-12 text-center">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      Nenhuma proposta encontrada
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Este cliente ainda não possui propostas
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Estatísticas das Propostas */}
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Total Propostas
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {estatisticasPropostas.total}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatCurrency(estatisticasPropostas.valorTotal)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Fechadas
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">
+                          {estatisticasPropostas.fechadas}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatCurrency(estatisticasPropostas.valorFechado)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-blue-600" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Abertas
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {estatisticasPropostas.abertas}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatCurrency(estatisticasPropostas.valorAberto)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Taxa Conversão
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {taxaConversao.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {estatisticasPropostas.perdidas} perdidas
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Lista de Propostas */}
+                    <div>
+                      <h3 className="font-semibold mb-4">Histórico de Propostas</h3>
+                      <div className="rounded-lg border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Data</TableHead>
+                              <TableHead>Tipo de Piso</TableHead>
+                              <TableHead>Área</TableHead>
+                              <TableHead>Valor Total</TableHead>
+                              <TableHead>Margem</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {propostas.map((proposta: any) => {
+                              const margemColor =
+                                proposta.margem_pct < 20
+                                  ? "text-destructive"
+                                  : proposta.margem_pct < 35
+                                  ? "text-yellow-600"
+                                  : "text-green-600";
+
+                              return (
+                                <TableRow key={proposta.id}>
+                                  <TableCell>
+                                    {format(
+                                      parseISO(proposta.data),
+                                      "dd/MM/yyyy",
+                                      { locale: ptBR }
+                                    )}
+                                  </TableCell>
+                                  <TableCell>{proposta.tipo_piso}</TableCell>
+                                  <TableCell>{proposta.m2} m²</TableCell>
+                                  <TableCell className="font-semibold">
+                                    {formatCurrency(Number(proposta.liquido))}
+                                  </TableCell>
+                                  <TableCell>
+                                    <span className={margemColor}>
+                                      {Number(proposta.margem_pct).toFixed(1)}%
+                                    </span>
+                                  </TableCell>
+                                  <TableCell>
+                                    {getPropostaStatusBadge(proposta.status)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleViewProposta(proposta.id)}
+                                      title="Ver detalhes"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+
+                    {/* Insights */}
+                    {taxaConversao < 30 && propostas.length >= 3 && (
+                      <div className="rounded-lg border border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-yellow-900 dark:text-yellow-100">
+                              Taxa de conversão abaixo da média
+                            </p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                              A taxa de conversão de {taxaConversao.toFixed(1)}% está abaixo
+                              do ideal (30-50%). Considere revisar a estratégia de
+                              precificação ou acompanhamento.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {estatisticasPropostas.abertas > 0 && (
+                      <div className="rounded-lg border border-blue-500/50 bg-blue-50 dark:bg-blue-950/20 p-4">
+                        <div className="flex items-start gap-3">
+                          <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <p className="font-semibold text-blue-900 dark:text-blue-100">
+                              {estatisticasPropostas.abertas} proposta
+                              {estatisticasPropostas.abertas > 1 ? "s" : ""} em aberto
+                            </p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                              Valor total em negociação:{" "}
+                              {formatCurrency(estatisticasPropostas.valorAberto)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </motion.div>
             </TabsContent>
 
