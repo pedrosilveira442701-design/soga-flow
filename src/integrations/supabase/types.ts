@@ -14,16 +14,476 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      arquivos: {
+        Row: {
+          created_at: string
+          entidade: string
+          entidade_id: string
+          id: string
+          nome: string
+          tipo: string | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entidade: string
+          entidade_id: string
+          id?: string
+          nome: string
+          tipo?: string | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entidade?: string
+          entidade_id?: string
+          id?: string
+          nome?: string
+          tipo?: string | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          contato: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          endereco: string | null
+          id: string
+          nome: string
+          status: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bairro?: string | null
+          cidade?: string | null
+          contato?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome: string
+          status?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bairro?: string | null
+          cidade?: string | null
+          contato?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          endereco?: string | null
+          id?: string
+          nome?: string
+          status?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contratos: {
+        Row: {
+          cliente_id: string
+          cpf_cnpj: string
+          created_at: string
+          data_inicio: string
+          forma_pagamento: string
+          id: string
+          observacoes: string | null
+          proposta_id: string | null
+          status: Database["public"]["Enums"]["contract_status"] | null
+          updated_at: string
+          user_id: string
+          valor_negociado: number
+        }
+        Insert: {
+          cliente_id: string
+          cpf_cnpj: string
+          created_at?: string
+          data_inicio: string
+          forma_pagamento: string
+          id?: string
+          observacoes?: string | null
+          proposta_id?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
+          updated_at?: string
+          user_id: string
+          valor_negociado: number
+        }
+        Update: {
+          cliente_id?: string
+          cpf_cnpj?: string
+          created_at?: string
+          data_inicio?: string
+          forma_pagamento?: string
+          id?: string
+          observacoes?: string | null
+          proposta_id?: string | null
+          status?: Database["public"]["Enums"]["contract_status"] | null
+          updated_at?: string
+          user_id?: string
+          valor_negociado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_parcelas: {
+        Row: {
+          contrato_id: string
+          created_at: string
+          data_pagamento: string | null
+          forma: string | null
+          id: string
+          numero_parcela: number
+          status: Database["public"]["Enums"]["payment_status"] | null
+          updated_at: string
+          user_id: string
+          valor_liquido_parcela: number
+          vencimento: string
+        }
+        Insert: {
+          contrato_id: string
+          created_at?: string
+          data_pagamento?: string | null
+          forma?: string | null
+          id?: string
+          numero_parcela: number
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          updated_at?: string
+          user_id: string
+          valor_liquido_parcela: number
+          vencimento: string
+        }
+        Update: {
+          contrato_id?: string
+          created_at?: string
+          data_pagamento?: string | null
+          forma?: string | null
+          id?: string
+          numero_parcela?: number
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          updated_at?: string
+          user_id?: string
+          valor_liquido_parcela?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_parcelas_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          estagio: Database["public"]["Enums"]["lead_stage"]
+          id: string
+          origem: string | null
+          responsavel: string | null
+          tipo_piso: string | null
+          ultima_interacao: string | null
+          updated_at: string
+          user_id: string
+          valor_potencial: number | null
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          estagio?: Database["public"]["Enums"]["lead_stage"]
+          id?: string
+          origem?: string | null
+          responsavel?: string | null
+          tipo_piso?: string | null
+          ultima_interacao?: string | null
+          updated_at?: string
+          user_id: string
+          valor_potencial?: number | null
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          estagio?: Database["public"]["Enums"]["lead_stage"]
+          id?: string
+          origem?: string | null
+          responsavel?: string | null
+          tipo_piso?: string | null
+          ultima_interacao?: string | null
+          updated_at?: string
+          user_id?: string
+          valor_potencial?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metas: {
+        Row: {
+          created_at: string
+          id: string
+          periodo_fim: string
+          periodo_inicio: string
+          progresso: number | null
+          responsavel: string | null
+          status: string | null
+          tipo: string
+          updated_at: string
+          user_id: string
+          valor_alvo: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          periodo_fim: string
+          periodo_inicio: string
+          progresso?: number | null
+          responsavel?: string | null
+          status?: string | null
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valor_alvo: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          periodo_fim?: string
+          periodo_inicio?: string
+          progresso?: number | null
+          responsavel?: string | null
+          status?: string | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valor_alvo?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      propostas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          custo_m2: number
+          data: string
+          id: string
+          liquido: number | null
+          m2: number
+          margem_pct: number | null
+          status: string | null
+          tipo_piso: string
+          updated_at: string
+          user_id: string
+          valor_m2: number
+          valor_total: number | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          custo_m2: number
+          data?: string
+          id?: string
+          liquido?: number | null
+          m2: number
+          margem_pct?: number | null
+          status?: string | null
+          tipo_piso: string
+          updated_at?: string
+          user_id: string
+          valor_m2: number
+          valor_total?: number | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          custo_m2?: number
+          data?: string
+          id?: string
+          liquido?: number | null
+          m2?: number
+          margem_pct?: number | null
+          status?: string | null
+          tipo_piso?: string
+          updated_at?: string
+          user_id?: string
+          valor_m2?: number
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visitas: {
+        Row: {
+          assunto: string
+          cliente_id: string
+          created_at: string
+          data: string | null
+          endereco: string | null
+          hora: string | null
+          id: string
+          marcacao_tipo: string
+          observacao: string | null
+          realizada: boolean | null
+          responsavel: string | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assunto: string
+          cliente_id: string
+          created_at?: string
+          data?: string | null
+          endereco?: string | null
+          hora?: string | null
+          id?: string
+          marcacao_tipo: string
+          observacao?: string | null
+          realizada?: boolean | null
+          responsavel?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assunto?: string
+          cliente_id?: string
+          created_at?: string
+          data?: string | null
+          endereco?: string | null
+          hora?: string | null
+          id?: string
+          marcacao_tipo?: string
+          observacao?: string | null
+          realizada?: boolean | null
+          responsavel?: string | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "comercial" | "financeiro" | "visualizador"
+      contract_status: "ativo" | "concluido" | "cancelado"
+      lead_stage:
+        | "novo"
+        | "contato"
+        | "proposta_enviada"
+        | "negociacao"
+        | "fechado_ganho"
+        | "perdido"
+      payment_status: "pendente" | "pago" | "atrasado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +610,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "comercial", "financeiro", "visualizador"],
+      contract_status: ["ativo", "concluido", "cancelado"],
+      lead_stage: [
+        "novo",
+        "contato",
+        "proposta_enviada",
+        "negociacao",
+        "fechado_ganho",
+        "perdido",
+      ],
+      payment_status: ["pendente", "pago", "atrasado"],
+    },
   },
 } as const
