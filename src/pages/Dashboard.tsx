@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
+import { FilePlus2, UserPlus, DollarSign, Target, TrendingUp, Percent, FileText } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
@@ -56,12 +56,20 @@ export default function Dashboard() {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline" size="lg">
-            <UserPlus className="h-5 w-5" strokeWidth={2} />
+          <Button 
+            variant="secondary" 
+            size="lg"
+            aria-label="Criar novo cliente"
+          >
+            <UserPlus strokeWidth={2} />
             Novo Cliente
           </Button>
-          <Button size="lg">
-            <FileText className="h-5 w-5" strokeWidth={2} />
+          <Button 
+            variant="primary" 
+            size="lg"
+            aria-label="Criar nova proposta"
+          >
+            <FilePlus2 strokeWidth={2} />
             Nova Proposta
           </Button>
         </div>
