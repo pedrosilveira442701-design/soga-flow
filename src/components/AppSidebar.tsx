@@ -36,6 +36,7 @@ import { useVisitas } from "@/hooks/useVisitas";
 import { SearchCommand } from "./sidebar/SearchCommand";
 import { UserMenu } from "./sidebar/UserMenu";
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -90,12 +91,14 @@ export function AppSidebar() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.16 }}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-3"
                 >
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm">
-                    SG
-                  </div>
-                  <span className="text-lg font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  <img 
+                    src={logoImage} 
+                    alt="Só Garagens Logo" 
+                    className="h-10 w-10 object-contain"
+                  />
+                  <span className="text-lg font-semibold text-foreground">
                     Só Garagens
                   </span>
                 </motion.div>
@@ -106,9 +109,12 @@ export function AppSidebar() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.16 }}
-                  className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm"
                 >
-                  SG
+                  <img 
+                    src={logoImage} 
+                    alt="Só Garagens" 
+                    className="h-10 w-10 object-contain"
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
