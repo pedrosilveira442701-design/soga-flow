@@ -77,7 +77,14 @@ export default function Clientes() {
   }, [clientes, searchTerm, statusFilter]);
 
   const handleCreateCliente = async (data: any) => {
-    await createCliente.mutateAsync(data);
+    const clienteData: any = { ...data };
+    
+    // Se forneceu created_at, converter Date para string ISO
+    if (data.created_at) {
+      clienteData.created_at = data.created_at.toISOString();
+    }
+
+    await createCliente.mutateAsync(clienteData);
     setCreateDialogOpen(false);
   };
 

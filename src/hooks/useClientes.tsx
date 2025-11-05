@@ -29,6 +29,7 @@ export interface CreateClienteData {
   cidade?: string;
   bairro?: string;
   status?: string;
+  created_at?: string;
 }
 
 export interface UpdateClienteData extends CreateClienteData {
@@ -67,12 +68,19 @@ export function useClientes() {
     mutationFn: async (data: CreateClienteData) => {
       if (!user) throw new Error("User not authenticated");
 
+      const clienteData: any = {
+        ...data,
+        user_id: user.id,
+      };
+
+      // Se forneceu created_at, adicionar também updated_at com mesmo valor
+      if (data.created_at) {
+        clienteData.updated_at = data.created_at;
+      }
+
       const { data: cliente, error } = await supabase
         .from("clientes")
-        .insert({
-          ...data,
-          user_id: user.id,
-        })
+        .insert(clienteData)
         .select()
         .single();
 

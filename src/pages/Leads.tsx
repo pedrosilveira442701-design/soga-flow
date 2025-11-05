@@ -33,7 +33,7 @@ export default function Leads() {
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any) => {
-    await createLead.mutateAsync({
+    const leadData: any = {
       cliente_id: values.cliente_id,
       tipo_piso: values.tipo_piso,
       valor_potencial: parseFloat(values.valor_potencial),
@@ -42,7 +42,14 @@ export default function Leads() {
       estagio: values.estagio,
       user_id: user?.id,
       ultima_interacao: new Date().toISOString(),
-    });
+    };
+
+    // Se forneceu created_at, converter Date para string ISO
+    if (values.created_at) {
+      leadData.created_at = values.created_at.toISOString();
+    }
+
+    await createLead.mutateAsync(leadData);
     setCreateDialogOpen(false);
   };
 

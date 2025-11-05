@@ -2,6 +2,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -26,11 +28,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus } from "lucide-react";
 import { ClienteForm } from "./ClienteForm";
 import { useClientes } from "@/hooks/useClientes";
+import { cn } from "@/lib/utils";
 
 const leadFormSchema = z.object({
   cliente_id: z.string().min(1, "Selecione um cliente"),
@@ -39,6 +48,7 @@ const leadFormSchema = z.object({
   origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   estagio: z.enum(["contato", "visita_agendada", "visita_realizada", "proposta", "contrato", "execucao", "finalizado", "perdido"]),
+  created_at: z.date().optional(),
 });
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
@@ -64,6 +74,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       origem: "",
       responsavel: "",
       estagio: "contato",
+      created_at: new Date(),
     },
   });
 
@@ -213,6 +224,51 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             </FormItem>
           )}
         />
+
+        {mode === "create" && (
+          <FormField
+            control={form.control}
+            name="created_at"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Data de Criação do Lead</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "dd/MM/yyyy")
+                        ) : (
+                          <span>Selecione a data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("2020-01-01")
+                      }
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex gap-3 justify-end pt-4">
           <Button type="submit" disabled={isLoading}>

@@ -32,10 +32,17 @@ export function useLeads() {
   });
 
   const createLead = useMutation({
-    mutationFn: async (lead: LeadInsert) => {
+    mutationFn: async (lead: LeadInsert & { created_at?: string }) => {
+      const leadData = { ...lead };
+      
+      // Se forneceu created_at, adicionar também updated_at com mesmo valor
+      if (lead.created_at) {
+        leadData.updated_at = lead.created_at;
+      }
+
       const { data, error } = await supabase
         .from("leads")
-        .insert(lead)
+        .insert(leadData)
         .select()
         .single();
 

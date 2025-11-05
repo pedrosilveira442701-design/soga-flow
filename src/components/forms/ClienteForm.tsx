@@ -1,6 +1,8 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -19,7 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { Cliente } from "@/hooks/useClientes";
+import { cn } from "@/lib/utils";
 
 const clienteFormSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -40,6 +49,7 @@ const clienteFormSchema = z.object({
   cidade: z.string().optional(),
   bairro: z.string().optional(),
   status: z.enum(["ativo", "inativo"]).default("ativo"),
+  created_at: z.date().optional(),
 });
 
 type ClienteFormValues = z.infer<typeof clienteFormSchema>;
@@ -79,6 +89,7 @@ export function ClienteForm({
           cidade: "",
           bairro: "",
           status: "ativo",
+          created_at: new Date(),
         },
   });
 
@@ -245,6 +256,51 @@ export function ClienteForm({
             </FormItem>
           )}
         />
+
+        {mode === "create" && (
+          <FormField
+            control={form.control}
+            name="created_at"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Data de Cadastro</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "dd/MM/yyyy")
+                        ) : (
+                          <span>Selecione a data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("2020-01-01")
+                      }
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex justify-end gap-4">
           <Button type="submit" disabled={isLoading}>
