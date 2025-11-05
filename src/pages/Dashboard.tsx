@@ -56,12 +56,12 @@ export default function Dashboard() {
         </div>
         
         <div className="flex gap-3">
-          <Button variant="outline">
-            <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          <Button variant="outline" size="lg">
+            <UserPlus className="h-5 w-5" strokeWidth={2} />
             Novo Cliente
           </Button>
-          <Button>
-            <FileText className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          <Button size="lg">
+            <FileText className="h-5 w-5" strokeWidth={2} />
             Nova Proposta
           </Button>
         </div>
