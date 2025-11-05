@@ -23,7 +23,7 @@ import { Cliente } from "@/hooks/useClientes";
 
 const clienteFormSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
-  contato: z.string().email("Email inválido").optional().or(z.literal("")),
+  contato: z.string().optional(),
   telefone: z.string().optional(),
   cpf_cnpj: z.string().optional(),
   endereco: z.string().optional(),
@@ -89,39 +89,33 @@ export function ClienteForm({
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="contato"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="email@exemplo.com"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={form.control}
+          name="contato"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Contato</FormLabel>
+              <FormControl>
+                <Input placeholder="Nome da pessoa de contato" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="telefone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone</FormLabel>
-                <FormControl>
-                  <Input placeholder="(11) 98765-4321" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="telefone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Telefone</FormLabel>
+              <FormControl>
+                <Input placeholder="(11) 98765-4321" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
