@@ -123,9 +123,9 @@ export function LeadDetailsDialog({
     
     // Sugerir tipo de visita baseado no estágio do lead
     let tipoSugerido = 'orcamento';
-    if (lead.estagio === 'novo' || lead.estagio === 'contato') {
+    if (lead.estagio === 'contato' || lead.estagio === 'visita_agendada') {
       tipoSugerido = 'medicao';
-    } else if (lead.estagio === 'negociacao' || lead.estagio === 'proposta_enviada') {
+    } else if (lead.estagio === 'proposta' || lead.estagio === 'contrato') {
       tipoSugerido = 'orcamento';
     }
 

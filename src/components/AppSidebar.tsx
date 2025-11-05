@@ -10,6 +10,7 @@ import {
   Calendar,
   FolderOpen,
   BarChart3,
+  Building2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,6 +46,7 @@ const menuItems = [
   { title: "Leads", url: "/leads", icon: Target },
   { title: "Propostas", url: "/propostas", icon: FileText },
   { title: "Contratos", url: "/contratos", icon: FileCheck },
+  { title: "Obras", url: "/obras", icon: Building2 },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Metas", url: "/metas", icon: TrendingUp },
   { title: "Visitas", url: "/visitas", icon: Calendar },

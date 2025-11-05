@@ -31,11 +31,15 @@ interface KanbanBoardProps {
 }
 
 const STAGES = [
-  { id: "novo", title: "Novo", color: "novo" },
-  { id: "contato", title: "Contato", color: "contato" },
-  { id: "negociacao", title: "Negociação", color: "qualificado" },
-  { id: "proposta_enviada", title: "Proposta Enviada", color: "proposta" },
-  { id: "fechado_ganho", title: "Fechado Ganho", color: "ganho" },
+  // COMERCIAL
+  { id: "contato", title: "Entrou em Contato", color: "novo", section: "comercial" },
+  { id: "visita_agendada", title: "Visita Agendada", color: "contato", section: "comercial" },
+  { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
+  { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
+  
+  // OPERACIONAL
+  { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
+  { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
 ] as const;
 
 function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
@@ -118,24 +122,37 @@ export function KanbanBoard({ leads, onStageChange, onCardClick }: KanbanBoardPr
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)]">
-        {STAGES.map((stage) => {
+        {STAGES.map((stage, index) => {
           const stageLeads = getLeadsByStage(stage.id);
+          const isFirstOperacional = stage.section === "operacional" && 
+            (index === 0 || STAGES[index - 1].section !== "operacional");
+          
           return (
-            <KanbanColumn
-              key={stage.id}
-              id={stage.id}
-              title={stage.title}
-              count={stageLeads.length}
-              color={stage.color}
-            >
-              {stageLeads.map((lead) => (
-                <SortableCard 
-                  key={lead.id} 
-                  lead={lead} 
-                  onClick={() => onCardClick(lead)}
-                />
-              ))}
-            </KanbanColumn>
+            <div key={stage.id} className="flex gap-6">
+              {isFirstOperacional && (
+                <div className="flex items-center">
+                  <div className="h-full w-px bg-border" />
+                  <div className="mx-2 px-3 py-1 bg-muted rounded-full text-xs font-medium text-muted-foreground whitespace-nowrap">
+                    Operacional →
+                  </div>
+                  <div className="h-full w-px bg-border" />
+                </div>
+              )}
+              <KanbanColumn
+                id={stage.id}
+                title={stage.title}
+                count={stageLeads.length}
+                color={stage.color}
+              >
+                {stageLeads.map((lead) => (
+                  <SortableCard 
+                    key={lead.id} 
+                    lead={lead} 
+                    onClick={() => onCardClick(lead)}
+                  />
+                ))}
+              </KanbanColumn>
+            </div>
           );
         })}
       </div>

@@ -595,7 +595,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
             ? data.margens.reduce((sum, m) => sum + m, 0) / data.margens.length
             : 0;
 
-          const leads_fechados = data.leads.filter((l) => l.estagio === "fechado_ganho").length;
+          const leads_fechados = data.leads.filter((l) => l.estagio === "contrato").length;
           const taxa_conversao = data.leads.length > 0
             ? (leads_fechados / data.leads.length) * 100
             : 0;
@@ -664,7 +664,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       const result: ResponseSpeedData[] = buckets
         .filter((b) => b.leads.length > 0)
         .map((bucket) => {
-          const fechados = bucket.leads.filter((l) => l.estagio === "fechado_ganho").length;
+          const fechados = bucket.leads.filter((l) => l.estagio === "contrato").length;
           const taxa_conversao = (fechados / bucket.leads.length) * 100;
 
           return {

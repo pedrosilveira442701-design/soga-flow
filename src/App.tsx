@@ -16,6 +16,7 @@ import Financeiro from "./pages/Financeiro";
 import Metas from "./pages/Metas";
 import Visitas from "./pages/Visitas";
 import Arquivos from "./pages/Arquivos";
+import Obras from "./pages/Obras";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/leads" element={<ProtectedRoute><DashboardLayout><Leads /></DashboardLayout></ProtectedRoute>} />
             <Route path="/propostas" element={<ProtectedRoute><DashboardLayout><Propostas /></DashboardLayout></ProtectedRoute>} />
             <Route path="/contratos" element={<ProtectedRoute><DashboardLayout><Contratos /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/obras" element={<ProtectedRoute><DashboardLayout><Obras /></DashboardLayout></ProtectedRoute>} />
             <Route path="/financeiro" element={<ProtectedRoute><DashboardLayout><Financeiro /></DashboardLayout></ProtectedRoute>} />
             <Route path="/metas" element={<ProtectedRoute><DashboardLayout><Metas /></DashboardLayout></ProtectedRoute>} />
             <Route path="/visitas" element={<ProtectedRoute><DashboardLayout><Visitas /></DashboardLayout></ProtectedRoute>} />

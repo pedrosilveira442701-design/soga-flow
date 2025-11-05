@@ -27,7 +27,7 @@ const leadFormSchema = z.object({
   valor_potencial: z.string().min(1, "Informe o valor potencial"),
   origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-  estagio: z.enum(["novo", "contato", "negociacao", "proposta_enviada", "fechado_ganho", "perdido"]),
+  estagio: z.enum(["contato", "visita_agendada", "visita_realizada", "proposta", "contrato", "execucao", "finalizado", "perdido"]),
 });
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
@@ -48,7 +48,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       valor_potencial: "",
       origem: "",
       responsavel: "",
-      estagio: "novo",
+      estagio: "contato",
     },
   });
 
@@ -81,11 +81,13 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="contato">Contato</SelectItem>
-                  <SelectItem value="negociacao">Negociação</SelectItem>
-                  <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
-                  <SelectItem value="fechado_ganho">Fechado Ganho</SelectItem>
+                  <SelectItem value="contato">Entrou em Contato</SelectItem>
+                  <SelectItem value="visita_agendada">Visita Agendada</SelectItem>
+                  <SelectItem value="visita_realizada">Visita Realizada</SelectItem>
+                  <SelectItem value="proposta">Gerou Proposta</SelectItem>
+                  <SelectItem value="contrato">Fechou Contrato</SelectItem>
+                  <SelectItem value="execucao">Em Execução</SelectItem>
+                  <SelectItem value="finalizado">Finalizado</SelectItem>
                   <SelectItem value="perdido">Perdido</SelectItem>
                 </SelectContent>
               </Select>

@@ -207,6 +207,8 @@ export type Database = {
           cliente_id: string | null
           created_at: string
           estagio: Database["public"]["Enums"]["lead_stage"]
+          first_response_at: string | null
+          first_response_minutes: number | null
           id: string
           origem: string | null
           responsavel: string | null
@@ -220,6 +222,8 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           estagio?: Database["public"]["Enums"]["lead_stage"]
+          first_response_at?: string | null
+          first_response_minutes?: number | null
           id?: string
           origem?: string | null
           responsavel?: string | null
@@ -233,6 +237,8 @@ export type Database = {
           cliente_id?: string | null
           created_at?: string
           estagio?: Database["public"]["Enums"]["lead_stage"]
+          first_response_at?: string | null
+          first_response_minutes?: number | null
           id?: string
           origem?: string | null
           responsavel?: string | null
@@ -294,6 +300,68 @@ export type Database = {
         }
         Relationships: []
       }
+      obras: {
+        Row: {
+          completed_at: string | null
+          contrato_id: string
+          created_at: string | null
+          equipe: Json | null
+          fotos: Json | null
+          id: string
+          marcos: Json | null
+          ocorrencias: Json | null
+          progresso_pct: number | null
+          responsavel_obra: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["obra_status"] | null
+          termo_conclusao_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contrato_id: string
+          created_at?: string | null
+          equipe?: Json | null
+          fotos?: Json | null
+          id?: string
+          marcos?: Json | null
+          ocorrencias?: Json | null
+          progresso_pct?: number | null
+          responsavel_obra?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["obra_status"] | null
+          termo_conclusao_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          contrato_id?: string
+          created_at?: string | null
+          equipe?: Json | null
+          fotos?: Json | null
+          id?: string
+          marcos?: Json | null
+          ocorrencias?: Json | null
+          progresso_pct?: number | null
+          responsavel_obra?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["obra_status"] | null
+          termo_conclusao_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: true
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -337,6 +405,7 @@ export type Database = {
           user_id: string
           valor_m2: number
           valor_total: number | null
+          visita_id: string | null
         }
         Insert: {
           cliente_id: string
@@ -353,6 +422,7 @@ export type Database = {
           user_id: string
           valor_m2: number
           valor_total?: number | null
+          visita_id?: string | null
         }
         Update: {
           cliente_id?: string
@@ -369,6 +439,7 @@ export type Database = {
           user_id?: string
           valor_m2?: number
           valor_total?: number | null
+          visita_id?: string | null
         }
         Relationships: [
           {
@@ -376,6 +447,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "visitas"
             referencedColumns: ["id"]
           },
         ]
@@ -404,12 +482,18 @@ export type Database = {
       visitas: {
         Row: {
           assunto: string
+          checklist: Json | null
           cliente_id: string
+          complexidade: number | null
           created_at: string
           data: string | null
+          done_at: string | null
           endereco: string | null
+          fotos: Json | null
           hora: string | null
           id: string
+          lead_id: string | null
+          m2_medido: number | null
           marcacao_tipo: string
           observacao: string | null
           realizada: boolean | null
@@ -420,12 +504,18 @@ export type Database = {
         }
         Insert: {
           assunto: string
+          checklist?: Json | null
           cliente_id: string
+          complexidade?: number | null
           created_at?: string
           data?: string | null
+          done_at?: string | null
           endereco?: string | null
+          fotos?: Json | null
           hora?: string | null
           id?: string
+          lead_id?: string | null
+          m2_medido?: number | null
           marcacao_tipo: string
           observacao?: string | null
           realizada?: boolean | null
@@ -436,12 +526,18 @@ export type Database = {
         }
         Update: {
           assunto?: string
+          checklist?: Json | null
           cliente_id?: string
+          complexidade?: number | null
           created_at?: string
           data?: string | null
+          done_at?: string | null
           endereco?: string | null
+          fotos?: Json | null
           hora?: string | null
           id?: string
+          lead_id?: string | null
+          m2_medido?: number | null
           marcacao_tipo?: string
           observacao?: string | null
           realizada?: boolean | null
@@ -456,6 +552,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visitas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
@@ -477,12 +580,20 @@ export type Database = {
       app_role: "admin" | "comercial" | "financeiro" | "visualizador"
       contract_status: "ativo" | "concluido" | "cancelado"
       lead_stage:
-        | "novo"
         | "contato"
-        | "proposta_enviada"
-        | "negociacao"
-        | "fechado_ganho"
+        | "visita_agendada"
+        | "visita_realizada"
+        | "proposta"
+        | "contrato"
+        | "execucao"
+        | "finalizado"
         | "perdido"
+      obra_status:
+        | "mobilizacao"
+        | "execucao"
+        | "acabamento"
+        | "concluida"
+        | "pausada"
       payment_status: "pendente" | "pago" | "atrasado"
     }
     CompositeTypes: {
@@ -614,12 +725,21 @@ export const Constants = {
       app_role: ["admin", "comercial", "financeiro", "visualizador"],
       contract_status: ["ativo", "concluido", "cancelado"],
       lead_stage: [
-        "novo",
         "contato",
-        "proposta_enviada",
-        "negociacao",
-        "fechado_ganho",
+        "visita_agendada",
+        "visita_realizada",
+        "proposta",
+        "contrato",
+        "execucao",
+        "finalizado",
         "perdido",
+      ],
+      obra_status: [
+        "mobilizacao",
+        "execucao",
+        "acabamento",
+        "concluida",
+        "pausada",
       ],
       payment_status: ["pendente", "pago", "atrasado"],
     },

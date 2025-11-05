@@ -165,6 +165,16 @@ export const useContratos = () => {
           .eq("id", data.proposta_id);
       }
 
+      // Criar obra automaticamente
+      await supabase
+        .from("obras")
+        .insert({
+          user_id: user.id,
+          contrato_id: contrato.id,
+          status: "mobilizacao",
+          progresso_pct: 0,
+        });
+
       return contrato;
     },
     onSuccess: () => {
