@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/sidebar";
 import { motion } from "framer-motion";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
+import { useMetas } from "@/hooks/useMetas";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -54,6 +55,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut, user } = useAuth();
   const { kpis } = useFinanceiro();
+  const { kpis: metasKpis } = useMetas({ status: 'ativa' });
 
   const getUserInitials = (email?: string) => {
     if (!email) return "U";
@@ -144,6 +146,11 @@ export function AppSidebar() {
                                     {kpis.atrasadas}
                                   </Badge>
                                 )}
+                                {item.title === "Metas" && metasKpis.metasEmAlerta > 0 && (
+                                  <Badge variant="destructive" className="ml-2">
+                                    {metasKpis.metasEmAlerta}
+                                  </Badge>
+                                )}
                               </TooltipContent>
                             </Tooltip>
                           ) : (
@@ -152,6 +159,11 @@ export function AppSidebar() {
                               {item.title === "Financeiro" && kpis.atrasadas > 0 && (
                                 <Badge variant="destructive" className="ml-auto">
                                   {kpis.atrasadas}
+                                </Badge>
+                              )}
+                              {item.title === "Metas" && metasKpis.metasEmAlerta > 0 && (
+                                <Badge variant="destructive" className="ml-auto">
+                                  {metasKpis.metasEmAlerta}
                                 </Badge>
                               )}
                             </div>
