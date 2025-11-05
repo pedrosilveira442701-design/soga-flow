@@ -18,6 +18,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
+import {
   Mail,
   Phone,
   MapPin,
@@ -27,11 +42,20 @@ import {
   FileText,
   Users,
   Calendar,
+  DollarSign,
+  TrendingUp,
+  Eye,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ClienteDetailsDialogProps {
   cliente: Cliente | null;
@@ -49,6 +73,36 @@ export function ClienteDetailsDialog({
   onDelete,
 }: ClienteDetailsDialogProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Buscar contratos do cliente
+  const { data: contratos = [], isLoading: isLoadingContratos } = useQuery({
+    queryKey: ["contratos-cliente", cliente?.id],
+    queryFn: async () => {
+      if (!cliente?.id || !user) return [];
+
+      const { data, error } = await supabase
+        .from("contratos")
+        .select(`
+          *,
+          parcelas:financeiro_parcelas(
+            id,
+            numero_parcela,
+            valor_liquido_parcela,
+            vencimento,
+            status,
+            data_pagamento
+          )
+        `)
+        .eq("cliente_id", cliente.id)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!cliente?.id && !!user && open,
+  });
 
   if (!cliente) return null;
 
@@ -65,13 +119,59 @@ export function ClienteDetailsDialog({
     onOpenChange(false);
   };
 
+  const handleViewContrato = (contratoId: string) => {
+    window.location.href = `/contratos?id=${contratoId}`;
+  };
+
   const propostasCount = cliente.propostas?.[0]?.count || 0;
   const leadsCount = cliente.leads?.[0]?.count || 0;
+
+  // Calcular resumo financeiro dos contratos
+  const resumoFinanceiro = contratos.reduce(
+    (acc, contrato) => {
+      const totalContrato = Number(contrato.valor_negociado);
+      const parcelas = contrato.parcelas || [];
+      const valorPago = parcelas
+        .filter((p: any) => p.status === "pago")
+        .reduce((sum: number, p: any) => sum + Number(p.valor_liquido_parcela), 0);
+      const valorPendente = parcelas
+        .filter((p: any) => p.status === "pendente")
+        .reduce((sum: number, p: any) => sum + Number(p.valor_liquido_parcela), 0);
+
+      return {
+        totalContratado: acc.totalContratado + totalContrato,
+        totalPago: acc.totalPago + valorPago,
+        totalPendente: acc.totalPendente + valorPendente,
+        contratos: acc.contratos + 1,
+      };
+    },
+    { totalContratado: 0, totalPago: 0, totalPendente: 0, contratos: 0 }
+  );
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "ativo":
+        return <Badge className="bg-blue-500">Ativo</Badge>;
+      case "concluido":
+        return <Badge className="bg-green-500">Concluído</Badge>;
+      case "cancelado":
+        return <Badge variant="destructive">Cancelado</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -85,11 +185,20 @@ export function ClienteDetailsDialog({
             </div>
           </DialogHeader>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 mt-4"
-          >
+          <Tabs defaultValue="info" className="mt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="info">Informações</TabsTrigger>
+              <TabsTrigger value="contratos">
+                Contratos ({contratos.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="info">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
             {/* Informações de Contato */}
             <div className="space-y-3">
               {cliente.contato && (
@@ -182,35 +291,185 @@ export function ClienteDetailsDialog({
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t">
-              <Button
-                onClick={() => {
-                  onEdit(cliente);
-                  onOpenChange(false);
-                }}
-                variant="outline"
-                className="flex-1"
+                {/* Actions */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      onEdit(cliente);
+                      onOpenChange(false);
+                    }}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    onClick={() => setDeleteDialogOpen(true)}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Deletar
+                  </Button>
+                  {cliente.telefone && (
+                    <Button onClick={handleWhatsApp} className="flex-1">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      WhatsApp
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            <TabsContent value="contratos">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
               >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-              <Button
-                onClick={() => setDeleteDialogOpen(true)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Deletar
-              </Button>
-              {cliente.telefone && (
-                <Button onClick={handleWhatsApp} className="flex-1">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  WhatsApp
-                </Button>
-              )}
-            </div>
-          </motion.div>
+                {isLoadingContratos ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-32" />
+                    <Skeleton className="h-64" />
+                  </div>
+                ) : contratos.length === 0 ? (
+                  <div className="rounded-lg border border-dashed p-12 text-center">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      Nenhum contrato encontrado
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Este cliente ainda não possui contratos
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Resumo Financeiro */}
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Total Contratos
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {resumoFinanceiro.contratos}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Total Contratado
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold">
+                          {formatCurrency(resumoFinanceiro.totalContratado)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Total Pago
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">
+                          {formatCurrency(resumoFinanceiro.totalPago)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            A Receber
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {formatCurrency(resumoFinanceiro.totalPendente)}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Lista de Contratos */}
+                    <div>
+                      <h3 className="font-semibold mb-4">Histórico de Contratos</h3>
+                      <div className="rounded-lg border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Data</TableHead>
+                              <TableHead>Valor</TableHead>
+                              <TableHead>Forma Pagamento</TableHead>
+                              <TableHead>Parcelas</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {contratos.map((contrato: any) => {
+                              const parcelas = contrato.parcelas || [];
+                              const parcelasPagas = parcelas.filter(
+                                (p: any) => p.status === "pago"
+                              ).length;
+                              const progressoParcelas = parcelas.length > 0
+                                ? (parcelasPagas / parcelas.length) * 100
+                                : 0;
+
+                              return (
+                                <TableRow key={contrato.id}>
+                                  <TableCell>
+                                    {format(
+                                      parseISO(contrato.data_inicio),
+                                      "dd/MM/yyyy",
+                                      { locale: ptBR }
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-semibold">
+                                    {formatCurrency(Number(contrato.valor_negociado))}
+                                  </TableCell>
+                                  <TableCell>{contrato.forma_pagamento}</TableCell>
+                                  <TableCell>
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2 text-sm">
+                                        <span>
+                                          {parcelasPagas}/{parcelas.length}
+                                        </span>
+                                      </div>
+                                      <Progress
+                                        value={progressoParcelas}
+                                        className="h-1.5"
+                                      />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{getStatusBadge(contrato.status)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleViewContrato(contrato.id)}
+                                      title="Ver detalhes"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
