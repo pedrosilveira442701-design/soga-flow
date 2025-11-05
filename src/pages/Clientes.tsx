@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,47 +11,103 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Search, Filter, MoreVertical, Phone, Mail, MapPin } from "lucide-react";
-
-// Mock data
-const mockClientes = [
-  {
-    id: 1,
-    nome: "João Silva",
-    contato: "joao@email.com",
-    telefone: "(11) 98765-4321",
-    cidade: "São Paulo",
-    bairro: "Jardins",
-    status: "Ativo",
-    propostas: 3,
-    ultimaInteracao: "2 dias atrás",
-  },
-  {
-    id: 2,
-    nome: "Maria Santos",
-    contato: "maria@email.com",
-    telefone: "(11) 97654-3210",
-    cidade: "São Paulo",
-    bairro: "Moema",
-    status: "Ativo",
-    propostas: 1,
-    ultimaInteracao: "1 semana atrás",
-  },
-  {
-    id: 3,
-    nome: "Carlos Oliveira",
-    contato: "carlos@email.com",
-    telefone: "(11) 96543-2109",
-    cidade: "São Paulo",
-    bairro: "Vila Mariana",
-    status: "Inativo",
-    propostas: 0,
-    ultimaInteracao: "3 meses atrás",
-  },
-];
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/states/EmptyState";
+import {
+  UserPlus,
+  Search,
+  MoreVertical,
+  Phone,
+  Mail,
+  MapPin,
+  Edit,
+  Trash2,
+  Eye,
+  MessageCircle,
+  Users,
+} from "lucide-react";
+import { useClientes, Cliente } from "@/hooks/useClientes";
+import { ClienteForm } from "@/components/forms/ClienteForm";
+import { ClienteDetailsDialog } from "@/components/clientes/ClienteDetailsDialog";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+
+  const { clientes, isLoading, createCliente, updateCliente, deleteCliente } = useClientes();
+
+  // Filter clientes
+  const filteredClientes = useMemo(() => {
+    if (!clientes) return [];
+
+    return clientes.filter((cliente) => {
+      const matchesSearch =
+        cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.contato?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.telefone?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "todos" || cliente.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [clientes, searchTerm, statusFilter]);
+
+  const handleCreateCliente = async (data: any) => {
+    await createCliente.mutateAsync(data);
+    setCreateDialogOpen(false);
+  };
+
+  const handleUpdateCliente = async (data: any) => {
+    if (!selectedCliente) return;
+    await updateCliente.mutateAsync({ ...data, id: selectedCliente.id });
+    setEditDialogOpen(false);
+    setSelectedCliente(null);
+  };
+
+  const handleDeleteCliente = async (id: string) => {
+    await deleteCliente.mutateAsync(id);
+  };
+
+  const handleEditCliente = (cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setEditDialogOpen(true);
+  };
+
+  const handleViewDetails = (cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setDetailsDialogOpen(true);
+  };
+
+  const handleWhatsApp = (telefone: string | null) => {
+    if (telefone) {
+      const phone = telefone.replace(/\D/g, "");
+      window.open(`https://wa.me/55${phone}`, "_blank");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,8 +119,8 @@ export default function Clientes() {
             Gerencie seus clientes e contatos
           </p>
         </div>
-        
-        <Button>
+
+        <Button onClick={() => setCreateDialogOpen(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
           Novo Cliente
         </Button>
@@ -83,11 +139,25 @@ export default function Clientes() {
                 className="pl-9"
               />
             </div>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtros
-            </Button>
+            <Select
+              value={statusFilter}
+              onValueChange={(value: any) => setStatusFilter(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="ativo">Ativo</SelectItem>
+                <SelectItem value="inativo">Inativo</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          {filteredClientes.length > 0 && (
+            <p className="text-sm text-muted-foreground mt-4">
+              {filteredClientes.length} cliente(s) encontrado(s)
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -97,67 +167,185 @@ export default function Clientes() {
           <CardTitle className="text-lg">Lista de Clientes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Localização</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Propostas</TableHead>
-                  <TableHead>Última Interação</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockClientes.map((cliente) => (
-                  <TableRow key={cliente.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">{cliente.nome}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        {cliente.contato}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        {cliente.telefone}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        {cliente.cidade} - {cliente.bairro}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={cliente.status === "Ativo" ? "default" : "secondary"}
-                      >
-                        {cliente.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline">{cliente.propostas}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {cliente.ultimaInteracao}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : filteredClientes.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title="Nenhum cliente cadastrado"
+              description="Comece adicionando seu primeiro cliente"
+              action={{
+                label: "Adicionar Cliente",
+                onClick: () => setCreateDialogOpen(true),
+              }}
+            />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Contato</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Localização</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Propostas</TableHead>
+                    <TableHead className="text-center">Leads</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredClientes.map((cliente) => {
+                    const propostasCount = cliente.propostas?.[0]?.count || 0;
+                    const leadsCount = cliente.leads?.[0]?.count || 0;
+
+                    return (
+                      <TableRow
+                        key={cliente.id}
+                        className="hover:bg-muted/50 cursor-pointer"
+                        onClick={() => handleViewDetails(cliente)}
+                      >
+                        <TableCell className="font-medium">
+                          {cliente.nome}
+                        </TableCell>
+                        <TableCell>
+                          {cliente.contato ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              {cliente.contato}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {cliente.telefone ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              {cliente.telefone}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {cliente.cidade || cliente.bairro ? (
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              {cliente.cidade && cliente.bairro
+                                ? `${cliente.cidade} - ${cliente.bairro}`
+                                : cliente.cidade || cliente.bairro}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              cliente.status === "ativo" ? "default" : "secondary"
+                            }
+                          >
+                            {cliente.status === "ativo" ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">{propostasCount}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">{leadsCount}</Badge>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleViewDetails(cliente)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver Detalhes
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditCliente(cliente)}
+                              >
+                                <Edit className="mr-2 h-4 w-4" />
+                                Editar
+                              </DropdownMenuItem>
+                              {cliente.telefone && (
+                                <DropdownMenuItem
+                                  onClick={() => handleWhatsApp(cliente.telefone)}
+                                >
+                                  <MessageCircle className="mr-2 h-4 w-4" />
+                                  WhatsApp
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteCliente(cliente.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Deletar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Create Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Cliente</DialogTitle>
+          </DialogHeader>
+          <ClienteForm
+            onSubmit={handleCreateCliente}
+            isLoading={createCliente.isPending}
+            mode="create"
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+          </DialogHeader>
+          {selectedCliente && (
+            <ClienteForm
+              initialData={selectedCliente}
+              onSubmit={handleUpdateCliente}
+              isLoading={updateCliente.isPending}
+              mode="edit"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <ClienteDetailsDialog
+        cliente={selectedCliente}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        onEdit={handleEditCliente}
+        onDelete={handleDeleteCliente}
+      />
     </div>
   );
 }
