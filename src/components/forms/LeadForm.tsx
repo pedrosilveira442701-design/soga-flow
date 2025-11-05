@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,8 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Plus } from "lucide-react";
+import { ClienteForm } from "./ClienteForm";
+import { useClientes } from "@/hooks/useClientes";
 
 const leadFormSchema = z.object({
   cliente_id: z.string().min(1, "Selecione um cliente"),
@@ -40,6 +51,10 @@ interface LeadFormProps {
 }
 
 export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
+  const [isClienteDialogOpen, setIsClienteDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { createCliente } = useClientes();
+  
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
     defaultValues: initialData || {
@@ -64,6 +79,13 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       return data;
     },
   });
+
+  const handleCreateCliente = async (values: any) => {
+    const novoCliente = await createCliente.mutateAsync(values);
+    form.setValue("cliente_id", novoCliente.id);
+    queryClient.invalidateQueries({ queryKey: ["clientes"] });
+    setIsClienteDialogOpen(false);
+  };
 
   return (
     <Form {...form}>
@@ -102,20 +124,30 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cliente</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o cliente" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {clientes.map((cliente) => (
-                    <SelectItem key={cliente.id} value={cliente.id}>
-                      {cliente.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Selecione o cliente" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {clientes.map((cliente) => (
+                      <SelectItem key={cliente.id} value={cliente.id}>
+                        {cliente.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsClienteDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -191,6 +223,23 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           </Button>
         </div>
       </form>
+
+      {/* Dialog para criar novo cliente */}
+      <Dialog open={isClienteDialogOpen} onOpenChange={setIsClienteDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Criar Novo Cliente</DialogTitle>
+            <DialogDescription>
+              Preencha os dados do cliente para adicioná-lo rapidamente
+            </DialogDescription>
+          </DialogHeader>
+          <ClienteForm
+            onSubmit={handleCreateCliente}
+            isLoading={createCliente.isPending}
+            mode="create"
+          />
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 }
