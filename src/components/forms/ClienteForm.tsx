@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import InputMask from "react-input-mask";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,7 +25,17 @@ import { Cliente } from "@/hooks/useClientes";
 const clienteFormSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   contato: z.string().optional(),
-  telefone: z.string().optional(),
+  telefone: z
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (!val || val.trim() === "") return true;
+        const cleaned = val.replace(/\D/g, "");
+        return cleaned.length === 10 || cleaned.length === 11;
+      },
+      { message: "Telefone deve ter 10 ou 11 dígitos" }
+    ),
   cpf_cnpj: z.string().optional(),
   endereco: z.string().optional(),
   cidade: z.string().optional(),
@@ -110,7 +121,20 @@ export function ClienteForm({
             <FormItem>
               <FormLabel>Telefone</FormLabel>
               <FormControl>
-                <Input placeholder="(11) 98765-4321" {...field} />
+                <InputMask
+                  mask="(99) 99999-9999"
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                >
+                  {(inputProps: any) => (
+                    <Input
+                      {...inputProps}
+                      placeholder="(11) 98765-4321"
+                      type="tel"
+                    />
+                  )}
+                </InputMask>
               </FormControl>
               <FormMessage />
             </FormItem>
