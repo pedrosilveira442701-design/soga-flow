@@ -10,11 +10,12 @@ import { Separator } from '@/components/ui/separator';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nome, setNome] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, resetPassword, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -29,37 +30,55 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      const { error } = isLogin
-        ? await signIn(email, password)
-        : await signUp(email, password, nome);
-
-      if (error) {
-        let errorMessage = 'Erro ao processar sua solicitação';
+      if (isForgotPassword) {
+        const { error } = await resetPassword(email);
         
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Email ou senha incorretos';
-        } else if (error.message.includes('User already registered')) {
-          errorMessage = 'Este email já está cadastrado';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirme seu email antes de fazer login';
-        }
-        
-        toast({
-          title: 'Erro',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      } else {
-        if (!isLogin) {
+        if (error) {
           toast({
-            title: 'Cadastro realizado!',
-            description: 'Verifique seu email para confirmar o cadastro.',
+            title: 'Erro',
+            description: 'Erro ao enviar email de recuperação',
+            variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Login realizado!',
-            description: 'Bem-vindo ao Só Garagens Hub.',
+            title: 'Email enviado!',
+            description: 'Verifique sua caixa de entrada para redefinir sua senha.',
           });
+          setIsForgotPassword(false);
+        }
+      } else {
+        const { error } = isLogin
+          ? await signIn(email, password)
+          : await signUp(email, password, nome);
+
+        if (error) {
+          let errorMessage = 'Erro ao processar sua solicitação';
+          
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Email ou senha incorretos';
+          } else if (error.message.includes('User already registered')) {
+            errorMessage = 'Este email já está cadastrado';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Por favor, confirme seu email antes de fazer login';
+          }
+          
+          toast({
+            title: 'Erro',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        } else {
+          if (!isLogin) {
+            toast({
+              title: 'Cadastro realizado!',
+              description: 'Verifique seu email para confirmar o cadastro.',
+            });
+          } else {
+            toast({
+              title: 'Login realizado!',
+              description: 'Bem-vindo ao Só Garagens Hub.',
+            });
+          }
         }
       }
     } catch (error) {
@@ -79,17 +98,19 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
-            {isLogin ? 'Login' : 'Criar conta'}
+            {isForgotPassword ? 'Recuperar senha' : isLogin ? 'Login' : 'Criar conta'}
           </CardTitle>
           <CardDescription>
-            {isLogin
+            {isForgotPassword
+              ? 'Digite seu email para receber o link de recuperação'
+              : isLogin
               ? 'Entre com sua conta para acessar o Só Garagens Hub'
               : 'Crie sua conta para começar a usar o Só Garagens Hub'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
+            {!isLogin && !isForgotPassword && (
               <div className="space-y-2">
                 <Label htmlFor="nome">Nome</Label>
                 <Input
@@ -115,32 +136,56 @@ export default function Auth() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Processando...' : isLogin ? 'Entrar' : 'Criar conta'}
+              {isLoading 
+                ? 'Processando...' 
+                : isForgotPassword 
+                ? 'Enviar email de recuperação'
+                : isLogin 
+                ? 'Entrar' 
+                : 'Criar conta'}
             </Button>
           </form>
 
-          <div className="text-center text-sm">
+          <div className="text-center text-sm space-y-2">
+            {!isForgotPassword && isLogin && (
+              <button
+                type="button"
+                className="text-primary hover:underline block w-full"
+                onClick={() => setIsForgotPassword(true)}
+                disabled={isLoading}
+              >
+                Esqueci minha senha
+              </button>
+            )}
+            
             <button
               type="button"
-              className="text-primary hover:underline"
-              onClick={() => setIsLogin(!isLogin)}
+              className="text-primary hover:underline block w-full"
+              onClick={() => {
+                setIsForgotPassword(false);
+                setIsLogin(!isLogin);
+              }}
               disabled={isLoading}
             >
-              {isLogin
+              {isForgotPassword
+                ? 'Voltar para login'
+                : isLogin
                 ? 'Não tem uma conta? Criar conta'
                 : 'Já tem uma conta? Fazer login'}
             </button>
