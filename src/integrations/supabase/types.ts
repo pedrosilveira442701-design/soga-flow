@@ -61,6 +61,7 @@ export type Database = {
           logradouro: string | null
           nome: string
           numero: string | null
+          pais: string | null
           status: string | null
           telefone: string | null
           uf: string | null
@@ -80,6 +81,7 @@ export type Database = {
           logradouro?: string | null
           nome: string
           numero?: string | null
+          pais?: string | null
           status?: string | null
           telefone?: string | null
           uf?: string | null
@@ -99,6 +101,7 @@ export type Database = {
           logradouro?: string | null
           nome?: string
           numero?: string | null
+          pais?: string | null
           status?: string | null
           telefone?: string | null
           uf?: string | null
