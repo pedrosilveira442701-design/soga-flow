@@ -37,6 +37,7 @@ const contratoSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
   proposta_id: z.string().optional(),
   valor_negociado: z.number().min(1, "Valor deve ser maior que zero"),
+  margem_pct: z.number().min(0).max(100, "Margem deve estar entre 0 e 100").optional(),
   cpf_cnpj: z.string().min(11, "CPF/CNPJ inválido"),
   valor_entrada: z.number().min(0, "Valor de entrada não pode ser negativo").optional(),
   forma_pagamento_entrada: z.string().optional(),
@@ -83,6 +84,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       cliente_id: initialData?.cliente_id || "",
       proposta_id: initialData?.proposta_id || "",
       valor_negociado: initialData?.valor_negociado || 0,
+      margem_pct: initialData?.margem_pct || 0,
       cpf_cnpj: initialData?.cpf_cnpj || "",
       valor_entrada: initialData?.valor_entrada || 0,
       forma_pagamento_entrada: initialData?.forma_pagamento_entrada || "",
@@ -136,6 +138,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       form.setValue("proposta_id", propostaId);
       form.setValue("cliente_id", proposta.cliente_id);
       form.setValue("valor_negociado", Number(proposta.liquido || proposta.valor_total));
+      form.setValue("margem_pct", Number(proposta.margem_pct || 0));
     }
   };
 
@@ -251,6 +254,28 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                     <Input
                       type="number"
                       step="0.01"
+                      placeholder="0,00"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="margem_pct"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Margem (%)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
                       placeholder="0,00"
                       {...field}
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}

@@ -41,6 +41,7 @@ export interface ContratoInsert {
   cliente_id: string;
   proposta_id?: string;
   valor_negociado: number;
+  margem_pct?: number;
   cpf_cnpj: string;
   valor_entrada?: number;
   forma_pagamento_entrada?: string;
@@ -120,9 +121,10 @@ export const useContratos = () => {
     mutationFn: async (data: ContratoInsert) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Buscar margem da proposta se houver
-      let margemPct = 0;
-      if (data.proposta_id) {
+      // Usar margem definida pelo usuário ou buscar da proposta como fallback
+      let margemPct = data.margem_pct || 0;
+      
+      if (!margemPct && data.proposta_id) {
         const { data: proposta } = await supabase
           .from("propostas")
           .select("margem_pct")

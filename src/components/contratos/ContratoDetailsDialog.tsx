@@ -220,10 +220,8 @@ export function ContratoDetailsDialog({
           <ParcelasManager 
             contratoId={contrato.id} 
             valorNegociado={Number(contrato.valor_negociado)}
-            propostaInfo={{
-              ...contrato.proposta,
-              margem_pct: contrato.margem_pct || contrato.proposta?.margem_pct || 0
-            }}
+            margem_pct={contrato.margem_pct || 0}
+            propostaInfo={contrato.proposta}
           />
 
           <Separator />

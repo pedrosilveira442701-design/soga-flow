@@ -57,31 +57,29 @@ import { cn } from "@/lib/utils";
 interface ParcelasManagerProps {
   contratoId: string;
   valorNegociado: number;
+  margem_pct: number;
   propostaInfo?: {
     m2: number;
     custo_m2?: number;
     servicos?: Array<{ descricao: string; valor: number }>;
-    margem_pct?: number;
   };
 }
 
-export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: ParcelasManagerProps) {
+export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propostaInfo }: ParcelasManagerProps) {
   const queryClient = useQueryClient();
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
   // Estado local para margem editável
-  const [margemPct, setMargemPct] = useState(propostaInfo?.margem_pct || 0);
+  const [margemPct, setMargemPct] = useState(margem_pct || 0);
   const [isEditingMargem, setIsEditingMargem] = useState(false);
-  const [margemInput, setMargemInput] = useState(String(propostaInfo?.margem_pct || 0));
+  const [margemInput, setMargemInput] = useState(String(margem_pct || 0));
   
-  // Sincronizar estado quando propostaInfo mudar
+  // Sincronizar estado quando margem_pct mudar
   useEffect(() => {
-    if (propostaInfo?.margem_pct !== undefined) {
-      setMargemPct(propostaInfo.margem_pct);
-      setMargemInput(String(propostaInfo.margem_pct));
-    }
-  }, [propostaInfo?.margem_pct]);
+    setMargemPct(margem_pct || 0);
+    setMargemInput(String(margem_pct || 0));
+  }, [margem_pct]);
   
   // Calcular valor da margem por parcela
   const calcularMargemPorParcela = (valorParcela: number) => {

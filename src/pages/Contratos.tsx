@@ -449,9 +449,9 @@ export default function Contratos() {
                 const parcelasPagas = contrato.parcelas?.pagas || 0;
                 const parcelasPendentes = totalParcelas - parcelasPagas;
                 
-                // Pago (bruto) = valor bruto das parcelas pagas
+                // Pago (líquido) = valor líquido das parcelas pagas
                 const valorBrutoPorParcela = total / totalParcelas;
-                const pago = valorBrutoPorParcela * parcelasPagas;
+                const pago = contrato.parcelas?.valor_pago || 0;
                 
                 // Pendente (bruto) = valor bruto das parcelas pendentes
                 const pendente = valorBrutoPorParcela * parcelasPendentes;
