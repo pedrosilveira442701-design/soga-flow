@@ -353,10 +353,11 @@ export const usePropostasFechadas = () => {
         contratos?.map((c) => c.proposta_id) || []
       );
 
-      // Filtrar propostas que ainda não têm contrato
-      return (propostas || []).filter(
-        (p) => !propostaIdsComContrato.has(p.id)
-      );
+      // Adicionar flag has_contrato em cada proposta
+      return (propostas || []).map(p => ({
+        ...p,
+        has_contrato: propostaIdsComContrato.has(p.id)
+      }));
     },
     enabled: !!user,
   });

@@ -124,8 +124,15 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   // Filtrar propostas fechadas por cliente selecionado
   const propostasPorCliente = useMemo(() => {
     if (!clienteIdWatch) return [];
-    return propostasFechadas.filter(p => p.cliente_id === clienteIdWatch);
+    return propostasFechadas.filter((p: any) => p.cliente_id === clienteIdWatch);
   }, [clienteIdWatch, propostasFechadas]);
+
+  // Verificar se a proposta selecionada já tem contrato
+  const propostaJaTemContrato = useMemo(() => {
+    if (!propostaIdWatch) return false;
+    const proposta: any = propostasFechadas.find((p: any) => p.id === propostaIdWatch);
+    return proposta?.has_contrato || false;
+  }, [propostaIdWatch, propostasFechadas]);
 
   // Calcular previsão de parcelas
   const previewParcelas = Array.from({ length: Math.min(parcelasWatch, 5) }, (_, i) => {
@@ -251,34 +258,50 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
             {/* Campo Proposta do Cliente - só aparece no modo create quando cliente for selecionado */}
             {mode === "create" && clienteIdWatch && propostasPorCliente.length > 0 && (
-              <FormField
-                control={form.control}
-                name="proposta_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proposta do Cliente (opcional)</FormLabel>
-                    <Select
-                      onValueChange={handlePropostaChange}
-                      value={field.value}
-                      disabled={isLoadingPropostas}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma proposta" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {propostasPorCliente.map((proposta) => (
-                          <SelectItem key={proposta.id} value={proposta.id}>
-                            #{proposta.id.substring(0, 8)} - {proposta.tipo_piso} - {formatCurrency(Number(proposta.valor_total))}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+              <>
+                <FormField
+                  control={form.control}
+                  name="proposta_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Proposta do Cliente (opcional)</FormLabel>
+                      <Select
+                        onValueChange={handlePropostaChange}
+                        value={field.value}
+                        disabled={isLoadingPropostas}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma proposta" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {propostasPorCliente.map((proposta: any) => (
+                            <SelectItem 
+                              key={proposta.id} 
+                              value={proposta.id}
+                              disabled={proposta.has_contrato}
+                            >
+                              #{proposta.id.substring(0, 8)} - {proposta.tipo_piso} - {formatCurrency(Number(proposta.valor_total))}
+                              {proposta.has_contrato && " (já tem contrato)"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {propostaJaTemContrato && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Esta proposta já possui um contrato vinculado. Não é possível criar múltiplos contratos da mesma proposta.
+                    </AlertDescription>
+                  </Alert>
                 )}
-              />
+              </>
             )}
 
             <FormField
