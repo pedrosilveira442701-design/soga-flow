@@ -40,7 +40,7 @@ export function useDashboard() {
   const lastMonthEnd = endOfMonth(subMonths(now, 1));
   const sixMonthsAgo = subMonths(now, 5);
 
-  // 1. Buscar propostas do mês atual
+  // 1. Buscar propostas fechadas do mês atual (pela data da proposta)
   const { data: currentMonthPropostas = [] } = useQuery({
     queryKey: ["propostas-dashboard-current", user?.id],
     queryFn: async () => {
@@ -49,8 +49,8 @@ export function useDashboard() {
         .select("*")
         .eq("user_id", user!.id)
         .eq("status", "fechada")
-        .gte("created_at", currentMonthStart.toISOString())
-        .lte("created_at", currentMonthEnd.toISOString());
+        .gte("data", format(currentMonthStart, "yyyy-MM-dd"))
+        .lte("data", format(currentMonthEnd, "yyyy-MM-dd"));
 
       if (error) throw error;
       return data || [];
@@ -58,7 +58,7 @@ export function useDashboard() {
     enabled: !!user?.id,
   });
 
-  // 2. Buscar propostas do mês anterior
+  // 2. Buscar propostas fechadas do mês anterior (pela data da proposta)
   const { data: lastMonthPropostas = [] } = useQuery({
     queryKey: ["propostas-dashboard-last", user?.id],
     queryFn: async () => {
@@ -67,8 +67,8 @@ export function useDashboard() {
         .select("*")
         .eq("user_id", user!.id)
         .eq("status", "fechada")
-        .gte("created_at", lastMonthStart.toISOString())
-        .lte("created_at", lastMonthEnd.toISOString());
+        .gte("data", format(lastMonthStart, "yyyy-MM-dd"))
+        .lte("data", format(lastMonthEnd, "yyyy-MM-dd"));
 
       if (error) throw error;
       return data || [];
@@ -76,7 +76,7 @@ export function useDashboard() {
     enabled: !!user?.id,
   });
 
-  // 3. Buscar propostas dos últimos 6 meses para timeline
+  // 3. Buscar propostas fechadas dos últimos 6 meses para timeline (pela data da proposta)
   const { data: timelinePropostas = [] } = useQuery({
     queryKey: ["propostas-timeline", user?.id],
     queryFn: async () => {
@@ -85,7 +85,7 @@ export function useDashboard() {
         .select("*")
         .eq("user_id", user!.id)
         .eq("status", "fechada")
-        .gte("created_at", sixMonthsAgo.toISOString());
+        .gte("data", format(sixMonthsAgo, "yyyy-MM-dd"));
 
       if (error) throw error;
       return data || [];
@@ -126,28 +126,40 @@ export function useDashboard() {
 
   // Calcular KPIs com memoização
   const kpis = useMemo(() => {
-    // Mês atual
+    // Mês atual - Totalizadores
     const currentBruto = currentMonthPropostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const currentCusto = currentMonthPropostas.reduce((sum, p) => sum + (Number(p.custo_m2 || 0) * Number(p.m2 || 0)), 0);
     const currentLiquido = currentMonthPropostas.reduce((sum, p) => sum + Number(p.liquido || 0), 0);
+    const currentCusto = currentBruto - currentLiquido; // Custo = Bruto - Líquido
     const currentMargem = currentBruto > 0 ? (currentLiquido / currentBruto) * 100 : 0;
 
-    // Mês anterior
+    // Mês anterior - Totalizadores
     const lastBruto = lastMonthPropostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const lastCusto = lastMonthPropostas.reduce((sum, p) => sum + (Number(p.custo_m2 || 0) * Number(p.m2 || 0)), 0);
     const lastLiquido = lastMonthPropostas.reduce((sum, p) => sum + Number(p.liquido || 0), 0);
+    const lastCusto = lastBruto - lastLiquido; // Custo = Bruto - Líquido
     const lastMargem = lastBruto > 0 ? (lastLiquido / lastBruto) * 100 : 0;
 
-    // A receber
+    // A receber - soma de todas as parcelas pendentes e atrasadas
     const aReceber = parcelas.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
-    // Calcular deltas
+    // Calcular deltas percentuais
     const calcDelta = (current: number, last: number): { value: string; direction: "up" | "down" } => {
-      if (last === 0) return { value: "+0%", direction: "up" };
+      if (last === 0) {
+        if (current === 0) return { value: "0%", direction: "up" };
+        return { value: "+100%", direction: "up" };
+      }
       const percent = ((current - last) / last) * 100;
       return {
         value: `${percent >= 0 ? "+" : ""}${percent.toFixed(0)}%`,
         direction: percent >= 0 ? "up" : "down",
+      };
+    };
+
+    // Delta de margem em pontos percentuais (mais claro que percentual do percentual)
+    const calcMargemDelta = (current: number, last: number): { value: string; direction: "up" | "down" } => {
+      const diff = current - last;
+      return {
+        value: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}pp`,
+        direction: diff >= 0 ? "up" : "down",
       };
     };
 
@@ -169,11 +181,11 @@ export function useDashboard() {
       },
       margem: {
         value: `${currentMargem.toFixed(1)}%`,
-        delta: calcDelta(currentMargem, lastMargem),
+        delta: calcMargemDelta(currentMargem, lastMargem),
       },
       aReceber: {
         value: formatCurrency(aReceber),
-        delta: undefined, // A receber não tem comparação
+        delta: undefined, // A receber não tem comparação mês a mês
       },
     };
   }, [currentMonthPropostas, lastMonthPropostas, parcelas]);
@@ -189,14 +201,18 @@ export function useDashboard() {
       monthsMap.set(key, { bruto: 0, custo: 0, liquido: 0 });
     }
 
-    // Agrupar propostas por mês
+    // Agrupar propostas por mês (usando data da proposta)
     timelinePropostas.forEach((p) => {
-      const month = format(new Date(p.created_at), "MMM", { locale: ptBR });
+      const month = format(new Date(p.data), "MMM", { locale: ptBR });
       const existing = monthsMap.get(month);
       if (existing) {
-        existing.bruto += Number(p.valor_total || 0);
-        existing.custo += Number(p.custo_m2 || 0) * Number(p.m2 || 0);
-        existing.liquido += Number(p.liquido || 0);
+        const bruto = Number(p.valor_total || 0);
+        const liquido = Number(p.liquido || 0);
+        const custo = bruto - liquido; // Custo = Bruto - Líquido
+        
+        existing.bruto += bruto;
+        existing.custo += custo;
+        existing.liquido += liquido;
       }
     });
 
