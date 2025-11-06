@@ -279,7 +279,23 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             <FormItem>
               <FormLabel>Orçamento</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="0" step="0.01" {...field} />
+                <Input 
+                  placeholder="R$ 0,00" 
+                  {...field}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '');
+                    const numericValue = parseFloat(value) / 100;
+                    field.onChange(numericValue.toString());
+                  }}
+                  value={
+                    field.value 
+                      ? new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        }).format(parseFloat(field.value) || 0)
+                      : ''
+                  }
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
