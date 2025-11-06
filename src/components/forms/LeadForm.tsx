@@ -5,34 +5,11 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,14 +17,7 @@ import { Plus } from "lucide-react";
 import { ClienteForm } from "./ClienteForm";
 import { useClientes } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 
 const TIPOS_PISO = [
@@ -59,27 +29,38 @@ const TIPOS_PISO = [
   "Outro",
 ] as const;
 
-const leadFormSchema = z.object({
-  cliente_id: z.string().min(1, "Selecione um cliente"),
-  tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
-  tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
-  valor_potencial: z.string().min(1, "Informe o valor potencial"),
-  origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-  responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-  estagio: z.enum(["contato", "visita_agendada", "visita_realizada", "proposta", "contrato", "execucao", "finalizado", "perdido"]),
-  created_at: z.date().optional(),
-}).refine(
-  (data) => {
-    if (data.tipo_piso.includes("Outro")) {
-      return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
-    }
-    return true;
-  },
-  {
-    message: "Descreva o tipo de piso",
-    path: ["tipo_piso_outro"],
-  }
-);
+const leadFormSchema = z
+  .object({
+    cliente_id: z.string().min(1, "Selecione um cliente"),
+    tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
+    tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
+    valor_potencial: z.string().min(1, "Informe o valor potencial"),
+    origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+    responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+    estagio: z.enum([
+      "contato",
+      "visita_agendada",
+      "visita_realizada",
+      "proposta",
+      "contrato",
+      "execucao",
+      "finalizado",
+      "perdido",
+    ]),
+    created_at: z.date().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.tipo_piso.includes("Outro")) {
+        return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Descreva o tipo de piso",
+      path: ["tipo_piso_outro"],
+    },
+  );
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
@@ -95,7 +76,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
   const [openTipoPiso, setOpenTipoPiso] = useState(false);
   const queryClient = useQueryClient();
   const { createCliente } = useClientes();
-  
+
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
     defaultValues: initialData || {
@@ -116,11 +97,8 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clientes")
-        .select("id, nome")
-        .order("nome");
-      
+      const { data, error } = await supabase.from("clientes").select("id, nome").order("nome");
+
       if (error) throw error;
       return data;
     },
@@ -185,12 +163,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setIsClienteDialogOpen(true)}
-                >
+                <Button type="button" variant="outline" size="icon" onClick={() => setIsClienteDialogOpen(true)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -213,11 +186,11 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                       role="combobox"
                       className={cn(
                         "w-full justify-between font-normal",
-                        field.value.length === 0 && "text-muted-foreground"
+                        field.value.length === 0 && "text-muted-foreground",
                       )}
                     >
                       {field.value.length > 0
-                        ? `${field.value.length} selecionado${field.value.length > 1 ? 's' : ''}`
+                        ? `${field.value.length} selecionado${field.value.length > 1 ? "s" : ""}`
                         : "Selecione os tipos de piso"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -241,12 +214,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                                 field.onChange(newValue);
                               }}
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
+                              <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
                               {tipo}
                             </CommandItem>
                           );
@@ -259,11 +227,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
               {field.value.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {field.value.map((tipo) => (
-                    <Badge
-                      key={tipo}
-                      variant="secondary"
-                      className="gap-1"
-                    >
+                    <Badge key={tipo} variant="secondary" className="gap-1">
                       {tipo}
                       <button
                         type="button"
@@ -304,14 +268,9 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           name="valor_potencial"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Valor Potencial</FormLabel>
+              <FormLabel>Orçamento</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  step="0.01"
-                  {...field}
-                />
+                <Input type="number" placeholder="0" step="0.01" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -358,16 +317,9 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                     <FormControl>
                       <Button
                         variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? (
-                          format(field.value, "dd/MM/yyyy")
-                        ) : (
-                          <span>Selecione a data</span>
-                        )}
+                        {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -377,9 +329,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("2020-01-01")
-                      }
+                      disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
@@ -393,10 +343,13 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
 
         <div className="flex gap-3 justify-end pt-4">
           <Button type="submit" disabled={isLoading}>
-            {isLoading 
-              ? (mode === "edit" ? "Salvando..." : "Criando...") 
-              : (mode === "edit" ? "Salvar Alterações" : "Criar Lead")
-            }
+            {isLoading
+              ? mode === "edit"
+                ? "Salvando..."
+                : "Criando..."
+              : mode === "edit"
+                ? "Salvar Alterações"
+                : "Criar Lead"}
           </Button>
         </div>
       </form>
@@ -406,15 +359,9 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Criar Novo Cliente</DialogTitle>
-            <DialogDescription>
-              Preencha os dados do cliente para adicioná-lo rapidamente
-            </DialogDescription>
+            <DialogDescription>Preencha os dados do cliente para adicioná-lo rapidamente</DialogDescription>
           </DialogHeader>
-          <ClienteForm
-            onSubmit={handleCreateCliente}
-            isLoading={createCliente.isPending}
-            mode="create"
-          />
+          <ClienteForm onSubmit={handleCreateCliente} isLoading={createCliente.isPending} mode="create" />
         </DialogContent>
       </Dialog>
     </Form>
