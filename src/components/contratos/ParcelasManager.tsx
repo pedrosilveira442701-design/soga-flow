@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParcelas } from "@/hooks/useParcelas";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -18,6 +21,7 @@ import {
   Plus,
   AlertCircle,
   TrendingUp,
+  Percent,
 } from "lucide-react";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -62,11 +66,22 @@ interface ParcelasManagerProps {
 }
 
 export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: ParcelasManagerProps) {
+  const queryClient = useQueryClient();
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
-  // Margem da proposta
-  const margemPct = propostaInfo?.margem_pct || 0;
+  // Estado local para margem editável
+  const [margemPct, setMargemPct] = useState(propostaInfo?.margem_pct || 0);
+  const [isEditingMargem, setIsEditingMargem] = useState(false);
+  const [margemInput, setMargemInput] = useState(String(propostaInfo?.margem_pct || 0));
+  
+  // Sincronizar estado quando propostaInfo mudar
+  useEffect(() => {
+    if (propostaInfo?.margem_pct !== undefined) {
+      setMargemPct(propostaInfo.margem_pct);
+      setMargemInput(String(propostaInfo.margem_pct));
+    }
+  }, [propostaInfo?.margem_pct]);
   
   // Calcular valor da margem por parcela
   const calcularMargemPorParcela = (valorParcela: number) => {
@@ -149,6 +164,32 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
     setEditParcelaVencimento(undefined);
   };
 
+  const handleSalvarMargem = async () => {
+    const novaMargem = parseFloat(margemInput);
+    
+    if (isNaN(novaMargem) || novaMargem < 0 || novaMargem > 100) {
+      toast.error("Margem deve ser um número entre 0 e 100");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("contratos")
+        .update({ margem_pct: novaMargem })
+        .eq("id", contratoId);
+
+      if (error) throw error;
+
+      setMargemPct(novaMargem);
+      setIsEditingMargem(false);
+      queryClient.invalidateQueries({ queryKey: ["contratos"] });
+      toast.success("Margem atualizada com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao atualizar margem");
+      console.error(error);
+    }
+  };
+
   const totais = {
     total: parcelas.reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
     pago: parcelas
@@ -178,8 +219,54 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Parcelas do Contrato</h3>
+      {/* Cabeçalho com Margem Editável */}
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <h3 className="text-lg font-semibold">Parcelas do Contrato</h3>
+          
+          {/* Campo de Margem Editável */}
+          <div className="flex items-center gap-2 rounded-lg border px-3 py-1.5 bg-primary/5">
+            <Percent className="h-4 w-4 text-primary" />
+            <Label className="text-sm font-medium text-muted-foreground">Margem:</Label>
+            {isEditingMargem ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={margemInput}
+                  onChange={(e) => setMargemInput(e.target.value)}
+                  className="w-20 h-7 text-sm"
+                  autoFocus
+                />
+                <span className="text-sm">%</span>
+                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSalvarMargem}>
+                  <CheckCircle className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => {
+                  setIsEditingMargem(false);
+                  setMargemInput(String(margemPct));
+                }}>
+                  <XCircle className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-primary">{margemPct.toFixed(2)}%</span>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-6 w-6 p-0"
+                  onClick={() => setIsEditingMargem(true)}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+        
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline">
