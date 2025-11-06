@@ -17,6 +17,7 @@ import {
   Trash2,
   Plus,
   AlertCircle,
+  TrendingUp,
 } from "lucide-react";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -163,6 +164,12 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
       const valorParcela = Number(p.valor_liquido_parcela);
       return sum + calcularMargemPorParcela(valorParcela);
     }, 0),
+    margemPendente: parcelas
+      .filter((p) => p.status === "pendente")
+      .reduce((sum, p) => {
+        const valorParcela = Number(p.valor_liquido_parcela);
+        return sum + calcularMargemPorParcela(valorParcela);
+      }, 0),
   };
 
   if (isLoading) {
@@ -371,7 +378,7 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
       </div>
 
       {/* Footer com Totalizações */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-lg border bg-muted/50">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-lg border bg-muted/50">
         <div>
           <p className="text-sm text-muted-foreground">Total</p>
           <p className="text-lg font-semibold">{formatCurrency(totais.total)}</p>
@@ -380,6 +387,15 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
           <p className="text-sm text-muted-foreground">Total da Margem</p>
           <p className="text-lg font-semibold text-green-600">
             {formatCurrency(totais.margemTotal)}
+          </p>
+        </div>
+        <div className="col-span-2 md:col-span-1 rounded-lg border-2 border-primary/20 bg-primary/5 p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <p className="text-sm font-medium text-primary">Líquido a Receber</p>
+          </div>
+          <p className="text-xl font-bold text-primary">
+            {formatCurrency(totais.margemPendente)}
           </p>
         </div>
         <div>
