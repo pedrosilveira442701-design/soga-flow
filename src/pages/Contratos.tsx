@@ -420,14 +420,15 @@ export default function Contratos() {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Valor Negociado</TableHead>
-                <TableHead>Valor Líquido Total</TableHead>
+                <TableHead>Total</TableHead>
+                <TableHead>Total da Margem</TableHead>
                 <TableHead>Líquido a Receber</TableHead>
+                <TableHead>Pago</TableHead>
+                <TableHead>Pendente</TableHead>
                 <TableHead>Forma Pagamento</TableHead>
                 <TableHead>Data Início</TableHead>
                 <TableHead>Parcelas</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Situação</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -447,9 +448,13 @@ export default function Contratos() {
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(Number(contrato.valor_negociado))}
+                    {/* Total - Valor Negociado */}
+                    <TableCell>
+                      <p className="font-semibold">
+                        {formatCurrency(Number(contrato.valor_negociado))}
+                      </p>
                     </TableCell>
+                    {/* Total da Margem - Valor Líquido Total */}
                     <TableCell>
                       <div>
                         <p className="font-semibold text-green-600 dark:text-green-400">
@@ -461,24 +466,28 @@ export default function Contratos() {
                         </p>
                         {contrato.margem_pct && (
                           <p className="text-xs text-muted-foreground">
-                            Margem: {contrato.margem_pct.toFixed(1)}%
+                            {contrato.margem_pct.toFixed(1)}%
                           </p>
                         )}
                       </div>
                     </TableCell>
+                    {/* Líquido a Receber - Valor líquido das parcelas pendentes */}
                     <TableCell>
-                      <div>
-                        <p className="font-semibold text-blue-600 dark:text-blue-400">
-                          {formatCurrency(contrato.parcelas?.valor_restante || 0)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          De {formatCurrency(
-                            contrato.margem_pct 
-                              ? Number(contrato.valor_negociado) * (contrato.margem_pct / 100)
-                              : Number(contrato.valor_negociado)
-                          )}
-                        </p>
-                      </div>
+                      <p className="font-semibold text-blue-600 dark:text-blue-400">
+                        {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                      </p>
+                    </TableCell>
+                    {/* Pago - Valor já recebido */}
+                    <TableCell>
+                      <p className="font-semibold text-green-600 dark:text-green-400">
+                        {formatCurrency(contrato.parcelas?.valor_pago || 0)}
+                      </p>
+                    </TableCell>
+                    {/* Pendente - Valor pendente (bruto) */}
+                    <TableCell>
+                      <p className="font-semibold text-blue-600 dark:text-blue-400">
+                        {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                      </p>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
                     <TableCell>
@@ -497,7 +506,6 @@ export default function Contratos() {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(contrato.status)}</TableCell>
-                    <TableCell>{getSituacaoBadge(contrato)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
