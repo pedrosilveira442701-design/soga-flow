@@ -449,8 +449,17 @@ export default function Contratos() {
                     <TableCell className="font-semibold">
                       {formatCurrency(Number(contrato.valor_negociado))}
                     </TableCell>
-                    <TableCell className="font-semibold text-blue-600 dark:text-blue-400">
-                      {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold text-blue-600 dark:text-blue-400">
+                          {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                        </p>
+                        {contrato.margem_pct && (
+                          <p className="text-xs text-muted-foreground">
+                            Margem: {contrato.margem_pct.toFixed(1)}%
+                          </p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
                     <TableCell>
