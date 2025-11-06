@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -40,16 +40,46 @@ import { Plus } from "lucide-react";
 import { ClienteForm } from "./ClienteForm";
 import { useClientes } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+
+const TIPOS_PISO = [
+  "Pintura Epóxi",
+  "Pintura PU",
+  "Pintura PU Quadra",
+  "Pintura Acrílica",
+  "Pintura Acrílica Quadra",
+  "Outro",
+] as const;
 
 const leadFormSchema = z.object({
   cliente_id: z.string().min(1, "Selecione um cliente"),
-  tipo_piso: z.string().trim().min(1, "Informe o tipo de piso").max(100, "Máximo 100 caracteres"),
+  tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
+  tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
   valor_potencial: z.string().min(1, "Informe o valor potencial"),
   origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   estagio: z.enum(["contato", "visita_agendada", "visita_realizada", "proposta", "contrato", "execucao", "finalizado", "perdido"]),
   created_at: z.date().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.tipo_piso.includes("Outro")) {
+      return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Descreva o tipo de piso",
+    path: ["tipo_piso_outro"],
+  }
+);
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
@@ -62,6 +92,7 @@ interface LeadFormProps {
 
 export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
   const [isClienteDialogOpen, setIsClienteDialogOpen] = useState(false);
+  const [openTipoPiso, setOpenTipoPiso] = useState(false);
   const queryClient = useQueryClient();
   const { createCliente } = useClientes();
   
@@ -69,7 +100,8 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     resolver: zodResolver(leadFormSchema),
     defaultValues: initialData || {
       cliente_id: "",
-      tipo_piso: "",
+      tipo_piso: [],
+      tipo_piso_outro: "",
       valor_potencial: "",
       origem: "",
       responsavel: "",
@@ -77,6 +109,9 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       created_at: new Date(),
     },
   });
+
+  const selectedTipos = form.watch("tipo_piso");
+  const showOutroField = selectedTipos.includes("Outro");
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes"],
@@ -170,13 +205,99 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo de Piso</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Porcelanato, Granilite..." {...field} />
-              </FormControl>
+              <Popover open={openTipoPiso} onOpenChange={setOpenTipoPiso}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        field.value.length === 0 && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value.length > 0
+                        ? `${field.value.length} selecionado${field.value.length > 1 ? 's' : ''}`
+                        : "Selecione os tipos de piso"}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar tipo de piso..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {TIPOS_PISO.map((tipo) => {
+                          const isSelected = field.value.includes(tipo);
+                          return (
+                            <CommandItem
+                              key={tipo}
+                              onSelect={() => {
+                                const newValue = isSelected
+                                  ? field.value.filter((v) => v !== tipo)
+                                  : [...field.value, tipo];
+                                field.onChange(newValue);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {tipo}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {field.value.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {field.value.map((tipo) => (
+                    <Badge
+                      key={tipo}
+                      variant="secondary"
+                      className="gap-1"
+                    >
+                      {tipo}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          field.onChange(field.value.filter((v) => v !== tipo));
+                        }}
+                        className="ml-1 hover:bg-muted rounded-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {showOutroField && (
+          <FormField
+            control={form.control}
+            name="tipo_piso_outro"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descreva o tipo de piso</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Concreto polido, Mármore..." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

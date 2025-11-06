@@ -33,9 +33,16 @@ export default function Leads() {
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any) => {
+    // Processar tipos de piso
+    let tiposPisoFinal = [...values.tipo_piso];
+    if (values.tipo_piso.includes("Outro") && values.tipo_piso_outro) {
+      tiposPisoFinal = tiposPisoFinal.filter(t => t !== "Outro");
+      tiposPisoFinal.push(`Outro: ${values.tipo_piso_outro}`);
+    }
+    
     const leadData: any = {
       cliente_id: values.cliente_id,
-      tipo_piso: values.tipo_piso,
+      tipo_piso: tiposPisoFinal.join(", "),
       valor_potencial: parseFloat(values.valor_potencial),
       origem: values.origem || null,
       responsavel: values.responsavel || null,
@@ -56,11 +63,18 @@ export default function Leads() {
   const handleUpdateLead = async (values: any) => {
     if (!selectedLead) return;
     
+    // Processar tipos de piso
+    let tiposPisoFinal = [...values.tipo_piso];
+    if (values.tipo_piso.includes("Outro") && values.tipo_piso_outro) {
+      tiposPisoFinal = tiposPisoFinal.filter(t => t !== "Outro");
+      tiposPisoFinal.push(`Outro: ${values.tipo_piso_outro}`);
+    }
+    
     await updateLead.mutateAsync({
       id: selectedLead.id,
       updates: {
         cliente_id: values.cliente_id,
-        tipo_piso: values.tipo_piso,
+        tipo_piso: tiposPisoFinal.join(", "),
         valor_potencial: parseFloat(values.valor_potencial),
         origem: values.origem || null,
         responsavel: values.responsavel || null,
@@ -161,7 +175,20 @@ export default function Leads() {
                 mode="edit"
                 initialData={{
                   cliente_id: selectedLead.cliente_id || "",
-                  tipo_piso: selectedLead.tipo_piso || "",
+                  tipo_piso: (() => {
+                    if (!selectedLead.tipo_piso) return [];
+                    const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
+                    return tipos.map(t => {
+                      if (t.startsWith("Outro:")) return "Outro";
+                      return t;
+                    });
+                  })(),
+                  tipo_piso_outro: (() => {
+                    if (!selectedLead.tipo_piso) return "";
+                    const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
+                    const outro = tipos.find(t => t.startsWith("Outro:"));
+                    return outro ? outro.replace("Outro:", "").trim() : "";
+                  })(),
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
                   origem: selectedLead.origem || "",
                   responsavel: selectedLead.responsavel || "",
