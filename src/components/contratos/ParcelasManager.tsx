@@ -237,18 +237,18 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                   max="100"
                   value={margemInput}
                   onChange={(e) => setMargemInput(e.target.value)}
-                  className="w-20 h-7 text-sm"
+                  className="w-20 h-8 text-sm"
                   autoFocus
                 />
                 <span className="text-sm">%</span>
-                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={handleSalvarMargem}>
-                  <CheckCircle className="h-3 w-3" />
+                <Button size="sm" variant="ghost" className="h-8 px-2" onClick={handleSalvarMargem}>
+                  <CheckCircle className="h-4 w-4" />
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => {
+                <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
                   setIsEditingMargem(false);
                   setMargemInput(String(margemPct));
                 }}>
-                  <XCircle className="h-3 w-3" />
+                  <XCircle className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
@@ -257,10 +257,10 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  className="h-6 w-6 p-0"
+                  className="h-7 w-7 p-0"
                   onClick={() => setIsEditingMargem(true)}
                 >
-                  <Edit className="h-3 w-3" />
+                  <Edit className="h-4 w-4" />
                 </Button>
               </div>
             )}
@@ -269,8 +269,8 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
         
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button size="sm" variant="outline" className="h-10 px-4">
+              <Plus className="h-5 w-5 mr-2" />
               Adicionar Parcela
             </Button>
           </DialogTrigger>
@@ -408,9 +408,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                             size="sm"
                             onClick={() => handleOpenEditDialog(parcela)}
                             title="Editar parcela"
-                            className="h-9 px-3"
+                            className="h-10 px-4"
                           >
-                            <Edit className="h-4 w-4 mr-2" />
+                            <Edit className="h-5 w-5 mr-2" />
                             Editar
                           </Button>
                           <Button
@@ -418,9 +418,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                             size="sm"
                             onClick={() => handleMarcarComoPago(parcela.id)}
                             title="Marcar como paga"
-                            className="h-9 px-3 border-green-500 text-green-600 hover:bg-green-50"
+                            className="h-10 px-4 border-green-500 text-green-600 hover:bg-green-50"
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
+                            <CheckCircle className="h-5 w-5 mr-2" />
                             Pagar
                           </Button>
                           <AlertDialog>
@@ -429,9 +429,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                                 variant="outline"
                                 size="sm"
                                 title="Excluir parcela"
-                                className="h-9 px-3 border-destructive text-destructive hover:bg-destructive/10"
+                                className="h-10 px-4 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-5 w-5 mr-2" />
                                 Excluir
                               </Button>
                             </AlertDialogTrigger>
