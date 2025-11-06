@@ -267,42 +267,47 @@ export default function Clientes() {
                           <Badge variant="outline">{leadsCount}</Badge>
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
+                          <div className="flex justify-end gap-2 flex-wrap">
+                            <Button
+                              variant="default"
+                              size="action"
+                              onClick={() => handleViewDetails(cliente)}
+                              title="Ver detalhes"
+                            >
+                              <Eye className="h-6 w-6" />
+                              Ver
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="action"
+                              onClick={() => handleEditCliente(cliente)}
+                              title="Editar cliente"
+                            >
+                              <Edit className="h-6 w-6" />
+                              Editar
+                            </Button>
+                            {cliente.telefone && (
+                              <Button
+                                variant="default"
+                                size="action"
+                                onClick={() => handleWhatsApp(cliente.telefone)}
+                                title="Enviar WhatsApp"
+                              >
+                                <MessageCircle className="h-6 w-6" />
+                                WhatsApp
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover z-50">
-                              <DropdownMenuItem
-                                onClick={() => handleViewDetails(cliente)}
-                              >
-                                <Eye className="mr-3 h-5 w-5" />
-                                Ver Detalhes
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleEditCliente(cliente)}
-                              >
-                                <Edit className="mr-3 h-5 w-5" />
-                                Editar
-                              </DropdownMenuItem>
-                              {cliente.telefone && (
-                                <DropdownMenuItem
-                                  onClick={() => handleWhatsApp(cliente.telefone)}
-                                >
-                                  <MessageCircle className="mr-3 h-5 w-5" />
-                                  WhatsApp
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteCliente(cliente.id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="mr-3 h-5 w-5" />
-                                Deletar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="action"
+                              onClick={() => handleDeleteCliente(cliente.id)}
+                              title="Deletar cliente"
+                              className="border-2 border-destructive text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-6 w-6" />
+                              Deletar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

@@ -396,4 +396,87 @@ Sempre usar tokens semânticos:
 
 ---
 
+## 16. Botões de Ação - Padrão de Implementação
+
+### Nova Variante: size="action"
+
+**Especificações:**
+- Altura: 48px (h-12)
+- Padding: px-6 py-3
+- Border radius: rounded-xl (16px)
+- Font size: text-base (16px)
+- Gap entre ícone e texto: 12px (gap-3)
+- Ícones: h-6 w-6 (24px) - 50% maiores para melhor visibilidade
+
+### Mudança Estrutural
+
+**Removido:** `[&_svg]:size-4` do buttonVariants
+**Motivo:** Permitir ícones customizáveis sem restrições de tamanho
+
+### Padrões de Uso
+
+**Botões de Ação Principais (Ver, Editar):**
+```tsx
+<Button variant="default" size="action" onClick={handleView}>
+  <Eye className="h-6 w-6" />
+  Ver
+</Button>
+
+<Button variant="default" size="action" onClick={handleEdit}>
+  <Pencil className="h-6 w-6" />
+  Editar
+</Button>
+```
+
+**Botões de Ação Destrutivos (Excluir, Cancelar):**
+```tsx
+<Button 
+  variant="outline" 
+  size="action"
+  className="border-2 border-destructive text-destructive hover:bg-destructive/10"
+  onClick={handleDelete}
+>
+  <Trash2 className="h-6 w-6" />
+  Excluir
+</Button>
+
+<Button 
+  variant="outline" 
+  size="action"
+  className="border-2 border-primary text-primary hover:bg-primary/10"
+  onClick={handleCancel}
+>
+  <X className="h-6 w-6" />
+  Cancelar
+</Button>
+```
+
+**Layout em Tabelas:**
+```tsx
+<TableCell className="text-right">
+  <div className="flex justify-end gap-2 flex-wrap">
+    {/* Botões de ação */}
+  </div>
+</TableCell>
+```
+
+### Páginas Padronizadas
+
+✅ **Contratos** - Botões inline: Ver, Editar, Cancelar
+✅ **Propostas** - Botões inline: Ver, Excluir
+✅ **Clientes** - Botões inline: Ver, Editar, WhatsApp, Deletar
+✅ **Visitas** - Cards com dropdown menu mantido
+✅ **Obras** - Cards clicáveis
+✅ **Financeiro** - Tabela sem ações diretas
+
+### Benefícios da Padronização
+
+1. **Visibilidade:** Ícones 50% maiores (24px vs 16px)
+2. **Acessibilidade:** Alvos de toque de 48px seguem Lei de Fitts
+3. **Consistência:** Mesmo padrão visual em todo o sistema
+4. **UX Profissional:** Botões maiores e mais claros
+5. **Responsivo:** flex-wrap permite adaptação em mobile
+
+---
+
 Este documento é vivo e deve ser atualizado conforme o sistema evolui.

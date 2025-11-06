@@ -525,27 +525,25 @@ export default function Contratos() {
                     </TableCell>
                     <TableCell>{getStatusBadge(contrato.status)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 flex-wrap">
                         <Button
                           variant="default"
-                          size="sm"
+                          size="action"
                           onClick={() => handleView(contrato)}
                           title="Ver detalhes"
-                          className="h-11 px-5 rounded-xl"
                         >
-                          <Eye className="h-9 w-9 mr-2" />
+                          <Eye className="h-6 w-6" />
                           Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
                           <>
                             <Button
                               variant="default"
-                              size="sm"
+                              size="action"
                               onClick={() => handleEdit(contrato)}
                               title="Editar contrato"
-                              className="h-11 px-5 rounded-xl"
                             >
-                              <Pencil className="h-9 w-9 mr-2" />
+                              <Pencil className="h-6 w-6" />
                               Editar
                             </Button>
                           </>
@@ -555,11 +553,11 @@ export default function Contratos() {
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="outline"
-                                size="sm"
+                                size="action"
                                 title="Cancelar contrato"
-                                className="h-11 px-5 rounded-xl border-2 border-primary text-primary hover:bg-primary/10"
+                                className="border-2 border-primary text-primary hover:bg-primary/10"
                               >
-                                <X className="h-9 w-9 mr-2" />
+                                <X className="h-6 w-6" />
                                 Cancelar
                               </Button>
                             </AlertDialogTrigger>

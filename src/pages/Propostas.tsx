@@ -430,26 +430,27 @@ export default function Propostas() {
                       {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-popover z-50">
-                          <DropdownMenuItem onClick={() => handleView(proposta)}>
-                            <Eye className="h-5 w-5 mr-3" />
-                            Ver Detalhes
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(proposta.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-5 w-5 mr-3" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="default"
+                          size="action"
+                          onClick={() => handleView(proposta)}
+                          title="Ver detalhes"
+                        >
+                          <Eye className="h-6 w-6" />
+                          Ver
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="action"
+                          onClick={() => handleDelete(proposta.id)}
+                          title="Excluir proposta"
+                          className="border-2 border-destructive text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-6 w-6" />
+                          Excluir
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
