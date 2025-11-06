@@ -119,18 +119,20 @@ export default function Leads() {
               Novo Lead
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+            <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
               <DialogTitle>Criar Novo Lead</DialogTitle>
               <DialogDescription>
                 Adicione um novo lead ao funil de vendas
               </DialogDescription>
             </DialogHeader>
-            <LeadForm
-              onSubmit={handleCreateLead}
-              isLoading={createLead.isPending}
-              mode="create"
-            />
+            <div className="overflow-y-auto px-6 pb-6">
+              <LeadForm
+                onSubmit={handleCreateLead}
+                isLoading={createLead.isPending}
+                mode="create"
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
@@ -144,28 +146,30 @@ export default function Leads() {
 
       {/* Edit Lead Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Editar Lead</DialogTitle>
             <DialogDescription>
               Atualize as informações do lead
             </DialogDescription>
           </DialogHeader>
-          {selectedLead && (
-            <LeadForm
-              onSubmit={handleUpdateLead}
-              isLoading={updateLead.isPending}
-              mode="edit"
-              initialData={{
-                cliente_id: selectedLead.cliente_id || "",
-                tipo_piso: selectedLead.tipo_piso || "",
-                valor_potencial: selectedLead.valor_potencial?.toString() || "",
-                origem: selectedLead.origem || "",
-                responsavel: selectedLead.responsavel || "",
-                estagio: selectedLead.estagio,
-              }}
-            />
-          )}
+          <div className="overflow-y-auto px-6 pb-6">
+            {selectedLead && (
+              <LeadForm
+                onSubmit={handleUpdateLead}
+                isLoading={updateLead.isPending}
+                mode="edit"
+                initialData={{
+                  cliente_id: selectedLead.cliente_id || "",
+                  tipo_piso: selectedLead.tipo_piso || "",
+                  valor_potencial: selectedLead.valor_potencial?.toString() || "",
+                  origem: selectedLead.origem || "",
+                  responsavel: selectedLead.responsavel || "",
+                  estagio: selectedLead.estagio,
+                }}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
