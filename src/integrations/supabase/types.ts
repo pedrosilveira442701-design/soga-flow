@@ -228,6 +228,7 @@ export type Database = {
           first_response_at: string | null
           first_response_minutes: number | null
           id: string
+          medida: number | null
           observacoes: string | null
           origem: string | null
           responsavel: string | null
@@ -244,6 +245,7 @@ export type Database = {
           first_response_at?: string | null
           first_response_minutes?: number | null
           id?: string
+          medida?: number | null
           observacoes?: string | null
           origem?: string | null
           responsavel?: string | null
@@ -260,6 +262,7 @@ export type Database = {
           first_response_at?: string | null
           first_response_minutes?: number | null
           id?: string
+          medida?: number | null
           observacoes?: string | null
           origem?: string | null
           responsavel?: string | null

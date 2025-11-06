@@ -43,6 +43,7 @@ export default function Leads() {
     const leadData: any = {
       cliente_id: values.cliente_id,
       tipo_piso: tiposPisoFinal.join(", "),
+      medida: values.medida ? parseFloat(values.medida) : null,
       valor_potencial: parseFloat(values.valor_potencial),
       observacoes: values.observacoes || null,
       origem: values.origem || null,
@@ -76,6 +77,7 @@ export default function Leads() {
       updates: {
         cliente_id: values.cliente_id,
         tipo_piso: tiposPisoFinal.join(", "),
+        medida: values.medida ? parseFloat(values.medida) : null,
         valor_potencial: parseFloat(values.valor_potencial),
         observacoes: values.observacoes || null,
         origem: values.origem || null,
@@ -191,6 +193,7 @@ export default function Leads() {
                     const outro = tipos.find(t => t.startsWith("Outro:"));
                     return outro ? outro.replace("Outro:", "").trim() : "";
                   })(),
+                  medida: selectedLead.medida?.toString() || "",
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
                   observacoes: selectedLead.observacoes || "",
                   origem: selectedLead.origem || "",

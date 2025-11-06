@@ -35,6 +35,7 @@ const leadFormSchema = z
     cliente_id: z.string().min(1, "Selecione um cliente"),
     tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
     tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
+    medida: z.string().optional(),
     valor_potencial: z.string().min(1, "Informe o valor potencial"),
     observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
     origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
@@ -85,6 +86,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       cliente_id: "",
       tipo_piso: [],
       tipo_piso_outro: "",
+      medida: "",
       valor_potencial: "",
       observacoes: "",
       origem: "",
@@ -271,6 +273,25 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             )}
           />
         )}
+
+        <FormField
+          control={form.control}
+          name="medida"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Medida (m²)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  step="0.01"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
