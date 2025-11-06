@@ -438,6 +438,15 @@ export default function Contratos() {
                   ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
                   : 0;
 
+                // Calcular valor bruto pago e pendente
+                const totalParcelas = contrato.parcelas?.total || 1;
+                const parcelasPagas = contrato.parcelas?.pagas || 0;
+                const parcelasPendentes = totalParcelas - parcelasPagas;
+                
+                const valorBrutoPorParcela = Number(contrato.valor_negociado) / totalParcelas;
+                const valorBrutoPago = valorBrutoPorParcela * parcelasPagas;
+                const valorBrutoPendente = valorBrutoPorParcela * parcelasPendentes;
+
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
@@ -477,16 +486,16 @@ export default function Contratos() {
                         {formatCurrency(contrato.parcelas?.valor_restante || 0)}
                       </p>
                     </TableCell>
-                    {/* Pago - Valor já recebido */}
+                    {/* Pago - Valor líquido já recebido */}
                     <TableCell>
                       <p className="font-semibold text-green-600 dark:text-green-400">
                         {formatCurrency(contrato.parcelas?.valor_pago || 0)}
                       </p>
                     </TableCell>
-                    {/* Pendente - Valor pendente (bruto) */}
+                    {/* Pendente - Valor bruto pendente */}
                     <TableCell>
                       <p className="font-semibold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                        {formatCurrency(valorBrutoPendente)}
                       </p>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
