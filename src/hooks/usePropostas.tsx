@@ -12,6 +12,7 @@ export interface Proposta {
   valor_total: number;
   liquido: number;
   margem_pct: number;
+  desconto: number;
   data: string;
   tipo_piso: string;
   status: string;
@@ -40,6 +41,7 @@ export interface PropostaInsert {
     valor_m2: number;
     custo_m2: number;
   }>;
+  desconto?: number;
   data?: string;
   status?: string;
 }
@@ -85,8 +87,10 @@ export const usePropostas = () => {
 
       // Calcular totais a partir dos serviços
       const servicos = data.servicos || [];
+      const desconto = data.desconto || 0;
       const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
-      const valor_total = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const valor_bruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const valor_total = valor_bruto - desconto;
       const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
       const liquido = valor_total - custo_total;
       const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
@@ -100,6 +104,7 @@ export const usePropostas = () => {
           user_id: user.id,
           cliente_id: data.cliente_id,
           servicos: servicos,
+          desconto,
           m2: m2_total,
           valor_m2: primeiroServico.valor_m2,
           custo_m2: primeiroServico.custo_m2,
@@ -130,8 +135,10 @@ export const usePropostas = () => {
     mutationFn: async (data: PropostaUpdate) => {
       // Calcular totais a partir dos serviços
       const servicos = data.servicos || [];
+      const desconto = data.desconto || 0;
       const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
-      const valor_total = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const valor_bruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const valor_total = valor_bruto - desconto;
       const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
       const liquido = valor_total - custo_total;
       const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
@@ -144,6 +151,7 @@ export const usePropostas = () => {
         .update({
           cliente_id: data.cliente_id,
           servicos: servicos,
+          desconto,
           m2: m2_total,
           valor_m2: primeiroServico.valor_m2,
           custo_m2: primeiroServico.custo_m2,

@@ -422,6 +422,7 @@ export type Database = {
           created_at: string
           custo_m2: number
           data: string
+          desconto: number | null
           id: string
           liquido: number | null
           m2: number
@@ -440,6 +441,7 @@ export type Database = {
           created_at?: string
           custo_m2: number
           data?: string
+          desconto?: number | null
           id?: string
           liquido?: number | null
           m2: number
@@ -458,6 +460,7 @@ export type Database = {
           created_at?: string
           custo_m2?: number
           data?: string
+          desconto?: number | null
           id?: string
           liquido?: number | null
           m2?: number

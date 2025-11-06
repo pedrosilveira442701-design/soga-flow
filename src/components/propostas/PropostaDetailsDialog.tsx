@@ -96,11 +96,13 @@ export default function PropostaDetailsDialog({
     ? proposta.servicos
     : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
 
+  const desconto = proposta.desconto || 0;
   const totalM2 = servicos.reduce((acc: number, s: any) => acc + (s.m2 || 0), 0);
   const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
   const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
-  const liquido = totalBruto - totalCusto;
-  const margem = totalBruto > 0 ? (liquido / totalBruto) * 100 : 0;
+  const totalComDesconto = totalBruto - desconto;
+  const liquido = totalComDesconto - totalCusto;
+  const margem = totalComDesconto > 0 ? (liquido / totalComDesconto) * 100 : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -320,6 +322,22 @@ export default function PropostaDetailsDialog({
                     {formatCurrency(totalBruto)}
                   </div>
                 </div>
+                {desconto > 0 && (
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Desconto</div>
+                    <div className="text-xl font-semibold text-destructive">
+                      -{formatCurrency(desconto)}
+                    </div>
+                  </div>
+                )}
+                {desconto > 0 && (
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">Total com Desconto</div>
+                    <div className="text-xl font-semibold text-primary">
+                      {formatCurrency(totalComDesconto)}
+                    </div>
+                  </div>
+                )}
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Total Custo</div>
                   <div className="text-xl font-semibold text-muted-foreground">
@@ -383,6 +401,7 @@ export default function PropostaDetailsDialog({
                 valor_m2: s.valor_m2 || 0,
                 custo_m2: s.custo_m2 || 0,
               })),
+              desconto,
               data: proposta.data,
               status: proposta.status,
             }}

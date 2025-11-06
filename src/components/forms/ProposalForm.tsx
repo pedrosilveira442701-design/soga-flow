@@ -63,6 +63,7 @@ const servicoSchema = z.object({
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
   servicos: z.array(servicoSchema).min(1, "Adicione pelo menos um serviço"),
+  desconto: z.number().min(0, "Desconto não pode ser negativo").default(0),
   data: z.string().optional(),
   status: z.string().optional(),
 });
@@ -85,6 +86,7 @@ export default function ProposalForm({
     defaultValues: {
       cliente_id: initialData?.cliente_id || "",
       servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
+      desconto: initialData?.desconto || 0,
       data: initialData?.data || new Date().toISOString().split('T')[0],
       status: initialData?.status || "aberta",
     },
@@ -96,11 +98,13 @@ export default function ProposalForm({
   });
 
   const servicos = form.watch("servicos");
+  const desconto = form.watch("desconto") || 0;
 
   const totalBruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
   const totalCusto = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
-  const valorLiquido = totalBruto - totalCusto;
-  const margem = totalBruto > 0 ? (valorLiquido / totalBruto) * 100 : 0;
+  const totalComDesconto = totalBruto - desconto;
+  const valorLiquido = totalComDesconto - totalCusto;
+  const margem = totalComDesconto > 0 ? (valorLiquido / totalComDesconto) * 100 : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -299,6 +303,28 @@ export default function ProposalForm({
               })}
             </div>
 
+            {/* Campo de Desconto */}
+            <FormField
+              control={form.control}
+              name="desconto"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Desconto (R$)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="data"
@@ -388,6 +414,16 @@ export default function ProposalForm({
             <div className="flex justify-between items-center pb-2 border-b">
               <span className="text-sm text-muted-foreground">Total Bruto</span>
               <span className="font-semibold text-primary">{formatCurrency(totalBruto)}</span>
+            </div>
+            {desconto > 0 && (
+              <div className="flex justify-between items-center pb-2 border-b">
+                <span className="text-sm text-muted-foreground">Desconto</span>
+                <span className="font-semibold text-destructive">-{formatCurrency(desconto)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pb-2 border-b">
+              <span className="text-sm text-muted-foreground">Total com Desconto</span>
+              <span className="font-semibold text-primary">{formatCurrency(totalComDesconto)}</span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b">
               <span className="text-sm text-muted-foreground">Total Custo</span>
