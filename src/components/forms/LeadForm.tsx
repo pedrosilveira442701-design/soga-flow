@@ -28,6 +28,14 @@ const TIPOS_PRODUTO = [
   "Outro",
 ] as const;
 
+const ORIGENS = [
+  "Whatsapp",
+  "Indicação",
+  "Sindico Profissional",
+  "Google",
+  "Outro",
+] as const;
+
 const produtoSchema = z.object({
   tipo: z.string().min(1, "Selecione o tipo"),
   tipo_outro: z.string().optional(),
@@ -50,7 +58,8 @@ const leadFormSchema = z.object({
   produtos: z.array(produtoSchema).min(1, "Adicione pelo menos um produto"),
   valor_potencial: z.string().min(1, "Informe o valor potencial"),
   observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
-  origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+  origem: z.string().optional(),
+  origem_descricao: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
   responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
   estagio: z.enum([
     "contato",
@@ -63,7 +72,18 @@ const leadFormSchema = z.object({
     "perdido",
   ]),
   created_at: z.date().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.origem === "Indicação" || data.origem === "Outro") {
+      return data.origem_descricao && data.origem_descricao.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Informe a descrição",
+    path: ["origem_descricao"],
+  },
+);
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
@@ -87,6 +107,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       valor_potencial: "",
       observacoes: "",
       origem: "",
+      origem_descricao: "",
       responsavel: "",
       estagio: "contato",
       created_at: new Date(),
@@ -94,6 +115,8 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
   });
 
   const produtos = form.watch("produtos");
+  const origemSelecionada = form.watch("origem");
+  const mostrarOrigemDescricao = origemSelecionada === "Indicação" || origemSelecionada === "Outro";
 
   const addProduto = () => {
     const currentProdutos = form.getValues("produtos");
@@ -322,13 +345,49 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           render={({ field }) => (
             <FormItem>
               <FormLabel>Origem</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Indicação, Site, WhatsApp..." {...field} />
-              </FormControl>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a origem" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent className="bg-background">
+                  {ORIGENS.map((origem) => (
+                    <SelectItem key={origem} value={origem}>
+                      {origem}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {mostrarOrigemDescricao && (
+          <FormField
+            control={form.control}
+            name="origem_descricao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {origemSelecionada === "Indicação" ? "Quem indicou?" : "Descreva a origem"}
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder={
+                      origemSelecionada === "Indicação" 
+                        ? "Nome de quem indicou..." 
+                        : "Descreva a origem..."
+                    } 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

@@ -42,13 +42,19 @@ export default function Leads() {
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
       medida: p.medida ? parseFloat(p.medida) : null,
     }));
+
+    // Processar origem
+    let origemFinal = values.origem || null;
+    if (values.origem && (values.origem === "Indicação" || values.origem === "Outro") && values.origem_descricao) {
+      origemFinal = `${values.origem}: ${values.origem_descricao}`;
+    }
     
     const leadData: any = {
       cliente_id: values.cliente_id,
       produtos: produtosProcessados,
       valor_potencial: parseFloat(values.valor_potencial),
       observacoes: values.observacoes || null,
-      origem: values.origem || null,
+      origem: origemFinal,
       responsavel: values.responsavel || null,
       estagio: values.estagio,
       user_id: user?.id,
@@ -72,6 +78,12 @@ export default function Leads() {
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
       medida: p.medida ? parseFloat(p.medida) : null,
     }));
+
+    // Processar origem
+    let origemFinal = values.origem || null;
+    if (values.origem && (values.origem === "Indicação" || values.origem === "Outro") && values.origem_descricao) {
+      origemFinal = `${values.origem}: ${values.origem_descricao}`;
+    }
     
     await updateLead.mutateAsync({
       id: selectedLead.id,
@@ -80,7 +92,7 @@ export default function Leads() {
         produtos: produtosProcessados,
         valor_potencial: parseFloat(values.valor_potencial),
         observacoes: values.observacoes || null,
-        origem: values.origem || null,
+        origem: origemFinal,
         responsavel: values.responsavel || null,
         estagio: values.estagio,
         ultima_interacao: new Date().toISOString(),
@@ -201,7 +213,19 @@ export default function Leads() {
                   })(),
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
                   observacoes: selectedLead.observacoes || "",
-                  origem: selectedLead.origem || "",
+                  origem: (() => {
+                    if (!selectedLead.origem) return "";
+                    // Extrair a origem base se tiver formato "Origem: Descrição"
+                    if (selectedLead.origem.includes(":")) {
+                      return selectedLead.origem.split(":")[0].trim();
+                    }
+                    return selectedLead.origem;
+                  })(),
+                  origem_descricao: (() => {
+                    if (!selectedLead.origem || !selectedLead.origem.includes(":")) return "";
+                    // Extrair a descrição se tiver formato "Origem: Descrição"
+                    return selectedLead.origem.split(":").slice(1).join(":").trim();
+                  })(),
                   responsavel: selectedLead.responsavel || "",
                   estagio: selectedLead.estagio,
                 }}
