@@ -454,22 +454,26 @@ export default function Contratos() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleView(contrato)}
                           title="Ver detalhes"
+                          className="h-9 px-3"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-2" />
+                          Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Cancelar"
+                                variant="outline"
+                                size="sm"
+                                title="Cancelar contrato"
+                                className="h-9 px-3 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Cancelar
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
