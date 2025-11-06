@@ -347,68 +347,79 @@ export default function Propostas() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredPropostas.map((proposta) => (
-                <TableRow key={proposta.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{proposta.clientes?.nome}</div>
-                      {proposta.clientes?.cidade && (
-                        <div className="text-xs text-muted-foreground">
-                          {proposta.clientes.cidade}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {proposta.servicos && proposta.servicos.length > 0 ? (
-                      <div className="space-y-1">
-                        {proposta.servicos.map((s, idx) => (
-                          <Badge key={idx} variant="outline" className="mr-1">
-                            {s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo}
-                          </Badge>
-                        ))}
+              filteredPropostas.map((proposta) => {
+                // Calcular valor total da mesma forma que no resumo financeiro
+                const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
+                  ? proposta.servicos
+                  : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
+                
+                const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+                const desconto = proposta.desconto || 0;
+                const valorTotal = totalBruto - desconto;
+
+                return (
+                  <TableRow key={proposta.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{proposta.clientes?.nome}</div>
+                        {proposta.clientes?.cidade && (
+                          <div className="text-xs text-muted-foreground">
+                            {proposta.clientes.cidade}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <Badge variant="outline">{proposta.tipo_piso}</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">{proposta.m2.toFixed(2)}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(proposta.valor_total)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span className={`font-bold ${getMargemColor(proposta.margem_pct)}`}>
-                      {proposta.margem_pct.toFixed(1)}%
-                    </span>
-                  </TableCell>
-                  <TableCell>{getStatusBadge(proposta.status)}</TableCell>
-                  <TableCell>
-                    {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleView(proposta)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(proposta.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      {proposta.servicos && proposta.servicos.length > 0 ? (
+                        <div className="space-y-1">
+                          {proposta.servicos.map((s, idx) => (
+                            <Badge key={idx} variant="outline" className="mr-1">
+                              {s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <Badge variant="outline">{proposta.tipo_piso}</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">{proposta.m2.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(valorTotal)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={`font-bold ${getMargemColor(proposta.margem_pct)}`}>
+                        {proposta.margem_pct.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(proposta.status)}</TableCell>
+                    <TableCell>
+                      {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-popover z-50">
+                          <DropdownMenuItem onClick={() => handleView(proposta)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver Detalhes
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(proposta.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
