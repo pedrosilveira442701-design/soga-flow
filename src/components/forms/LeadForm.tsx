@@ -164,7 +164,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   </SelectContent>
                 </Select>
                 <Button type="button" variant="default" size="icon" onClick={() => setIsClienteDialogOpen(true)} className="hover-scale">
-                  <Plus className="h-6 w-6" strokeWidth={2.5} />
+                  <Plus className="h-5 w-5" strokeWidth={3} />
                 </Button>
               </div>
               <FormMessage />
