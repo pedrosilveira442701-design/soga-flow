@@ -55,13 +55,7 @@ interface ParcelasManagerProps {
   propostaInfo?: {
     m2: number;
     custo_m2?: number;
-    servicos?: Array<{
-      tipo: string;
-      tipo_outro?: string;
-      m2: number;
-      valor_m2: number;
-      custo_m2: number;
-    }>;
+    servicos?: Array<{ descricao: string; valor: number }>;
   };
 }
 
@@ -69,12 +63,14 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
-  // Calcular custo total da proposta usando a mesma lógica do usePropostas
-  const custoTotal = propostaInfo?.servicos 
-    ? propostaInfo.servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0)
-    : 0;
+  // Calcular custo total
+  const custoTotal = propostaInfo ? (() => {
+    const custoMaterial = (propostaInfo.custo_m2 || 0) * propostaInfo.m2;
+    const custoServicos = (propostaInfo.servicos || []).reduce((sum, s) => sum + s.valor, 0);
+    return custoMaterial + custoServicos;
+  })() : 0;
   
-  // Calcular custo proporcional por parcela
+  // Calcular custo por parcela
   const calcularCustoPorParcela = (valorParcela: number) => {
     if (valorNegociado === 0) return 0;
     return (custoTotal / valorNegociado) * valorParcela;
