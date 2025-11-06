@@ -87,13 +87,13 @@ export const usePropostas = () => {
 
       // Calcular totais a partir dos serviços
       const servicos = data.servicos || [];
-      const desconto = data.desconto || 0;
-      const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
-      const valor_bruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
-      const valor_total = valor_bruto - desconto;
-      const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
-      const liquido = valor_total - custo_total;
-      const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
+      const desconto = Number(data.desconto) || 0;
+      const m2_total = servicos.reduce((acc, s) => acc + (Number(s.m2) || 0), 0);
+      const valor_bruto = servicos.reduce((acc, s) => acc + ((Number(s.m2) || 0) * (Number(s.valor_m2) || 0)), 0);
+      const valor_total = Number((valor_bruto - desconto).toFixed(2));
+      const custo_total = servicos.reduce((acc, s) => acc + ((Number(s.m2) || 0) * (Number(s.custo_m2) || 0)), 0);
+      const liquido = Number((valor_total - custo_total).toFixed(2));
+      const margem_pct = valor_total > 0 ? Number(((liquido / valor_total) * 100).toFixed(2)) : 0;
 
       // Para compatibilidade, usar valores do primeiro serviço nos campos antigos
       const primeiroServico = servicos[0] || { m2: 0, valor_m2: 0, custo_m2: 0 };
@@ -135,13 +135,13 @@ export const usePropostas = () => {
     mutationFn: async (data: PropostaUpdate) => {
       // Calcular totais a partir dos serviços
       const servicos = data.servicos || [];
-      const desconto = data.desconto || 0;
-      const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
-      const valor_bruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
-      const valor_total = valor_bruto - desconto;
-      const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
-      const liquido = valor_total - custo_total;
-      const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
+      const desconto = Number(data.desconto) || 0;
+      const m2_total = servicos.reduce((acc, s) => acc + (Number(s.m2) || 0), 0);
+      const valor_bruto = servicos.reduce((acc, s) => acc + ((Number(s.m2) || 0) * (Number(s.valor_m2) || 0)), 0);
+      const valor_total = Number((valor_bruto - desconto).toFixed(2));
+      const custo_total = servicos.reduce((acc, s) => acc + ((Number(s.m2) || 0) * (Number(s.custo_m2) || 0)), 0);
+      const liquido = Number((valor_total - custo_total).toFixed(2));
+      const margem_pct = valor_total > 0 ? Number(((liquido / valor_total) * 100).toFixed(2)) : 0;
 
       // Para compatibilidade, usar valores do primeiro serviço nos campos antigos
       const primeiroServico = servicos[0] || { m2: 0, valor_m2: 0, custo_m2: 0 };
