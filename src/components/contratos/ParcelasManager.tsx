@@ -54,12 +54,17 @@ interface ParcelasManagerProps {
 }
 
 export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
-  const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela } =
+  const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [novaParcelaValor, setNovaParcelaValor] = useState("");
   const [novaParcelaVencimento, setNovaParcelaVencimento] = useState<Date>();
+  
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editParcelaId, setEditParcelaId] = useState<string | null>(null);
+  const [editParcelaValor, setEditParcelaValor] = useState("");
+  const [editParcelaVencimento, setEditParcelaVencimento] = useState<Date>();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -102,6 +107,30 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
     setShowAddDialog(false);
     setNovaParcelaValor("");
     setNovaParcelaVencimento(undefined);
+  };
+
+  const handleOpenEditDialog = (parcela: any) => {
+    setEditParcelaId(parcela.id);
+    setEditParcelaValor(parcela.valor_liquido_parcela.toString());
+    setEditParcelaVencimento(parseISO(parcela.vencimento));
+    setShowEditDialog(true);
+  };
+
+  const handleEditParcela = async () => {
+    if (!editParcelaId || !editParcelaVencimento || !editParcelaValor) return;
+
+    await updateParcela({
+      id: editParcelaId,
+      data: {
+        valor_liquido_parcela: parseFloat(editParcelaValor),
+        vencimento: editParcelaVencimento.toISOString().split("T")[0],
+      },
+    });
+
+    setShowEditDialog(false);
+    setEditParcelaId(null);
+    setEditParcelaValor("");
+    setEditParcelaVencimento(undefined);
   };
 
   const totais = {
@@ -249,44 +278,52 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {parcela.status === "pendente" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleMarcarComoPago(parcela.id)}
-                          title="Marcar como paga"
-                        >
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        </Button>
-                      )}
-                      {parcela.status === "pendente" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              title="Excluir parcela"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Parcela</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir esta parcela? Esta
-                                ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteParcela(parcela.id)}
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenEditDialog(parcela)}
+                            title="Editar parcela"
+                          >
+                            <Edit className="h-4 w-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleMarcarComoPago(parcela.id)}
+                            title="Marcar como paga"
+                          >
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Excluir parcela"
                               >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Parcela</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir esta parcela? Esta
+                                  ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteParcela(parcela.id)}
+                                >
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
                       )}
                     </div>
                   </TableCell>
@@ -316,6 +353,69 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
           </p>
         </div>
       </div>
+
+      {/* Dialog de Editar Parcela */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Parcela</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label>Valor *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                value={editParcelaValor}
+                onChange={(e) => setEditParcelaValor(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Vencimento *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editParcelaVencimento && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editParcelaVencimento ? (
+                      format(editParcelaVencimento, "PPP", { locale: ptBR })
+                    ) : (
+                      <span>Selecione uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={editParcelaVencimento}
+                    onSelect={setEditParcelaVencimento}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleEditParcela} className="flex-1">
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
