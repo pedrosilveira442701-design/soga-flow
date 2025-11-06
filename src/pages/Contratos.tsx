@@ -438,14 +438,26 @@ export default function Contratos() {
                   ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
                   : 0;
 
-                // Calcular valores conforme lógica da imagem
-                const total = Number(contrato.valor_negociado); // Valor bruto total do contrato
+                // Calcular valores conforme lógica da janela de contrato
+                const total = Number(contrato.valor_negociado); // Valor bruto total
                 const totalDaMargem = contrato.margem_pct 
                   ? total * (contrato.margem_pct / 100)
-                  : total; // Lucro total (margem)
-                const pago = contrato.parcelas?.valor_pago || 0; // Valor líquido já pago
-                const liquidoAReceber = totalDaMargem - pago; // Lucro que falta receber
-                const pendente = total - (contrato.parcelas?.valor_pago || 0); // Valor bruto pendente
+                  : total; // Lucro total
+                
+                // Cálculo de valores por parcela
+                const totalParcelas = contrato.parcelas?.total || 1;
+                const parcelasPagas = contrato.parcelas?.pagas || 0;
+                const parcelasPendentes = totalParcelas - parcelasPagas;
+                
+                // Pago (bruto) = valor bruto das parcelas pagas
+                const valorBrutoPorParcela = total / totalParcelas;
+                const pago = valorBrutoPorParcela * parcelasPagas;
+                
+                // Pendente (bruto) = valor bruto das parcelas pendentes
+                const pendente = valorBrutoPorParcela * parcelasPendentes;
+                
+                // Líquido a Receber = margem das parcelas pendentes
+                const liquidoAReceber = contrato.parcelas?.valor_restante || 0;
 
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
