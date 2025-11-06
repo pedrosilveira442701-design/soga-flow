@@ -438,14 +438,14 @@ export default function Contratos() {
                   ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
                   : 0;
 
-                // Calcular valor bruto pago e pendente
-                const totalParcelas = contrato.parcelas?.total || 1;
-                const parcelasPagas = contrato.parcelas?.pagas || 0;
-                const parcelasPendentes = totalParcelas - parcelasPagas;
-                
-                const valorBrutoPorParcela = Number(contrato.valor_negociado) / totalParcelas;
-                const valorBrutoPago = valorBrutoPorParcela * parcelasPagas;
-                const valorBrutoPendente = valorBrutoPorParcela * parcelasPendentes;
+                // Calcular valores conforme lógica da imagem
+                const total = Number(contrato.valor_negociado); // Valor bruto total do contrato
+                const totalDaMargem = contrato.margem_pct 
+                  ? total * (contrato.margem_pct / 100)
+                  : total; // Lucro total (margem)
+                const pago = contrato.parcelas?.valor_pago || 0; // Valor líquido já pago
+                const liquidoAReceber = totalDaMargem - pago; // Lucro que falta receber
+                const pendente = total - (contrato.parcelas?.valor_pago || 0); // Valor bruto pendente
 
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
@@ -460,18 +460,14 @@ export default function Contratos() {
                     {/* Total - Valor Negociado */}
                     <TableCell>
                       <p className="font-semibold">
-                        {formatCurrency(Number(contrato.valor_negociado))}
+                        {formatCurrency(total)}
                       </p>
                     </TableCell>
-                    {/* Total da Margem - Valor Líquido Total */}
+                    {/* Total da Margem - Lucro total */}
                     <TableCell>
                       <div>
                         <p className="font-semibold text-green-600 dark:text-green-400">
-                          {formatCurrency(
-                            contrato.margem_pct 
-                              ? Number(contrato.valor_negociado) * (contrato.margem_pct / 100)
-                              : Number(contrato.valor_negociado)
-                          )}
+                          {formatCurrency(totalDaMargem)}
                         </p>
                         {contrato.margem_pct && (
                           <p className="text-xs text-muted-foreground">
@@ -480,22 +476,22 @@ export default function Contratos() {
                         )}
                       </div>
                     </TableCell>
-                    {/* Líquido a Receber - Valor líquido das parcelas pendentes */}
+                    {/* Líquido a Receber - Lucro que falta receber */}
                     <TableCell>
                       <p className="font-semibold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(contrato.parcelas?.valor_restante || 0)}
+                        {formatCurrency(liquidoAReceber)}
                       </p>
                     </TableCell>
                     {/* Pago - Valor líquido já recebido */}
                     <TableCell>
                       <p className="font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(contrato.parcelas?.valor_pago || 0)}
+                        {formatCurrency(pago)}
                       </p>
                     </TableCell>
                     {/* Pendente - Valor bruto pendente */}
                     <TableCell>
                       <p className="font-semibold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(valorBrutoPendente)}
+                        {formatCurrency(pendente)}
                       </p>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
