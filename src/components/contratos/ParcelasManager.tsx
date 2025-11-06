@@ -56,6 +56,7 @@ interface ParcelasManagerProps {
     m2: number;
     custo_m2?: number;
     servicos?: Array<{ descricao: string; valor: number }>;
+    margem_pct?: number;
   };
 }
 
@@ -63,17 +64,12 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
-  // Calcular custo total
-  const custoTotal = propostaInfo ? (() => {
-    const custoMaterial = (propostaInfo.custo_m2 || 0) * propostaInfo.m2;
-    const custoServicos = (propostaInfo.servicos || []).reduce((sum, s) => sum + s.valor, 0);
-    return custoMaterial + custoServicos;
-  })() : 0;
+  // Margem da proposta
+  const margemPct = propostaInfo?.margem_pct || 0;
   
-  // Calcular custo por parcela
-  const calcularCustoPorParcela = (valorParcela: number) => {
-    if (valorNegociado === 0) return 0;
-    return (custoTotal / valorNegociado) * valorParcela;
+  // Calcular valor da margem por parcela
+  const calcularMargemPorParcela = (valorParcela: number) => {
+    return (valorParcela * margemPct) / 100;
   };
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -163,11 +159,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
     vencidas: parcelas.filter(
       (p) => p.status === "pendente" && isPast(parseISO(p.vencimento))
     ).length,
-    custoTotal,
-    liquidoTotal: parcelas.reduce((sum, p) => {
+    margemTotal: parcelas.reduce((sum, p) => {
       const valorParcela = Number(p.valor_liquido_parcela);
-      const custoParcela = calcularCustoPorParcela(valorParcela);
-      return sum + (valorParcela - custoParcela);
+      return sum + calcularMargemPorParcela(valorParcela);
     }, 0),
   };
 
@@ -263,8 +257,8 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
               <TableHead>Nº</TableHead>
               <TableHead>Vencimento</TableHead>
               <TableHead>Valor</TableHead>
-              <TableHead>Custo</TableHead>
-              <TableHead>Líquido</TableHead>
+              <TableHead>Margem (%)</TableHead>
+              <TableHead>Valor da Margem</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data Pagamento</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -277,8 +271,7 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                 parcela.status === "pendente";
               
               const valorParcela = Number(parcela.valor_liquido_parcela);
-              const custoParcela = calcularCustoPorParcela(valorParcela);
-              const liquidoParcela = valorParcela - custoParcela;
+              const margemParcela = calcularMargemPorParcela(valorParcela);
 
               return (
                 <TableRow
@@ -297,10 +290,10 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                     {formatCurrency(valorParcela)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {formatCurrency(custoParcela)}
+                    {margemPct.toFixed(2)}%
                   </TableCell>
                   <TableCell className="font-semibold text-green-600">
-                    {formatCurrency(liquidoParcela)}
+                    {formatCurrency(margemParcela)}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(parcela.status, parcela.vencimento)}
@@ -378,21 +371,15 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
       </div>
 
       {/* Footer com Totalizações */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-lg border bg-muted/50">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-lg border bg-muted/50">
         <div>
           <p className="text-sm text-muted-foreground">Total</p>
           <p className="text-lg font-semibold">{formatCurrency(totais.total)}</p>
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">Custo Total</p>
-          <p className="text-lg font-semibold text-orange-600">
-            {formatCurrency(totais.custoTotal)}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Líquido Total</p>
+          <p className="text-sm text-muted-foreground">Total da Margem</p>
           <p className="text-lg font-semibold text-green-600">
-            {formatCurrency(totais.liquidoTotal)}
+            {formatCurrency(totais.margemTotal)}
           </p>
         </div>
         <div>
