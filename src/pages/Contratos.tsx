@@ -36,6 +36,7 @@ import {
   Calendar,
   AlertCircle,
   X,
+  Pencil,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,11 +57,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Contratos() {
-  const { contratos, isLoading, createContrato, deleteContrato } = useContratos();
+  const { contratos, isLoading, createContrato, updateContrato, deleteContrato } = useContratos();
   
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateFromPropostaDialog, setShowCreateFromPropostaDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedContrato, setSelectedContrato] = useState<Contrato | null>(null);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,6 +82,19 @@ export default function Contratos() {
   const handleView = (contrato: Contrato) => {
     setSelectedContrato(contrato);
     setShowDetailsDialog(true);
+  };
+
+  const handleEdit = (contrato: Contrato) => {
+    setSelectedContrato(contrato);
+    setShowEditDialog(true);
+  };
+
+  const handleUpdate = async (data: any) => {
+    if (selectedContrato) {
+      await updateContrato({ id: selectedContrato.id, data });
+      setShowEditDialog(false);
+      setSelectedContrato(null);
+    }
   };
 
   const filteredContratos = useMemo(() => {
@@ -464,6 +479,20 @@ export default function Contratos() {
                           Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(contrato)}
+                              title="Editar contrato"
+                              className="h-9 px-3"
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Editar
+                            </Button>
+                          </>
+                        )}
+                        {contrato.status !== "cancelado" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -524,6 +553,28 @@ export default function Contratos() {
             <DialogTitle>Criar Contrato a partir de Proposta</DialogTitle>
           </DialogHeader>
           <ContratoForm onSubmit={handleCreate} mode="fromProposta" />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Contrato</DialogTitle>
+          </DialogHeader>
+          {selectedContrato && (
+            <ContratoForm
+              onSubmit={handleUpdate}
+              mode="create"
+              initialData={{
+                cliente_id: selectedContrato.cliente_id,
+                valor_negociado: Number(selectedContrato.valor_negociado),
+                forma_pagamento: selectedContrato.forma_pagamento,
+                data_inicio: selectedContrato.data_inicio,
+                observacoes: selectedContrato.observacoes || "",
+                cpf_cnpj: selectedContrato.cpf_cnpj,
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
