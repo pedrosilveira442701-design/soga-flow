@@ -421,6 +421,7 @@ export default function Contratos() {
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Valor Negociado</TableHead>
+                <TableHead>Valor Líquido Total</TableHead>
                 <TableHead>Valor a Receber Líquido</TableHead>
                 <TableHead>Forma Pagamento</TableHead>
                 <TableHead>Data Início</TableHead>
@@ -448,6 +449,22 @@ export default function Contratos() {
                     </TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(Number(contrato.valor_negociado))}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(
+                            contrato.margem_pct 
+                              ? Number(contrato.valor_negociado) * (contrato.margem_pct / 100)
+                              : Number(contrato.valor_negociado)
+                          )}
+                        </p>
+                        {contrato.margem_pct && (
+                          <p className="text-xs text-muted-foreground">
+                            Margem: {contrato.margem_pct.toFixed(1)}%
+                          </p>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div>
