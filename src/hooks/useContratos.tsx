@@ -25,7 +25,13 @@ export interface Contrato {
     tipo_piso: string;
     m2: number;
     custo_m2?: number;
-    servicos?: Array<{ descricao: string; valor: number }>;
+    servicos?: Array<{
+      tipo: string;
+      tipo_outro?: string;
+      m2: number;
+      valor_m2: number;
+      custo_m2: number;
+    }>;
   };
   parcelas?: {
     total: number;
