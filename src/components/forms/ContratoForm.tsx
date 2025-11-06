@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -108,6 +109,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     }).format(value);
   };
 
+  const clienteIdWatch = form.watch("cliente_id");
   const propostaIdWatch = form.watch("proposta_id");
   const valorWatch = form.watch("valor_negociado");
   const valorEntradaWatch = form.watch("valor_entrada") || 0;
@@ -118,6 +120,12 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   const selectedProposta = propostasFechadas.find((p) => p.id === propostaIdWatch);
   const valorRestante = valorWatch - valorEntradaWatch;
   const valorParcela = valorRestante / parcelasWatch;
+
+  // Filtrar propostas fechadas por cliente selecionado
+  const propostasPorCliente = useMemo(() => {
+    if (!clienteIdWatch) return [];
+    return propostasFechadas.filter(p => p.cliente_id === clienteIdWatch);
+  }, [clienteIdWatch, propostasFechadas]);
 
   // Calcular previsão de parcelas
   const previewParcelas = Array.from({ length: Math.min(parcelasWatch, 5) }, (_, i) => {
@@ -136,9 +144,20 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     const proposta = propostasFechadas.find((p) => p.id === propostaId);
     if (proposta) {
       form.setValue("proposta_id", propostaId);
-      form.setValue("cliente_id", proposta.cliente_id);
+      
+      // No modo fromProposta, também seta o cliente
+      if (mode === "fromProposta") {
+        form.setValue("cliente_id", proposta.cliente_id);
+      }
+      
       form.setValue("valor_negociado", Number(proposta.liquido || proposta.valor_total));
       form.setValue("margem_pct", Number(proposta.margem_pct || 0));
+      
+      // Buscar CPF/CNPJ do cliente
+      const cliente = clientes.find(c => c.id === proposta.cliente_id);
+      if (cliente?.cpf_cnpj) {
+        form.setValue("cpf_cnpj", cliente.cpf_cnpj);
+      }
     }
   };
 
@@ -229,6 +248,38 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                 </FormItem>
               )}
             />
+
+            {/* Campo Proposta do Cliente - só aparece no modo create quando cliente for selecionado */}
+            {mode === "create" && clienteIdWatch && propostasPorCliente.length > 0 && (
+              <FormField
+                control={form.control}
+                name="proposta_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Proposta do Cliente (opcional)</FormLabel>
+                    <Select
+                      onValueChange={handlePropostaChange}
+                      value={field.value}
+                      disabled={isLoadingPropostas}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma proposta" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {propostasPorCliente.map((proposta) => (
+                          <SelectItem key={proposta.id} value={proposta.id}>
+                            #{proposta.id.substring(0, 8)} - {proposta.tipo_piso} - {formatCurrency(Number(proposta.valor_total))}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
