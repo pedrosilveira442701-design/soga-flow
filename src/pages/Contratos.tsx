@@ -457,7 +457,9 @@ export default function Contratos() {
                 const pendente = valorBrutoPorParcela * parcelasPendentes;
                 
                 // Líquido a Receber = margem das parcelas pendentes
-                const liquidoAReceber = contrato.parcelas?.valor_restante || 0;
+                const liquidoAReceber = contrato.margem_pct 
+                  ? pendente * (contrato.margem_pct / 100)
+                  : pendente;
 
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
