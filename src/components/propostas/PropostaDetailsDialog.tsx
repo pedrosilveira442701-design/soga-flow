@@ -158,9 +158,9 @@ export default function PropostaDetailsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
+            <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
               <span>Detalhes da Proposta</span>
               <div className="flex items-center gap-2">
                 {getStatusBadge(proposta.status)}
@@ -170,7 +170,7 @@ export default function PropostaDetailsDialog({
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="bg-popover z-50">
                     <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
@@ -206,24 +206,24 @@ export default function PropostaDetailsDialog({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-6 pr-2">
             {/* Informações Principais */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Cliente</div>
-                  <div className="font-medium">{proposta.clientes?.nome}</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                <User className="h-5 w-5 text-primary mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs text-muted-foreground mb-1">Cliente</div>
+                  <div className="font-semibold truncate">{proposta.clientes?.nome}</div>
                   {proposta.clientes?.cidade && (
-                    <div className="text-xs text-muted-foreground">{proposta.clientes.cidade}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{proposta.clientes.cidade}</div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="text-sm text-muted-foreground">Data</div>
-                  <div className="font-medium">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                <Calendar className="h-5 w-5 text-primary mt-0.5" />
+                <div className="flex-1">
+                  <div className="text-xs text-muted-foreground mb-1">Data</div>
+                  <div className="font-semibold">
                     {format(new Date(proposta.data), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                   </div>
                 </div>
@@ -232,34 +232,37 @@ export default function PropostaDetailsDialog({
 
             {/* Serviços */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg">Serviços</h3>
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Square className="h-5 w-5 text-primary" />
+                Serviços
+              </h3>
               {servicos.map((servico: any, index: number) => (
-                <div key={index} className="rounded-lg border p-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div key={index} className="rounded-lg border bg-card p-4 shadow-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">Tipo</div>
-                      <div className="font-medium">
+                      <div className="text-xs text-muted-foreground mb-1">Tipo</div>
+                      <div className="font-semibold">
                         {servico.tipo === "Outro" && servico.tipo_outro 
                           ? servico.tipo_outro 
                           : servico.tipo}
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Área</div>
-                      <div className="font-medium">{(servico.m2 || 0).toFixed(2)} m²</div>
+                      <div className="text-xs text-muted-foreground mb-1">Área</div>
+                      <div className="font-semibold">{(servico.m2 || 0).toFixed(2)} m²</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Preço/m²</div>
-                      <div className="font-medium">{formatCurrency(servico.valor_m2 || 0)}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Preço/m²</div>
+                      <div className="font-semibold text-primary">{formatCurrency(servico.valor_m2 || 0)}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Custo/m²</div>
-                      <div className="font-medium">{formatCurrency(servico.custo_m2 || 0)}</div>
+                      <div className="text-xs text-muted-foreground mb-1">Custo/m²</div>
+                      <div className="font-semibold">{formatCurrency(servico.custo_m2 || 0)}</div>
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Subtotal</span>
-                    <span className="font-bold text-lg">
+                  <div className="mt-4 pt-3 border-t flex justify-between items-center">
+                    <span className="text-sm font-medium text-muted-foreground">Subtotal</span>
+                    <span className="font-bold text-xl text-primary">
                       {formatCurrency((servico.m2 || 0) * (servico.valor_m2 || 0))}
                     </span>
                   </div>
@@ -307,60 +310,61 @@ export default function PropostaDetailsDialog({
             )}
 
             {/* Resumo Financeiro */}
-            <div className="rounded-lg bg-muted/50 p-6 space-y-4">
-              <h3 className="font-semibold text-lg mb-4">Resumo Financeiro</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">Área Total</div>
-                  <div className="text-xl font-semibold">
+            <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-6 space-y-4">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-primary" />
+                Resumo Financeiro
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Área Total</div>
+                  <div className="text-2xl font-bold">
                     {totalM2.toFixed(2)} m²
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">Total Bruto</div>
-                  <div className="text-xl font-semibold text-primary">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Total Bruto</div>
+                  <div className="text-2xl font-bold text-primary">
                     {formatCurrency(totalBruto)}
                   </div>
                 </div>
                 {desconto > 0 && (
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Desconto</div>
-                    <div className="text-xl font-semibold text-destructive">
-                      -{formatCurrency(desconto)}
+                  <>
+                    <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Desconto</div>
+                      <div className="text-2xl font-bold text-destructive">
+                        -{formatCurrency(desconto)}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {desconto > 0 && (
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Total com Desconto</div>
-                    <div className="text-xl font-semibold text-primary">
-                      {formatCurrency(totalComDesconto)}
+                    <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                      <div className="text-xs text-muted-foreground mb-1">Total com Desconto</div>
+                      <div className="text-2xl font-bold text-primary">
+                        {formatCurrency(totalComDesconto)}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">Total Custo</div>
-                  <div className="text-xl font-semibold text-muted-foreground">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Total Custo</div>
+                  <div className="text-2xl font-bold text-muted-foreground">
                     {formatCurrency(totalCusto)}
                   </div>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    Valor Líquido
-                  </div>
-                  <div className="text-3xl font-bold text-success">
+                <div className="bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-xs text-muted-foreground mb-1">Valor Líquido</div>
+                  <div className="text-2xl font-bold text-success">
                     {formatCurrency(liquido)}
                   </div>
                 </div>
-                <div className="col-span-2">
-                  <div className="text-sm text-muted-foreground mb-1">Margem</div>
-                  <div className={`text-3xl font-bold ${getMargemColor(margem)}`}>
+                <div className="col-span-full bg-background/60 backdrop-blur-sm rounded-lg p-4">
+                  <div className="text-xs text-muted-foreground mb-2">Margem de Lucro</div>
+                  <div className={`text-4xl font-bold ${getMargemColor(margem)}`}>
                     {margem.toFixed(1)}%
                   </div>
                   {margem < 20 && (
-                    <div className="text-xs text-destructive mt-1">
-                      ⚠️ Atenção: margem abaixo do recomendado
+                    <div className="text-xs text-destructive mt-2 flex items-center gap-1">
+                      <TrendingDown className="h-3 w-3" />
+                      Atenção: margem abaixo do recomendado
                     </div>
                   )}
                 </div>
