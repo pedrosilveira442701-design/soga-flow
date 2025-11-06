@@ -217,11 +217,7 @@ export function ContratoDetailsDialog({
           <Separator />
 
           {/* Gerenciador de Parcelas */}
-          <ParcelasManager 
-            contratoId={contrato.id} 
-            valorNegociado={Number(contrato.valor_negociado)}
-            propostaInfo={contrato.proposta}
-          />
+          <ParcelasManager contratoId={contrato.id} />
 
           <Separator />
 

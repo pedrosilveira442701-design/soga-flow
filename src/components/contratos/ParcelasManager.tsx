@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useParcelas } from "@/hooks/useParcelas";
 import {
   Table,
@@ -51,21 +51,9 @@ import { cn } from "@/lib/utils";
 
 interface ParcelasManagerProps {
   contratoId: string;
-  valorNegociado?: number;
-  propostaInfo?: {
-    tipo_piso: string;
-    m2: number;
-    custo_m2?: number;
-    servicos?: Array<{
-      tipo: string;
-      m2: number;
-      valor_m2: number;
-      custo_m2: number;
-    }>;
-  };
 }
 
-export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }: ParcelasManagerProps) {
+export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
   
@@ -77,27 +65,6 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
   const [editParcelaId, setEditParcelaId] = useState<string | null>(null);
   const [editParcelaValor, setEditParcelaValor] = useState("");
   const [editParcelaVencimento, setEditParcelaVencimento] = useState<Date>();
-
-  // Calcular custo total da proposta
-  const custoTotal = useMemo(() => {
-    if (!propostaInfo) return 0;
-    
-    if (propostaInfo.servicos && propostaInfo.servicos.length > 0) {
-      return propostaInfo.servicos.reduce(
-        (acc, s) => acc + (s.m2 * s.custo_m2),
-        0
-      );
-    }
-    
-    return (propostaInfo.m2 || 0) * (propostaInfo.custo_m2 || 0);
-  }, [propostaInfo]);
-
-  // Calcular custo proporcional por parcela
-  const calcularCustoPorParcela = (valorParcela: number) => {
-    if (!valorNegociado || valorNegociado === 0 || !custoTotal) return 0;
-    const proporcao = valorParcela / valorNegociado;
-    return custoTotal * proporcao;
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -177,18 +144,6 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
     vencidas: parcelas.filter(
       (p) => p.status === "pendente" && isPast(parseISO(p.vencimento))
     ).length,
-    custoTotal: parcelas.reduce(
-      (sum, p) => sum + calcularCustoPorParcela(Number(p.valor_liquido_parcela)),
-      0
-    ),
-    liquidoTotal: parcelas.reduce(
-      (sum, p) => {
-        const valorParcela = Number(p.valor_liquido_parcela);
-        const custoParcela = calcularCustoPorParcela(valorParcela);
-        return sum + (valorParcela - custoParcela);
-      },
-      0
-    ),
   };
 
   if (isLoading) {
@@ -282,9 +237,7 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
             <TableRow>
               <TableHead>Nº</TableHead>
               <TableHead>Vencimento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right">Custo</TableHead>
-              <TableHead className="text-right">Líquido</TableHead>
+              <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data Pagamento</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -295,10 +248,6 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
               const isVencida =
                 isPast(parseISO(parcela.vencimento)) &&
                 parcela.status === "pendente";
-              
-              const valorParcela = Number(parcela.valor_liquido_parcela);
-              const custoParcela = calcularCustoPorParcela(valorParcela);
-              const liquidoParcela = valorParcela - custoParcela;
 
               return (
                 <TableRow
@@ -306,21 +255,15 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
                   className={cn(isVencida && "bg-destructive/5")}
                 >
                   <TableCell className="font-medium">
-                    {parcela.numero_parcela === 0 ? "Entrada" : `${parcela.numero_parcela}ª`}
+                    {parcela.numero_parcela}ª
                   </TableCell>
                   <TableCell>
                     {format(parseISO(parcela.vencimento), "dd/MM/yyyy", {
                       locale: ptBR,
                     })}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
-                    {formatCurrency(valorParcela)}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {formatCurrency(custoParcela)}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold text-green-600">
-                    {formatCurrency(liquidoParcela)}
+                  <TableCell>
+                    {formatCurrency(Number(parcela.valor_liquido_parcela))}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(parcela.status, parcela.vencimento)}
@@ -398,22 +341,10 @@ export function ParcelasManager({ contratoId, valorNegociado = 0, propostaInfo }
       </div>
 
       {/* Footer com Totalizações */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-lg border bg-muted/50">
+      <div className="grid grid-cols-3 gap-4 p-4 rounded-lg border bg-muted/50">
         <div>
           <p className="text-sm text-muted-foreground">Total</p>
           <p className="text-lg font-semibold">{formatCurrency(totais.total)}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Custo Total</p>
-          <p className="text-lg font-semibold text-amber-600">
-            {formatCurrency(totais.custoTotal)}
-          </p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Líquido Total</p>
-          <p className="text-lg font-semibold text-green-600">
-            {formatCurrency(totais.liquidoTotal)}
-          </p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Pago</p>
