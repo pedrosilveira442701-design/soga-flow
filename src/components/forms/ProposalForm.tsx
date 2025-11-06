@@ -31,15 +31,37 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
 
+const TIPOS_PRODUTO = [
+  "Pintura Epóxi",
+  "Pintura PU",
+  "Pintura PU Quadra",
+  "Pintura Acrílica",
+  "Pintura Acrílica Quadra",
+  "Pintura de Parede",
+  "Outro",
+] as const;
+
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
   m2: z.number().positive("Área deve ser maior que zero"),
   valor_m2: z.number().positive("Preço deve ser maior que zero"),
   custo_m2: z.number().positive("Custo deve ser maior que zero"),
-  tipo_piso: z.string().min(1, "Tipo de piso é obrigatório"),
+  tipo_piso: z.string().min(1, "Tipo de serviço é obrigatório"),
+  tipo_piso_outro: z.string().optional(),
   data: z.string().optional(),
   status: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.tipo_piso === "Outro") {
+      return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Descreva o tipo de serviço",
+    path: ["tipo_piso_outro"],
+  },
+);
 
 type ProposalFormValues = z.infer<typeof proposalSchema>;
 
@@ -62,6 +84,7 @@ export default function ProposalForm({
       valor_m2: initialData?.valor_m2 || 0,
       custo_m2: initialData?.custo_m2 || 0,
       tipo_piso: initialData?.tipo_piso || "",
+      tipo_piso_outro: initialData?.tipo_piso_outro || "",
       data: initialData?.data || new Date().toISOString().split('T')[0],
       status: initialData?.status || "aberta",
     },
@@ -84,7 +107,7 @@ export default function ProposalForm({
   };
 
   const selectedCliente = clientes?.find(c => c.id === form.watch("cliente_id"));
-  const tiposPiso = ["Porcelanato", "Vinílico", "Laminado", "Madeira", "Cerâmica", "Pedra Natural", "Outros"];
+  const tipoServicoSelecionado = form.watch("tipo_piso");
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,7 +150,7 @@ export default function ProposalForm({
               name="tipo_piso"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tipo de Piso *</FormLabel>
+                  <FormLabel>Tipo de Serviço *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -135,7 +158,7 @@ export default function ProposalForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {tiposPiso.map((tipo) => (
+                      {TIPOS_PRODUTO.map((tipo) => (
                         <SelectItem key={tipo} value={tipo}>
                           {tipo}
                         </SelectItem>
@@ -146,6 +169,25 @@ export default function ProposalForm({
                 </FormItem>
               )}
             />
+
+            {tipoServicoSelecionado === "Outro" && (
+              <FormField
+                control={form.control}
+                name="tipo_piso_outro"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descreva o tipo de serviço *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: Pintura especial, revestimento customizado..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
