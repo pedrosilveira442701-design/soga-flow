@@ -89,6 +89,8 @@ export default function PropostaDetailsDialog({
     }
   }, [open, proposta?.id, refetchContrato]);
 
+  if (!proposta) return null;
+
   // Calcular totais a partir dos serviços
   const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
     ? proposta.servicos
