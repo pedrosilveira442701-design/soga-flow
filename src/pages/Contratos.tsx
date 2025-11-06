@@ -527,25 +527,25 @@ export default function Contratos() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={() => handleView(contrato)}
                           title="Ver detalhes"
-                          className="h-11 px-5"
+                          className="h-11 px-5 rounded-xl"
                         >
-                          <Eye className="h-6 w-6 mr-3" />
+                          <Eye className="h-5 w-5 mr-2" />
                           Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
                           <>
                             <Button
-                              variant="outline"
+                              variant="default"
                               size="sm"
                               onClick={() => handleEdit(contrato)}
                               title="Editar contrato"
-                              className="h-11 px-5"
+                              className="h-11 px-5 rounded-xl"
                             >
-                              <Pencil className="h-6 w-6 mr-3" />
+                              <Pencil className="h-5 w-5 mr-2" />
                               Editar
                             </Button>
                           </>
@@ -557,9 +557,9 @@ export default function Contratos() {
                                 variant="outline"
                                 size="sm"
                                 title="Cancelar contrato"
-                                className="h-11 px-5 border-destructive text-destructive hover:bg-destructive/10"
+                                className="h-11 px-5 rounded-xl border-2 border-primary text-primary hover:bg-primary/10"
                               >
-                                <Trash2 className="h-6 w-6 mr-3" />
+                                <X className="h-5 w-5 mr-2" />
                                 Cancelar
                               </Button>
                             </AlertDialogTrigger>
