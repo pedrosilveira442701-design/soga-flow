@@ -19,6 +19,7 @@ import { useClientes } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 const TIPOS_PISO = [
   "Pintura Epóxi",
@@ -35,6 +36,7 @@ const leadFormSchema = z
     tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
     tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
     valor_potencial: z.string().min(1, "Informe o valor potencial"),
+    observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
     origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
     responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
     estagio: z.enum([
@@ -84,6 +86,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       tipo_piso: [],
       tipo_piso_outro: "",
       valor_potencial: "",
+      observacoes: "",
       origem: "",
       responsavel: "",
       estagio: "contato",
@@ -277,6 +280,20 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
               <FormLabel>Orçamento</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="0" step="0.01" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Observações sobre o lead..." {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

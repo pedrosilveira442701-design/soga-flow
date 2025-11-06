@@ -44,6 +44,7 @@ export default function Leads() {
       cliente_id: values.cliente_id,
       tipo_piso: tiposPisoFinal.join(", "),
       valor_potencial: parseFloat(values.valor_potencial),
+      observacoes: values.observacoes || null,
       origem: values.origem || null,
       responsavel: values.responsavel || null,
       estagio: values.estagio,
@@ -76,6 +77,7 @@ export default function Leads() {
         cliente_id: values.cliente_id,
         tipo_piso: tiposPisoFinal.join(", "),
         valor_potencial: parseFloat(values.valor_potencial),
+        observacoes: values.observacoes || null,
         origem: values.origem || null,
         responsavel: values.responsavel || null,
         estagio: values.estagio,
@@ -190,6 +192,7 @@ export default function Leads() {
                     return outro ? outro.replace("Outro:", "").trim() : "";
                   })(),
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
+                  observacoes: selectedLead.observacoes || "",
                   origem: selectedLead.origem || "",
                   responsavel: selectedLead.responsavel || "",
                   estagio: selectedLead.estagio,
