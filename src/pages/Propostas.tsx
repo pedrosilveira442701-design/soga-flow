@@ -99,17 +99,48 @@ export default function Propostas() {
     });
   }, [propostas, searchTerm, statusFilter, tipoFilter]);
 
-  // KPIs
+  // KPIs - Recalculados localmente para garantir precisão
   const kpis = useMemo(() => {
     const total = propostas.length;
     const fechadas = propostas.filter((p) => p.status === "fechada").length;
     const taxaFechamento = total > 0 ? (fechadas / total) * 100 : 0;
+    
+    // Valor em Aberto: soma do VALOR LÍQUIDO (lucro) de todas as propostas abertas
+    // Valor Líquido = (Total Bruto - Desconto) - Custo Total
     const valorEmAberto = propostas
       .filter((p) => p.status === "aberta")
-      .reduce((sum, p) => sum + p.liquido, 0);
+      .reduce((sum, p) => {
+        const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
+          ? p.servicos
+          : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
+        
+        const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+        const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
+        const desconto = p.desconto || 0;
+        const totalComDesconto = totalBruto - desconto;
+        const liquido = totalComDesconto - totalCusto;
+        
+        return sum + liquido;
+      }, 0);
+    
+    // Margem Média: média da margem percentual de todas as propostas
+    // Margem % = (Valor Líquido / Total com Desconto) * 100
     const margemMedia =
       propostas.length > 0
-        ? propostas.reduce((sum, p) => sum + p.margem_pct, 0) / propostas.length
+        ? propostas.reduce((sum, p) => {
+            const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
+              ? p.servicos
+              : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
+            
+            const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+            const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
+            const desconto = p.desconto || 0;
+            const totalComDesconto = totalBruto - desconto;
+            const liquido = totalComDesconto - totalCusto;
+            const margem = totalComDesconto > 0 ? (liquido / totalComDesconto) * 100 : 0;
+            
+            return sum + margem;
+          }, 0) / propostas.length
         : 0;
 
     return { total, taxaFechamento, valorEmAberto, margemMedia };
@@ -348,14 +379,17 @@ export default function Propostas() {
               </TableRow>
             ) : (
               filteredPropostas.map((proposta) => {
-                // Calcular valor total da mesma forma que no resumo financeiro
+                // Calcular valores da mesma forma que no resumo financeiro
                 const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
                   ? proposta.servicos
                   : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
                 
                 const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+                const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
                 const desconto = proposta.desconto || 0;
                 const valorTotal = totalBruto - desconto;
+                const liquido = valorTotal - totalCusto;
+                const margem = valorTotal > 0 ? (liquido / valorTotal) * 100 : 0;
 
                 return (
                   <TableRow key={proposta.id}>
@@ -387,8 +421,8 @@ export default function Propostas() {
                       {formatCurrency(valorTotal)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className={`font-bold ${getMargemColor(proposta.margem_pct)}`}>
-                        {proposta.margem_pct.toFixed(1)}%
+                      <span className={`font-bold ${getMargemColor(margem)}`}>
+                        {margem.toFixed(1)}%
                       </span>
                     </TableCell>
                     <TableCell>{getStatusBadge(proposta.status)}</TableCell>
