@@ -14,6 +14,7 @@ export interface Contrato {
   forma_pagamento: string;
   data_inicio: string;
   observacoes?: string;
+  margem_pct?: number;
   created_at: string;
   updated_at: string;
   cliente?: {
@@ -73,6 +74,7 @@ export const useContratos = () => {
         .from("contratos")
         .select(`
           *,
+          margem_pct,
           cliente:clientes!cliente_id(nome, telefone, cidade),
           proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos, margem_pct)
         `)
@@ -118,6 +120,18 @@ export const useContratos = () => {
     mutationFn: async (data: ContratoInsert) => {
       if (!user) throw new Error("Usuário não autenticado");
 
+      // Buscar margem da proposta se houver
+      let margemPct = 0;
+      if (data.proposta_id) {
+        const { data: proposta } = await supabase
+          .from("propostas")
+          .select("margem_pct")
+          .eq("id", data.proposta_id)
+          .single();
+        
+        margemPct = Number(proposta?.margem_pct || 0);
+      }
+
       // Criar contrato
       const { data: contrato, error: contratoError } = await supabase
         .from("contratos")
@@ -130,6 +144,7 @@ export const useContratos = () => {
           forma_pagamento: data.forma_pagamento,
           data_inicio: data.data_inicio,
           observacoes: data.observacoes,
+          margem_pct: margemPct,
           status: "ativo",
         })
         .select()

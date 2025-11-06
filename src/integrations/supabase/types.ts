@@ -118,6 +118,7 @@ export type Database = {
           data_inicio: string
           forma_pagamento: string
           id: string
+          margem_pct: number | null
           observacoes: string | null
           proposta_id: string | null
           status: Database["public"]["Enums"]["contract_status"] | null
@@ -132,6 +133,7 @@ export type Database = {
           data_inicio: string
           forma_pagamento: string
           id?: string
+          margem_pct?: number | null
           observacoes?: string | null
           proposta_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
@@ -146,6 +148,7 @@ export type Database = {
           data_inicio?: string
           forma_pagamento?: string
           id?: string
+          margem_pct?: number | null
           observacoes?: string | null
           proposta_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
