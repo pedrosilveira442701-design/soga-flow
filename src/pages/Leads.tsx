@@ -58,12 +58,19 @@ export default function Leads() {
       responsavel: values.responsavel || null,
       estagio: values.estagio,
       user_id: user?.id,
-      ultima_interacao: new Date().toISOString(),
     };
 
     // Se forneceu created_at, converter Date para string ISO
     if (values.created_at) {
       leadData.created_at = values.created_at.toISOString();
+    }
+
+    // Se forneceu ultima_interacao, converter Date para string ISO
+    if (values.ultima_interacao) {
+      leadData.ultima_interacao = values.ultima_interacao.toISOString();
+    } else {
+      // Se não forneceu, usar a data atual
+      leadData.ultima_interacao = new Date().toISOString();
     }
 
     await createLead.mutateAsync(leadData);
@@ -95,7 +102,8 @@ export default function Leads() {
         origem: origemFinal,
         responsavel: values.responsavel || null,
         estagio: values.estagio,
-        ultima_interacao: new Date().toISOString(),
+        created_at: values.created_at ? values.created_at.toISOString() : undefined,
+        ultima_interacao: values.ultima_interacao ? values.ultima_interacao.toISOString() : undefined,
       },
     });
     setEditDialogOpen(false);
@@ -228,6 +236,8 @@ export default function Leads() {
                   })(),
                   responsavel: selectedLead.responsavel || "",
                   estagio: selectedLead.estagio,
+                  created_at: selectedLead.created_at ? new Date(selectedLead.created_at) : new Date(),
+                  ultima_interacao: selectedLead.ultima_interacao ? new Date(selectedLead.ultima_interacao) : new Date(),
                 }}
               />
             )}
