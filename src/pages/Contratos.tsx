@@ -421,6 +421,7 @@ export default function Contratos() {
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Valor Negociado</TableHead>
+                <TableHead>Valor a Receber Líquido</TableHead>
                 <TableHead>Forma Pagamento</TableHead>
                 <TableHead>Data Início</TableHead>
                 <TableHead>Parcelas</TableHead>
@@ -447,6 +448,9 @@ export default function Contratos() {
                     </TableCell>
                     <TableCell className="font-semibold">
                       {formatCurrency(Number(contrato.valor_negociado))}
+                    </TableCell>
+                    <TableCell className="font-semibold text-blue-600 dark:text-blue-400">
+                      {formatCurrency(contrato.parcelas?.valor_restante || 0)}
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
                     <TableCell>
