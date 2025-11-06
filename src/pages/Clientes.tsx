@@ -267,45 +267,44 @@ export default function Clientes() {
                           <Badge variant="outline">{leadsCount}</Badge>
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end gap-2 flex-wrap">
+                          <div className="flex justify-end gap-2">
                             <Button
                               variant="default"
-                              size="action"
+                              size="icon"
                               onClick={() => handleViewDetails(cliente)}
                               title="Ver detalhes"
+                              className="h-10 w-10"
                             >
-                              <Eye className="h-6 w-6" />
-                              Ver
+                              <Eye className="h-5 w-5" />
                             </Button>
                             <Button
                               variant="default"
-                              size="action"
+                              size="icon"
                               onClick={() => handleEditCliente(cliente)}
                               title="Editar cliente"
+                              className="h-10 w-10"
                             >
-                              <Edit className="h-6 w-6" />
-                              Editar
+                              <Edit className="h-5 w-5" />
                             </Button>
                             {cliente.telefone && (
                               <Button
                                 variant="default"
-                                size="action"
+                                size="icon"
                                 onClick={() => handleWhatsApp(cliente.telefone)}
                                 title="Enviar WhatsApp"
+                                className="h-10 w-10"
                               >
-                                <MessageCircle className="h-6 w-6" />
-                                WhatsApp
+                                <MessageCircle className="h-5 w-5" />
                               </Button>
                             )}
                             <Button
                               variant="outline"
-                              size="action"
+                              size="icon"
                               onClick={() => handleDeleteCliente(cliente.id)}
                               title="Deletar cliente"
-                              className="border-2 border-destructive text-destructive hover:bg-destructive/10"
+                              className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-6 w-6" />
-                              Deletar
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           </div>
                         </TableCell>

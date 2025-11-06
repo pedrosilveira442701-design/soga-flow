@@ -433,22 +433,21 @@ export default function Propostas() {
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="default"
-                          size="action"
+                          size="icon"
                           onClick={() => handleView(proposta)}
                           title="Ver detalhes"
+                          className="h-10 w-10"
                         >
-                          <Eye className="h-6 w-6" />
-                          Ver
+                          <Eye className="h-5 w-5" />
                         </Button>
                         <Button
                           variant="outline"
-                          size="action"
+                          size="icon"
                           onClick={() => handleDelete(proposta.id)}
                           title="Excluir proposta"
-                          className="border-2 border-destructive text-destructive hover:bg-destructive/10"
+                          className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
                         >
-                          <Trash2 className="h-6 w-6" />
-                          Excluir
+                          <Trash2 className="h-5 w-5" />
                         </Button>
                       </div>
                     </TableCell>
