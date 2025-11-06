@@ -148,7 +148,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
   // Quando seleciona uma proposta, preencher dados automaticamente
   const handlePropostaChange = (propostaId: string) => {
-    const proposta = propostasFechadas.find((p) => p.id === propostaId);
+    const proposta = propostasFechadas.find((p: any) => p.id === propostaId);
     if (proposta) {
       form.setValue("proposta_id", propostaId);
       
@@ -157,7 +157,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
         form.setValue("cliente_id", proposta.cliente_id);
       }
       
-      form.setValue("valor_negociado", Number(proposta.liquido || proposta.valor_total));
+      // Valor negociado deve ser o valor bruto (valor_total)
+      form.setValue("valor_negociado", Number(proposta.valor_total));
       form.setValue("margem_pct", Number(proposta.margem_pct || 0));
       
       // Buscar CPF/CNPJ do cliente
