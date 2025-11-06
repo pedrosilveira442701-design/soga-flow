@@ -111,16 +111,20 @@ export default function Contratos() {
     const inicioMes = startOfMonth(hoje);
     const fimMes = endOfMonth(hoje);
 
+    let valorPago = 0;
+    let valorRestante = 0;
     let recebidoMes = 0;
     let aReceberMes = 0;
 
     contratos.forEach((contrato) => {
       if (contrato.parcelas) {
-        // Esta é uma aproximação - idealmente buscaríamos as parcelas diretamente
+        valorPago += contrato.parcelas.valor_pago || 0;
+        valorRestante += contrato.parcelas.valor_restante || 0;
+        
+        // Estimativa para o mês
         const valorParcela = Number(contrato.valor_negociado) / (contrato.parcelas.total || 1);
         const parcelasPagas = contrato.parcelas.pagas || 0;
         
-        // Estimativa simples
         if (parcelasPagas > 0) {
           recebidoMes += valorParcela * 0.3; // Aproximação
         }
@@ -133,6 +137,8 @@ export default function Contratos() {
     return {
       contratosAtivos: ativos.length,
       valorTotalAtivo,
+      valorPago,
+      valorRestante,
       recebidoMes,
       aReceberMes,
     };
@@ -234,57 +240,72 @@ export default function Contratos() {
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">
               Contratos Ativos
             </p>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-2xl font-bold mt-2">{kpis.contratosAtivos}</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-3xl font-bold">{kpis.contratosAtivos}</p>
+          <p className="text-xs text-muted-foreground mt-2">
             {contratos.length} total
           </p>
         </div>
 
         <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">
               Valor Total Ativo
             </p>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-2xl font-bold mt-2">
+          <p className="text-3xl font-bold">
             {formatCurrency(kpis.valorTotalAtivo)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Em contratos ativos</p>
+          <p className="text-xs text-muted-foreground mt-2">Em contratos ativos</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center justify-between">
+        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">
-              Recebido Este Mês
+              Já Recebido
             </p>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
-          <p className="text-2xl font-bold mt-2 text-green-600">
-            {formatCurrency(kpis.recebidoMes)}
+          <p className="text-3xl font-bold text-green-700 dark:text-green-400">
+            {formatCurrency(kpis.valorPago)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Parcelas pagas</p>
+          <p className="text-xs text-muted-foreground mt-2">Parcelas pagas</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center justify-between">
+        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+          <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">
-              A Receber Este Mês
+              Restante a Receber
             </p>
-            <Calendar className="h-4 w-4 text-blue-500" />
+            <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-2xl font-bold mt-2 text-blue-600">
+          <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">
+            {formatCurrency(kpis.valorRestante)}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">Parcelas pendentes</p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-medium text-muted-foreground">
+              Este Mês
+            </p>
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
             {formatCurrency(kpis.aReceberMes)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">Previsão</p>
+          <p className="text-xs text-green-600 dark:text-green-400 mt-2">
+            ↑ {formatCurrency(kpis.recebidoMes)} recebido
+          </p>
         </div>
       </div>
 
