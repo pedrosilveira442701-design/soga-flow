@@ -231,6 +231,7 @@ export type Database = {
           medida: number | null
           observacoes: string | null
           origem: string | null
+          produtos: Json | null
           responsavel: string | null
           tipo_piso: string | null
           ultima_interacao: string | null
@@ -248,6 +249,7 @@ export type Database = {
           medida?: number | null
           observacoes?: string | null
           origem?: string | null
+          produtos?: Json | null
           responsavel?: string | null
           tipo_piso?: string | null
           ultima_interacao?: string | null
@@ -265,6 +267,7 @@ export type Database = {
           medida?: number | null
           observacoes?: string | null
           origem?: string | null
+          produtos?: Json | null
           responsavel?: string | null
           tipo_piso?: string | null
           ultima_interacao?: string | null

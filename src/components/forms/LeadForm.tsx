@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Check, ChevronsUpDown, X } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -13,57 +13,57 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus } from "lucide-react";
 import { ClienteForm } from "./ClienteForm";
 import { useClientes } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
-const TIPOS_PISO = [
+const TIPOS_PRODUTO = [
   "Pintura Epóxi",
   "Pintura PU",
   "Pintura PU Quadra",
   "Pintura Acrílica",
   "Pintura Acrílica Quadra",
+  "Pintura de Parede",
   "Outro",
 ] as const;
 
-const leadFormSchema = z
-  .object({
-    cliente_id: z.string().min(1, "Selecione um cliente"),
-    tipo_piso: z.array(z.string()).min(1, "Selecione pelo menos um tipo de piso"),
-    tipo_piso_outro: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
-    medida: z.string().optional(),
-    valor_potencial: z.string().min(1, "Informe o valor potencial"),
-    observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
-    origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-    responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-    estagio: z.enum([
-      "contato",
-      "visita_agendada",
-      "visita_realizada",
-      "proposta",
-      "contrato",
-      "execucao",
-      "finalizado",
-      "perdido",
-    ]),
-    created_at: z.date().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.tipo_piso.includes("Outro")) {
-        return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
-      }
-      return true;
-    },
-    {
-      message: "Descreva o tipo de piso",
-      path: ["tipo_piso_outro"],
-    },
-  );
+const produtoSchema = z.object({
+  tipo: z.string().min(1, "Selecione o tipo"),
+  tipo_outro: z.string().optional(),
+  medida: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.tipo === "Outro") {
+      return data.tipo_outro && data.tipo_outro.trim().length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Descreva o tipo de produto",
+    path: ["tipo_outro"],
+  },
+);
+
+const leadFormSchema = z.object({
+  cliente_id: z.string().min(1, "Selecione um cliente"),
+  produtos: z.array(produtoSchema).min(1, "Adicione pelo menos um produto"),
+  valor_potencial: z.string().min(1, "Informe o valor potencial"),
+  observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
+  origem: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+  responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+  estagio: z.enum([
+    "contato",
+    "visita_agendada",
+    "visita_realizada",
+    "proposta",
+    "contrato",
+    "execucao",
+    "finalizado",
+    "perdido",
+  ]),
+  created_at: z.date().optional(),
+});
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
@@ -76,7 +76,6 @@ interface LeadFormProps {
 
 export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
   const [isClienteDialogOpen, setIsClienteDialogOpen] = useState(false);
-  const [openTipoPiso, setOpenTipoPiso] = useState(false);
   const queryClient = useQueryClient();
   const { createCliente } = useClientes();
 
@@ -84,9 +83,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     resolver: zodResolver(leadFormSchema),
     defaultValues: initialData || {
       cliente_id: "",
-      tipo_piso: [],
-      tipo_piso_outro: "",
-      medida: "",
+      produtos: [{ tipo: "", tipo_outro: "", medida: "" }],
       valor_potencial: "",
       observacoes: "",
       origem: "",
@@ -96,8 +93,19 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     },
   });
 
-  const selectedTipos = form.watch("tipo_piso");
-  const showOutroField = selectedTipos.includes("Outro");
+  const produtos = form.watch("produtos");
+
+  const addProduto = () => {
+    const currentProdutos = form.getValues("produtos");
+    form.setValue("produtos", [...currentProdutos, { tipo: "", tipo_outro: "", medida: "" }]);
+  };
+
+  const removeProduto = (index: number) => {
+    const currentProdutos = form.getValues("produtos");
+    if (currentProdutos.length > 1) {
+      form.setValue("produtos", currentProdutos.filter((_, i) => i !== index));
+    }
+  };
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes"],
@@ -183,115 +191,86 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="tipo_piso"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo de Piso</FormLabel>
-              <Popover open={openTipoPiso} onOpenChange={setOpenTipoPiso}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-full justify-between font-normal",
-                        field.value.length === 0 && "text-muted-foreground",
-                      )}
-                    >
-                      {field.value.length > 0
-                        ? `${field.value.length} selecionado${field.value.length > 1 ? "s" : ""}`
-                        : "Selecione os tipos de piso"}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Buscar tipo de piso..." />
-                    <CommandList>
-                      <CommandEmpty>Nenhum tipo encontrado.</CommandEmpty>
-                      <CommandGroup>
-                        {TIPOS_PISO.map((tipo) => {
-                          const isSelected = field.value.includes(tipo);
-                          return (
-                            <CommandItem
-                              key={tipo}
-                              onSelect={() => {
-                                const newValue = isSelected
-                                  ? field.value.filter((v) => v !== tipo)
-                                  : [...field.value, tipo];
-                                field.onChange(newValue);
-                              }}
-                            >
-                              <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
-                              {tipo}
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              {field.value.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {field.value.map((tipo) => (
-                    <Badge key={tipo} variant="secondary" className="gap-1">
-                      {tipo}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          field.onChange(field.value.filter((v) => v !== tipo));
-                        }}
-                        className="ml-1 hover:bg-muted rounded-sm"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <FormLabel>Produtos</FormLabel>
+            <Button type="button" variant="outline" size="sm" onClick={addProduto} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Adicionar Produto
+            </Button>
+          </div>
+
+          {produtos.map((_, index) => (
+            <div key={index} className="border rounded-lg p-4 space-y-4 relative">
+              {produtos.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-6 w-6"
+                  onClick={() => removeProduto(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               )}
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        {showOutroField && (
-          <FormField
-            control={form.control}
-            name="tipo_piso_outro"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descreva o tipo de piso</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ex: Concreto polido, Mármore..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+              <FormField
+                control={form.control}
+                name={`produtos.${index}.tipo`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Produto {produtos.length > 1 ? `${index + 1}` : ""}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-background">
+                        {TIPOS_PRODUTO.map((tipo) => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <FormField
-          control={form.control}
-          name="medida"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Medida (m²)</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  placeholder="0" 
-                  step="0.01"
-                  {...field} 
+              {produtos[index]?.tipo === "Outro" && (
+                <FormField
+                  control={form.control}
+                  name={`produtos.${index}.tipo_outro`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descreva o tipo de produto</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Concreto polido, Mármore..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              )}
+
+              <FormField
+                control={form.control}
+                name={`produtos.${index}.medida`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Medida (m²)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="0" step="0.01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          ))}
+        </div>
 
         <FormField
           control={form.control}

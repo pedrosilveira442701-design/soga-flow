@@ -22,6 +22,10 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
     telefone?: string;
     endereco?: string;
   } | null;
+  produtos?: Array<{
+    tipo: string;
+    medida: number | null;
+  }>;
 };
 
 export default function Leads() {
@@ -33,17 +37,15 @@ export default function Leads() {
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any) => {
-    // Processar tipos de piso
-    let tiposPisoFinal = [...values.tipo_piso];
-    if (values.tipo_piso.includes("Outro") && values.tipo_piso_outro) {
-      tiposPisoFinal = tiposPisoFinal.filter(t => t !== "Outro");
-      tiposPisoFinal.push(`Outro: ${values.tipo_piso_outro}`);
-    }
+    // Processar produtos
+    const produtosProcessados = values.produtos.map((p: any) => ({
+      tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
+      medida: p.medida ? parseFloat(p.medida) : null,
+    }));
     
     const leadData: any = {
       cliente_id: values.cliente_id,
-      tipo_piso: tiposPisoFinal.join(", "),
-      medida: values.medida ? parseFloat(values.medida) : null,
+      produtos: produtosProcessados,
       valor_potencial: parseFloat(values.valor_potencial),
       observacoes: values.observacoes || null,
       origem: values.origem || null,
@@ -65,19 +67,17 @@ export default function Leads() {
   const handleUpdateLead = async (values: any) => {
     if (!selectedLead) return;
     
-    // Processar tipos de piso
-    let tiposPisoFinal = [...values.tipo_piso];
-    if (values.tipo_piso.includes("Outro") && values.tipo_piso_outro) {
-      tiposPisoFinal = tiposPisoFinal.filter(t => t !== "Outro");
-      tiposPisoFinal.push(`Outro: ${values.tipo_piso_outro}`);
-    }
+    // Processar produtos
+    const produtosProcessados = values.produtos.map((p: any) => ({
+      tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
+      medida: p.medida ? parseFloat(p.medida) : null,
+    }));
     
     await updateLead.mutateAsync({
       id: selectedLead.id,
       updates: {
         cliente_id: values.cliente_id,
-        tipo_piso: tiposPisoFinal.join(", "),
-        medida: values.medida ? parseFloat(values.medida) : null,
+        produtos: produtosProcessados,
         valor_potencial: parseFloat(values.valor_potencial),
         observacoes: values.observacoes || null,
         origem: values.origem || null,
@@ -179,21 +179,26 @@ export default function Leads() {
                 mode="edit"
                 initialData={{
                   cliente_id: selectedLead.cliente_id || "",
-                  tipo_piso: (() => {
-                    if (!selectedLead.tipo_piso) return [];
-                    const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
-                    return tipos.map(t => {
-                      if (t.startsWith("Outro:")) return "Outro";
-                      return t;
-                    });
+                  produtos: (() => {
+                    // Se tem produtos no formato novo (JSONB)
+                    if (selectedLead.produtos && Array.isArray(selectedLead.produtos) && selectedLead.produtos.length > 0) {
+                      return selectedLead.produtos.map((p: any) => ({
+                        tipo: p.tipo?.startsWith("Outro:") ? "Outro" : p.tipo,
+                        tipo_outro: p.tipo?.startsWith("Outro:") ? p.tipo.replace("Outro:", "").trim() : "",
+                        medida: p.medida?.toString() || "",
+                      }));
+                    }
+                    // Fallback para formato antigo (tipo_piso string)
+                    if (selectedLead.tipo_piso) {
+                      const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
+                      return tipos.map(t => ({
+                        tipo: t.startsWith("Outro:") ? "Outro" : t,
+                        tipo_outro: t.startsWith("Outro:") ? t.replace("Outro:", "").trim() : "",
+                        medida: selectedLead.medida?.toString() || "",
+                      }));
+                    }
+                    return [{ tipo: "", tipo_outro: "", medida: "" }];
                   })(),
-                  tipo_piso_outro: (() => {
-                    if (!selectedLead.tipo_piso) return "";
-                    const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
-                    const outro = tipos.find(t => t.startsWith("Outro:"));
-                    return outro ? outro.replace("Outro:", "").trim() : "";
-                  })(),
-                  medida: selectedLead.medida?.toString() || "",
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
                   observacoes: selectedLead.observacoes || "",
                   origem: selectedLead.origem || "",
