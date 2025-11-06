@@ -38,6 +38,8 @@ export interface ContratoInsert {
   proposta_id?: string;
   valor_negociado: number;
   cpf_cnpj: string;
+  valor_entrada?: number;
+  forma_pagamento_entrada?: string;
   forma_pagamento: string;
   data_inicio: string;
   observacoes?: string;
@@ -133,10 +135,28 @@ export const useContratos = () => {
       if (contratoError) throw contratoError;
 
       // Gerar parcelas
-      const valorParcela = data.valor_negociado / data.numero_parcelas;
+      const valorEntrada = data.valor_entrada || 0;
+      const valorRestante = data.valor_negociado - valorEntrada;
+      const valorParcela = valorRestante / data.numero_parcelas;
       const dataInicio = new Date(data.data_inicio);
       
-      const parcelas = Array.from({ length: data.numero_parcelas }, (_, i) => {
+      const parcelas = [];
+      
+      // Se houver entrada, criar parcela de entrada (número 0)
+      if (valorEntrada > 0 && data.forma_pagamento_entrada) {
+        parcelas.push({
+          user_id: user.id,
+          contrato_id: contrato.id,
+          numero_parcela: 0,
+          valor_liquido_parcela: valorEntrada,
+          vencimento: data.data_inicio,
+          status: "pendente" as const,
+          forma: data.forma_pagamento_entrada,
+        });
+      }
+      
+      // Gerar parcelas do restante
+      const parcelasRestante = Array.from({ length: data.numero_parcelas }, (_, i) => {
         const vencimento = new Date(dataInicio);
         vencimento.setMonth(vencimento.getMonth() + i);
         vencimento.setDate(data.dia_vencimento);
@@ -148,8 +168,11 @@ export const useContratos = () => {
           valor_liquido_parcela: valorParcela,
           vencimento: vencimento.toISOString().split("T")[0],
           status: "pendente" as const,
+          forma: data.forma_pagamento,
         };
       });
+      
+      parcelas.push(...parcelasRestante);
 
       const { error: parcelasError } = await supabase
         .from("financeiro_parcelas")

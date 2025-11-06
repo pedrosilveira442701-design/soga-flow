@@ -38,11 +38,31 @@ const contratoSchema = z.object({
   proposta_id: z.string().optional(),
   valor_negociado: z.number().min(1, "Valor deve ser maior que zero"),
   cpf_cnpj: z.string().min(11, "CPF/CNPJ inválido"),
+  valor_entrada: z.number().min(0, "Valor de entrada não pode ser negativo").optional(),
+  forma_pagamento_entrada: z.string().optional(),
   forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
   data_inicio: z.string().min(1, "Data de início é obrigatória"),
   numero_parcelas: z.number().min(1).max(48, "Máximo 48 parcelas"),
   dia_vencimento: z.number().min(1).max(31, "Dia deve estar entre 1 e 31"),
   observacoes: z.string().optional(),
+}).refine((data) => {
+  // Se houver entrada, a forma de pagamento da entrada é obrigatória
+  if (data.valor_entrada && data.valor_entrada > 0) {
+    return !!data.forma_pagamento_entrada;
+  }
+  return true;
+}, {
+  message: "Forma de pagamento da entrada é obrigatória quando há valor de entrada",
+  path: ["forma_pagamento_entrada"],
+}).refine((data) => {
+  // Entrada não pode ser maior ou igual ao valor total
+  if (data.valor_entrada && data.valor_entrada >= data.valor_negociado) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Entrada não pode ser maior ou igual ao valor total",
+  path: ["valor_entrada"],
 });
 
 type ContratoFormValues = z.infer<typeof contratoSchema>;
@@ -64,6 +84,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       proposta_id: initialData?.proposta_id || "",
       valor_negociado: initialData?.valor_negociado || 0,
       cpf_cnpj: initialData?.cpf_cnpj || "",
+      valor_entrada: initialData?.valor_entrada || 0,
+      forma_pagamento_entrada: initialData?.forma_pagamento_entrada || "",
       forma_pagamento: initialData?.forma_pagamento || "",
       data_inicio: initialData?.data_inicio || new Date().toISOString().split("T")[0],
       numero_parcelas: initialData?.numero_parcelas || 1,
@@ -86,12 +108,14 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
   const propostaIdWatch = form.watch("proposta_id");
   const valorWatch = form.watch("valor_negociado");
+  const valorEntradaWatch = form.watch("valor_entrada") || 0;
   const parcelasWatch = form.watch("numero_parcelas");
   const diaVencimentoWatch = form.watch("dia_vencimento");
   const dataInicioWatch = form.watch("data_inicio");
 
   const selectedProposta = propostasFechadas.find((p) => p.id === propostaIdWatch);
-  const valorParcela = valorWatch / parcelasWatch;
+  const valorRestante = valorWatch - valorEntradaWatch;
+  const valorParcela = valorRestante / parcelasWatch;
 
   // Calcular previsão de parcelas
   const previewParcelas = Array.from({ length: Math.min(parcelasWatch, 5) }, (_, i) => {
@@ -120,7 +144,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     "Boleto",
     "Cartão de Crédito",
     "Cartão de Débito",
-    "Pix",
+    "PIX",
     "Transferência Bancária",
     "Cheque",
   ];
@@ -237,30 +261,85 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="forma_pagamento"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Forma de Pagamento *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h4 className="font-medium text-sm">Entrada</h4>
+              
+              <FormField
+                control={form.control}
+                name="valor_entrada"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor da Entrada</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {formasPagamento.map((forma) => (
-                        <SelectItem key={forma} value={forma}>
-                          {forma}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {valorEntradaWatch > 0 && (
+                <FormField
+                  control={form.control}
+                  name="forma_pagamento_entrada"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Forma de Pagamento da Entrada *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {formasPagamento.map((forma) => (
+                            <SelectItem key={forma} value={forma}>
+                              {forma}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h4 className="font-medium text-sm">Parcelas do Restante</h4>
+              
+              <FormField
+                control={form.control}
+                name="forma_pagamento"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Forma de Pagamento das Parcelas *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {formasPagamento.map((forma) => (
+                          <SelectItem key={forma} value={forma}>
+                            {forma}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -370,15 +449,29 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
             <div className="rounded-lg border bg-card p-4">
               <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
               
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between pb-2 border-b">
                   <span className="text-muted-foreground">Valor Total:</span>
                   <span className="font-semibold">{formatCurrency(valorWatch)}</span>
                 </div>
+                
+                {valorEntradaWatch > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Entrada:</span>
+                    <span className="font-medium text-primary">{formatCurrency(valorEntradaWatch)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Valor a Parcelar:</span>
+                  <span className="font-medium">{formatCurrency(valorRestante)}</span>
+                </div>
+                
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Parcelas:</span>
                   <span>{parcelasWatch}x de {formatCurrency(valorParcela)}</span>
                 </div>
+                
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Vencimento:</span>
                   <span>Todo dia {diaVencimentoWatch}</span>
@@ -390,6 +483,15 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
                     Muitas parcelas podem dificultar o controle financeiro
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {valorEntradaWatch >= valorWatch && (
+                <Alert className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Entrada não pode ser maior ou igual ao valor total
                   </AlertDescription>
                 </Alert>
               )}
