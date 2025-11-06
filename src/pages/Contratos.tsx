@@ -533,7 +533,7 @@ export default function Contratos() {
                           title="Ver detalhes"
                           className="h-11 px-5 rounded-xl"
                         >
-                          <Eye className="h-5 w-5 mr-2" />
+                          <Eye className="h-9 w-9 mr-2" />
                           Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
@@ -545,7 +545,7 @@ export default function Contratos() {
                               title="Editar contrato"
                               className="h-11 px-5 rounded-xl"
                             >
-                              <Pencil className="h-5 w-5 mr-2" />
+                              <Pencil className="h-9 w-9 mr-2" />
                               Editar
                             </Button>
                           </>
@@ -559,7 +559,7 @@ export default function Contratos() {
                                 title="Cancelar contrato"
                                 className="h-11 px-5 rounded-xl border-2 border-primary text-primary hover:bg-primary/10"
                               >
-                                <X className="h-5 w-5 mr-2" />
+                                <X className="h-9 w-9 mr-2" />
                                 Cancelar
                               </Button>
                             </AlertDialogTrigger>
