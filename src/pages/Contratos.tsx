@@ -422,7 +422,7 @@ export default function Contratos() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Valor Negociado</TableHead>
                 <TableHead>Valor Líquido Total</TableHead>
-                <TableHead>Valor a Receber Líquido</TableHead>
+                <TableHead>Líquido a Receber</TableHead>
                 <TableHead>Forma Pagamento</TableHead>
                 <TableHead>Data Início</TableHead>
                 <TableHead>Parcelas</TableHead>
@@ -471,11 +471,13 @@ export default function Contratos() {
                         <p className="font-semibold text-blue-600 dark:text-blue-400">
                           {formatCurrency(contrato.parcelas?.valor_restante || 0)}
                         </p>
-                        {contrato.margem_pct && (
-                          <p className="text-xs text-muted-foreground">
-                            Margem: {contrato.margem_pct.toFixed(1)}%
-                          </p>
-                        )}
+                        <p className="text-xs text-muted-foreground">
+                          De {formatCurrency(
+                            contrato.margem_pct 
+                              ? Number(contrato.valor_negociado) * (contrato.margem_pct / 100)
+                              : Number(contrato.valor_negociado)
+                          )}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
