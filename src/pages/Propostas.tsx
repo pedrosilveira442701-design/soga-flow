@@ -212,8 +212,8 @@ export default function Propostas() {
             Gerencie propostas comerciais com análise de margem
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={() => setShowCreateDialog(true)} className="h-11 px-5">
+          <Plus className="h-5 w-5 mr-3" />
           Nova Proposta
         </Button>
       </div>
@@ -369,8 +369,8 @@ export default function Propostas() {
                         : "Crie sua primeira proposta"}
                     </p>
                     {!hasActiveFilters && (
-                      <Button onClick={() => setShowCreateDialog(true)} className="mt-2">
-                        <Plus className="h-4 w-4 mr-2" />
+                      <Button onClick={() => setShowCreateDialog(true)} className="mt-2 h-11 px-5">
+                        <Plus className="h-5 w-5 mr-3" />
                         Criar Primeira Proposta
                       </Button>
                     )}
@@ -438,14 +438,14 @@ export default function Propostas() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover z-50">
                           <DropdownMenuItem onClick={() => handleView(proposta)}>
-                            <Eye className="h-4 w-4 mr-2" />
+                            <Eye className="h-5 w-5 mr-3" />
                             Ver Detalhes
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDelete(proposta.id)}
                             className="text-destructive"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="h-5 w-5 mr-3" />
                             Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -269,8 +269,8 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
         
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-10 px-4">
-              <Plus className="h-5 w-5 mr-2" />
+            <Button size="sm" variant="outline" className="h-11 px-5">
+              <Plus className="h-6 w-6 mr-3" />
               Adicionar Parcela
             </Button>
           </DialogTrigger>
@@ -408,9 +408,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                             size="sm"
                             onClick={() => handleOpenEditDialog(parcela)}
                             title="Editar parcela"
-                            className="h-10 px-4"
+                            className="h-11 px-5"
                           >
-                            <Edit className="h-5 w-5 mr-2" />
+                            <Edit className="h-6 w-6 mr-3" />
                             Editar
                           </Button>
                           <Button
@@ -418,9 +418,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                             size="sm"
                             onClick={() => handleMarcarComoPago(parcela.id)}
                             title="Marcar como paga"
-                            className="h-10 px-4 border-green-500 text-green-600 hover:bg-green-50"
+                            className="h-11 px-5 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                           >
-                            <CheckCircle className="h-5 w-5 mr-2" />
+                            <CheckCircle className="h-6 w-6 mr-3" />
                             Pagar
                           </Button>
                           <AlertDialog>
@@ -429,9 +429,9 @@ export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: Pa
                                 variant="outline"
                                 size="sm"
                                 title="Excluir parcela"
-                                className="h-10 px-4 border-destructive text-destructive hover:bg-destructive/10"
+                                className="h-11 px-5 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-5 w-5 mr-2" />
+                                <Trash2 className="h-6 w-6 mr-3" />
                                 Excluir
                               </Button>
                             </AlertDialogTrigger>

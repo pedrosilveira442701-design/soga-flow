@@ -144,8 +144,8 @@ export default function Leads() {
 
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
+            <Button className="gap-2 h-11 px-5">
+              <Plus className="h-5 w-5" />
               Novo Lead
             </Button>
           </DialogTrigger>

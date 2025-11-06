@@ -127,8 +127,8 @@ export default function Clientes() {
           </p>
         </div>
 
-        <Button onClick={() => setCreateDialogOpen(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setCreateDialogOpen(true)} className="h-11 px-5">
+          <UserPlus className="mr-3 h-5 w-5" />
           Novo Cliente
         </Button>
       </div>
@@ -273,24 +273,24 @@ export default function Clientes() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className="bg-popover z-50">
                               <DropdownMenuItem
                                 onClick={() => handleViewDetails(cliente)}
                               >
-                                <Eye className="mr-2 h-4 w-4" />
+                                <Eye className="mr-3 h-5 w-5" />
                                 Ver Detalhes
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleEditCliente(cliente)}
                               >
-                                <Edit className="mr-2 h-4 w-4" />
+                                <Edit className="mr-3 h-5 w-5" />
                                 Editar
                               </DropdownMenuItem>
                               {cliente.telefone && (
                                 <DropdownMenuItem
                                   onClick={() => handleWhatsApp(cliente.telefone)}
                                 >
-                                  <MessageCircle className="mr-2 h-4 w-4" />
+                                  <MessageCircle className="mr-3 h-5 w-5" />
                                   WhatsApp
                                 </DropdownMenuItem>
                               )}
@@ -298,7 +298,7 @@ export default function Clientes() {
                                 onClick={() => handleDeleteCliente(cliente.id)}
                                 className="text-destructive"
                               >
-                                <Trash2 className="mr-2 h-4 w-4" />
+                                <Trash2 className="mr-3 h-5 w-5" />
                                 Deletar
                               </DropdownMenuItem>
                             </DropdownMenuContent>

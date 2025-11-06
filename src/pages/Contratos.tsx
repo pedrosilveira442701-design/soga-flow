@@ -243,12 +243,12 @@ export default function Contratos() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline">
-            <FileText className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline" className="h-11 px-5">
+            <FileText className="mr-3 h-5 w-5" />
             Criar de Proposta
           </Button>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setShowCreateDialog(true)} className="h-11 px-5">
+            <Plus className="mr-3 h-5 w-5" />
             Novo Contrato
           </Button>
         </div>
@@ -406,10 +406,10 @@ export default function Contratos() {
           {!searchTerm && statusFilter === "all" && formaPagamentoFilter === "all" && (
             <Button
               onClick={() => setShowCreateDialog(true)}
-              className="mt-4"
+              className="mt-4 h-11 px-5"
               variant="outline"
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-3 h-5 w-5" />
               Criar Primeiro Contrato
             </Button>
           )}
@@ -473,9 +473,9 @@ export default function Contratos() {
                           size="sm"
                           onClick={() => handleView(contrato)}
                           title="Ver detalhes"
-                          className="h-9 px-3"
+                          className="h-11 px-5"
                         >
-                          <Eye className="h-4 w-4 mr-2" />
+                          <Eye className="h-6 w-6 mr-3" />
                           Ver
                         </Button>
                         {contrato.status !== "cancelado" && (
@@ -485,9 +485,9 @@ export default function Contratos() {
                               size="sm"
                               onClick={() => handleEdit(contrato)}
                               title="Editar contrato"
-                              className="h-9 px-3"
+                              className="h-11 px-5"
                             >
-                              <Pencil className="h-4 w-4 mr-2" />
+                              <Pencil className="h-6 w-6 mr-3" />
                               Editar
                             </Button>
                           </>
@@ -499,9 +499,9 @@ export default function Contratos() {
                                 variant="outline"
                                 size="sm"
                                 title="Cancelar contrato"
-                                className="h-9 px-3 border-destructive text-destructive hover:bg-destructive/10"
+                                className="h-11 px-5 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                                <Trash2 className="h-6 w-6 mr-3" />
                                 Cancelar
                               </Button>
                             </AlertDialogTrigger>
