@@ -393,6 +393,7 @@ export default function PropostaDetailsDialog({
           <ProposalForm
             onSubmit={handleEdit}
             initialData={{
+              id: proposta.id,
               cliente_id: proposta.cliente_id,
               servicos: servicos.map((s: any) => ({
                 tipo: s.tipo || "",

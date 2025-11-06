@@ -30,6 +30,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
+import ArquivosList from "@/components/arquivos/ArquivosList";
+import { Paperclip } from "lucide-react";
 
 const TIPOS_PRODUTO = [
   "Pintura Epóxi",
@@ -72,7 +74,7 @@ type ProposalFormValues = z.infer<typeof proposalSchema>;
 
 interface ProposalFormProps {
   onSubmit: (data: ProposalFormValues) => void;
-  initialData?: Partial<ProposalFormValues>;
+  initialData?: Partial<ProposalFormValues> & { id?: string };
 }
 
 export default function ProposalForm({
@@ -389,6 +391,22 @@ export default function ProposalForm({
                   </FormItem>
                 )}
               />
+            )}
+
+            {/* Seção de Arquivos - apenas em edição */}
+            {initialData?.id && (
+              <Card className="p-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Paperclip className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="font-semibold">Arquivos Anexados</h3>
+                </div>
+                <ArquivosList 
+                  entidade="proposta"
+                  entidadeId={initialData.id}
+                  showUpload={true}
+                  compact={false}
+                />
+              </Card>
             )}
 
             <Button type="submit" className="w-full">
