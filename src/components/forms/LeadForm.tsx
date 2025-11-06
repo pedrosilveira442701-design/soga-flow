@@ -362,12 +362,14 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
 
       {/* Dialog para criar novo cliente */}
       <Dialog open={isClienteDialogOpen} onOpenChange={setIsClienteDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Criar Novo Cliente</DialogTitle>
             <DialogDescription>Preencha os dados do cliente para adicioná-lo rapidamente</DialogDescription>
           </DialogHeader>
-          <ClienteForm onSubmit={handleCreateCliente} isLoading={createCliente.isPending} mode="create" />
+          <div className="overflow-y-auto px-6 pb-6">
+            <ClienteForm onSubmit={handleCreateCliente} isLoading={createCliente.isPending} mode="create" />
+          </div>
         </DialogContent>
       </Dialog>
     </Form>
