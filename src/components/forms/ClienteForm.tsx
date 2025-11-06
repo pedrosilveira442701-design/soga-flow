@@ -99,6 +99,7 @@ interface ClienteFormProps {
   onSubmit: (data: ClienteFormValues) => void;
   isLoading?: boolean;
   mode?: "create" | "edit";
+  onCancel?: () => void;
 }
 
 export function ClienteForm({
@@ -106,6 +107,7 @@ export function ClienteForm({
   onSubmit,
   isLoading,
   mode = "create",
+  onCancel,
 }: ClienteFormProps) {
   const { toast } = useToast();
   const [loadingCep, setLoadingCep] = useState(false);
@@ -576,7 +578,12 @@ export function ClienteForm({
           />
         )}
 
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-3">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Voltar
+            </Button>
+          )}
           <Button type="submit" disabled={isLoading}>
             {isLoading
               ? "Salvando..."

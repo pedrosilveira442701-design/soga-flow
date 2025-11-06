@@ -368,7 +368,12 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             <DialogDescription>Preencha os dados do cliente para adicioná-lo rapidamente</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto px-6 pb-6">
-            <ClienteForm onSubmit={handleCreateCliente} isLoading={createCliente.isPending} mode="create" />
+            <ClienteForm 
+              onSubmit={handleCreateCliente} 
+              isLoading={createCliente.isPending} 
+              mode="create"
+              onCancel={() => setIsClienteDialogOpen(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>
