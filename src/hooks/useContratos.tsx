@@ -24,6 +24,8 @@ export interface Contrato {
   proposta?: {
     tipo_piso: string;
     m2: number;
+    custo_m2?: number;
+    servicos?: Array<{ descricao: string; valor: number }>;
   };
   parcelas?: {
     total: number;
@@ -71,7 +73,7 @@ export const useContratos = () => {
         .select(`
           *,
           cliente:clientes!cliente_id(nome, telefone, cidade),
-          proposta:propostas!proposta_id(tipo_piso, m2)
+          proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos)
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });

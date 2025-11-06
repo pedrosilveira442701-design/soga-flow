@@ -51,11 +51,30 @@ import { cn } from "@/lib/utils";
 
 interface ParcelasManagerProps {
   contratoId: string;
+  valorNegociado: number;
+  propostaInfo?: {
+    m2: number;
+    custo_m2?: number;
+    servicos?: Array<{ descricao: string; valor: number }>;
+  };
 }
 
-export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
+export function ParcelasManager({ contratoId, valorNegociado, propostaInfo }: ParcelasManagerProps) {
   const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
     useParcelas(contratoId);
+  
+  // Calcular custo total
+  const custoTotal = propostaInfo ? (() => {
+    const custoMaterial = (propostaInfo.custo_m2 || 0) * propostaInfo.m2;
+    const custoServicos = (propostaInfo.servicos || []).reduce((sum, s) => sum + s.valor, 0);
+    return custoMaterial + custoServicos;
+  })() : 0;
+  
+  // Calcular custo por parcela
+  const calcularCustoPorParcela = (valorParcela: number) => {
+    if (valorNegociado === 0) return 0;
+    return (custoTotal / valorNegociado) * valorParcela;
+  };
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [novaParcelaValor, setNovaParcelaValor] = useState("");
@@ -144,6 +163,12 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
     vencidas: parcelas.filter(
       (p) => p.status === "pendente" && isPast(parseISO(p.vencimento))
     ).length,
+    custoTotal,
+    liquidoTotal: parcelas.reduce((sum, p) => {
+      const valorParcela = Number(p.valor_liquido_parcela);
+      const custoParcela = calcularCustoPorParcela(valorParcela);
+      return sum + (valorParcela - custoParcela);
+    }, 0),
   };
 
   if (isLoading) {
@@ -238,16 +263,22 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
               <TableHead>Nº</TableHead>
               <TableHead>Vencimento</TableHead>
               <TableHead>Valor</TableHead>
+              <TableHead>Custo</TableHead>
+              <TableHead>Líquido</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data Pagamento</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {parcelas.map((parcela) => {
+          {parcelas.map((parcela) => {
               const isVencida =
                 isPast(parseISO(parcela.vencimento)) &&
                 parcela.status === "pendente";
+              
+              const valorParcela = Number(parcela.valor_liquido_parcela);
+              const custoParcela = calcularCustoPorParcela(valorParcela);
+              const liquidoParcela = valorParcela - custoParcela;
 
               return (
                 <TableRow
@@ -263,7 +294,13 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
                     })}
                   </TableCell>
                   <TableCell>
-                    {formatCurrency(Number(parcela.valor_liquido_parcela))}
+                    {formatCurrency(valorParcela)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatCurrency(custoParcela)}
+                  </TableCell>
+                  <TableCell className="font-semibold text-green-600">
+                    {formatCurrency(liquidoParcela)}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(parcela.status, parcela.vencimento)}
@@ -341,10 +378,22 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
       </div>
 
       {/* Footer com Totalizações */}
-      <div className="grid grid-cols-3 gap-4 p-4 rounded-lg border bg-muted/50">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-lg border bg-muted/50">
         <div>
           <p className="text-sm text-muted-foreground">Total</p>
           <p className="text-lg font-semibold">{formatCurrency(totais.total)}</p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Custo Total</p>
+          <p className="text-lg font-semibold text-orange-600">
+            {formatCurrency(totais.custoTotal)}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Líquido Total</p>
+          <p className="text-lg font-semibold text-green-600">
+            {formatCurrency(totais.liquidoTotal)}
+          </p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Pago</p>
