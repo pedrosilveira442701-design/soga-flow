@@ -109,9 +109,6 @@ export const usePropostas = () => {
           valor_m2: primeiroServico.valor_m2,
           custo_m2: primeiroServico.custo_m2,
           tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
-          valor_total,
-          liquido,
-          margem_pct,
           data: data.data || new Date().toISOString().split('T')[0],
           status: data.status || 'aberta',
         })
@@ -158,9 +155,6 @@ export const usePropostas = () => {
           tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
           data: data.data,
           status: data.status,
-          valor_total,
-          liquido,
-          margem_pct,
         })
         .eq("id", data.id)
         .select()
