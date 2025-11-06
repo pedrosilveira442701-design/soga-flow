@@ -280,29 +280,35 @@ export function ParcelasManager({ contratoId }: ParcelasManagerProps) {
                       {parcela.status === "pendente" && (
                         <>
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleOpenEditDialog(parcela)}
                             title="Editar parcela"
+                            className="h-9 px-3"
                           >
-                            <Edit className="h-4 w-4 text-blue-500" />
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
                           </Button>
                           <Button
-                            variant="ghost"
-                            size="icon"
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleMarcarComoPago(parcela.id)}
                             title="Marcar como paga"
+                            className="h-9 px-3 border-green-500 text-green-600 hover:bg-green-50"
                           >
-                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Pagar
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
+                                variant="outline"
+                                size="sm"
                                 title="Excluir parcela"
+                                className="h-9 px-3 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
