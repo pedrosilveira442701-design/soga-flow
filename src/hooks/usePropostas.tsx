@@ -17,6 +17,13 @@ export interface Proposta {
   status: string;
   created_at: string;
   updated_at: string;
+  servicos?: Array<{
+    tipo: string;
+    tipo_outro?: string;
+    m2: number;
+    valor_m2: number;
+    custo_m2: number;
+  }>;
   clientes?: {
     nome: string;
     telefone?: string;
@@ -26,10 +33,13 @@ export interface Proposta {
 
 export interface PropostaInsert {
   cliente_id: string;
-  m2: number;
-  valor_m2: number;
-  custo_m2: number;
-  tipo_piso: string;
+  servicos?: Array<{
+    tipo: string;
+    tipo_outro?: string;
+    m2: number;
+    valor_m2: number;
+    custo_m2: number;
+  }>;
   data?: string;
   status?: string;
 }
@@ -58,7 +68,12 @@ export const usePropostas = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as Proposta[];
+      
+      // Parse servicos from JSON
+      return (data || []).map(p => ({
+        ...p,
+        servicos: Array.isArray(p.servicos) ? p.servicos : []
+      })) as unknown as Proposta[];
     },
   });
 
@@ -68,16 +83,27 @@ export const usePropostas = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Usuário não autenticado");
 
-      const valor_total = data.m2 * data.valor_m2;
-      const custo_total = data.m2 * data.custo_m2;
+      // Calcular totais a partir dos serviços
+      const servicos = data.servicos || [];
+      const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
+      const valor_total = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
       const liquido = valor_total - custo_total;
       const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
+
+      // Para compatibilidade, usar valores do primeiro serviço nos campos antigos
+      const primeiroServico = servicos[0] || { m2: 0, valor_m2: 0, custo_m2: 0 };
 
       const { data: proposta, error } = await supabase
         .from("propostas")
         .insert({
-          ...data,
           user_id: user.id,
+          cliente_id: data.cliente_id,
+          servicos: servicos,
+          m2: m2_total,
+          valor_m2: primeiroServico.valor_m2,
+          custo_m2: primeiroServico.custo_m2,
+          tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
           valor_total,
           liquido,
           margem_pct,
@@ -102,19 +128,26 @@ export const usePropostas = () => {
   // Update proposta
   const updateProposta = useMutation({
     mutationFn: async (data: PropostaUpdate) => {
-      const valor_total = data.m2 * data.valor_m2;
-      const custo_total = data.m2 * data.custo_m2;
+      // Calcular totais a partir dos serviços
+      const servicos = data.servicos || [];
+      const m2_total = servicos.reduce((acc, s) => acc + s.m2, 0);
+      const valor_total = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+      const custo_total = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
       const liquido = valor_total - custo_total;
       const margem_pct = valor_total > 0 ? (liquido / valor_total) * 100 : 0;
+
+      // Para compatibilidade, usar valores do primeiro serviço nos campos antigos
+      const primeiroServico = servicos[0] || { m2: 0, valor_m2: 0, custo_m2: 0 };
 
       const { data: proposta, error } = await supabase
         .from("propostas")
         .update({
           cliente_id: data.cliente_id,
-          m2: data.m2,
-          valor_m2: data.valor_m2,
-          custo_m2: data.custo_m2,
-          tipo_piso: data.tipo_piso,
+          servicos: servicos,
+          m2: m2_total,
+          valor_m2: primeiroServico.valor_m2,
+          custo_m2: primeiroServico.custo_m2,
+          tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
           data: data.data,
           status: data.status,
           valor_total,

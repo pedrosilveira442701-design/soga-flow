@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card } from "@/components/ui/card";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -41,27 +41,31 @@ const TIPOS_PRODUTO = [
   "Outro",
 ] as const;
 
-const proposalSchema = z.object({
-  cliente_id: z.string().min(1, "Cliente é obrigatório"),
+const servicoSchema = z.object({
+  tipo: z.string().min(1, "Selecione o tipo"),
+  tipo_outro: z.string().optional(),
   m2: z.number().positive("Área deve ser maior que zero"),
   valor_m2: z.number().positive("Preço deve ser maior que zero"),
   custo_m2: z.number().positive("Custo deve ser maior que zero"),
-  tipo_piso: z.string().min(1, "Tipo de serviço é obrigatório"),
-  tipo_piso_outro: z.string().optional(),
-  data: z.string().optional(),
-  status: z.string().optional(),
 }).refine(
   (data) => {
-    if (data.tipo_piso === "Outro") {
-      return data.tipo_piso_outro && data.tipo_piso_outro.trim().length > 0;
+    if (data.tipo === "Outro") {
+      return data.tipo_outro && data.tipo_outro.trim().length > 0;
     }
     return true;
   },
   {
     message: "Descreva o tipo de serviço",
-    path: ["tipo_piso_outro"],
+    path: ["tipo_outro"],
   },
 );
+
+const proposalSchema = z.object({
+  cliente_id: z.string().min(1, "Cliente é obrigatório"),
+  servicos: z.array(servicoSchema).min(1, "Adicione pelo menos um serviço"),
+  data: z.string().optional(),
+  status: z.string().optional(),
+});
 
 type ProposalFormValues = z.infer<typeof proposalSchema>;
 
@@ -80,22 +84,21 @@ export default function ProposalForm({
     resolver: zodResolver(proposalSchema),
     defaultValues: {
       cliente_id: initialData?.cliente_id || "",
-      m2: initialData?.m2 || 0,
-      valor_m2: initialData?.valor_m2 || 0,
-      custo_m2: initialData?.custo_m2 || 0,
-      tipo_piso: initialData?.tipo_piso || "",
-      tipo_piso_outro: initialData?.tipo_piso_outro || "",
+      servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
       data: initialData?.data || new Date().toISOString().split('T')[0],
       status: initialData?.status || "aberta",
     },
   });
 
-  const m2 = form.watch("m2");
-  const valor_m2 = form.watch("valor_m2");
-  const custo_m2 = form.watch("custo_m2");
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "servicos",
+  });
 
-  const totalBruto = m2 * valor_m2;
-  const totalCusto = m2 * custo_m2;
+  const servicos = form.watch("servicos");
+
+  const totalBruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
+  const totalCusto = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
   const valorLiquido = totalBruto - totalCusto;
   const margem = totalBruto > 0 ? (valorLiquido / totalBruto) * 100 : 0;
 
@@ -107,7 +110,6 @@ export default function ProposalForm({
   };
 
   const selectedCliente = clientes?.find(c => c.id === form.watch("cliente_id"));
-  const tipoServicoSelecionado = form.watch("tipo_piso");
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -145,49 +147,157 @@ export default function ProposalForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="tipo_piso"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Serviço *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {TIPOS_PRODUTO.map((tipo) => (
-                        <SelectItem key={tipo} value={tipo}>
-                          {tipo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Serviços</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => append({ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 })}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Serviço
+                </Button>
+              </div>
 
-            {tipoServicoSelecionado === "Outro" && (
-              <FormField
-                control={form.control}
-                name="tipo_piso_outro"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descreva o tipo de serviço *</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: Pintura especial, revestimento customizado..."
-                        {...field}
+              {fields.map((field, index) => {
+                const tipoSelecionado = form.watch(`servicos.${index}.tipo`);
+                
+                return (
+                  <Card key={field.id} className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Serviço {index + 1}</h4>
+                      {fields.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name={`servicos.${index}.tipo`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Serviço *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {TIPOS_PRODUTO.map((tipo) => (
+                                <SelectItem key={tipo} value={tipo}>
+                                  {tipo}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {tipoSelecionado === "Outro" && (
+                      <FormField
+                        control={form.control}
+                        name={`servicos.${index}.tipo_outro`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Descreva o tipo de serviço *</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: Pintura especial, revestimento customizado..."
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+                    )}
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`servicos.${index}.m2`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Área (m²) *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`servicos.${index}.valor_m2`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Preço/m² (R$) *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`servicos.${index}.custo_m2`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Custo/m² (R$) *</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="text-sm text-muted-foreground bg-muted p-3 rounded">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-medium">
+                          {formatCurrency(form.watch(`servicos.${index}.m2`) * form.watch(`servicos.${index}.valor_m2`))}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
 
             <FormField
               control={form.control}
@@ -229,65 +339,6 @@ export default function ProposalForm({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="m2"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Área (m²) *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="valor_m2"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preço por m² (R$) *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="custo_m2"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Custo por m² (R$) *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {initialData && (
               <FormField

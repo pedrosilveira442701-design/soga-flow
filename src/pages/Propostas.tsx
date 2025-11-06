@@ -87,8 +87,13 @@ export default function Propostas() {
         .includes(searchTerm.toLowerCase());
       const matchesStatus =
         statusFilter === "todas" || proposta.status === statusFilter;
+      
+      // Para filtro de tipo, considerar tanto servicos quanto tipo_piso antigo
+      const tipos = proposta.servicos && proposta.servicos.length > 0
+        ? proposta.servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo)
+        : [proposta.tipo_piso];
       const matchesTipo =
-        tipoFilter === "todos" || proposta.tipo_piso === tipoFilter;
+        tipoFilter === "todos" || tipos.some(t => t === tipoFilter);
 
       return matchesSearch && matchesStatus && matchesTipo;
     });
@@ -133,7 +138,15 @@ export default function Propostas() {
     return "text-success";
   };
 
-  const tiposPiso = Array.from(new Set(propostas.map((p) => p.tipo_piso)));
+  const tiposPiso = Array.from(
+    new Set(
+      propostas.flatMap(p => 
+        p.servicos && p.servicos.length > 0
+          ? p.servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo)
+          : [p.tipo_piso]
+      )
+    )
+  );
   const hasActiveFilters = searchTerm || statusFilter !== "todas" || tipoFilter !== "todos";
 
   const clearFilters = () => {
@@ -347,7 +360,17 @@ export default function Propostas() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{proposta.tipo_piso}</Badge>
+                    {proposta.servicos && proposta.servicos.length > 0 ? (
+                      <div className="space-y-1">
+                        {proposta.servicos.map((s, idx) => (
+                          <Badge key={idx} variant="outline" className="mr-1">
+                            {s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <Badge variant="outline">{proposta.tipo_piso}</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="text-right">{proposta.m2.toFixed(2)}</TableCell>
                   <TableCell className="text-right font-medium">

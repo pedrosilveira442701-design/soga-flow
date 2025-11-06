@@ -426,6 +426,7 @@ export type Database = {
           liquido: number | null
           m2: number
           margem_pct: number | null
+          servicos: Json | null
           status: string | null
           tipo_piso: string
           updated_at: string
@@ -443,6 +444,7 @@ export type Database = {
           liquido?: number | null
           m2: number
           margem_pct?: number | null
+          servicos?: Json | null
           status?: string | null
           tipo_piso: string
           updated_at?: string
@@ -460,6 +462,7 @@ export type Database = {
           liquido?: number | null
           m2?: number
           margem_pct?: number | null
+          servicos?: Json | null
           status?: string | null
           tipo_piso?: string
           updated_at?: string

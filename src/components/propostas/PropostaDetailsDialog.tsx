@@ -89,7 +89,16 @@ export default function PropostaDetailsDialog({
     }
   }, [open, proposta?.id, refetchContrato]);
 
-  if (!proposta) return null;
+  // Calcular totais a partir dos serviços
+  const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
+    ? proposta.servicos
+    : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
+
+  const totalM2 = servicos.reduce((acc: number, s: any) => acc + (s.m2 || 0), 0);
+  const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+  const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
+  const liquido = totalBruto - totalCusto;
+  const margem = totalBruto > 0 ? (liquido / totalBruto) * 100 : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -217,28 +226,41 @@ export default function PropostaDetailsDialog({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Square className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <div className="text-sm text-muted-foreground">Tipo de Piso</div>
-                <div className="font-medium">{proposta.tipo_piso}</div>
-              </div>
-            </div>
-
-            {/* Medições e Valores */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground mb-1">Área</div>
-                <div className="text-2xl font-bold">{proposta.m2.toFixed(2)} m²</div>
-              </div>
-              <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground mb-1">Preço/m²</div>
-                <div className="text-2xl font-bold">{formatCurrency(proposta.valor_m2)}</div>
-              </div>
-              <div className="rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground mb-1">Custo/m²</div>
-                <div className="text-2xl font-bold">{formatCurrency(proposta.custo_m2)}</div>
-              </div>
+            {/* Serviços */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Serviços</h3>
+              {servicos.map((servico: any, index: number) => (
+                <div key={index} className="rounded-lg border p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Tipo</div>
+                      <div className="font-medium">
+                        {servico.tipo === "Outro" && servico.tipo_outro 
+                          ? servico.tipo_outro 
+                          : servico.tipo}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Área</div>
+                      <div className="font-medium">{(servico.m2 || 0).toFixed(2)} m²</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Preço/m²</div>
+                      <div className="font-medium">{formatCurrency(servico.valor_m2 || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Custo/m²</div>
+                      <div className="font-medium">{formatCurrency(servico.custo_m2 || 0)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Subtotal</span>
+                    <span className="font-bold text-lg">
+                      {formatCurrency((servico.m2 || 0) * (servico.valor_m2 || 0))}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Ação de Contrato */}
@@ -285,15 +307,21 @@ export default function PropostaDetailsDialog({
               <h3 className="font-semibold text-lg mb-4">Resumo Financeiro</h3>
               <div className="grid grid-cols-2 gap-6">
                 <div>
+                  <div className="text-sm text-muted-foreground mb-1">Área Total</div>
+                  <div className="text-xl font-semibold">
+                    {totalM2.toFixed(2)} m²
+                  </div>
+                </div>
+                <div>
                   <div className="text-sm text-muted-foreground mb-1">Total Bruto</div>
                   <div className="text-xl font-semibold text-primary">
-                    {formatCurrency(proposta.valor_total)}
+                    {formatCurrency(totalBruto)}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">Total Custo</div>
                   <div className="text-xl font-semibold text-muted-foreground">
-                    {formatCurrency(proposta.m2 * proposta.custo_m2)}
+                    {formatCurrency(totalCusto)}
                   </div>
                 </div>
                 <div>
@@ -302,15 +330,15 @@ export default function PropostaDetailsDialog({
                     Valor Líquido
                   </div>
                   <div className="text-3xl font-bold text-success">
-                    {formatCurrency(proposta.liquido)}
+                    {formatCurrency(liquido)}
                   </div>
                 </div>
-                <div>
+                <div className="col-span-2">
                   <div className="text-sm text-muted-foreground mb-1">Margem</div>
-                  <div className={`text-3xl font-bold ${getMargemColor(proposta.margem_pct)}`}>
-                    {proposta.margem_pct.toFixed(1)}%
+                  <div className={`text-3xl font-bold ${getMargemColor(margem)}`}>
+                    {margem.toFixed(1)}%
                   </div>
-                  {proposta.margem_pct < 20 && (
+                  {margem < 20 && (
                     <div className="text-xs text-destructive mt-1">
                       ⚠️ Atenção: margem abaixo do recomendado
                     </div>
@@ -346,10 +374,13 @@ export default function PropostaDetailsDialog({
             onSubmit={handleEdit}
             initialData={{
               cliente_id: proposta.cliente_id,
-              m2: proposta.m2,
-              valor_m2: proposta.valor_m2,
-              custo_m2: proposta.custo_m2,
-              tipo_piso: proposta.tipo_piso,
+              servicos: servicos.map((s: any) => ({
+                tipo: s.tipo || "",
+                tipo_outro: s.tipo_outro || "",
+                m2: s.m2 || 0,
+                valor_m2: s.valor_m2 || 0,
+                custo_m2: s.custo_m2 || 0,
+              })),
               data: proposta.data,
               status: proposta.status,
             }}
@@ -386,13 +417,13 @@ export default function PropostaDetailsDialog({
             initialData={{
               cliente_id: proposta.cliente_id,
               proposta_id: proposta.id,
-              valor_negociado: Number(proposta.liquido),
+              valor_negociado: Number(liquido),
               cpf_cnpj: "",
               forma_pagamento: "",
               data_inicio: new Date().toISOString().split("T")[0],
               numero_parcelas: 1,
               dia_vencimento: 10,
-              observacoes: `Contrato gerado a partir da proposta de ${proposta.tipo_piso} - ${proposta.m2}m²`,
+              observacoes: `Contrato gerado a partir da proposta - ${totalM2.toFixed(2)}m²`,
             }}
             mode="fromProposta"
           />
