@@ -1,76 +1,84 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, Wallet, Receipt } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
 import { ProximosVencimentos } from "@/components/financeiro/ProximosVencimentos";
 import { ProximasVisitas } from "@/components/visitas/ProximasVisitas";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useDashboard } from "@/hooks/useDashboard";
+import { useDashboard, FilterPeriod } from "@/hooks/useDashboard";
+import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
+import { useState } from "react";
 
 export default function Dashboard() {
-  const { kpis, timelineData, funnelData, isLoading } = useDashboard();
+  const [period, setPeriod] = useState<FilterPeriod>("month");
+  const [customDateRange, setCustomDateRange] = useState<{ from: Date; to: Date }>();
+
+  const { kpis, timelineData, funnelData, isLoading } = useDashboard({
+    period,
+    customDateRange,
+  });
 
   const kpiData = [
     {
-      title: "Total Bruto",
-      value: kpis.bruto.value,
-      delta: kpis.bruto.delta,
-      icon: DollarSign,
-    },
-    {
-      title: "Total Custo",
-      value: kpis.custo.value,
-      delta: kpis.custo.delta,
-      icon: TrendingUp,
-    },
-    {
-      title: "Valor Líquido",
-      value: kpis.liquido.value,
-      delta: kpis.liquido.delta,
-      variant: "liquid" as const,
-      icon: Target,
-    },
-    {
-      title: "Margem",
-      value: kpis.margem.value,
-      delta: kpis.margem.delta,
-      icon: Percent,
-    },
-    {
-      title: "A Receber",
-      value: kpis.aReceber.value,
-      delta: kpis.aReceber.delta,
+      title: "Valor Total de Propostas",
+      value: kpis.totalPropostas.value,
       icon: FileText,
+    },
+    {
+      title: "Valor Total de Contratos",
+      value: kpis.totalContratos.value,
+      icon: HandCoins,
+    },
+    {
+      title: "Valor Total a Receber",
+      value: kpis.totalAReceber.value,
+      icon: Wallet,
+    },
+    {
+      title: "Valor Total a Receber Líquido",
+      value: kpis.totalAReceberLiquido.value,
+      variant: "liquid" as const,
+      icon: Receipt,
     },
   ];
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-h1">Dashboard</h1>
-          <p className="text-body text-muted-foreground mt-2">
-            Visão geral do seu negócio
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-h1">Dashboard</h1>
+            <p className="text-body text-muted-foreground mt-2">
+              Visão geral do seu negócio
+            </p>
+          </div>
+          
+          <div className="flex gap-3">
+            <Button variant="outline">
+              <UserPlus className="mr-3 h-5 w-5" strokeWidth={1.5} />
+              Novo Cliente
+            </Button>
+            <Button>
+              <FileText className="mr-3 h-5 w-5" strokeWidth={1.5} />
+              Nova Proposta
+            </Button>
+          </div>
         </div>
-        
-        <div className="flex gap-3">
-          <Button variant="outline">
-            <UserPlus className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            Novo Cliente
-          </Button>
-          <Button>
-            <FileText className="mr-2 h-4 w-4" strokeWidth={1.5} />
-            Nova Proposta
-          </Button>
-        </div>
+
+        {/* Filtros */}
+        <DashboardFilters
+          period={period}
+          onPeriodChange={setPeriod}
+          customDateRange={customDateRange}
+          onCustomDateRangeChange={setCustomDateRange}
+        />
       </div>
 
       {/* Row 1: KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
+          Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full" />
           ))
         ) : (
@@ -79,7 +87,6 @@ export default function Dashboard() {
               key={kpi.title}
               title={kpi.title}
               value={kpi.value}
-              delta={kpi.delta}
               variant={kpi.variant}
               icon={kpi.icon}
             />

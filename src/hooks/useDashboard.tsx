@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemo } from "react";
-import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, format, startOfWeek, endOfWeek, startOfYear, endOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+export type FilterPeriod = "week" | "month" | "year" | "custom";
 
 interface KPIData {
   title: string;
@@ -29,28 +31,58 @@ interface FunnelData {
   conversionRate?: number;
 }
 
-export function useDashboard() {
+interface DashboardFilters {
+  period: FilterPeriod;
+  customDateRange?: { from: Date; to: Date };
+}
+
+export function useDashboard(filters: DashboardFilters = { period: "month" }) {
   const { user } = useAuth();
 
-  // Datas para filtros
+  // Calcular datas baseado no filtro
   const now = new Date();
-  const currentMonthStart = startOfMonth(now);
-  const currentMonthEnd = endOfMonth(now);
-  const lastMonthStart = startOfMonth(subMonths(now, 1));
-  const lastMonthEnd = endOfMonth(subMonths(now, 1));
+  const { startDate, endDate } = useMemo(() => {
+    switch (filters.period) {
+      case "week":
+        return {
+          startDate: startOfWeek(now, { locale: ptBR }),
+          endDate: endOfWeek(now, { locale: ptBR }),
+        };
+      case "month":
+        return {
+          startDate: startOfMonth(now),
+          endDate: endOfMonth(now),
+        };
+      case "year":
+        return {
+          startDate: startOfYear(now),
+          endDate: endOfYear(now),
+        };
+      case "custom":
+        return {
+          startDate: filters.customDateRange?.from || startOfMonth(now),
+          endDate: filters.customDateRange?.to || endOfMonth(now),
+        };
+      default:
+        return {
+          startDate: startOfMonth(now),
+          endDate: endOfMonth(now),
+        };
+    }
+  }, [filters.period, filters.customDateRange, now]);
+
   const sixMonthsAgo = subMonths(now, 5);
 
-  // 1. Buscar propostas fechadas do mês atual (pela data da proposta)
-  const { data: currentMonthPropostas = [] } = useQuery({
-    queryKey: ["propostas-dashboard-current", user?.id],
+  // 1. Buscar todas as propostas no período selecionado
+  const { data: propostas = [] } = useQuery({
+    queryKey: ["propostas-dashboard", user?.id, filters.period, startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
-        .eq("status", "fechada")
-        .gte("data", format(currentMonthStart, "yyyy-MM-dd"))
-        .lte("data", format(currentMonthEnd, "yyyy-MM-dd"));
+        .gte("data", format(startDate, "yyyy-MM-dd"))
+        .lte("data", format(endDate, "yyyy-MM-dd"));
 
       if (error) throw error;
       return data || [];
@@ -58,17 +90,16 @@ export function useDashboard() {
     enabled: !!user?.id,
   });
 
-  // 2. Buscar propostas fechadas do mês anterior (pela data da proposta)
-  const { data: lastMonthPropostas = [] } = useQuery({
-    queryKey: ["propostas-dashboard-last", user?.id],
+  // 2. Buscar todos os contratos no período selecionado
+  const { data: contratos = [] } = useQuery({
+    queryKey: ["contratos-dashboard", user?.id, filters.period, startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("propostas")
+        .from("contratos")
         .select("*")
         .eq("user_id", user!.id)
-        .eq("status", "fechada")
-        .gte("data", format(lastMonthStart, "yyyy-MM-dd"))
-        .lte("data", format(lastMonthEnd, "yyyy-MM-dd"));
+        .gte("data_inicio", format(startDate, "yyyy-MM-dd"))
+        .lte("data_inicio", format(endDate, "yyyy-MM-dd"));
 
       if (error) throw error;
       return data || [];
@@ -76,7 +107,23 @@ export function useDashboard() {
     enabled: !!user?.id,
   });
 
-  // 3. Buscar propostas fechadas dos últimos 6 meses para timeline (pela data da proposta)
+  // 3. Buscar parcelas a receber (todas as pendentes/atrasadas)
+  const { data: parcelasAReceber = [] } = useQuery({
+    queryKey: ["parcelas-a-receber", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_parcelas")
+        .select("*")
+        .eq("user_id", user!.id)
+        .in("status", ["pendente", "atrasado"]);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // 4. Buscar propostas fechadas dos últimos 6 meses para timeline
   const { data: timelinePropostas = [] } = useQuery({
     queryKey: ["propostas-timeline", user?.id],
     queryFn: async () => {
@@ -86,22 +133,6 @@ export function useDashboard() {
         .eq("user_id", user!.id)
         .eq("status", "fechada")
         .gte("data", format(sixMonthsAgo, "yyyy-MM-dd"));
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-
-  // 4. Buscar parcelas pendentes/atrasadas
-  const { data: parcelas = [] } = useQuery({
-    queryKey: ["parcelas-dashboard", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("financeiro_parcelas")
-        .select("valor_liquido_parcela, vencimento")
-        .eq("user_id", user!.id)
-        .in("status", ["pendente", "atrasado"]);
 
       if (error) throw error;
       return data || [];
@@ -126,69 +157,37 @@ export function useDashboard() {
 
   // Calcular KPIs com memoização
   const kpis = useMemo(() => {
-    // Mês atual - Totalizadores
-    const currentBruto = currentMonthPropostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const currentLiquido = currentMonthPropostas.reduce((sum, p) => sum + Number(p.liquido || 0), 0);
-    const currentCusto = currentBruto - currentLiquido; // Custo = Bruto - Líquido
-    const currentMargem = currentBruto > 0 ? (currentLiquido / currentBruto) * 100 : 0;
+    // Valor total de propostas no período
+    const totalPropostas = propostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
 
-    // Mês anterior - Totalizadores
-    const lastBruto = lastMonthPropostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const lastLiquido = lastMonthPropostas.reduce((sum, p) => sum + Number(p.liquido || 0), 0);
-    const lastCusto = lastBruto - lastLiquido; // Custo = Bruto - Líquido
-    const lastMargem = lastBruto > 0 ? (lastLiquido / lastBruto) * 100 : 0;
+    // Valor total de contratos no período
+    const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
 
-    // A receber - soma de todas as parcelas pendentes e atrasadas
-    const aReceber = parcelas.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+    // Valor total a receber (bruto) - soma das parcelas pendentes/atrasadas
+    const totalAReceber = parcelasAReceber.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
-    // Calcular deltas percentuais
-    const calcDelta = (current: number, last: number): { value: string; direction: "up" | "down" } => {
-      if (last === 0) {
-        if (current === 0) return { value: "0%", direction: "up" };
-        return { value: "+100%", direction: "up" };
-      }
-      const percent = ((current - last) / last) * 100;
-      return {
-        value: `${percent >= 0 ? "+" : ""}${percent.toFixed(0)}%`,
-        direction: percent >= 0 ? "up" : "down",
-      };
-    };
-
-    // Delta de margem em pontos percentuais (mais claro que percentual do percentual)
-    const calcMargemDelta = (current: number, last: number): { value: string; direction: "up" | "down" } => {
-      const diff = current - last;
-      return {
-        value: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}pp`,
-        direction: diff >= 0 ? "up" : "down",
-      };
-    };
+    // Para calcular o valor total a receber com margem, precisamos buscar o contrato de cada parcela
+    // Como não temos a margem_pct nas parcelas, vamos usar o valor_liquido_parcela diretamente
+    const totalAReceberLiquido = parcelasAReceber.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
     const formatCurrency = (value: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
     return {
-      bruto: {
-        value: formatCurrency(currentBruto),
-        delta: calcDelta(currentBruto, lastBruto),
+      totalPropostas: {
+        value: formatCurrency(totalPropostas),
       },
-      custo: {
-        value: formatCurrency(currentCusto),
-        delta: calcDelta(currentCusto, lastCusto),
+      totalContratos: {
+        value: formatCurrency(totalContratos),
       },
-      liquido: {
-        value: formatCurrency(currentLiquido),
-        delta: calcDelta(currentLiquido, lastLiquido),
+      totalAReceber: {
+        value: formatCurrency(totalAReceber),
       },
-      margem: {
-        value: `${currentMargem.toFixed(1)}%`,
-        delta: calcMargemDelta(currentMargem, lastMargem),
-      },
-      aReceber: {
-        value: formatCurrency(aReceber),
-        delta: undefined, // A receber não tem comparação mês a mês
+      totalAReceberLiquido: {
+        value: formatCurrency(totalAReceberLiquido),
       },
     };
-  }, [currentMonthPropostas, lastMonthPropostas, parcelas]);
+  }, [propostas, contratos, parcelasAReceber]);
 
   // Calcular dados de timeline (últimos 6 meses)
   const timelineData = useMemo((): TimelineData[] => {
