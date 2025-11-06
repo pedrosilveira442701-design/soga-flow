@@ -107,18 +107,35 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     enabled: !!user?.id,
   });
 
-  // 3. Buscar parcelas a receber (todas as pendentes/atrasadas)
-  const { data: parcelasAReceber = [] } = useQuery({
-    queryKey: ["parcelas-a-receber", user?.id],
+  // 3. Buscar todos os contratos ativos com suas parcelas e margem
+  const { data: contratosComParcelas = [] } = useQuery({
+    queryKey: ["contratos-parcelas", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("financeiro_parcelas")
-        .select("*")
+      const { data: contratosData, error: contratosError } = await supabase
+        .from("contratos")
+        .select("id, margem_pct, valor_negociado")
         .eq("user_id", user!.id)
-        .in("status", ["pendente", "atrasado"]);
+        .eq("status", "ativo");
 
-      if (error) throw error;
-      return data || [];
+      if (contratosError) throw contratosError;
+
+      // Buscar parcelas pendentes para cada contrato
+      const contratosComParcelasData = await Promise.all(
+        (contratosData || []).map(async (contrato) => {
+          const { data: parcelas } = await supabase
+            .from("financeiro_parcelas")
+            .select("*")
+            .eq("contrato_id", contrato.id)
+            .in("status", ["pendente", "atrasado"]);
+
+          return {
+            ...contrato,
+            parcelas: parcelas || [],
+          };
+        })
+      );
+
+      return contratosComParcelasData;
     },
     enabled: !!user?.id,
   });
@@ -163,12 +180,21 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     // Valor total de contratos no período
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
 
-    // Valor total a receber (bruto) - soma das parcelas pendentes/atrasadas
-    const totalAReceber = parcelasAReceber.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+    // Valor total a receber (bruto) - soma das parcelas pendentes de todos os contratos
+    let totalAReceber = 0;
+    let totalAReceberLiquido = 0;
 
-    // Para calcular o valor total a receber com margem, precisamos buscar o contrato de cada parcela
-    // Como não temos a margem_pct nas parcelas, vamos usar o valor_liquido_parcela diretamente
-    const totalAReceberLiquido = parcelasAReceber.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+    contratosComParcelas.forEach((contrato) => {
+      contrato.parcelas.forEach((parcela) => {
+        const valorParcela = Number(parcela.valor_liquido_parcela || 0);
+        totalAReceber += valorParcela;
+        
+        // Líquido a receber = valor da parcela * margem do contrato
+        const margemPct = Number(contrato.margem_pct || 0);
+        const liquidoParcela = valorParcela * (margemPct / 100);
+        totalAReceberLiquido += liquidoParcela;
+      });
+    });
 
     const formatCurrency = (value: number) =>
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -187,7 +213,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         value: formatCurrency(totalAReceberLiquido),
       },
     };
-  }, [propostas, contratos, parcelasAReceber]);
+  }, [propostas, contratos, contratosComParcelas]);
 
   // Calcular dados de timeline (últimos 6 meses)
   const timelineData = useMemo((): TimelineData[] => {
