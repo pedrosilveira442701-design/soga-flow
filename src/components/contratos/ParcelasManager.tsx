@@ -98,6 +98,11 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
   
   const [showPagarDialog, setShowPagarDialog] = useState(false);
   const [parcelaParaPagar, setParcelaParaPagar] = useState<string | null>(null);
+  
+  const [showEditPagaDialog, setShowEditPagaDialog] = useState(false);
+  const [editPagaParcelaId, setEditPagaParcelaId] = useState<string | null>(null);
+  const [editPagaData, setEditPagaData] = useState<Date>();
+  const [editPagaForma, setEditPagaForma] = useState("");
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -134,6 +139,30 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
   const handleOpenPagarDialog = (parcelaId: string) => {
     setParcelaParaPagar(parcelaId);
     setShowPagarDialog(true);
+  };
+
+  const handleOpenEditPagaDialog = (parcela: any) => {
+    setEditPagaParcelaId(parcela.id);
+    setEditPagaData(parcela.data_pagamento ? parseISO(parcela.data_pagamento) : new Date());
+    setEditPagaForma(parcela.forma || "");
+    setShowEditPagaDialog(true);
+  };
+
+  const handleEditParcePaga = async () => {
+    if (!editPagaParcelaId || !editPagaData) return;
+
+    await updateParcela({
+      id: editPagaParcelaId,
+      data: {
+        data_pagamento: editPagaData.toISOString().split("T")[0],
+        forma: editPagaForma,
+      },
+    });
+
+    setShowEditPagaDialog(false);
+    setEditPagaParcelaId(null);
+    setEditPagaData(undefined);
+    setEditPagaForma("");
   };
 
   const handleAddParcela = async () => {
@@ -364,6 +393,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
               <TableHead>Valor da Margem</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Data Pagamento</TableHead>
+              <TableHead>Forma</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -407,6 +437,9 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                           locale: ptBR,
                         })
                       : "-"}
+                  </TableCell>
+                  <TableCell>
+                    {parcela.forma || "-"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -463,6 +496,18 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                             </AlertDialogContent>
                           </AlertDialog>
                         </>
+                      )}
+                      {parcela.status === "pago" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditPagaDialog(parcela)}
+                          title="Editar pagamento"
+                          className="h-11 px-5"
+                        >
+                          <Edit className="h-6 w-6 mr-3" />
+                          Editar Pagamento
+                        </Button>
                       )}
                     </div>
                   </TableCell>
@@ -577,6 +622,75 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
         parcelasSelecionadas={1}
         onConfirm={handleMarcarComoPago}
       />
+
+      {/* Dialog para editar parcela paga */}
+      <Dialog open={showEditPagaDialog} onOpenChange={setShowEditPagaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label>Data do Pagamento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !editPagaData && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {editPagaData ? (
+                      format(editPagaData, "PPP", { locale: ptBR })
+                    ) : (
+                      <span>Selecione uma data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={editPagaData}
+                    onSelect={setEditPagaData}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Forma de Pagamento</Label>
+              <select
+                value={editPagaForma}
+                onChange={(e) => setEditPagaForma(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+              >
+                <option value="">Selecione</option>
+                <option value="pix">PIX</option>
+                <option value="transferencia">Transferência</option>
+                <option value="boleto">Boleto</option>
+                <option value="cartao">Cartão</option>
+                <option value="dinheiro">Dinheiro</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowEditPagaDialog(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleEditParcePaga} className="flex-1">
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
