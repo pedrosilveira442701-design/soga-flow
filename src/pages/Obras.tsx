@@ -17,6 +17,7 @@ const STATUS_LABELS = {
   execucao: "Em Execução",
   acabamento: "Acabamento",
   concluida: "Concluída",
+  finalizada: "Finalizada",
   pausada: "Pausada",
 };
 
@@ -25,6 +26,7 @@ const STATUS_COLORS = {
   execucao: "bg-green-500",
   acabamento: "bg-yellow-500",
   concluida: "bg-primary",
+  finalizada: "bg-primary",
   pausada: "bg-gray-500",
 };
 
@@ -157,6 +159,7 @@ export default function Obras() {
             <SelectItem value="execucao">Em Execução</SelectItem>
             <SelectItem value="acabamento">Acabamento</SelectItem>
             <SelectItem value="concluida">Concluída</SelectItem>
+            <SelectItem value="finalizada">Finalizada</SelectItem>
             <SelectItem value="pausada">Pausada</SelectItem>
           </SelectContent>
         </Select>
