@@ -30,7 +30,8 @@ const TIPOS_PRODUTO = [
 ] as const;
 
 const ORIGENS = [
-  "Whatsapp",
+  "Instagram",
+  "Orgânico",
   "Indicação",
   "Sindico Profissional",
   "Google",

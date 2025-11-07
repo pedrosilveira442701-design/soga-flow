@@ -150,12 +150,12 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
-                  <SelectItem value="Site">Site</SelectItem>
+                  <SelectItem value="Instagram">Instagram</SelectItem>
+                  <SelectItem value="Orgânico">Orgânico</SelectItem>
                   <SelectItem value="Indicação">Indicação</SelectItem>
-                  <SelectItem value="Telefone">Telefone</SelectItem>
-                  <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                  <SelectItem value="Email">Email</SelectItem>
-                  <SelectItem value="Redes Sociais">Redes Sociais</SelectItem>
+                  <SelectItem value="Sindico Profissional">Sindico Profissional</SelectItem>
+                  <SelectItem value="Google">Google</SelectItem>
+                  <SelectItem value="Outro">Outro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
