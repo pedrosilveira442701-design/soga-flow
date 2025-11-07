@@ -19,7 +19,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
         return [
           { value: "all", label: "Todos" },
           { value: "aberta", label: "Aberta" },
-          { value: "ganha", label: "Ganha" },
+          { value: "fechada", label: "Ganha" },
           { value: "perdida", label: "Perdida" },
         ];
       case "contratos":

@@ -109,7 +109,7 @@ export function MapaGeografico() {
     (status: string, tipo: string) => {
       if (tipo === "proposta") {
         switch (status) {
-          case "ganha":
+          case "fechada":
             return "http://maps.google.com/mapfiles/ms/icons/green-dot.png";
           case "aberta":
             return "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png";

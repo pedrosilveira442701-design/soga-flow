@@ -66,7 +66,7 @@ export function useMapaGeografico(filters: MapaFilters) {
 
   // Win rate apenas para propostas
   if (filters.modo === "propostas") {
-    const ganhas = pontos.filter((p) => p.status === "ganha").length;
+    const ganhas = pontos.filter((p) => p.status === "fechada").length;
     kpis.win_rate = pontos.length > 0 ? (ganhas / pontos.length) * 100 : 0;
   }
 
