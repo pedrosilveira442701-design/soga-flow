@@ -45,6 +45,10 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
     telefone?: string;
     endereco?: string;
   } | null;
+  produtos?: Array<{
+    tipo: string;
+    medida: number | null;
+  }>;
 };
 
 interface LeadDetailsDialogProps {
@@ -198,14 +202,64 @@ export function LeadDetailsDialog({
                 </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 col-span-2">
                 <div className="flex items-center gap-2 text-caption text-muted-foreground">
                   <TrendingUp className="h-4 w-4" />
-                  <span>Tipo de Piso</span>
+                  <span>Serviços</span>
                 </div>
-                <p className="text-body font-medium">
-                  {lead.tipo_piso || "Não especificado"}
-                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(() => {
+                    // Processar produtos do campo JSONB
+                    const produtos = lead.produtos;
+                    
+                    if (produtos && Array.isArray(produtos) && produtos.length > 0) {
+                      return produtos.map((produto, index) => {
+                        // Formatar "Outro: descrição" como "Outro — descrição"
+                        let displayTipo = produto.tipo;
+                        if (produto.tipo?.startsWith("Outro:")) {
+                          displayTipo = produto.tipo.replace("Outro:", "Outro —");
+                        }
+                        
+                        return (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-caption font-normal"
+                            title={displayTipo}
+                          >
+                            {displayTipo}
+                          </Badge>
+                        );
+                      });
+                    }
+                    
+                    // Fallback para dados legados (tipo_piso)
+                    if (lead.tipo_piso) {
+                      const tipos = lead.tipo_piso.split(",").map(t => t.trim());
+                      return tipos.map((tipo, index) => {
+                        // Formatar "Outro: descrição" como "Outro — descrição"
+                        let displayTipo = tipo;
+                        if (tipo?.startsWith("Outro:")) {
+                          displayTipo = tipo.replace("Outro:", "Outro —");
+                        }
+                        
+                        return (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-caption font-normal"
+                            title={displayTipo}
+                          >
+                            {displayTipo}
+                          </Badge>
+                        );
+                      });
+                    }
+                    
+                    // Sem dados
+                    return <span className="text-body text-muted-foreground">—</span>;
+                  })()}
+                </div>
               </div>
 
               {lead.responsavel && (
