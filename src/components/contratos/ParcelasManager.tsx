@@ -23,6 +23,7 @@ import {
   TrendingUp,
   Percent,
 } from "lucide-react";
+import { MarcarPagoDialog } from "@/components/financeiro/MarcarPagoDialog";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -94,6 +95,9 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
   const [editParcelaId, setEditParcelaId] = useState<string | null>(null);
   const [editParcelaValor, setEditParcelaValor] = useState("");
   const [editParcelaVencimento, setEditParcelaVencimento] = useState<Date>();
+  
+  const [showPagarDialog, setShowPagarDialog] = useState(false);
+  const [parcelaParaPagar, setParcelaParaPagar] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -121,8 +125,15 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
     }
   };
 
-  const handleMarcarComoPago = async (parcelaId: string) => {
-    await marcarComoPago(parcelaId);
+  const handleMarcarComoPago = async (dataPagamento: string, forma: string) => {
+    if (!parcelaParaPagar) return;
+    await marcarComoPago({ id: parcelaParaPagar, dataPagamento, forma });
+    setParcelaParaPagar(null);
+  };
+
+  const handleOpenPagarDialog = (parcelaId: string) => {
+    setParcelaParaPagar(parcelaId);
+    setShowPagarDialog(true);
   };
 
   const handleAddParcela = async () => {
@@ -414,7 +425,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleMarcarComoPago(parcela.id)}
+                            onClick={() => handleOpenPagarDialog(parcela.id)}
                             title="Marcar como paga"
                             className="h-11 px-5 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
                           >
@@ -559,6 +570,13 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
           </div>
         </DialogContent>
       </Dialog>
+
+      <MarcarPagoDialog
+        open={showPagarDialog}
+        onOpenChange={setShowPagarDialog}
+        parcelasSelecionadas={1}
+        onConfirm={handleMarcarComoPago}
+      />
     </div>
   );
 }

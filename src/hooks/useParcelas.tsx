@@ -84,14 +84,15 @@ export const useParcelas = (contratoId?: string) => {
   });
 
   const marcarComoPagoMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const hoje = new Date().toISOString().split("T")[0];
+    mutationFn: async ({ id, dataPagamento, forma }: { id: string; dataPagamento?: string; forma?: string }) => {
+      const dataFinal = dataPagamento || new Date().toISOString().split("T")[0];
       
       const { error } = await supabase
         .from("financeiro_parcelas")
         .update({
           status: "pago",
-          data_pagamento: hoje,
+          data_pagamento: dataFinal,
+          forma: forma,
         })
         .eq("id", id);
 
