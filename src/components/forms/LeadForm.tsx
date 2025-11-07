@@ -67,6 +67,7 @@ const leadFormSchema = z.object({
     "contato",
     "visita_agendada",
     "visita_realizada",
+    "proposta_pendente",
     "proposta",
     "contrato",
     "execucao",
@@ -170,6 +171,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   <SelectItem value="contato">Entrou em Contato</SelectItem>
                   <SelectItem value="visita_agendada">Visita Agendada</SelectItem>
                   <SelectItem value="visita_realizada">Visita Realizada</SelectItem>
+                  <SelectItem value="proposta_pendente">Proposta Pendente</SelectItem>
                   <SelectItem value="proposta">Gerou Proposta</SelectItem>
                   <SelectItem value="contrato">Fechou Contrato</SelectItem>
                   <SelectItem value="execucao">Em Execução</SelectItem>

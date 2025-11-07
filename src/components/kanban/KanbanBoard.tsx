@@ -34,6 +34,8 @@ const STAGES = [
   // COMERCIAL
   { id: "contato", title: "Entrou em Contato", color: "novo", section: "comercial" },
   { id: "visita_agendada", title: "Visita Agendada", color: "contato", section: "comercial" },
+  { id: "visita_realizada", title: "Visita Realizada", color: "contato", section: "comercial" },
+  { id: "proposta_pendente", title: "Proposta Pendente", color: "contato", section: "comercial" },
   { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
   { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
   

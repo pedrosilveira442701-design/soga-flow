@@ -629,6 +629,7 @@ export type Database = {
         | "contato"
         | "visita_agendada"
         | "visita_realizada"
+        | "proposta_pendente"
         | "proposta"
         | "contrato"
         | "execucao"
@@ -774,6 +775,7 @@ export const Constants = {
         "contato",
         "visita_agendada",
         "visita_realizada",
+        "proposta_pendente",
         "proposta",
         "contrato",
         "execucao",

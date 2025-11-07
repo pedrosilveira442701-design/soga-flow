@@ -379,8 +379,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // Calcular dados de funil com novas etapas
   const funnelData = useMemo((): FunnelData[] => {
-    const stages = ["contato", "visita_agendada", "proposta", "contrato", "execucao", "finalizado"];
-    const stageLabels = ["Contato", "Visita Agendada", "Proposta", "Contrato", "Em Execução", "Finalizado"];
+    const stages = ["contato", "visita_agendada", "visita_realizada", "proposta_pendente", "proposta", "contrato", "execucao", "finalizado"];
+    const stageLabels = ["Contato", "Visita Agendada", "Visita Realizada", "Proposta Pendente", "Proposta", "Contrato", "Em Execução", "Finalizado"];
     
     const counts = stages.map(stage => 
       leads.filter(l => l.estagio === stage).length
