@@ -9,6 +9,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { KPICard } from "@/components/kpi/KPICard";
 import { ArquivoCard } from "@/components/arquivos/ArquivoCard";
 import { ArquivoUploadDialog } from "@/components/arquivos/ArquivoUploadDialog";
@@ -25,6 +34,9 @@ import {
   Building2,
   TrendingUp,
   HardDrive,
+  Download,
+  Eye,
+  Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { ENTIDADES, TIPOS_ARQUIVO } from "@/lib/fileUtils";
@@ -186,7 +198,7 @@ export default function Arquivos() {
         </CardContent>
       </Card>
 
-      {/* Grid de Arquivos */}
+      {/* Grid/Lista de Arquivos */}
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -211,13 +223,92 @@ export default function Arquivos() {
             Fazer Primeiro Upload
           </Button>
         </div>
+      ) : viewMode === "list" ? (
+        /* Visualização em Lista/Tabela */
+        <Card>
+          <CardContent className="p-0">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome do Arquivo</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Entidade</TableHead>
+                    <TableHead>Cliente/Nome</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredArquivos.map((arquivo) => (
+                    <TableRow key={arquivo.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{arquivo.nome}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {arquivo.tipo ? (
+                          <Badge variant="outline">{arquivo.tipo}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {arquivo.entidade === "cliente" && "Cliente"}
+                          {arquivo.entidade === "contrato" && "Contrato"}
+                          {arquivo.entidade === "proposta" && "Proposta"}
+                          {arquivo.entidade === "lead" && "Lead"}
+                          {arquivo.entidade === "visita" && "Visita"}
+                          {arquivo.entidade === "obra" && "Obra"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {arquivo.entidade_nome || (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(arquivo.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setPreviewArquivo(arquivo)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => downloadArquivo(arquivo)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteWithConfirm(arquivo)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
+        /* Visualização em Grid */
         <motion.div
-          className={
-            viewMode === "grid"
-              ? "grid gap-4 md:grid-cols-3 lg:grid-cols-4"
-              : "space-y-2"
-          }
+          className="grid gap-4 md:grid-cols-3 lg:grid-cols-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -230,7 +321,6 @@ export default function Arquivos() {
               onDownload={downloadArquivo}
               onDelete={handleDeleteWithConfirm}
               onRename={(arquivo) => {
-                // Implementar rename inline
                 const newName = prompt("Novo nome:", arquivo.nome);
                 if (newName) {
                   // renameArquivo mutation já está no hook
