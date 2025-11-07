@@ -9,7 +9,7 @@ import { BurndownChart } from "@/components/analytics/BurndownChart";
 import { PerformanceChart } from "@/components/analytics/PerformanceChart";
 import { ResponseSpeedChart } from "@/components/analytics/ResponseSpeedChart";
 import { FloorTypeChart } from "@/components/analytics/FloorTypeChart";
-import { GeographicChart } from "@/components/analytics/GeographicChart";
+import { MapaGeografico } from "@/components/analytics/MapaGeografico";
 import { CohortChart } from "@/components/analytics/CohortChart";
 import { LossReasonsChart } from "@/components/analytics/LossReasonsChart";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
@@ -135,8 +135,8 @@ export default function Analytics() {
         {/* Análise por Tipos de Piso */}
         <FloorTypeChart data={floorTypeData} isLoading={loadingFloorType} />
 
-        {/* Análise Geográfica */}
-        <GeographicChart data={geographicData} isLoading={loadingGeographic} />
+        {/* Mapa Geográfico */}
+        <MapaGeografico />
 
         {/* Cohorts de Entrada */}
         <CohortChart data={cohortData} isLoading={loadingCohort} />
