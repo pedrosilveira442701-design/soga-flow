@@ -64,7 +64,8 @@ function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
         cliente={lead.clientes?.nome || "Cliente não identificado"}
         lastInteraction={lead.ultima_interacao ? new Date(lead.ultima_interacao) : new Date(lead.created_at)}
         valorEstimado={Number(lead.valor_potencial) || 0}
-        tipoPiso={lead.tipo_piso || "Não especificado"}
+        produtos={lead.produtos as Array<{ tipo: string; medida: number | null }> | null}
+        tipoPiso={lead.tipo_piso}
         responsavel={{
           name: lead.responsavel || "Não atribuído",
         }}
@@ -164,7 +165,8 @@ export function KanbanBoard({ leads, onStageChange, onCardClick }: KanbanBoardPr
               cliente={activeLead.clientes?.nome || "Cliente não identificado"}
               lastInteraction={activeLead.ultima_interacao ? new Date(activeLead.ultima_interacao) : new Date(activeLead.created_at)}
               valorEstimado={Number(activeLead.valor_potencial) || 0}
-              tipoPiso={activeLead.tipo_piso || "Não especificado"}
+              produtos={activeLead.produtos as Array<{ tipo: string; medida: number | null }> | null}
+              tipoPiso={activeLead.tipo_piso}
               responsavel={{
                 name: activeLead.responsavel || "Não atribuído",
               }}

@@ -11,7 +11,11 @@ interface KanbanCardProps {
   cliente: string;
   lastInteraction: Date;
   valorEstimado: number;
-  tipoPiso: string;
+  produtos?: Array<{
+    tipo: string;
+    medida: number | null;
+  }> | null;
+  tipoPiso?: string; // Fallback para dados legados
   responsavel: {
     name: string;
     avatar?: string;
@@ -26,6 +30,7 @@ export function KanbanCard({
   cliente,
   lastInteraction,
   valorEstimado,
+  produtos,
   tipoPiso,
   responsavel,
   onWhatsApp,
@@ -48,6 +53,93 @@ export function KanbanCard({
       .join("")
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Renderizar serviços como chips
+  const renderServicos = () => {
+    // Processar produtos do campo JSONB
+    if (produtos && Array.isArray(produtos) && produtos.length > 0) {
+      const servicosTexto = produtos.map(p => {
+        if (p.tipo?.startsWith("Outro:")) {
+          return p.tipo.replace("Outro:", "Outro —");
+        }
+        return p.tipo;
+      }).join(", ");
+
+      return (
+        <div className="flex flex-wrap gap-1.5" title={servicosTexto}>
+          {produtos.slice(0, 2).map((produto, index) => {
+            let displayTipo = produto.tipo;
+            if (produto.tipo?.startsWith("Outro:")) {
+              displayTipo = produto.tipo.replace("Outro:", "Outro —");
+            }
+            
+            return (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className="text-[11px] px-2 py-0.5 font-normal"
+              >
+                {displayTipo}
+              </Badge>
+            );
+          })}
+          {produtos.length > 2 && (
+            <Badge 
+              variant="secondary" 
+              className="text-[11px] px-2 py-0.5 font-normal"
+              title={servicosTexto}
+            >
+              +{produtos.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
+    }
+    
+    // Fallback para dados legados (tipo_piso)
+    if (tipoPiso && tipoPiso !== "Não especificado") {
+      const tipos = tipoPiso.split(",").map(t => t.trim());
+      const servicosTexto = tipos.map(t => {
+        if (t?.startsWith("Outro:")) {
+          return t.replace("Outro:", "Outro —");
+        }
+        return t;
+      }).join(", ");
+
+      return (
+        <div className="flex flex-wrap gap-1.5" title={servicosTexto}>
+          {tipos.slice(0, 2).map((tipo, index) => {
+            let displayTipo = tipo;
+            if (tipo?.startsWith("Outro:")) {
+              displayTipo = tipo.replace("Outro:", "Outro —");
+            }
+            
+            return (
+              <Badge 
+                key={index} 
+                variant="secondary" 
+                className="text-[11px] px-2 py-0.5 font-normal"
+              >
+                {displayTipo}
+              </Badge>
+            );
+          })}
+          {tipos.length > 2 && (
+            <Badge 
+              variant="secondary" 
+              className="text-[11px] px-2 py-0.5 font-normal"
+              title={servicosTexto}
+            >
+              +{tipos.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
+    }
+    
+    // Sem dados
+    return <span className="text-caption text-muted-foreground">—</span>;
   };
 
   return (
@@ -78,14 +170,12 @@ export function KanbanCard({
           </span>
         </div>
 
-        {/* Value and Type */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-body font-semibold text-primary">
+        {/* Value and Services */}
+        <div className="flex items-start gap-2 mb-4">
+          <span className="text-body font-semibold text-primary whitespace-nowrap">
             {formatCurrency(valorEstimado)}
           </span>
-          <Badge variant="secondary" className="text-caption">
-            {tipoPiso}
-          </Badge>
+          {renderServicos()}
         </div>
 
         {/* Footer - Actions and Avatar */}
