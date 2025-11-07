@@ -3,6 +3,7 @@ import { FileText, UserPlus, DollarSign, HandCoins, Wallet, Receipt } from "luci
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
+import { RecebimentosTendenciaChart } from "@/components/charts/RecebimentosTendenciaChart";
 import { ProximosVencimentos } from "@/components/financeiro/ProximosVencimentos";
 import { ProximasVisitas } from "@/components/visitas/ProximasVisitas";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState<FilterPeriod>("month");
   const [customDateRange, setCustomDateRange] = useState<{ from: Date; to: Date }>();
 
-  const { kpis, timelineData, funnelData, isLoading } = useDashboard({
+  const { kpis, timelineData, funnelData, recebimentosTendencia, isLoading } = useDashboard({
     period,
     customDateRange,
   });
@@ -110,7 +111,10 @@ export default function Dashboard() {
         <FunnelChart data={funnelData} />
       </div>
 
-      {/* Row 3: Widgets de Vencimentos e Visitas */}
+      {/* Row 3: Tendência de Recebimentos */}
+      <RecebimentosTendenciaChart data={recebimentosTendencia} />
+
+      {/* Row 4: Widgets de Vencimentos e Visitas */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ProximosVencimentos />
         <ProximasVisitas />

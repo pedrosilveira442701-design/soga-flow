@@ -256,6 +256,26 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     enabled: !!user?.id,
   });
 
+  // 10. Buscar histórico de recebimentos (últimos 12 meses)
+  const twelveMonthsAgo = subMonths(now, 11);
+  const { data: historicoRecebimentos = [] } = useQuery({
+    queryKey: ["historico-recebimentos", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_parcelas")
+        .select("valor_liquido_parcela, data_pagamento")
+        .eq("user_id", user!.id)
+        .eq("status", "pago")
+        .gte("data_pagamento", format(twelveMonthsAgo, "yyyy-MM-dd"))
+        .lte("data_pagamento", format(now, "yyyy-MM-dd"))
+        .order("data_pagamento", { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Calcular KPIs com memoização e comparação com período anterior
   const kpis = useMemo(() => {
     // Função auxiliar para calcular delta
@@ -378,12 +398,45 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     }));
   }, [leads]);
 
+  // Calcular tendência de recebimentos (últimos 12 meses)
+  const recebimentosTendencia = useMemo(() => {
+    const mesesMap = new Map<string, number>();
+
+    // Inicializar últimos 12 meses
+    for (let i = 11; i >= 0; i--) {
+      const date = subMonths(now, i);
+      const key = format(date, "yyyy-MM");
+      const label = format(date, "MMM/yy", { locale: ptBR });
+      mesesMap.set(key, 0);
+    }
+
+    // Agrupar recebimentos por mês usando data_pagamento
+    historicoRecebimentos.forEach((parcela) => {
+      if (parcela.data_pagamento) {
+        const mes = parcela.data_pagamento.slice(0, 7); // yyyy-MM
+        if (mesesMap.has(mes)) {
+          mesesMap.set(mes, mesesMap.get(mes)! + Number(parcela.valor_liquido_parcela || 0));
+        }
+      }
+    });
+
+    // Mês atual para destacar
+    const mesAtual = format(now, "yyyy-MM");
+
+    return Array.from(mesesMap.entries()).map(([key, valor]) => ({
+      mes: format(new Date(key + "-01"), "MMM/yy", { locale: ptBR }),
+      valor,
+      isAtual: key === mesAtual,
+    }));
+  }, [historicoRecebimentos, now]);
+
   const isLoading = !user?.id;
 
   return {
     kpis,
     timelineData,
     funnelData,
+    recebimentosTendencia,
     isLoading,
   };
 }
