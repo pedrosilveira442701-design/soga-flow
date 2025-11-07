@@ -79,7 +79,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
   });
 
   const clienteId = watch('cliente_id');
-  const selectedCliente = clientes.find((c) => c.id === clienteId);
+  const selectedCliente = clientes?.find((c) => c.id === clienteId);
 
   // Pre-fill endereço e telefone ao selecionar cliente
   useEffect(() => {
@@ -118,7 +118,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
             <SelectValue placeholder="Selecione um cliente" />
           </SelectTrigger>
           <SelectContent>
-            {clientes.map((cliente) => (
+            {clientes?.map((cliente) => (
               <SelectItem key={cliente.id} value={cliente.id}>
                 <div>
                   <div className="font-medium">{cliente.nome}</div>
