@@ -74,14 +74,7 @@ export function useArquivos(filters?: ArquivoFilters) {
     queryFn: async () => {
       let query = supabase
         .from("arquivos")
-        .select(`
-          *,
-          clientes:entidade_id(nome),
-          contratos:entidade_id(id),
-          propostas:entidade_id(id),
-          leads:entidade_id(id),
-          visitas:entidade_id(id)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (filters?.entidade && filters.entidade !== "todos") {
@@ -103,7 +96,27 @@ export function useArquivos(filters?: ArquivoFilters) {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as ArquivoWithRelations[];
+
+      // Buscar nomes de clientes para arquivos de clientes
+      const arquivosComNomes = await Promise.all(
+        data.map(async (arquivo) => {
+          if (arquivo.entidade === 'cliente') {
+            const { data: cliente } = await supabase
+              .from('clientes')
+              .select('nome')
+              .eq('id', arquivo.entidade_id)
+              .single();
+            
+            return {
+              ...arquivo,
+              entidade_nome: cliente?.nome || 'Cliente não encontrado'
+            };
+          }
+          return arquivo;
+        })
+      );
+
+      return arquivosComNomes as ArquivoWithRelations[];
     },
   });
 
