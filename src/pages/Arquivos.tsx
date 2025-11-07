@@ -13,6 +13,7 @@ import { KPICard } from "@/components/kpi/KPICard";
 import { ArquivoCard } from "@/components/arquivos/ArquivoCard";
 import { ArquivoUploadDialog } from "@/components/arquivos/ArquivoUploadDialog";
 import { ArquivoPreviewDialog } from "@/components/arquivos/ArquivoPreviewDialog";
+import { DownloadHistoryList } from "@/components/arquivos/DownloadHistoryList";
 import { EmptyState } from "@/components/states/EmptyState";
 import { useArquivos, type ArquivoWithRelations } from "@/hooks/useArquivos";
 import {
@@ -239,6 +240,9 @@ export default function Arquivos() {
           ))}
         </motion.div>
       )}
+
+      {/* Histórico de Downloads */}
+      <DownloadHistoryList />
 
       {/* Dialogs */}
       <ArquivoUploadDialog

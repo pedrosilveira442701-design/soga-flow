@@ -263,6 +263,30 @@ export function useArquivos(filters?: ArquivoFilters) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      // Registrar download no histórico
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Buscar nome do cliente se for arquivo de cliente
+        let clienteNome = null;
+        if (arquivo.entidade === 'cliente') {
+          const { data: cliente } = await supabase
+            .from('clientes')
+            .select('nome')
+            .eq('id', arquivo.entidade_id)
+            .single();
+          clienteNome = cliente?.nome || null;
+        }
+
+        await supabase.from('arquivo_downloads').insert({
+          user_id: user.id,
+          arquivo_id: arquivo.id,
+          entidade: arquivo.entidade,
+          cliente_nome: clienteNome,
+          tipo_arquivo: arquivo.tipo,
+          nome_arquivo: arquivo.nome,
+        });
+      }
+
       toast.success("Download iniciado!");
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer download");
@@ -308,4 +332,21 @@ export function useArquivos(filters?: ArquivoFilters) {
     getSignedUrl,
     renameArquivo,
   };
+}
+
+// Hook para buscar histórico de downloads
+export function useDownloadHistory() {
+  return useQuery({
+    queryKey: ["arquivo-downloads"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("arquivo_downloads")
+        .select("*")
+        .order("downloaded_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      return data;
+    },
+  });
 }

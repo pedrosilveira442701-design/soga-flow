@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      arquivo_downloads: {
+        Row: {
+          arquivo_id: string
+          cliente_nome: string | null
+          downloaded_at: string
+          entidade: string
+          id: string
+          nome_arquivo: string
+          tipo_arquivo: string | null
+          user_id: string
+        }
+        Insert: {
+          arquivo_id: string
+          cliente_nome?: string | null
+          downloaded_at?: string
+          entidade: string
+          id?: string
+          nome_arquivo: string
+          tipo_arquivo?: string | null
+          user_id: string
+        }
+        Update: {
+          arquivo_id?: string
+          cliente_nome?: string | null
+          downloaded_at?: string
+          entidade?: string
+          id?: string
+          nome_arquivo?: string
+          tipo_arquivo?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       arquivos: {
         Row: {
           created_at: string
