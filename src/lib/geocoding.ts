@@ -40,7 +40,14 @@ export async function geocodeEndereco(
     console.warn("Erro ao acessar localStorage:", e);
   }
 
-  // Montar endereço completo para geocoding
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  if (!apiKey || apiKey === "USE_YOUR_GOOGLE_MAPS_API_KEY") {
+    console.error("❌ Google Maps API Key não configurada corretamente");
+    console.info("📝 Configure VITE_GOOGLE_MAPS_API_KEY no arquivo .env");
+    return BH_CENTER;
+  }
+
+  // ESTRATÉGIA 1: Endereço completo
   const enderecoParts = [
     logradouro,
     numero,
@@ -54,19 +61,17 @@ export async function geocodeEndereco(
   const enderecoCompleto = enderecoParts.join(", ");
 
   try {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || apiKey === "USE_YOUR_GOOGLE_MAPS_API_KEY") {
-      console.error("❌ Google Maps API Key não configurada corretamente");
-      console.info("📝 Configure VITE_GOOGLE_MAPS_API_KEY no arquivo .env");
-      return BH_CENTER;
-    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5s
 
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         enderecoCompleto
-      )}&key=${apiKey}`
+      )}&key=${apiKey}`,
+      { signal: controller.signal }
     );
 
+    clearTimeout(timeoutId);
     const data = await response.json();
 
     if (data.status === "OK" && data.results.length > 0) {
@@ -83,17 +88,50 @@ export async function geocodeEndereco(
         console.warn("Erro ao salvar no localStorage:", e);
       }
 
+      console.log(`✅ Geocoding OK: ${enderecoCompleto}`);
       return location;
-    } else {
-      console.warn(`⚠️ Geocoding falhou para ${enderecoCompleto}`);
-      console.warn(`Status: ${data.status}`);
-      if (data.error_message) {
-        console.warn(`Mensagem: ${data.error_message}`);
-      }
-      return BH_CENTER;
     }
+
+    // ESTRATÉGIA 2: Tentar só com CEP se falhar
+    console.warn(`⚠️ Tentando só com CEP: ${cep}`);
+    
+    const controller2 = new AbortController();
+    const timeoutId2 = setTimeout(() => controller2.abort(), 5000);
+
+    const response2 = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${cep},Brasil&key=${apiKey}`,
+      { signal: controller2.signal }
+    );
+
+    clearTimeout(timeoutId2);
+    const data2 = await response2.json();
+    
+    if (data2.status === "OK" && data2.results.length > 0) {
+      const location: GeocodedLocation = {
+        lat: data2.results[0].geometry.location.lat,
+        lng: data2.results[0].geometry.location.lng,
+      };
+      
+      // Salvar no cache
+      geocodeCache.set(cacheKey, location);
+      try {
+        localStorage.setItem(`geocode_${cacheKey}`, JSON.stringify(location));
+      } catch (e) {
+        console.warn("Erro ao salvar no localStorage:", e);
+      }
+
+      console.log(`✅ Geocoding OK (só CEP): ${cep}`);
+      return location;
+    }
+
+    // Falhou completamente - NÃO SALVAR NO CACHE
+    console.error(`❌ Geocoding falhou completamente para ${enderecoCompleto}`);
+    console.error(`Status: ${data.status}, Message: ${data.error_message || 'N/A'}`);
+    return BH_CENTER;
+    
   } catch (error) {
-    console.error("Erro no geocoding:", error);
+    // Erro de rede ou timeout - NÃO SALVAR NO CACHE
+    console.error(`❌ Erro no geocoding para ${enderecoCompleto}:`, error);
     return BH_CENTER;
   }
 }

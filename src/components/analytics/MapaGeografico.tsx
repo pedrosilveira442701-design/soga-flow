@@ -4,13 +4,21 @@ import { GoogleMap, Marker, InfoWindow, useJsApiLoader, MarkerClusterer } from "
 import { MapaFilters, MapaDataPoint, useMapaGeografico } from "@/hooks/useMapaGeografico";
 import { MapaFiltros } from "./MapaFiltros";
 import { MapaKPICards } from "./MapaKPICards";
-import { geocodeEndereco, GeocodedLocation } from "@/lib/geocoding";
+import { geocodeEndereco, GeocodedLocation, clearGeocodeCache } from "@/lib/geocoding";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ExternalLink, Navigation, AlertCircle, Flame } from "lucide-react";
+import { ExternalLink, Navigation, AlertCircle, Flame, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ErrorMessage } from "@/components/feedback/ErrorMessage";
+import { toast } from "sonner";
+
+// Função para limpar cache de um endereço específico
+const clearCacheForAddress = (cep: string, numero: string) => {
+  const cacheKey = `geocode_${cep}-${numero}`;
+  localStorage.removeItem(cacheKey);
+  console.log(`🧹 Cache limpo para: ${cacheKey}`);
+};
 
 const mapContainerStyle = {
   width: "100%",
@@ -44,6 +52,7 @@ export function MapaGeografico() {
   const [mapError, setMapError] = useState<string | null>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [heatmapLayer, setHeatmapLayer] = useState<google.maps.visualization.HeatmapLayer | null>(null);
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -189,55 +198,54 @@ export function MapaGeografico() {
 
   // Criar/atualizar heatmap quando markers ou toggle mudam
   useEffect(() => {
-    if (!isLoaded || !showHeatmap || markers.length === 0) {
-      if (heatmapLayer) {
-        heatmapLayer.setMap(null);
-        setHeatmapLayer(null);
-      }
+    // Limpar heatmap anterior se existir
+    if (heatmapLayer) {
+      heatmapLayer.setMap(null);
+      setHeatmapLayer(null);
+    }
+
+    // Não criar heatmap se estiver desativado ou sem dados
+    if (!isLoaded || !showHeatmap || !mapInstance || markers.length === 0) {
       return;
     }
 
-    // Converter markers para LatLng do Google Maps
-    const heatmapData = markers.map(
-      (marker) => new google.maps.LatLng(marker.position.lat, marker.position.lng)
-    );
+    // Converter markers para LatLng weighted (com peso baseado no valor)
+    const heatmapData = markers.map((marker) => ({
+      location: new google.maps.LatLng(marker.position.lat, marker.position.lng),
+      weight: Math.log10(marker.valor + 1), // Peso logarítmico baseado no valor
+    }));
 
-    // Criar ou atualizar heatmap
-    if (heatmapLayer) {
-      heatmapLayer.setData(heatmapData);
-    } else {
-      const newHeatmap = new google.maps.visualization.HeatmapLayer({
-        data: heatmapData,
-        radius: 30,
-        opacity: 0.6,
-        gradient: [
-          "rgba(0, 255, 255, 0)",
-          "rgba(0, 255, 255, 1)",
-          "rgba(0, 191, 255, 1)",
-          "rgba(0, 127, 255, 1)",
-          "rgba(0, 63, 255, 1)",
-          "rgba(0, 0, 255, 1)",
-          "rgba(0, 0, 223, 1)",
-          "rgba(0, 0, 191, 1)",
-          "rgba(0, 0, 159, 1)",
-          "rgba(0, 0, 127, 1)",
-          "rgba(63, 0, 91, 1)",
-          "rgba(127, 0, 63, 1)",
-          "rgba(191, 0, 31, 1)",
-          "rgba(255, 0, 0, 1)",
-        ],
-      });
-      setHeatmapLayer(newHeatmap);
-    }
-  }, [isLoaded, showHeatmap, markers, heatmapLayer]);
+    // Criar novo heatmap
+    const newHeatmap = new google.maps.visualization.HeatmapLayer({
+      data: heatmapData,
+      map: mapInstance, // Vincular diretamente ao mapa
+      radius: 40, // Aumentar raio para melhor visualização
+      opacity: 0.7,
+      gradient: [
+        "rgba(0, 255, 255, 0)",
+        "rgba(0, 255, 255, 1)",
+        "rgba(0, 191, 255, 1)",
+        "rgba(0, 127, 255, 1)",
+        "rgba(0, 63, 255, 1)",
+        "rgba(0, 0, 255, 1)",
+        "rgba(0, 0, 223, 1)",
+        "rgba(0, 0, 191, 1)",
+        "rgba(0, 0, 159, 1)",
+        "rgba(0, 0, 127, 1)",
+        "rgba(63, 0, 91, 1)",
+        "rgba(127, 0, 63, 1)",
+        "rgba(191, 0, 31, 1)",
+        "rgba(255, 0, 0, 1)",
+      ],
+    });
 
-  // Vincular/desvincular heatmap ao mapa
-  useEffect(() => {
-    if (heatmapLayer && isLoaded) {
-      // O heatmap será vinculado ao mapa através do prop 'map' do GoogleMap
-      // Precisamos fazer isso no onLoad do GoogleMap
-    }
-  }, [heatmapLayer, isLoaded]);
+    setHeatmapLayer(newHeatmap);
+
+    // Cleanup ao desmontar
+    return () => {
+      newHeatmap.setMap(null);
+    };
+  }, [isLoaded, showHeatmap, mapInstance, markers]);
 
   const getLegendaStatus = useMemo(() => {
     switch (filters.modo) {
@@ -376,9 +384,7 @@ export function MapaGeografico() {
               zoom={12}
               options={mapOptions}
               onLoad={(map) => {
-                if (heatmapLayer) {
-                  heatmapLayer.setMap(map);
-                }
+                setMapInstance(map);
               }}
             >
               <MarkerClusterer>
@@ -458,7 +464,7 @@ export function MapaGeografico() {
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-3 flex-wrap">
                       <Button size="sm" variant="outline" onClick={handleAbrirCRM}>
                         <ExternalLink className="h-3 w-3 mr-1" />
                         Abrir no CRM
@@ -466,6 +472,20 @@ export function MapaGeografico() {
                       <Button size="sm" variant="outline" onClick={handleVerRota}>
                         <Navigation className="h-3 w-3 mr-1" />
                         Ver Rota
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (selectedMarker?.cep && selectedMarker?.numero) {
+                            clearCacheForAddress(selectedMarker.cep, selectedMarker.numero);
+                            clearGeocodeCache();
+                            toast.success("Cache limpo! Recarregue a página para recalcular a posição.");
+                          }
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Recalcular
                       </Button>
                     </div>
                   </div>
