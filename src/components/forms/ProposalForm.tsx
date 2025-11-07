@@ -1,6 +1,8 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -25,13 +27,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Card } from "@/components/ui/card";
-import { CalendarIcon, Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, Plus, X, Info } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
 import ArquivosList from "@/components/arquivos/ArquivosList";
 import { Paperclip } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TIPOS_PRODUTO = [
   "Pintura Epóxi",
@@ -64,6 +68,7 @@ const servicoSchema = z.object({
 
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
+  lead_id: z.string().optional(),
   servicos: z.array(servicoSchema).min(1, "Adicione pelo menos um serviço"),
   desconto: z.number().min(0, "Desconto não pode ser negativo").default(0),
   data: z.string().optional(),
@@ -82,11 +87,14 @@ export default function ProposalForm({
   initialData,
 }: ProposalFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
+  const [autoFilledFromLead, setAutoFilledFromLead] = useState(false);
+  const [leadInfo, setLeadInfo] = useState<{ id: string; name: string } | null>(null);
   
   const form = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
     defaultValues: {
       cliente_id: initialData?.cliente_id || "",
+      lead_id: initialData?.lead_id || "",
       servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
       desconto: initialData?.desconto || 0,
       data: initialData?.data || new Date().toISOString().split('T')[0],
@@ -101,6 +109,62 @@ export default function ProposalForm({
 
   const servicos = form.watch("servicos");
   const desconto = form.watch("desconto") || 0;
+  const selectedClienteId = form.watch("cliente_id");
+
+  // Buscar leads do cliente selecionado
+  const { data: leadsDoCliente } = useQuery({
+    queryKey: ["leads-by-cliente", selectedClienteId],
+    queryFn: async () => {
+      if (!selectedClienteId) return null;
+      
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("cliente_id", selectedClienteId)
+        .not("produtos", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      return data?.[0] || null;
+    },
+    enabled: !!selectedClienteId && !initialData,
+  });
+
+  // Auto-preencher serviços do lead quando cliente for selecionado
+  useEffect(() => {
+    if (leadsDoCliente && !autoFilledFromLead && !initialData) {
+      const lead = leadsDoCliente;
+      const produtos = lead.produtos as Array<{ tipo: string; medida: number | null }>;
+      
+      if (produtos && Array.isArray(produtos) && produtos.length > 0) {
+        // Mapear produtos do lead para serviços da proposta
+        const servicosPreenchidos = produtos.map(p => {
+          let tipo = p.tipo;
+          let tipo_outro = "";
+          
+          // Se começar com "Outro:", extrair a descrição
+          if (p.tipo?.startsWith("Outro:")) {
+            tipo = "Outro";
+            tipo_outro = p.tipo.replace("Outro:", "").trim();
+          }
+          
+          return {
+            tipo,
+            tipo_outro,
+            m2: p.medida || 0,
+            valor_m2: 0,
+            custo_m2: 0,
+          };
+        });
+        
+        form.setValue("servicos", servicosPreenchidos);
+        form.setValue("lead_id", lead.id);
+        setAutoFilledFromLead(true);
+        setLeadInfo({ id: lead.id, name: `Lead #${lead.id.slice(0, 8)}` });
+      }
+    }
+  }, [leadsDoCliente, autoFilledFromLead, initialData, form]);
 
   const totalBruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
   const totalCusto = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
@@ -155,7 +219,15 @@ export default function ProposalForm({
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Serviços</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">Serviços</h3>
+                  {leadInfo && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Info className="w-3 h-3" />
+                      Preenchido do {leadInfo.name}
+                    </Badge>
+                  )}
+                </div>
                 <Button
                   type="button"
                   variant="outline"

@@ -427,6 +427,7 @@ export type Database = {
           data: string
           desconto: number | null
           id: string
+          lead_id: string | null
           liquido: number | null
           m2: number
           margem_pct: number | null
@@ -446,6 +447,7 @@ export type Database = {
           data?: string
           desconto?: number | null
           id?: string
+          lead_id?: string | null
           liquido?: number | null
           m2: number
           margem_pct?: number | null
@@ -465,6 +467,7 @@ export type Database = {
           data?: string
           desconto?: number | null
           id?: string
+          lead_id?: string | null
           liquido?: number | null
           m2?: number
           margem_pct?: number | null
@@ -483,6 +486,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
           {

@@ -34,6 +34,7 @@ export interface Proposta {
 
 export interface PropostaInsert {
   cliente_id: string;
+  lead_id?: string;
   servicos?: Array<{
     tipo: string;
     tipo_outro?: string;
@@ -103,6 +104,7 @@ export const usePropostas = () => {
         .insert({
           user_id: user.id,
           cliente_id: data.cliente_id,
+          lead_id: data.lead_id || null,
           servicos: servicos,
           desconto,
           m2: m2_total,
@@ -150,6 +152,7 @@ export const usePropostas = () => {
         .from("propostas")
         .update({
           cliente_id: data.cliente_id,
+          lead_id: data.lead_id || null,
           servicos: servicos,
           desconto,
           m2: m2_total,
