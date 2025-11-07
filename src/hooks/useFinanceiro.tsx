@@ -190,14 +190,17 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
       // Processar parcelas
       const hojStr = hoje.toISOString().split("T")[0];
       (data || []).forEach((p) => {
-        const vencMes = p.vencimento.slice(0, 7);
-
-        if (meses.has(vencMes)) {
-          const mesData = meses.get(vencMes)!;
-
-          if (p.status === "pago" && p.data_pagamento) {
+        // Para parcelas pagas, usar data_pagamento; para não pagas, usar vencimento
+        if (p.status === "pago" && p.data_pagamento) {
+          const pgtoMes = p.data_pagamento.slice(0, 7);
+          if (meses.has(pgtoMes)) {
+            const mesData = meses.get(pgtoMes)!;
             mesData.recebido += Number(p.valor_liquido_parcela);
-          } else if (p.status === "pendente") {
+          }
+        } else if (p.status === "pendente") {
+          const vencMes = p.vencimento.slice(0, 7);
+          if (meses.has(vencMes)) {
+            const mesData = meses.get(vencMes)!;
             if (p.vencimento < hojStr) {
               mesData.atrasado += Number(p.valor_liquido_parcela);
             } else {
