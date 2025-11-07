@@ -41,7 +41,16 @@ export function VisitaCard({
   const tipo = TIPOS_VISITA.find((t) => t.value === visita.marcacao_tipo);
   
   const dataVisita = visita.data ? parseISO(visita.data) : null;
-  const isAtrasada = dataVisita && isPast(dataVisita) && !visita.realizada;
+  
+  // Combinar data + hora para verificação correta de atraso
+  let dataHoraCompleta = dataVisita;
+  if (dataVisita && visita.hora) {
+    const [horas, minutos] = visita.hora.split(':');
+    dataHoraCompleta = new Date(dataVisita);
+    dataHoraCompleta.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+  }
+  
+  const isAtrasada = dataHoraCompleta && isPast(dataHoraCompleta) && !visita.realizada;
   const isHoje = dataVisita && isToday(dataVisita);
 
   const getStatusBadge = () => {
