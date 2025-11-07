@@ -37,6 +37,7 @@ export function MapaGeografico() {
   const { pontos, kpis, isLoading } = useMapaGeografico(filters);
   const [markers, setMarkers] = useState<MarkerData[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+  const [hoveredMarker, setHoveredMarker] = useState<MarkerData | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -150,6 +151,14 @@ export function MapaGeografico() {
 
   const handleMarkerClick = useCallback((marker: MarkerData) => {
     setSelectedMarker(marker);
+  }, []);
+
+  const handleMarkerMouseOver = useCallback((marker: MarkerData) => {
+    setHoveredMarker(marker);
+  }, []);
+
+  const handleMarkerMouseOut = useCallback(() => {
+    setHoveredMarker(null);
   }, []);
 
   const handleAbrirCRM = useCallback(() => {
@@ -298,6 +307,8 @@ export function MapaGeografico() {
                         key={marker.id}
                         position={marker.position}
                         onClick={() => handleMarkerClick(marker)}
+                        onMouseOver={() => handleMarkerMouseOver(marker)}
+                        onMouseOut={handleMarkerMouseOut}
                         icon={getCorPorStatus(marker.status, marker.tipo)}
                         clusterer={clusterer}
                       />
@@ -306,6 +317,33 @@ export function MapaGeografico() {
                 )}
               </MarkerClusterer>
 
+              {/* Tooltip ao passar o mouse */}
+              {hoveredMarker && !selectedMarker && (
+                <InfoWindow
+                  position={hoveredMarker.position}
+                  options={{
+                    pixelOffset: new google.maps.Size(0, -40),
+                    disableAutoPan: true,
+                  }}
+                >
+                  <div className="p-2 min-w-[200px]">
+                    <h4 className="font-semibold text-sm mb-1">
+                      {hoveredMarker.cliente_nome}
+                    </h4>
+                    <div className="space-y-0.5 text-xs text-muted-foreground">
+                      <p>{hoveredMarker.bairro}</p>
+                      <p className="font-medium text-foreground">
+                        R$ {hoveredMarker.valor.toLocaleString("pt-BR")}
+                      </p>
+                      <p className="text-xs italic mt-1">
+                        Clique para mais detalhes
+                      </p>
+                    </div>
+                  </div>
+                </InfoWindow>
+              )}
+
+              {/* InfoWindow completo ao clicar */}
               {selectedMarker && (
                 <InfoWindow
                   position={selectedMarker.position}
