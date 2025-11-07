@@ -19,21 +19,30 @@ export default function Dashboard() {
     customDateRange,
   });
 
-  const kpiData = [
+  const kpiData: Array<{
+    title: string;
+    value: string;
+    delta?: { value: string; direction: "up" | "down" };
+    variant?: "default" | "liquid";
+    icon: any;
+  }> = [
+    {
+      title: "Recebido no Período",
+      value: kpis.recebidoMes.value,
+      delta: kpis.recebidoMes.delta,
+      icon: DollarSign,
+    },
     {
       title: "Valor Total de Propostas",
       value: kpis.totalPropostas.value,
+      delta: kpis.totalPropostas.delta,
       icon: FileText,
     },
     {
       title: "Valor Total de Contratos",
       value: kpis.totalContratos.value,
+      delta: kpis.totalContratos.delta,
       icon: HandCoins,
-    },
-    {
-      title: "Valor Total a Receber",
-      value: kpis.totalAReceber.value,
-      icon: Wallet,
     },
     {
       title: "Valor Total a Receber Líquido",
@@ -87,6 +96,7 @@ export default function Dashboard() {
               key={kpi.title}
               title={kpi.title}
               value={kpi.value}
+              delta={kpi.delta}
               variant={kpi.variant}
               icon={kpi.icon}
             />

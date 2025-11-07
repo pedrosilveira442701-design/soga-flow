@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMemo } from "react";
-import { startOfMonth, endOfMonth, subMonths, format, startOfWeek, endOfWeek, startOfYear, endOfYear } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths, format, startOfWeek, endOfWeek, startOfYear, endOfYear, subWeeks, subYears, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export type FilterPeriod = "week" | "month" | "year" | "custom";
@@ -41,34 +41,48 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // Calcular datas baseado no filtro
   const now = new Date();
-  const { startDate, endDate } = useMemo(() => {
+  const { startDate, endDate, prevStartDate, prevEndDate } = useMemo(() => {
+    let start: Date, end: Date, prevStart: Date, prevEnd: Date;
+
     switch (filters.period) {
       case "week":
-        return {
-          startDate: startOfWeek(now, { locale: ptBR }),
-          endDate: endOfWeek(now, { locale: ptBR }),
-        };
+        start = startOfWeek(now, { locale: ptBR });
+        end = endOfWeek(now, { locale: ptBR });
+        prevStart = startOfWeek(subWeeks(now, 1), { locale: ptBR });
+        prevEnd = endOfWeek(subWeeks(now, 1), { locale: ptBR });
+        break;
       case "month":
-        return {
-          startDate: startOfMonth(now),
-          endDate: endOfMonth(now),
-        };
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        prevStart = startOfMonth(subMonths(now, 1));
+        prevEnd = endOfMonth(subMonths(now, 1));
+        break;
       case "year":
-        return {
-          startDate: startOfYear(now),
-          endDate: endOfYear(now),
-        };
+        start = startOfYear(now);
+        end = endOfYear(now);
+        prevStart = startOfYear(subYears(now, 1));
+        prevEnd = endOfYear(subYears(now, 1));
+        break;
       case "custom":
-        return {
-          startDate: filters.customDateRange?.from || startOfMonth(now),
-          endDate: filters.customDateRange?.to || endOfMonth(now),
-        };
+        start = filters.customDateRange?.from || startOfMonth(now);
+        end = filters.customDateRange?.to || endOfMonth(now);
+        const days = differenceInDays(end, start);
+        prevEnd = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+        prevStart = new Date(prevEnd.getTime() - days * 24 * 60 * 60 * 1000);
+        break;
       default:
-        return {
-          startDate: startOfMonth(now),
-          endDate: endOfMonth(now),
-        };
+        start = startOfMonth(now);
+        end = endOfMonth(now);
+        prevStart = startOfMonth(subMonths(now, 1));
+        prevEnd = endOfMonth(subMonths(now, 1));
     }
+
+    return {
+      startDate: start,
+      endDate: end,
+      prevStartDate: prevStart,
+      prevEndDate: prevEnd,
+    };
   }, [filters.period, filters.customDateRange, now]);
 
   const sixMonthsAgo = subMonths(now, 5);
@@ -172,13 +186,101 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     enabled: !!user?.id,
   });
 
-  // Calcular KPIs com memoização
-  const kpis = useMemo(() => {
-    // Valor total de propostas no período
-    const totalPropostas = propostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+  // 6. Buscar propostas do período anterior
+  const { data: propostasAnterior = [] } = useQuery({
+    queryKey: ["propostas-anterior", user?.id, filters.period, prevStartDate, prevEndDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("propostas")
+        .select("*")
+        .eq("user_id", user!.id)
+        .gte("data", format(prevStartDate, "yyyy-MM-dd"))
+        .lte("data", format(prevEndDate, "yyyy-MM-dd"));
 
-    // Valor total de contratos no período
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // 7. Buscar contratos do período anterior
+  const { data: contratosAnterior = [] } = useQuery({
+    queryKey: ["contratos-anterior", user?.id, filters.period, prevStartDate, prevEndDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contratos")
+        .select("*")
+        .eq("user_id", user!.id)
+        .gte("data_inicio", format(prevStartDate, "yyyy-MM-dd"))
+        .lte("data_inicio", format(prevEndDate, "yyyy-MM-dd"));
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // 8. Buscar parcelas pagas do período atual (para KPI "Recebido")
+  const { data: parcelasPagasAtual = [] } = useQuery({
+    queryKey: ["parcelas-pagas-atual", user?.id, startDate, endDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_parcelas")
+        .select("valor_liquido_parcela, data_pagamento")
+        .eq("user_id", user!.id)
+        .eq("status", "pago")
+        .gte("data_pagamento", format(startDate, "yyyy-MM-dd"))
+        .lte("data_pagamento", format(endDate, "yyyy-MM-dd"));
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // 9. Buscar parcelas pagas do período anterior
+  const { data: parcelasPagasAnterior = [] } = useQuery({
+    queryKey: ["parcelas-pagas-anterior", user?.id, prevStartDate, prevEndDate],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_parcelas")
+        .select("valor_liquido_parcela, data_pagamento")
+        .eq("user_id", user!.id)
+        .eq("status", "pago")
+        .gte("data_pagamento", format(prevStartDate, "yyyy-MM-dd"))
+        .lte("data_pagamento", format(prevEndDate, "yyyy-MM-dd"));
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  // Calcular KPIs com memoização e comparação com período anterior
+  const kpis = useMemo(() => {
+    // Função auxiliar para calcular delta
+    const calculateDelta = (atual: number, anterior: number): { value: string; direction: "up" | "down" } | undefined => {
+      if (anterior === 0) {
+        return atual > 0 
+          ? { value: "+100%", direction: "up" }
+          : undefined;
+      }
+      const percentual = ((atual - anterior) / anterior) * 100;
+      const direction: "up" | "down" = percentual >= 0 ? "up" : "down";
+      const sinal = percentual >= 0 ? "+" : "";
+      return {
+        value: `${sinal}${percentual.toFixed(1)}%`,
+        direction,
+      };
+    };
+
+    const formatCurrency = (value: number) =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+    // PERÍODO ATUAL
+    const totalPropostas = propostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
+    const recebidoAtual = parcelasPagasAtual.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
     // Valor total a receber (bruto) - soma das parcelas pendentes de todos os contratos
     let totalAReceber = 0;
@@ -196,15 +298,23 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       });
     });
 
-    const formatCurrency = (value: number) =>
-      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+    // PERÍODO ANTERIOR
+    const totalPropostasAnterior = propostasAnterior.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const totalContratosAnterior = contratosAnterior.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
+    const recebidoAnterior = parcelasPagasAnterior.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
     return {
+      recebidoMes: {
+        value: formatCurrency(recebidoAtual),
+        delta: calculateDelta(recebidoAtual, recebidoAnterior),
+      },
       totalPropostas: {
         value: formatCurrency(totalPropostas),
+        delta: calculateDelta(totalPropostas, totalPropostasAnterior),
       },
       totalContratos: {
         value: formatCurrency(totalContratos),
+        delta: calculateDelta(totalContratos, totalContratosAnterior),
       },
       totalAReceber: {
         value: formatCurrency(totalAReceber),
@@ -213,7 +323,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         value: formatCurrency(totalAReceberLiquido),
       },
     };
-  }, [propostas, contratos, contratosComParcelas]);
+  }, [propostas, contratos, contratosComParcelas, propostasAnterior, contratosAnterior, parcelasPagasAtual, parcelasPagasAnterior]);
 
   // Calcular dados de timeline (últimos 6 meses)
   const timelineData = useMemo((): TimelineData[] => {
