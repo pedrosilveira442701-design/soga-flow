@@ -44,6 +44,7 @@ const TIPOS_PRODUTO = [
   "Pintura Acrílica",
   "Pintura Acrílica Quadra",
   "Pintura de Parede",
+  "Piso Autonivelante",
   "Outro",
 ] as const;
 
