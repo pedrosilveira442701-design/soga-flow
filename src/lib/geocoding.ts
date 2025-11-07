@@ -55,8 +55,9 @@ export async function geocodeEndereco(
 
   try {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.warn("GOOGLE_MAPS_API_KEY não configurada");
+    if (!apiKey || apiKey === "USE_YOUR_GOOGLE_MAPS_API_KEY") {
+      console.error("❌ Google Maps API Key não configurada corretamente");
+      console.info("📝 Configure VITE_GOOGLE_MAPS_API_KEY no arquivo .env");
       return BH_CENTER;
     }
 
@@ -84,7 +85,11 @@ export async function geocodeEndereco(
 
       return location;
     } else {
-      console.warn(`Geocoding falhou para ${enderecoCompleto}:`, data.status);
+      console.warn(`⚠️ Geocoding falhou para ${enderecoCompleto}`);
+      console.warn(`Status: ${data.status}`);
+      if (data.error_message) {
+        console.warn(`Mensagem: ${data.error_message}`);
+      }
       return BH_CENTER;
     }
   } catch (error) {
