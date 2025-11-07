@@ -6,7 +6,9 @@ import { MapaFiltros } from "./MapaFiltros";
 import { MapaKPICards } from "./MapaKPICards";
 import { geocodeEndereco, GeocodedLocation } from "@/lib/geocoding";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Navigation, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ExternalLink, Navigation, AlertCircle, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ErrorMessage } from "@/components/feedback/ErrorMessage";
 
@@ -40,11 +42,14 @@ export function MapaGeografico() {
   const [hoveredMarker, setHoveredMarker] = useState<MarkerData | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [heatmapLayer, setHeatmapLayer] = useState<google.maps.visualization.HeatmapLayer | null>(null);
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: ["visualization"],
   });
 
   // Detectar erros de API key
@@ -182,6 +187,58 @@ export function MapaGeografico() {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${endereco}`, "_blank");
   }, [selectedMarker]);
 
+  // Criar/atualizar heatmap quando markers ou toggle mudam
+  useEffect(() => {
+    if (!isLoaded || !showHeatmap || markers.length === 0) {
+      if (heatmapLayer) {
+        heatmapLayer.setMap(null);
+        setHeatmapLayer(null);
+      }
+      return;
+    }
+
+    // Converter markers para LatLng do Google Maps
+    const heatmapData = markers.map(
+      (marker) => new google.maps.LatLng(marker.position.lat, marker.position.lng)
+    );
+
+    // Criar ou atualizar heatmap
+    if (heatmapLayer) {
+      heatmapLayer.setData(heatmapData);
+    } else {
+      const newHeatmap = new google.maps.visualization.HeatmapLayer({
+        data: heatmapData,
+        radius: 30,
+        opacity: 0.6,
+        gradient: [
+          "rgba(0, 255, 255, 0)",
+          "rgba(0, 255, 255, 1)",
+          "rgba(0, 191, 255, 1)",
+          "rgba(0, 127, 255, 1)",
+          "rgba(0, 63, 255, 1)",
+          "rgba(0, 0, 255, 1)",
+          "rgba(0, 0, 223, 1)",
+          "rgba(0, 0, 191, 1)",
+          "rgba(0, 0, 159, 1)",
+          "rgba(0, 0, 127, 1)",
+          "rgba(63, 0, 91, 1)",
+          "rgba(127, 0, 63, 1)",
+          "rgba(191, 0, 31, 1)",
+          "rgba(255, 0, 0, 1)",
+        ],
+      });
+      setHeatmapLayer(newHeatmap);
+    }
+  }, [isLoaded, showHeatmap, markers, heatmapLayer]);
+
+  // Vincular/desvincular heatmap ao mapa
+  useEffect(() => {
+    if (heatmapLayer && isLoaded) {
+      // O heatmap será vinculado ao mapa através do prop 'map' do GoogleMap
+      // Precisamos fazer isso no onLoad do GoogleMap
+    }
+  }, [heatmapLayer, isLoaded]);
+
   const getLegendaStatus = useMemo(() => {
     switch (filters.modo) {
       case "propostas":
@@ -265,7 +322,27 @@ export function MapaGeografico() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Filtros */}
-          <MapaFiltros filters={filters} onChange={setFilters} />
+          <div className="space-y-4">
+            <MapaFiltros filters={filters} onChange={setFilters} />
+            
+            {/* Toggle Heatmap */}
+            <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+              <Flame className="h-5 w-5 text-orange-500" />
+              <div className="flex-1">
+                <Label htmlFor="heatmap-toggle" className="text-sm font-medium cursor-pointer">
+                  Mapa de Calor (Densidade)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Visualizar concentração de {filters.modo}
+                </p>
+              </div>
+              <Switch
+                id="heatmap-toggle"
+                checked={showHeatmap}
+                onCheckedChange={setShowHeatmap}
+              />
+            </div>
+          </div>
 
           {/* KPIs */}
           <MapaKPICards kpis={kpis} modo={filters.modo} />
@@ -298,6 +375,11 @@ export function MapaGeografico() {
               center={center}
               zoom={12}
               options={mapOptions}
+              onLoad={(map) => {
+                if (heatmapLayer) {
+                  heatmapLayer.setMap(map);
+                }
+              }}
             >
               <MarkerClusterer>
                 {(clusterer) => (
