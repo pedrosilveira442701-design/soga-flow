@@ -258,6 +258,7 @@ export type Database = {
       }
       lead_interacoes: {
         Row: {
+          automatica: boolean | null
           created_at: string
           data_hora: string
           id: string
@@ -268,6 +269,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          automatica?: boolean | null
           created_at?: string
           data_hora: string
           id?: string
@@ -278,6 +280,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          automatica?: boolean | null
           created_at?: string
           data_hora?: string
           id?: string

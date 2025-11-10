@@ -10,6 +10,7 @@ interface Interacao {
   tipo_interacao: string;
   data_hora: string;
   observacao: string | null;
+  automatica?: boolean;
 }
 
 interface LeadTimelineProps {
@@ -23,6 +24,8 @@ const TIPO_ICONS: Record<string, any> = {
   "WhatsApp": MessageSquare,
   "Reunião": Users,
   "Visita": Calendar,
+  "Criação": Clock,
+  "Mudança de Estágio": Clock,
 };
 
 const TIPO_COLORS: Record<string, string> = {
@@ -31,6 +34,8 @@ const TIPO_COLORS: Record<string, string> = {
   "WhatsApp": "bg-green-500",
   "Reunião": "bg-orange-500",
   "Visita": "bg-pink-500",
+  "Criação": "bg-gray-500",
+  "Mudança de Estágio": "bg-indigo-500",
 };
 
 export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
@@ -62,11 +67,11 @@ export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
             </div>
 
             {/* Content */}
-            <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+            <div className={`rounded-lg p-4 space-y-2 ${interacao.automatica ? 'bg-muted/20 border border-border/30' : 'bg-muted/30'}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant={interacao.automatica ? "outline" : "secondary"} className="text-xs">
                       {interacao.tipo_interacao}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
@@ -74,35 +79,39 @@ export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
                     </span>
                   </div>
                   {interacao.observacao && (
-                    <p className="text-sm whitespace-pre-wrap">{interacao.observacao}</p>
+                    <p className={`text-sm whitespace-pre-wrap ${interacao.automatica ? 'text-muted-foreground italic' : ''}`}>
+                      {interacao.observacao}
+                    </p>
                   )}
                 </div>
                 
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir esta interação? Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDelete(interacao.id)}>
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                {!interacao.automatica && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir esta interação? Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(interacao.id)}>
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             </div>
           </div>

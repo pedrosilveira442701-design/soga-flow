@@ -70,8 +70,9 @@ export function useLeads() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["lead-interacoes", data.id] });
     },
     onError: (error) => {
       toast.error("Erro ao atualizar lead: " + error.message);
@@ -93,8 +94,9 @@ export function useLeads() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["leads"] });
+      queryClient.invalidateQueries({ queryKey: ["lead-interacoes", data.id] });
     },
     onError: (error) => {
       toast.error("Erro ao atualizar estágio: " + error.message);
