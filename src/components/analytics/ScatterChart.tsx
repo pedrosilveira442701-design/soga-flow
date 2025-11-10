@@ -23,7 +23,7 @@ interface ScatterChartProps {
 }
 
 const TIPO_COLORS: Record<string, string> = {
-  // Pinturas Epóxi - Tons de Azul
+  // Pinturas Epóxi - Azul
   "Pintura Epóxi": "#3b82f6",
   
   // Pinturas PU - Tons de Roxo
@@ -34,11 +34,11 @@ const TIPO_COLORS: Record<string, string> = {
   "Pintura Acrílica": "#10b981",
   "Pintura Acrílica Quadra": "#34d399",
   
-  // Pintura de Parede - Laranja
-  "Pintura de Parede": "#f59e0b",
+  // Pintura de Parede - Amarelo
+  "Pintura de Parede": "#eab308",
   
-  // Piso Autonivelante - Ciano
-  "Piso Autonivelante": "#06b6d4",
+  // Piso Autonivelante - Vermelho
+  "Piso Autonivelante": "#ef4444",
   
   // Outros - Cinza
   "Não especificado": "#94a3b8",
