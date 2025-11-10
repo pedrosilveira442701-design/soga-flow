@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -74,6 +75,7 @@ const proposalSchema = z.object({
   desconto: z.number().min(0, "Desconto não pode ser negativo").default(0),
   data: z.string().optional(),
   status: z.string().optional(),
+  observacao: z.string().optional(),
 });
 
 type ProposalFormValues = z.infer<typeof proposalSchema>;
@@ -100,6 +102,7 @@ export default function ProposalForm({
       desconto: initialData?.desconto || 0,
       data: initialData?.data || new Date().toISOString().split('T')[0],
       status: initialData?.status || "aberta",
+      observacao: initialData?.observacao || "",
     },
   });
 
@@ -440,6 +443,23 @@ export default function ProposalForm({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="observacao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observações</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Observações sobre a proposta..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {initialData && (
               <FormField
