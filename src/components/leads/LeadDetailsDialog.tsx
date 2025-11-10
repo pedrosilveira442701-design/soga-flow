@@ -32,11 +32,15 @@ import {
   TrendingUp,
   Clock,
   MessageSquare,
+  Plus,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Database } from "@/integrations/supabase/types";
 import { VisitaForm } from "@/components/forms/VisitaForm";
 import { useVisitas } from "@/hooks/useVisitas";
+import { useLeadInteracoes } from "@/hooks/useLeadInteracoes";
+import { LeadTimeline } from "./LeadTimeline";
+import { LeadTimelineForm } from "./LeadTimelineForm";
 import { toast } from "sonner";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
@@ -86,7 +90,9 @@ export function LeadDetailsDialog({
 }: LeadDetailsDialogProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visitaDialogOpen, setVisitaDialogOpen] = useState(false);
+  const [showTimelineForm, setShowTimelineForm] = useState(false);
   const { createVisita } = useVisitas();
+  const { interacoes, isLoading: isLoadingInteracoes, createInteracao, deleteInteracao } = useLeadInteracoes(lead?.id);
 
   if (!lead) return null;
 
@@ -301,69 +307,59 @@ export function LeadDetailsDialog({
 
             <Separator />
 
-            {/* Timeline */}
+            {/* Timeline de Interações */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="space-y-4"
             >
-              <h4 className="text-body font-semibold flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Timeline
-              </h4>
-
-              <div className="space-y-3 pl-4 border-l-2 border-border">
-                {lead.ultima_interacao && (
-                  <div className="relative pl-4">
-                    <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-primary border-2 border-background" />
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-caption font-medium">
-                          Última Interação
-                        </span>
-                      </div>
-                      <p className="text-caption text-muted-foreground">
-                        {format(
-                          new Date(lead.ultima_interacao),
-                          "dd/MM/yyyy 'às' HH:mm",
-                          { locale: ptBR }
-                        )}
-                        {" • "}
-                        {formatDistanceToNow(new Date(lead.ultima_interacao), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </p>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-body font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Timeline de Interações
+                </h4>
+                {!showTimelineForm && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTimelineForm(true)}
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nova Interação
+                  </Button>
                 )}
-
-                <div className="relative pl-4">
-                  <div className="absolute -left-[9px] top-1 h-4 w-4 rounded-full bg-muted border-2 border-background" />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-caption font-medium">
-                        Lead Criado
-                      </span>
-                    </div>
-                    <p className="text-caption text-muted-foreground">
-                      {format(
-                        new Date(lead.created_at),
-                        "dd/MM/yyyy 'às' HH:mm",
-                        { locale: ptBR }
-                      )}
-                      {" • "}
-                      {formatDistanceToNow(new Date(lead.created_at), {
-                        addSuffix: true,
-                        locale: ptBR,
-                      })}
-                    </p>
-                  </div>
-                </div>
               </div>
+
+              {showTimelineForm && (
+                <div className="rounded-lg border bg-muted/30 p-4">
+                  <LeadTimelineForm
+                    leadId={lead.id}
+                    onSubmit={(data) => {
+                      createInteracao.mutate(data as any, {
+                        onSuccess: () => {
+                          setShowTimelineForm(false);
+                        },
+                      });
+                    }}
+                    onCancel={() => setShowTimelineForm(false)}
+                    isLoading={createInteracao.isPending}
+                  />
+                </div>
+              )}
+
+              {isLoadingInteracoes ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="w-12 h-12 mx-auto mb-2 opacity-50 animate-pulse" />
+                  <p>Carregando interações...</p>
+                </div>
+              ) : (
+                <LeadTimeline
+                  interacoes={interacoes}
+                  onDelete={(id) => deleteInteracao.mutate(id)}
+                />
+              )}
             </motion.div>
 
             <Separator />

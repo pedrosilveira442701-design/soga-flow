@@ -256,6 +256,39 @@ export type Database = {
           },
         ]
       }
+      lead_interacoes: {
+        Row: {
+          created_at: string
+          data_hora: string
+          id: string
+          lead_id: string
+          observacao: string | null
+          tipo_interacao: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_hora: string
+          id?: string
+          lead_id: string
+          observacao?: string | null
+          tipo_interacao: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_hora?: string
+          id?: string
+          lead_id?: string
+          observacao?: string | null
+          tipo_interacao?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           cliente_id: string | null
