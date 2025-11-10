@@ -170,12 +170,14 @@ export default function Propostas() {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Badge 
-            variant={currentStatus.variant} 
-            className="cursor-pointer hover:opacity-80 transition-opacity"
-          >
-            {currentStatus.label}
-          </Badge>
+          <button className="inline-flex">
+            <Badge 
+              variant={currentStatus.variant} 
+              className="cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              {currentStatus.label}
+            </Badge>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-40 p-2">
           <div className="flex flex-col gap-1">
