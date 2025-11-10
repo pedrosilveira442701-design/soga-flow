@@ -29,7 +29,7 @@ import {
 import { CalendarIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, formatDateToLocal } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
 import { usePropostasFechadas } from "@/hooks/useContratos";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -471,7 +471,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
                         onSelect={(date) =>
-                          field.onChange(date?.toISOString().split("T")[0])
+                          field.onChange(date ? formatDateToLocal(date) : undefined)
                         }
                         initialFocus
                         className="pointer-events-auto"

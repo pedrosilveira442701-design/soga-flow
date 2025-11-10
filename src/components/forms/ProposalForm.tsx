@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plus, X, Info } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, formatDateToLocal } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
 import ArquivosList from "@/components/arquivos/ArquivosList";
 import { Paperclip } from "lucide-react";
@@ -450,7 +450,7 @@ export default function ProposalForm({
                       <Calendar
                         mode="single"
                         selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                        onSelect={(date) => field.onChange(date ? formatDateToLocal(date) : undefined)}
                         initialFocus
                         className="pointer-events-auto"
                       />
