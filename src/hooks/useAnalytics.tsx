@@ -256,7 +256,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     enabled: !!user,
   });
 
-  // Scatter Preço x Margem
+  // Scatter Preço x Margem - agora por serviço individual
   const { data: scatterData, isLoading: loadingScatter } = useQuery({
     queryKey: ["analytics", "scatter", filters, user?.id],
     queryFn: async () => {
@@ -265,24 +265,21 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       let query = supabase
         .from("propostas")
         .select(`
-          valor_m2,
+          servicos,
           margem_pct,
-          tipo_piso,
-          m2,
           cliente_id,
+          data,
           clientes!inner(nome, cidade)
         `)
         .eq("user_id", user.id)
-        .not("margem_pct", "is", null);
+        .not("margem_pct", "is", null)
+        .not("servicos", "is", null);
 
       if (filters.startDate) {
         query = query.gte("data", filters.startDate.toISOString().split("T")[0]);
       }
       if (filters.endDate) {
         query = query.lte("data", filters.endDate.toISOString().split("T")[0]);
-      }
-      if (filters.tipoPiso) {
-        query = query.eq("tipo_piso", filters.tipoPiso);
       }
       if (filters.cidade) {
         query = query.eq("clientes.cidade", filters.cidade);
@@ -291,13 +288,35 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       const { data: propostas, error } = await query;
       if (error) throw error;
 
-      const result: ScatterDataPoint[] = propostas.map((prop: any) => ({
-        valor_m2: parseFloat(String(prop.valor_m2 || "0")),
-        margem_pct: parseFloat(String(prop.margem_pct || "0")),
-        tipo_piso: prop.tipo_piso || "Não especificado",
-        m2: parseFloat(String(prop.m2 || "0")),
-        cliente_nome: prop.clientes?.nome || "Sem nome",
-      }));
+      // Expandir cada serviço em um ponto separado
+      const result: ScatterDataPoint[] = [];
+      
+      propostas.forEach((prop: any) => {
+        const servicos = Array.isArray(prop.servicos) ? prop.servicos : [];
+        servicos.forEach((servico: any) => {
+          const tipo = servico.tipo === "Outro" && servico.tipo_outro 
+            ? servico.tipo_outro 
+            : servico.tipo || "Não especificado";
+          
+          // Filtrar por tipo se especificado
+          if (filters.tipoPiso && tipo !== filters.tipoPiso) {
+            return;
+          }
+
+          const valorM2 = parseFloat(String(servico.valor_m2 || "0"));
+          const custoM2 = parseFloat(String(servico.custo_m2 || "0"));
+          const m2 = parseFloat(String(servico.m2 || "0"));
+          const margemServico = valorM2 > 0 ? ((valorM2 - custoM2) / valorM2) * 100 : 0;
+
+          result.push({
+            valor_m2: valorM2,
+            margem_pct: margemServico,
+            tipo_piso: tipo,
+            m2: m2,
+            cliente_nome: prop.clientes?.nome || "Sem nome",
+          });
+        });
+      });
 
       return result;
     },
