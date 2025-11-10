@@ -405,6 +405,24 @@ export default function ProposalForm({
 
             <FormField
               control={form.control}
+              name="observacao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Observações</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Observações sobre a proposta..."
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="data"
               render={({ field }) => (
                 <FormItem className="flex flex-col">

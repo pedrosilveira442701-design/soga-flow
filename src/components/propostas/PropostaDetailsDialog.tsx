@@ -270,6 +270,14 @@ export default function PropostaDetailsDialog({
               ))}
             </div>
 
+            {/* Observações */}
+            {proposta.observacao && (
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Observações</h3>
+                <p className="text-sm whitespace-pre-wrap">{proposta.observacao}</p>
+              </div>
+            )}
+
             {/* Ação de Contrato */}
             {proposta.status === "fechada" && (
               <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
@@ -409,6 +417,7 @@ export default function PropostaDetailsDialog({
               desconto,
               data: proposta.data,
               status: proposta.status,
+              observacao: proposta.observacao,
             }}
           />
         </DialogContent>

@@ -18,6 +18,7 @@ export interface Proposta {
   status: string;
   created_at: string;
   updated_at: string;
+  observacao?: string;
   servicos?: Array<{
     tipo: string;
     tipo_outro?: string;
@@ -45,6 +46,7 @@ export interface PropostaInsert {
   desconto?: number;
   data?: string;
   status?: string;
+  observacao?: string;
 }
 
 export interface PropostaUpdate extends PropostaInsert {
@@ -116,6 +118,7 @@ export const usePropostas = () => {
           tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
           data: data.data || new Date().toISOString().split('T')[0],
           status: data.status || 'aberta',
+          observacao: data.observacao || null,
         })
         .select()
         .single();
@@ -164,6 +167,7 @@ export const usePropostas = () => {
           tipo_piso: servicos.map(s => s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo).join(", "),
           data: data.data,
           status: data.status,
+          observacao: data.observacao,
         })
         .eq("id", data.id)
         .select()
