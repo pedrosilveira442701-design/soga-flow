@@ -29,6 +29,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePropostas } from "@/hooks/usePropostas";
@@ -53,7 +58,7 @@ import { ptBR } from "date-fns/locale";
 import type { Proposta } from "@/hooks/usePropostas";
 
 export default function Propostas() {
-  const { propostas, isLoading, createProposta, deleteProposta } = usePropostas();
+  const { propostas, isLoading, createProposta, updateStatus, deleteProposta } = usePropostas();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedProposta, setSelectedProposta] = useState<Proposta | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -153,14 +158,46 @@ export default function Propostas() {
     }).format(value);
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-      aberta: { label: "Aberta", variant: "default" },
-      fechada: { label: "Fechada", variant: "secondary" },
-      perdida: { label: "Perdida", variant: "destructive" },
-    };
-    const config = statusMap[status] || statusMap.aberta;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+  const statusOptions = [
+    { value: "aberta", label: "Aberta", variant: "default" as const },
+    { value: "fechada", label: "Fechada", variant: "secondary" as const },
+    { value: "perdida", label: "Perdida", variant: "destructive" as const },
+  ];
+
+  const getStatusBadge = (propostaId: string, status: string) => {
+    const currentStatus = statusOptions.find(s => s.value === status) || statusOptions[0];
+    
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Badge 
+            variant={currentStatus.variant} 
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            {currentStatus.label}
+          </Badge>
+        </PopoverTrigger>
+        <PopoverContent className="w-40 p-2">
+          <div className="flex flex-col gap-1">
+            {statusOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  updateStatus.mutate({ id: propostaId, status: option.value });
+                }}
+                className={`px-3 py-2 text-sm rounded-md text-left transition-colors ${
+                  option.value === status
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "hover:bg-accent/50"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
   };
 
   const getMargemColor = (margem: number) => {
@@ -427,7 +464,7 @@ export default function Propostas() {
                         {margem.toFixed(1)}%
                       </span>
                     </TableCell>
-                    <TableCell>{getStatusBadge(proposta.status)}</TableCell>
+                    <TableCell>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
                     <TableCell>
                       {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
                     </TableCell>
