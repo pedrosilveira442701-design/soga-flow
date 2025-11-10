@@ -23,18 +23,70 @@ interface ScatterChartProps {
 }
 
 const TIPO_COLORS: Record<string, string> = {
-  "Pintura Epóxi": "hsl(var(--chart-1))",
-  "Pintura PU": "hsl(var(--chart-2))",
-  "Pintura PU Quadra": "hsl(var(--chart-3))",
-  "Pintura Acrílica": "hsl(var(--chart-4))",
-  "Pintura Acrílica Quadra": "hsl(var(--chart-5))",
+  // Pinturas Epóxi - Tons de Azul
+  "Pintura Epóxi": "#3b82f6",
+  
+  // Pinturas PU - Tons de Roxo
+  "Pintura PU": "#8b5cf6",
+  "Pintura PU Quadra": "#a78bfa",
+  
+  // Pinturas Acrílicas - Tons de Verde
+  "Pintura Acrílica": "#10b981",
+  "Pintura Acrílica Quadra": "#34d399",
+  
+  // Pintura de Parede - Laranja
   "Pintura de Parede": "#f59e0b",
-  "Piso Autonivelante": "#10b981",
-  "Não especificado": "hsl(var(--muted-foreground))",
+  
+  // Piso Autonivelante - Ciano
+  "Piso Autonivelante": "#06b6d4",
+  
+  // Outros - Cinza
+  "Não especificado": "#94a3b8",
 };
 
+// Cores adicionais para tipos customizados ou combinações
+const EXTENDED_COLORS = [
+  "#ef4444", // Vermelho
+  "#ec4899", // Rosa
+  "#f97316", // Laranja escuro
+  "#84cc16", // Lima
+  "#14b8a6", // Teal
+  "#0ea5e9", // Azul claro
+  "#6366f1", // Indigo
+  "#d946ef", // Fuchsia
+  "#f43f5e", // Rosa escuro
+  "#22c55e", // Verde claro
+];
+
+// Cache de cores geradas para tipos não mapeados
+const colorCache = new Map<string, string>();
+
 const getColorForType = (tipo: string) => {
-  return TIPO_COLORS[tipo] || "hsl(var(--primary))";
+  // Se já existe cor definida, retorna
+  if (TIPO_COLORS[tipo]) {
+    return TIPO_COLORS[tipo];
+  }
+  
+  // Se já gerou cor para este tipo, retorna do cache
+  if (colorCache.has(tipo)) {
+    return colorCache.get(tipo)!;
+  }
+  
+  // Gera hash simples baseado no nome do tipo
+  let hash = 0;
+  for (let i = 0; i < tipo.length; i++) {
+    hash = ((hash << 5) - hash) + tipo.charCodeAt(i);
+    hash = hash & hash;
+  }
+  
+  // Seleciona cor baseada no hash
+  const colorIndex = Math.abs(hash) % EXTENDED_COLORS.length;
+  const color = EXTENDED_COLORS[colorIndex];
+  
+  // Armazena no cache
+  colorCache.set(tipo, color);
+  
+  return color;
 };
 
 export function ScatterChart({ data, isLoading }: ScatterChartProps) {
