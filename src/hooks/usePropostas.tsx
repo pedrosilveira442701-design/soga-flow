@@ -30,6 +30,7 @@ export interface Proposta {
     nome: string;
     telefone?: string;
     cidade?: string;
+    bairro?: string;
   };
 }
 
@@ -67,7 +68,8 @@ export const usePropostas = () => {
           clientes:cliente_id (
             nome,
             telefone,
-            cidade
+            cidade,
+            bairro
           )
         `)
         .order("created_at", { ascending: false });

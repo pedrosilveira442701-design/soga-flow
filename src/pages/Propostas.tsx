@@ -396,9 +396,11 @@ export default function Propostas() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{proposta.clientes?.nome}</div>
-                        {proposta.clientes?.cidade && (
+                        {(proposta.clientes?.cidade || proposta.clientes?.bairro) && (
                           <div className="text-xs text-muted-foreground">
-                            {proposta.clientes.cidade}
+                            {[proposta.clientes.cidade, proposta.clientes.bairro]
+                              .filter(Boolean)
+                              .join(" / ")}
                           </div>
                         )}
                       </div>
