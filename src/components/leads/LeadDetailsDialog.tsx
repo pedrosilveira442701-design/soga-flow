@@ -312,17 +312,22 @@ export function LeadDetailsDialog({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="space-y-4"
+              className="space-y-4 rounded-lg bg-muted/50 p-4 border border-border/50"
             >
               <div className="flex items-center justify-between">
                 <h4 className="text-body font-semibold flex items-center gap-2">
                   <Clock className="h-4 w-4" />
                   Timeline de Interações
+                  {!isLoadingInteracoes && interacoes.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {interacoes.length}
+                    </Badge>
+                  )}
                 </h4>
                 {!showTimelineForm && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="default"
+                    size="default"
                     onClick={() => setShowTimelineForm(true)}
                     className="gap-2"
                   >
@@ -333,7 +338,7 @@ export function LeadDetailsDialog({
               </div>
 
               {showTimelineForm && (
-                <div className="rounded-lg border bg-muted/30 p-4">
+                <div className="rounded-lg border bg-background p-4 shadow-sm">
                   <LeadTimelineForm
                     leadId={lead.id}
                     onSubmit={(data) => {
@@ -350,9 +355,46 @@ export function LeadDetailsDialog({
               )}
 
               {isLoadingInteracoes ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="w-12 h-12 mx-auto mb-2 opacity-50 animate-pulse" />
-                  <p>Carregando interações...</p>
+                <div className="space-y-3 py-4">
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-1/3" />
+                      <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded animate-pulse w-1/4" />
+                      <div className="h-3 bg-muted rounded animate-pulse w-3/4" />
+                    </div>
+                  </div>
+                </div>
+              ) : interacoes.length === 0 ? (
+                <div className="text-center py-8 space-y-3">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                    <MessageSquare className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-body font-medium text-muted-foreground">
+                      Nenhuma interação registrada ainda
+                    </p>
+                    <p className="text-caption text-muted-foreground">
+                      Comece adicionando a primeira interação com este lead
+                    </p>
+                  </div>
+                  {!showTimelineForm && (
+                    <Button
+                      variant="default"
+                      size="default"
+                      onClick={() => setShowTimelineForm(true)}
+                      className="gap-2 mt-4"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Adicionar Primeira Interação
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <LeadTimeline
