@@ -101,6 +101,12 @@ export interface LossReasonData {
   taxa_perda: number;
 }
 
+export interface ConversionRatesData {
+  total_leads: number;
+  total_propostas: number;
+  total_contratos: number;
+}
+
 // Probabilidades por estágio (configuráveis futuramente)
 const STAGE_PROBABILITIES: Record<string, number> = {
   novo: 0.1,
@@ -885,6 +891,77 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     enabled: !!user,
   });
 
+  // Taxas de Conversão
+  const { data: conversionRatesData, isLoading: loadingConversionRates } = useQuery({
+    queryKey: ["analytics", "conversionRates", filters, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+
+      // Buscar total de leads
+      let leadsQuery = supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (filters.startDate) {
+        leadsQuery = leadsQuery.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        leadsQuery = leadsQuery.lte("created_at", filters.endDate.toISOString());
+      }
+      if (filters.responsavel) {
+        leadsQuery = leadsQuery.eq("responsavel", filters.responsavel);
+      }
+      if (filters.origem) {
+        leadsQuery = leadsQuery.eq("origem", filters.origem);
+      }
+
+      const { count: total_leads } = await leadsQuery;
+
+      // Buscar total de propostas
+      let propostasQuery = supabase
+        .from("propostas")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (filters.startDate) {
+        propostasQuery = propostasQuery.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        propostasQuery = propostasQuery.lte("created_at", filters.endDate.toISOString());
+      }
+      if (filters.tipoPiso) {
+        propostasQuery = propostasQuery.eq("tipo_piso", filters.tipoPiso);
+      }
+
+      const { count: total_propostas } = await propostasQuery;
+
+      // Buscar total de contratos
+      let contratosQuery = supabase
+        .from("contratos")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (filters.startDate) {
+        contratosQuery = contratosQuery.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        contratosQuery = contratosQuery.lte("created_at", filters.endDate.toISOString());
+      }
+
+      const { count: total_contratos } = await contratosQuery;
+
+      const result: ConversionRatesData = {
+        total_leads: total_leads || 0,
+        total_propostas: total_propostas || 0,
+        total_contratos: total_contratos || 0,
+      };
+
+      return result;
+    },
+    enabled: !!user,
+  });
+
   return {
     funnelData,
     loadingFunnel,
@@ -910,6 +987,8 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     loadingCohort,
     lossReasonData,
     loadingLossReason,
+    conversionRatesData,
+    loadingConversionRates,
     isLoading:
       loadingFunnel ||
       loadingPipeline ||
@@ -922,6 +1001,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       loadingFloorType ||
       loadingGeographic ||
       loadingCohort ||
-      loadingLossReason,
+      loadingLossReason ||
+      loadingConversionRates,
   };
 }

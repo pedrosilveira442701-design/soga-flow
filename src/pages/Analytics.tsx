@@ -12,6 +12,7 @@ import { FloorTypeChart } from "@/components/analytics/FloorTypeChart";
 import { MapaGeografico } from "@/components/analytics/MapaGeografico";
 import { CohortChart } from "@/components/analytics/CohortChart";
 import { LossReasonsChart } from "@/components/analytics/LossReasonsChart";
+import { ConversionRatesCard } from "@/components/analytics/ConversionRatesCard";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, TrendingUp, DollarSign } from "lucide-react";
@@ -43,6 +44,8 @@ export default function Analytics() {
     loadingCohort,
     lossReasonData,
     loadingLossReason,
+    conversionRatesData,
+    loadingConversionRates,
   } = useAnalytics(filters);
 
   // Calcular KPIs principais
@@ -108,6 +111,9 @@ export default function Analytics() {
 
       {/* Gráficos */}
       <div className="space-y-6">
+        {/* Taxas de Conversão */}
+        <ConversionRatesCard data={conversionRatesData} isLoading={loadingConversionRates} />
+
         {/* Funil de Conversão */}
         <FunnelChart data={funnelData} isLoading={loadingFunnel} />
 
