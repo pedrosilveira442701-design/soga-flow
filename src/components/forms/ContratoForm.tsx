@@ -90,7 +90,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       valor_entrada: initialData?.valor_entrada || 0,
       forma_pagamento_entrada: initialData?.forma_pagamento_entrada || "",
       forma_pagamento: initialData?.forma_pagamento || "",
-      data_inicio: initialData?.data_inicio || new Date().toISOString().split("T")[0],
+      data_inicio: initialData?.data_inicio || formatDateToLocal(new Date()),
       numero_parcelas: initialData?.numero_parcelas || 1,
       dia_vencimento: initialData?.dia_vencimento || 10,
       observacoes: initialData?.observacoes || "",
@@ -458,7 +458,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "PPP", { locale: ptBR })
+                            format(new Date(field.value + 'T00:00:00'), "PPP", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -469,7 +469,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
                         onSelect={(date) =>
                           field.onChange(date ? formatDateToLocal(date) : undefined)
                         }

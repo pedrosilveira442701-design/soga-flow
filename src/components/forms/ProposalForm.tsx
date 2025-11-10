@@ -100,7 +100,7 @@ export default function ProposalForm({
       lead_id: initialData?.lead_id || "",
       servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
       desconto: initialData?.desconto || 0,
-      data: initialData?.data || new Date().toISOString().split('T')[0],
+      data: initialData?.data || formatDateToLocal(new Date()),
       status: initialData?.status || "aberta",
       observacao: initialData?.observacao || "",
     },
@@ -438,7 +438,7 @@ export default function ProposalForm({
                           )}
                         >
                           {field.value ? (
-                            format(new Date(field.value), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                            format(new Date(field.value + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -449,7 +449,7 @@ export default function ProposalForm({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value) : undefined}
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
                         onSelect={(date) => field.onChange(date ? formatDateToLocal(date) : undefined)}
                         initialFocus
                         className="pointer-events-auto"
