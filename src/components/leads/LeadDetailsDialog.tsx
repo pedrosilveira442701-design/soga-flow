@@ -64,20 +64,26 @@ interface LeadDetailsDialogProps {
 }
 
 const STAGE_LABELS: Record<string, string> = {
-  novo: "Novo",
-  contato: "Contato",
-  negociacao: "Negociação",
-  proposta_enviada: "Proposta Enviada",
-  fechado_ganho: "Fechado Ganho",
+  contato: "Entrou em Contato",
+  visita_agendada: "Visita Agendada",
+  visita_realizada: "Visita Realizada",
+  proposta_pendente: "Proposta Pendente",
+  proposta: "Gerou Proposta",
+  contrato: "Fechou Contrato",
+  execucao: "Em Execução",
+  finalizado: "Finalizado",
   perdido: "Perdido",
 };
 
 const STAGE_COLORS: Record<string, string> = {
-  novo: "bg-blue-500/10 text-blue-700 border-blue-500/20",
   contato: "bg-purple-500/10 text-purple-700 border-purple-500/20",
-  negociacao: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-  proposta_enviada: "bg-orange-500/10 text-orange-700 border-orange-500/20",
-  fechado_ganho: "bg-green-500/10 text-green-700 border-green-500/20",
+  visita_agendada: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+  visita_realizada: "bg-purple-500/10 text-purple-700 border-purple-500/20",
+  proposta_pendente: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  proposta: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  contrato: "bg-green-500/10 text-green-700 border-green-500/20",
+  execucao: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  finalizado: "bg-green-500/10 text-green-700 border-green-500/20",
   perdido: "bg-red-500/10 text-red-700 border-red-500/20",
 };
 
