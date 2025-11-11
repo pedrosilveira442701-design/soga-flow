@@ -56,6 +56,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Clock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -359,7 +360,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.total}</div>
@@ -372,7 +373,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Perdidas</CardTitle>
-            <X className="h-4 w-4 text-destructive" />
+            <X className="h-6 w-6 text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{kpis.perdidas}</div>
@@ -385,7 +386,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Repouso</CardTitle>
-            <div className="h-4 w-4 text-muted-foreground">💤</div>
+            <Clock className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-muted-foreground">{kpis.repouso}</div>
@@ -398,7 +399,7 @@ export default function Propostas() {
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Volume Real (Ativas)</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-6 w-6 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{kpis.ativas}</div>
@@ -411,7 +412,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Margem Média</CardTitle>
-            <Percent className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-6 w-6 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getMargemColor(kpis.margemMedia)}`}>
