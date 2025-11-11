@@ -57,14 +57,21 @@ interface ContatoQuickFormProps {
   onSubmit: (data: ContatoFormValues) => void;
   onOpenLeadForm: (telefone: string, origem: string) => void;
   isLoading?: boolean;
+  initialData?: {
+    telefone: string;
+    nome: string;
+    data: Date;
+    hora: string;
+    origem: string;
+  };
 }
 
-export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading }: ContatoQuickFormProps) {
+export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialData }: ContatoQuickFormProps) {
   const [showLeadCheckbox, setShowLeadCheckbox] = useState(false);
 
   const form = useForm<ContatoFormValues>({
     resolver: zodResolver(contatoSchema),
-    defaultValues: {
+    defaultValues: initialData || {
       telefone: "",
       nome: "",
       data: new Date(),

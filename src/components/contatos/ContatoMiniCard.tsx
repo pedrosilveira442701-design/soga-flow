@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Calendar, ArrowRight } from "lucide-react";
+import { Phone, Calendar, ArrowRight, Pencil, User } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contato } from "@/hooks/useContatos";
@@ -8,13 +8,22 @@ import { Contato } from "@/hooks/useContatos";
 interface ContatoMiniCardProps {
   contato: Contato;
   onConvertToLead: (contato: Contato) => void;
+  onEdit: (contato: Contato) => void;
 }
 
-export function ContatoMiniCard({ contato, onConvertToLead }: ContatoMiniCardProps) {
+export function ContatoMiniCard({ contato, onConvertToLead, onEdit }: ContatoMiniCardProps) {
   return (
     <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 space-y-1.5 min-w-0">
+          {contato.nome && (
+            <div className="flex items-center gap-2">
+              <User className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="text-sm font-semibold text-foreground truncate">
+                {contato.nome}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium text-foreground truncate">
@@ -31,6 +40,14 @@ export function ContatoMiniCard({ contato, onConvertToLead }: ContatoMiniCardPro
             </span>
           </div>
         </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onEdit(contato)}
+          className="h-8 w-8 p-0 shrink-0"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
       </div>
       <Button
         size="sm"

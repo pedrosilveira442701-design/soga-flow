@@ -35,13 +35,15 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
 export default function Leads() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [contatoDialogOpen, setContatoDialogOpen] = useState(false);
+  const [editContatoDialogOpen, setEditContatoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedContato, setSelectedContato] = useState<Contato | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [contatoToConvert, setContatoToConvert] = useState<{telefone: string; origem: string; contatoId?: string} | null>(null);
   
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
-  const { naoConvertidos, createContato, convertToLead } = useContatos();
+  const { naoConvertidos, createContato, updateContato, convertToLead } = useContatos();
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any, contatoId?: string) => {
@@ -126,6 +128,30 @@ export default function Leads() {
       contatoId: contato.id 
     });
     setCreateDialogOpen(true);
+  };
+
+  const handleEditContato = (contato: Contato) => {
+    setSelectedContato(contato);
+    setEditContatoDialogOpen(true);
+  };
+
+  const handleUpdateContato = async (data: any) => {
+    if (!selectedContato) return;
+    
+    const dataHora = `${format(data.data, "yyyy-MM-dd")}T${data.hora}:00`;
+    
+    await updateContato.mutateAsync({
+      id: selectedContato.id,
+      updates: {
+        telefone: data.telefone,
+        nome: data.nome || null,
+        data_hora: dataHora,
+        origem: data.origem,
+      },
+    });
+    
+    setEditContatoDialogOpen(false);
+    setSelectedContato(null);
   };
 
   const handleUpdateLead = async (values: any) => {
@@ -260,7 +286,38 @@ export default function Leads() {
         onCardClick={handleCardClick}
         contatosNaoConvertidos={naoConvertidos}
         onConvertContato={handleConvertContatoToLead}
+        onEditContato={handleEditContato}
       />
+
+      {/* Edit Contato Dialog */}
+      <Dialog open={editContatoDialogOpen} onOpenChange={setEditContatoDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Contato</DialogTitle>
+            <DialogDescription>
+              Atualize as informações do contato
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContato && (
+            <ContatoQuickForm
+              onSubmit={handleUpdateContato}
+              onOpenLeadForm={(telefone, origem) => {
+                setContatoToConvert({ telefone, origem, contatoId: selectedContato.id });
+                setEditContatoDialogOpen(false);
+                setCreateDialogOpen(true);
+              }}
+              isLoading={updateContato.isPending}
+              initialData={{
+                telefone: selectedContato.telefone,
+                nome: selectedContato.nome || "",
+                data: new Date(selectedContato.data_hora),
+                hora: format(new Date(selectedContato.data_hora), "HH:mm"),
+                origem: selectedContato.origem,
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Lead Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>

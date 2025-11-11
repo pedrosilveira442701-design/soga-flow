@@ -76,6 +76,31 @@ export function useContatos() {
     },
   });
 
+  const updateContato = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateContatoData> }) => {
+      const { error } = await supabase
+        .from("contatos")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contatos"] });
+      toast({
+        title: "Contato atualizado",
+        description: "O contato foi atualizado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao atualizar contato",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const convertToLead = useMutation({
     mutationFn: async ({ contatoId, leadId }: { contatoId: string; leadId: string }) => {
       const { error } = await supabase
@@ -108,6 +133,7 @@ export function useContatos() {
     naoConvertidos,
     isLoading,
     createContato,
+    updateContato,
     convertToLead,
   };
 }

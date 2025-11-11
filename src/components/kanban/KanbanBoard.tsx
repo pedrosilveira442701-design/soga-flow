@@ -32,6 +32,7 @@ interface KanbanBoardProps {
   onCardClick: (lead: Lead) => void;
   contatosNaoConvertidos?: Contato[];
   onConvertContato?: (contato: Contato) => void;
+  onEditContato?: (contato: Contato) => void;
 }
 
 const STAGES = [
@@ -92,6 +93,7 @@ export function KanbanBoard({
   onCardClick,
   contatosNaoConvertidos = [],
   onConvertContato,
+  onEditContato,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   
@@ -157,7 +159,7 @@ export function KanbanBoard({
                 count={stageLeads.length}
                 color={stage.color}
                 additionalContent={
-                  stage.id === "contato" && contatosNaoConvertidos.length > 0 && onConvertContato ? (
+                  stage.id === "contato" && contatosNaoConvertidos.length > 0 && onConvertContato && onEditContato ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="h-px flex-1 bg-border/50" />
@@ -171,6 +173,7 @@ export function KanbanBoard({
                           key={contato.id}
                           contato={contato}
                           onConvertToLead={onConvertContato}
+                          onEdit={onEditContato}
                         />
                       ))}
                       {contatosNaoConvertidos.length > 5 && (
