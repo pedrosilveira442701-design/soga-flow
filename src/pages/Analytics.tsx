@@ -4,9 +4,7 @@ import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { PipelineChart } from "@/components/analytics/PipelineChart";
 import { ScatterChart } from "@/components/analytics/ScatterChart";
 import { WaterfallChart } from "@/components/analytics/WaterfallChart";
-import { ReceivablesChart } from "@/components/analytics/ReceivablesChart";
 import { BurndownChart } from "@/components/analytics/BurndownChart";
-import { PerformanceChart } from "@/components/analytics/PerformanceChart";
 import { ResponseSpeedChart } from "@/components/analytics/ResponseSpeedChart";
 import { FloorTypeChart } from "@/components/analytics/FloorTypeChart";
 import { MapaGeografico } from "@/components/analytics/MapaGeografico";
@@ -28,12 +26,8 @@ export default function Analytics() {
     loadingScatter,
     waterfallData,
     loadingWaterfall,
-    receivablesData,
-    loadingReceivables,
     burndownData,
     loadingBurndown,
-    performanceData,
-    loadingPerformance,
     responseSpeedData,
     loadingResponseSpeed,
     floorTypeData,
@@ -114,6 +108,9 @@ export default function Analytics() {
         {/* Taxas de Conversão */}
         <ConversionRatesCard data={conversionRatesData} isLoading={loadingConversionRates} />
 
+        {/* Mapa Geográfico */}
+        <MapaGeografico />
+
         {/* Funil de Conversão */}
         <FunnelChart data={funnelData} isLoading={loadingFunnel} />
 
@@ -126,23 +123,14 @@ export default function Analytics() {
         {/* Waterfall de Margem */}
         <WaterfallChart data={waterfallData} isLoading={loadingWaterfall} />
 
-        {/* Recebíveis Aging */}
-        <ReceivablesChart data={receivablesData} isLoading={loadingReceivables} />
-
         {/* Burndown de Metas */}
         <BurndownChart data={burndownData} isLoading={loadingBurndown} />
-
-        {/* Performance por Responsável */}
-        <PerformanceChart data={performanceData} isLoading={loadingPerformance} />
 
         {/* Velocidade de Resposta */}
         <ResponseSpeedChart data={responseSpeedData} isLoading={loadingResponseSpeed} />
 
         {/* Análise por Tipos de Piso */}
         <FloorTypeChart data={floorTypeData} isLoading={loadingFloorType} />
-
-        {/* Mapa Geográfico */}
-        <MapaGeografico />
 
         {/* Cohorts de Entrada */}
         <CohortChart data={cohortData} isLoading={loadingCohort} />
