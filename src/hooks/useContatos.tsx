@@ -9,6 +9,8 @@ export interface Contato {
   nome?: string | null;
   data_hora: string;
   origem: string;
+  observacoes?: string | null;
+  tag?: 'anuncio' | 'descoberta' | 'orcamento' | null;
   converteu_lead: boolean;
   lead_id: string | null;
   created_at: string;
@@ -20,6 +22,8 @@ export interface CreateContatoData {
   nome?: string;
   data_hora: string;
   origem: string;
+  observacoes?: string;
+  tag?: 'anuncio' | 'descoberta' | 'orcamento';
 }
 
 export function useContatos() {

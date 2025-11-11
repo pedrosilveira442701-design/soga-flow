@@ -4,6 +4,7 @@ import { Phone, Calendar, ArrowRight, Pencil, User, Trash2 } from "lucide-react"
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contato } from "@/hooks/useContatos";
+import { cn } from "@/lib/utils";
 
 interface ContatoMiniCardProps {
   contato: Contato;
@@ -11,6 +12,18 @@ interface ContatoMiniCardProps {
   onEdit: (contato: Contato) => void;
   onDelete: (contato: Contato) => void;
 }
+
+const TAG_STYLES = {
+  anuncio: "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30",
+  descoberta: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+  orcamento: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30",
+};
+
+const TAG_LABELS = {
+  anuncio: "Anúncio",
+  descoberta: "Descoberta",
+  orcamento: "Orçamento",
+};
 
 export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: ContatoMiniCardProps) {
   return (
@@ -32,6 +45,14 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             </span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {contato.tag && (
+              <Badge 
+                variant="outline" 
+                className={cn("text-xs", TAG_STYLES[contato.tag])}
+              >
+                {TAG_LABELS[contato.tag]}
+              </Badge>
+            )}
             <Badge variant="secondary" className="text-xs">
               {contato.origem}
             </Badge>
@@ -40,6 +61,11 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>
+          {contato.observacoes && (
+            <p className="text-xs text-muted-foreground truncate mt-1">
+              {contato.observacoes}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button

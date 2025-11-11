@@ -99,8 +99,11 @@ export default function Leads() {
     
     await createContato.mutateAsync({
       telefone: data.telefone,
+      nome: data.nome || undefined,
       data_hora: dataHora,
       origem: data.origem,
+      observacoes: data.observacoes || undefined,
+      tag: data.tag || undefined,
     });
     
     setContatoDialogOpen(false);
@@ -147,6 +150,8 @@ export default function Leads() {
         nome: data.nome || null,
         data_hora: dataHora,
         origem: data.origem,
+        observacoes: data.observacoes || null,
+        tag: data.tag || null,
       },
     });
     
@@ -318,6 +323,8 @@ export default function Leads() {
                 data: new Date(selectedContato.data_hora),
                 hora: format(new Date(selectedContato.data_hora), "HH:mm"),
                 origem: selectedContato.origem,
+                observacoes: selectedContato.observacoes || "",
+                tag: selectedContato.tag || undefined,
               }}
             />
           )}

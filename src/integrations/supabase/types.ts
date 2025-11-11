@@ -151,7 +151,9 @@ export type Database = {
           id: string
           lead_id: string | null
           nome: string | null
+          observacoes: string | null
           origem: string
+          tag: Database["public"]["Enums"]["contato_tag"] | null
           telefone: string
           updated_at: string
           user_id: string
@@ -163,7 +165,9 @@ export type Database = {
           id?: string
           lead_id?: string | null
           nome?: string | null
+          observacoes?: string | null
           origem: string
+          tag?: Database["public"]["Enums"]["contato_tag"] | null
           telefone: string
           updated_at?: string
           user_id: string
@@ -175,7 +179,9 @@ export type Database = {
           id?: string
           lead_id?: string | null
           nome?: string | null
+          observacoes?: string | null
           origem?: string
+          tag?: Database["public"]["Enums"]["contato_tag"] | null
           telefone?: string
           updated_at?: string
           user_id?: string
@@ -743,6 +749,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "comercial" | "financeiro" | "visualizador"
+      contato_tag: "anuncio" | "descoberta" | "orcamento"
       contract_status: "ativo" | "concluido" | "cancelado"
       lead_stage:
         | "contato"
@@ -889,6 +896,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "comercial", "financeiro", "visualizador"],
+      contato_tag: ["anuncio", "descoberta", "orcamento"],
       contract_status: ["ativo", "concluido", "cancelado"],
       lead_stage: [
         "contato",

@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -48,6 +49,8 @@ const contatoSchema = z.object({
   data: z.date(),
   hora: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido (HH:MM)"),
   origem: z.string().min(1, "Selecione a origem do contato"),
+  observacoes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
+  tag: z.enum(['anuncio', 'descoberta', 'orcamento']).optional(),
   gerouLead: z.boolean().default(false),
 });
 
@@ -63,6 +66,8 @@ interface ContatoQuickFormProps {
     data: Date;
     hora: string;
     origem: string;
+    observacoes?: string;
+    tag?: 'anuncio' | 'descoberta' | 'orcamento';
   };
 }
 
@@ -77,6 +82,8 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
       data: new Date(),
       hora: format(new Date(), "HH:mm"),
       origem: "",
+      observacoes: "",
+      tag: undefined,
       gerouLead: false,
     },
   });
@@ -209,6 +216,47 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
                       {origem}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="observacoes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Observações</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Observações sobre o contato (opcional)"
+                  className="resize-none"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tag"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tag</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma tag (opcional)" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="anuncio">Anúncio</SelectItem>
+                  <SelectItem value="descoberta">Descoberta</SelectItem>
+                  <SelectItem value="orcamento">Orçamento</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
