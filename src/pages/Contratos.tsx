@@ -37,6 +37,9 @@ import {
   AlertCircle,
   X,
   Pencil,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -68,6 +71,8 @@ export default function Contratos() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [formaPagamentoFilter, setFormaPagamentoFilter] = useState<string>("all");
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const handleCreate = async (data: any) => {
     await createContrato(data);
@@ -114,6 +119,60 @@ export default function Contratos() {
       return matchesSearch && matchesStatus && matchesFormaPagamento;
     });
   }, [contratos, searchTerm, statusFilter, formaPagamentoFilter]);
+
+  const sortedContratos = useMemo(() => {
+    if (!sortColumn) return filteredContratos;
+
+    return [...filteredContratos].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "cliente":
+          aValue = a.cliente?.nome || "";
+          bValue = b.cliente?.nome || "";
+          break;
+        case "total":
+          aValue = Number(a.valor_negociado);
+          bValue = Number(b.valor_negociado);
+          break;
+        case "margem":
+          aValue = a.margem_pct ? Number(a.valor_negociado) * (a.margem_pct / 100) : Number(a.valor_negociado);
+          bValue = b.margem_pct ? Number(b.valor_negociado) * (b.margem_pct / 100) : Number(b.valor_negociado);
+          break;
+        case "pago":
+          aValue = a.parcelas?.valor_pago || 0;
+          bValue = b.parcelas?.valor_pago || 0;
+          break;
+        case "pendente":
+          aValue = a.parcelas?.valor_restante || 0;
+          bValue = b.parcelas?.valor_restante || 0;
+          break;
+        case "forma_pagamento":
+          aValue = a.forma_pagamento || "";
+          bValue = b.forma_pagamento || "";
+          break;
+        case "data_inicio":
+          aValue = new Date(a.data_inicio);
+          bValue = new Date(b.data_inicio);
+          break;
+        case "parcelas":
+          aValue = a.parcelas?.pagas || 0;
+          bValue = b.parcelas?.pagas || 0;
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredContratos, sortColumn, sortDirection]);
 
   const kpis = useMemo(() => {
     const ativos = contratos.filter((c) => c.status === "ativo");
@@ -206,10 +265,37 @@ export default function Contratos() {
     },
   ].filter(Boolean);
 
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else {
+        setSortColumn(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1 inline text-primary" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1 inline text-primary" />
+    );
+  };
+
   const clearFilters = () => {
     setStatusFilter("all");
     setFormaPagamentoFilter("all");
     setSearchTerm("");
+    setSortColumn(null);
+    setSortDirection("asc");
   };
 
   if (isLoading) {
@@ -419,21 +505,48 @@ export default function Contratos() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Total da Margem</TableHead>
+                <TableHead onClick={() => handleSort("cliente")} className="group">
+                  Cliente
+                  <SortIcon column="cliente" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("total")} className="group">
+                  Total
+                  <SortIcon column="total" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("margem")} className="group">
+                  Total da Margem
+                  <SortIcon column="margem" />
+                </TableHead>
                 <TableHead>Líquido a Receber</TableHead>
-                <TableHead>Pago</TableHead>
-                <TableHead>Pendente</TableHead>
-                <TableHead>Forma Pagamento</TableHead>
-                <TableHead>Data Início</TableHead>
-                <TableHead>Parcelas</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead onClick={() => handleSort("pago")} className="group">
+                  Pago
+                  <SortIcon column="pago" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("pendente")} className="group">
+                  Pendente
+                  <SortIcon column="pendente" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("forma_pagamento")} className="group">
+                  Forma Pagamento
+                  <SortIcon column="forma_pagamento" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("data_inicio")} className="group">
+                  Data Início
+                  <SortIcon column="data_inicio" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("parcelas")} className="group">
+                  Parcelas
+                  <SortIcon column="parcelas" />
+                </TableHead>
+                <TableHead onClick={() => handleSort("status")} className="group">
+                  Status
+                  <SortIcon column="status" />
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContratos.map((contrato) => {
+              {sortedContratos.map((contrato) => {
                 const progressoParcelas = contrato.parcelas
                   ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
                   : 0;

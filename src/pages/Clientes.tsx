@@ -47,6 +47,9 @@ import {
   Users,
   Filter,
   X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useClientes, Cliente } from "@/hooks/useClientes";
 import { ClienteForm } from "@/components/forms/ClienteForm";
@@ -59,6 +62,8 @@ export default function Clientes() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const { clientes, isLoading, createCliente, updateCliente, deleteCliente } = useClientes();
 
@@ -78,6 +83,48 @@ export default function Clientes() {
       return matchesSearch && matchesStatus;
     });
   }, [clientes, searchTerm, statusFilter]);
+
+  const sortedClientes = useMemo(() => {
+    if (!sortColumn) return filteredClientes;
+
+    return [...filteredClientes].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "nome":
+          aValue = a.nome || "";
+          bValue = b.nome || "";
+          break;
+        case "email":
+          aValue = a.contato || "";
+          bValue = b.contato || "";
+          break;
+        case "telefone":
+          aValue = a.telefone || "";
+          bValue = b.telefone || "";
+          break;
+        case "cidade":
+          aValue = a.cidade || "";
+          bValue = b.cidade || "";
+          break;
+        case "propostas":
+          aValue = a.propostas?.[0]?.count || 0;
+          bValue = b.propostas?.[0]?.count || 0;
+          break;
+        case "status":
+          aValue = a.status || "";
+          bValue = b.status || "";
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredClientes, sortColumn, sortDirection]);
 
   const handleCreateCliente = async (data: any) => {
     const clienteData: any = { ...data };
@@ -117,6 +164,31 @@ export default function Clientes() {
       const phone = telefone.replace(/\D/g, "");
       window.open(`https://wa.me/55${phone}`, "_blank");
     }
+  };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else {
+        setSortColumn(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1 inline text-primary" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1 inline text-primary" />
+    );
   };
 
   return (
@@ -160,6 +232,8 @@ export default function Clientes() {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("todos");
+                    setSortColumn(null);
+                    setSortDirection("asc");
                   }}
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -283,18 +357,36 @@ export default function Clientes() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Contato</TableHead>
-                    <TableHead>Telefone</TableHead>
-                    <TableHead>Localização</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-center">Propostas</TableHead>
+                    <TableHead onClick={() => handleSort("nome")} className="group">
+                      Nome
+                      <SortIcon column="nome" />
+                    </TableHead>
+                    <TableHead onClick={() => handleSort("email")} className="group">
+                      Contato
+                      <SortIcon column="email" />
+                    </TableHead>
+                    <TableHead onClick={() => handleSort("telefone")} className="group">
+                      Telefone
+                      <SortIcon column="telefone" />
+                    </TableHead>
+                    <TableHead onClick={() => handleSort("cidade")} className="group">
+                      Localização
+                      <SortIcon column="cidade" />
+                    </TableHead>
+                    <TableHead onClick={() => handleSort("status")} className="group">
+                      Status
+                      <SortIcon column="status" />
+                    </TableHead>
+                    <TableHead className="text-center" onClick={() => handleSort("propostas")}>
+                      Propostas
+                      <SortIcon column="propostas" />
+                    </TableHead>
                     <TableHead className="text-center">Leads</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredClientes.map((cliente) => {
+                  {sortedClientes.map((cliente) => {
                     const propostasCount = cliente.propostas?.[0]?.count || 0;
                     const leadsCount = cliente.leads?.[0]?.count || 0;
 

@@ -53,6 +53,9 @@ import {
   TrendingUp,
   DollarSign,
   Percent,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -68,6 +71,8 @@ export default function Propostas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todas");
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const handleCreate = async (data: any) => {
     await createProposta.mutateAsync(data);
@@ -104,6 +109,48 @@ export default function Propostas() {
       return matchesSearch && matchesStatus && matchesTipo;
     });
   }, [propostas, searchTerm, statusFilter, tipoFilter]);
+
+  const sortedPropostas = useMemo(() => {
+    if (!sortColumn) return filteredPropostas;
+
+    return [...filteredPropostas].sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "cliente":
+          aValue = a.clientes?.nome || "";
+          bValue = b.clientes?.nome || "";
+          break;
+        case "valor":
+          aValue = Number(a.valor_total);
+          bValue = Number(b.valor_total);
+          break;
+        case "area":
+          aValue = Number(a.m2);
+          bValue = Number(b.m2);
+          break;
+        case "tipo_piso":
+          aValue = a.tipo_piso || "";
+          bValue = b.tipo_piso || "";
+          break;
+        case "data":
+          aValue = new Date(a.data);
+          bValue = new Date(b.data);
+          break;
+        case "status":
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredPropostas, sortColumn, sortDirection]);
 
   // KPIs - Recalculados localmente para garantir precisão
   const kpis = useMemo(() => {
@@ -242,10 +289,37 @@ export default function Propostas() {
   );
   const hasActiveFilters = searchTerm || statusFilter !== "todas" || tipoFilter !== "todos";
 
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else {
+        setSortColumn(null);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4 ml-1 inline text-primary" />
+    ) : (
+      <ArrowDown className="h-4 w-4 ml-1 inline text-primary" />
+    );
+  };
+
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("todas");
     setTipoFilter("todos");
+    setSortColumn(null);
+    setSortDirection("asc");
   };
 
   if (isLoading) {
@@ -489,18 +563,36 @@ export default function Propostas() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Tipo de Piso</TableHead>
-              <TableHead className="text-right">Área (m²)</TableHead>
-              <TableHead className="text-right">Valor Total</TableHead>
+              <TableHead onClick={() => handleSort("cliente")} className="group">
+                Cliente
+                <SortIcon column="cliente" />
+              </TableHead>
+              <TableHead onClick={() => handleSort("tipo_piso")} className="group">
+                Tipo de Piso
+                <SortIcon column="tipo_piso" />
+              </TableHead>
+              <TableHead className="text-right" onClick={() => handleSort("area")}>
+                Área (m²)
+                <SortIcon column="area" />
+              </TableHead>
+              <TableHead className="text-right" onClick={() => handleSort("valor")}>
+                Valor Total
+                <SortIcon column="valor" />
+              </TableHead>
               <TableHead className="text-right">Margem</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead onClick={() => handleSort("status")} className="group">
+                Status
+                <SortIcon column="status" />
+              </TableHead>
+              <TableHead onClick={() => handleSort("data")} className="group">
+                Data
+                <SortIcon column="data" />
+              </TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPropostas.length === 0 ? (
+            {sortedPropostas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
@@ -521,7 +613,7 @@ export default function Propostas() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredPropostas.map((proposta) => {
+              sortedPropostas.map((proposta) => {
                 // Calcular valores da mesma forma que no resumo financeiro
                 const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
                   ? proposta.servicos
