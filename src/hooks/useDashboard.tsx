@@ -326,6 +326,12 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       });
     });
 
+    // Contadores de propostas por status
+    const countTotal = propostas.length;
+    const countPerdidas = propostas.filter(p => p.status === 'perdida').length;
+    const countRepouso = propostas.filter(p => p.status === 'repouso').length;
+    const countAtivas = countTotal - countPerdidas - countRepouso;
+
     // PERÍODO ANTERIOR
     const todasPropostasAnterior = propostasAnterior.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
     const propostasPerdidasAnterior = propostasAnterior
@@ -338,6 +344,12 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     
     const totalContratosAnterior = contratosAnterior.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     const recebidoAnterior = parcelasPagasAnterior.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+
+    // Contadores do período anterior
+    const countTotalAnterior = propostasAnterior.length;
+    const countPerdidasAnterior = propostasAnterior.filter(p => p.status === 'perdida').length;
+    const countRepousoAnterior = propostasAnterior.filter(p => p.status === 'repouso').length;
+    const countAtivasAnterior = countTotalAnterior - countPerdidasAnterior - countRepousoAnterior;
 
     return {
       recebidoMes: {
@@ -358,6 +370,54 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       totalAReceberLiquido: {
         value: formatCurrency(totalAReceberLiquido),
       },
+      // Novos KPIs de Pipeline
+      totalPropostasCount: {
+        value: `${countTotal} proposta${countTotal !== 1 ? 's' : ''}`,
+        subValue: formatCurrency(todasPropostas),
+        delta: calculateDelta(countTotal, countTotalAnterior),
+      },
+      propostasPerdidas: {
+        value: `${countPerdidas} proposta${countPerdidas !== 1 ? 's' : ''}`,
+        subValue: formatCurrency(propostasPerdidas),
+        delta: calculateDelta(countPerdidas, countPerdidasAnterior),
+      },
+      propostasRepouso: {
+        value: `${countRepouso} proposta${countRepouso !== 1 ? 's' : ''}`,
+        subValue: formatCurrency(propostasRepouso),
+        delta: calculateDelta(countRepouso, countRepousoAnterior),
+      },
+      propostasAtivas: {
+        value: `${countAtivas} proposta${countAtivas !== 1 ? 's' : ''}`,
+        subValue: formatCurrency(totalPropostas),
+        delta: calculateDelta(countAtivas, countAtivasAnterior),
+      },
+      // Dados para o gráfico
+      pipelineDistribution: [
+        { 
+          name: 'Total', 
+          value: todasPropostas, 
+          count: countTotal,
+          color: '#2E90FA' 
+        },
+        { 
+          name: 'Perdidas', 
+          value: propostasPerdidas, 
+          count: countPerdidas,
+          color: '#F04438' 
+        },
+        { 
+          name: 'Repouso', 
+          value: propostasRepouso, 
+          count: countRepouso,
+          color: '#FDB022' 
+        },
+        { 
+          name: 'Ativas', 
+          value: totalPropostas, 
+          count: countAtivas,
+          color: '#12B76A' 
+        },
+      ],
     };
   }, [propostas, contratos, contratosComParcelas, propostasAnterior, contratosAnterior, parcelasPagasAtual, parcelasPagasAnterior]);
 

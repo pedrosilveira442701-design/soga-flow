@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, HandCoins, Wallet, Receipt } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2 } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
 import { RecebimentosTendenciaChart } from "@/components/charts/RecebimentosTendenciaChart";
+import { PipelineDistributionChart } from "@/components/charts/PipelineDistributionChart";
 import { ProximosVencimentos } from "@/components/financeiro/ProximosVencimentos";
 import { ProximasVisitas } from "@/components/visitas/ProximasVisitas";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,16 +106,66 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Row 2: Charts */}
+      {/* Row 2: Pipeline de Propostas */}
+      <div>
+        <h2 className="text-h2 mb-4">Pipeline de Propostas</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))
+          ) : (
+            <>
+              <KPICard
+                title="Total de Propostas"
+                value={kpis.totalPropostasCount.value}
+                subValue={kpis.totalPropostasCount.subValue}
+                delta={kpis.totalPropostasCount.delta}
+                variant="default"
+                icon={FileText}
+              />
+              <KPICard
+                title="Propostas Perdidas"
+                value={kpis.propostasPerdidas.value}
+                subValue={kpis.propostasPerdidas.subValue}
+                delta={kpis.propostasPerdidas.delta}
+                variant="danger"
+                icon={XCircle}
+              />
+              <KPICard
+                title="Propostas em Repouso"
+                value={kpis.propostasRepouso.value}
+                subValue={kpis.propostasRepouso.subValue}
+                delta={kpis.propostasRepouso.delta}
+                variant="repouso"
+                icon={Clock}
+              />
+              <KPICard
+                title="Volume Real (Ativas)"
+                value={kpis.propostasAtivas.value}
+                subValue={kpis.propostasAtivas.subValue}
+                delta={kpis.propostasAtivas.delta}
+                variant="success"
+                icon={CheckCircle2}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Gráfico de Distribuição */}
+      {!isLoading && <PipelineDistributionChart data={kpis.pipelineDistribution} />}
+
+      {/* Row 4: Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <TimelineChart data={timelineData} />
         <FunnelChart data={funnelData} />
       </div>
 
-      {/* Row 3: Tendência de Recebimentos */}
+      {/* Row 5: Tendência de Recebimentos */}
       <RecebimentosTendenciaChart data={recebimentosTendencia} />
 
-      {/* Row 4: Widgets de Vencimentos e Visitas */}
+      {/* Row 6: Widgets de Vencimentos e Visitas */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ProximosVencimentos />
         <ProximasVisitas />

@@ -5,23 +5,57 @@ import { cn } from "@/lib/utils";
 interface KPICardProps {
   title: string;
   value: string | number;
+  subValue?: string;
   delta?: {
     value: string;
     direction: "up" | "down";
   };
-  variant?: "default" | "liquid";
+  variant?: "default" | "liquid" | "danger" | "success" | "repouso";
   icon?: LucideIcon;
 }
 
-export function KPICard({ title, value, delta, variant = "default", icon: Icon }: KPICardProps) {
-  const isLiquid = variant === "liquid";
+export function KPICard({ title, value, subValue, delta, variant = "default", icon: Icon }: KPICardProps) {
+  const variantStyles = {
+    default: {
+      border: "",
+      iconBg: "bg-primary/10",
+      iconColor: "text-primary",
+      valueColor: "text-foreground",
+    },
+    liquid: {
+      border: "border-brand-liquid/20",
+      iconBg: "bg-brand-liquid/10",
+      iconColor: "text-brand-liquid",
+      valueColor: "text-brand-liquid",
+    },
+    danger: {
+      border: "border-destructive/20",
+      iconBg: "bg-destructive/10",
+      iconColor: "text-destructive",
+      valueColor: "text-destructive",
+    },
+    success: {
+      border: "border-success/20",
+      iconBg: "bg-success/10",
+      iconColor: "text-success",
+      valueColor: "text-success",
+    },
+    repouso: {
+      border: "border-warning/20",
+      iconBg: "bg-warning/10",
+      iconColor: "text-warning",
+      valueColor: "text-warning",
+    },
+  };
+
+  const styles = variantStyles[variant];
 
   return (
     <Card
       className={cn(
         "p-6 transition-shadow duration-200 hover:shadow-elev2",
         "shadow-elev1",
-        isLiquid && "border-brand-liquid/20"
+        styles.border
       )}
     >
       <div className="flex items-start justify-between">
@@ -30,11 +64,14 @@ export function KPICard({ title, value, delta, variant = "default", icon: Icon }
           <p
             className={cn(
               "text-3xl text-kpi mb-1",
-              isLiquid ? "text-brand-liquid" : "text-foreground"
+              styles.valueColor
             )}
           >
             {value}
           </p>
+          {subValue && (
+            <p className="text-sm text-muted-foreground mb-1">{subValue}</p>
+          )}
           {delta && (
             <div
               className={cn(
@@ -55,13 +92,13 @@ export function KPICard({ title, value, delta, variant = "default", icon: Icon }
           <div
             className={cn(
               "p-3 rounded-lg",
-              isLiquid ? "bg-brand-liquid/10" : "bg-primary/10"
+              styles.iconBg
             )}
           >
             <Icon
               className={cn(
                 "h-5 w-5",
-                isLiquid ? "text-brand-liquid" : "text-primary"
+                styles.iconColor
               )}
             />
           </div>
