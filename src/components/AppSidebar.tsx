@@ -79,12 +79,12 @@ export function AppSidebar() {
         collapsible="icon"
         className={cn(
           "border-r bg-sidebar-background transition-all duration-200",
-          open ? "w-[280px]" : "w-[72px]"
+          open ? "w-[240px]" : "w-[64px]"
         )}
       >
         <SidebarContent className="flex flex-col h-full">
           {/* Logo/Header */}
-          <div className="px-4 py-6 flex items-center justify-center min-h-[72px]">
+          <div className="px-3 py-5 flex items-center justify-center min-h-[64px]">
             <AnimatePresence mode="wait">
               {open ? (
                 <motion.div
@@ -98,9 +98,9 @@ export function AppSidebar() {
                   <img 
                     src={logoImage} 
                     alt="Só Garagens Logo" 
-                    className="h-10 w-10 object-contain"
+                    className="h-9 w-9 object-contain"
                   />
-                  <span className="text-lg font-semibold text-foreground">
+                  <span className="text-base font-semibold text-foreground">
                     Só Garagens
                   </span>
                 </motion.div>
@@ -115,7 +115,7 @@ export function AppSidebar() {
                   <img 
                     src={logoImage} 
                     alt="Só Garagens" 
-                    className="h-10 w-10 object-contain"
+                    className="h-9 w-9 object-contain"
                   />
                 </motion.div>
               )}
@@ -130,14 +130,14 @@ export function AppSidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.16, delay: 0.05 }}
-              className="px-3 py-3"
+              className="px-2.5 py-2.5"
             >
               <SearchCommand />
             </motion.div>
           )}
 
           {/* Navigation */}
-          <div className="flex-1 px-3 py-2 overflow-y-auto">
+          <div className="flex-1 px-2.5 py-2 overflow-y-auto">
             <SidebarGroup>
               {open && (
                 <motion.div
@@ -163,7 +163,7 @@ export function AppSidebar() {
                             <NavLink
                               to={item.url}
                               className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 relative group",
+                                "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all duration-200 relative group",
                                 "hover:bg-sidebar-hover",
                                 isActive && "bg-sidebar-active text-sidebar-active-foreground shadow-sm",
                                 !isActive && "text-sidebar-foreground",
@@ -181,7 +181,7 @@ export function AppSidebar() {
 
                               <item.icon
                                 className={cn(
-                                  "h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                                  "h-[18px] w-[18px] flex-shrink-0 transition-transform group-hover:scale-110",
                                   isActive ? "opacity-100" : "opacity-70"
                                 )}
                                 strokeWidth={isActive ? 2 : 1.5}
@@ -233,7 +233,7 @@ export function AppSidebar() {
           <Separator className="opacity-50" />
 
           {/* User Section */}
-          <div className="p-3 space-y-2">
+          <div className="p-2.5 space-y-2">
             <UserMenu collapsed={!open} />
             
             {open && (
