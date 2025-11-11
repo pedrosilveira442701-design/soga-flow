@@ -28,12 +28,13 @@ type LeadStage = Database["public"]["Enums"]["lead_stage"];
 
 interface KanbanBoardProps {
   leads: Lead[];
-  onStageChange: (leadId: string, newStage: LeadStage) => void;
+  onStageChange: (leadId: string, newStage: LeadStage, motivo?: string) => void;
   onCardClick: (lead: Lead) => void;
   contatosNaoConvertidos?: Contato[];
   onConvertContato?: (contato: Contato) => void;
   onEditContato?: (contato: Contato) => void;
   onDeleteContato?: (contato: Contato) => void;
+  onLossReasonRequired?: (leadId: string, onConfirm: (motivo: string) => void) => void;
 }
 
 const STAGES = [
@@ -48,6 +49,9 @@ const STAGES = [
   // OPERACIONAL
   { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
   { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
+  
+  // PERDIDOS
+  { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
 ] as const;
 
 function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
@@ -96,6 +100,7 @@ export function KanbanBoard({
   onConvertContato,
   onEditContato,
   onDeleteContato,
+  onLossReasonRequired,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   
@@ -128,7 +133,14 @@ export function KanbanBoard({
     });
 
     if (STAGES.some((stage) => stage.id === newStage)) {
-      onStageChange(leadId, newStage);
+      // Se estiver movendo para "perdido", solicitar motivo
+      if (newStage === "perdido" && onLossReasonRequired) {
+        onLossReasonRequired(leadId, (motivo: string) => {
+          onStageChange(leadId, newStage, motivo);
+        });
+      } else {
+        onStageChange(leadId, newStage);
+      }
     }
 
     setActiveId(null);
@@ -151,6 +163,8 @@ export function KanbanBoard({
           const stageLeads = getLeadsByStage(stage.id);
           const isFirstOperacional = stage.section === "operacional" && 
             (index === 0 || STAGES[index - 1].section !== "operacional");
+          const isFirstPerdido = stage.section === "perdido" && 
+            (index === 0 || STAGES[index - 1].section !== "perdido");
           
           return (
             <div key={stage.id} className="flex gap-6">
@@ -159,6 +173,15 @@ export function KanbanBoard({
                   <div className="h-full w-px bg-border" />
                   <div className="mx-2 px-3 py-1 bg-muted rounded-full text-xs font-medium text-muted-foreground whitespace-nowrap">
                     Operacional →
+                  </div>
+                  <div className="h-full w-px bg-border" />
+                </div>
+              )}
+              {isFirstPerdido && (
+                <div className="flex items-center">
+                  <div className="h-full w-px bg-border" />
+                  <div className="mx-2 px-3 py-1 bg-destructive/10 rounded-full text-xs font-medium text-destructive whitespace-nowrap">
+                    Perdidos
                   </div>
                   <div className="h-full w-px bg-border" />
                 </div>

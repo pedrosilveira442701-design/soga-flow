@@ -33,6 +33,7 @@ export function KanbanColumn({
     qualificado: "bg-amber-500/5 border-amber-500/20",
     proposta: "bg-orange-500/5 border-orange-500/20",
     ganho: "bg-green-500/5 border-green-500/20",
+    perdido: "bg-red-500/5 border-red-500/20",
   };
 
   return (

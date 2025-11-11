@@ -176,6 +176,27 @@ export function LeadDetailsDialog({
                     </span>
                   )}
                 </DialogDescription>
+                
+                {/* Motivo da Perda */}
+                {lead.estagio === "perdido" && lead.motivo_perda && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg"
+                  >
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-caption font-medium text-destructive">
+                          Motivo da Perda
+                        </p>
+                        <p className="text-caption text-destructive/80">
+                          {lead.motivo_perda}
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button

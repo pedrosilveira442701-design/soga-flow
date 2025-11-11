@@ -11,6 +11,7 @@ import {
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
+import { LossReasonDialog } from "@/components/leads/LossReasonDialog";
 import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
 import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import { useLeads } from "@/hooks/useLeads";
@@ -41,6 +42,11 @@ export default function Leads() {
   const [selectedContato, setSelectedContato] = useState<Contato | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [contatoToConvert, setContatoToConvert] = useState<{telefone: string; origem: string; contatoId?: string} | null>(null);
+  const [lossReasonDialogOpen, setLossReasonDialogOpen] = useState(false);
+  const [pendingLossData, setPendingLossData] = useState<{
+    leadId: string;
+    onConfirm: (motivo: string) => void;
+  } | null>(null);
   
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
@@ -192,8 +198,39 @@ export default function Leads() {
     setDetailsOpen(false);
   };
 
-  const handleStageChange = async (leadId: string, newStage: any) => {
-    await updateLeadStage.mutateAsync({ id: leadId, stage: newStage });
+  const handleStageChange = async (leadId: string, newStage: any, motivo?: string) => {
+    // Se há motivo (mudança para perdido), incluir na atualização
+    if (motivo) {
+      await updateLead.mutateAsync({
+        id: leadId,
+        updates: {
+          estagio: newStage,
+          motivo_perda: motivo,
+          ultima_interacao: new Date().toISOString(),
+        },
+      });
+    } else {
+      await updateLeadStage.mutateAsync({ id: leadId, stage: newStage });
+    }
+  };
+
+  const handleLossReasonRequired = (leadId: string, onConfirm: (motivo: string) => void) => {
+    setPendingLossData({ leadId, onConfirm });
+    setLossReasonDialogOpen(true);
+  };
+
+  const handleLossReasonConfirm = (motivo: string) => {
+    if (pendingLossData) {
+      pendingLossData.onConfirm(motivo);
+      setPendingLossData(null);
+    }
+    setLossReasonDialogOpen(false);
+  };
+
+  const getPendingLeadName = (): string | undefined => {
+    if (!pendingLossData) return undefined;
+    const lead = leads.find(l => l.id === pendingLossData.leadId) as Lead | undefined;
+    return lead?.clientes?.nome;
   };
 
   const handleCardClick = (lead: Lead) => {
@@ -297,6 +334,7 @@ export default function Leads() {
         onConvertContato={handleConvertContatoToLead}
         onEditContato={handleEditContato}
         onDeleteContato={handleDeleteContato}
+        onLossReasonRequired={handleLossReasonRequired}
       />
 
       {/* Edit Contato Dialog */}
@@ -401,6 +439,15 @@ export default function Leads() {
         onOpenChange={setDetailsOpen}
         onEdit={handleEditLead}
         onDelete={handleDeleteLead}
+      />
+
+      {/* Loss Reason Dialog */}
+      <LossReasonDialog
+        open={lossReasonDialogOpen}
+        onOpenChange={setLossReasonDialogOpen}
+        onConfirm={handleLossReasonConfirm}
+        isLoading={updateLead.isPending}
+        clienteName={getPendingLeadName()}
       />
     </div>
   );

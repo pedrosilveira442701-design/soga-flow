@@ -354,6 +354,7 @@ export type Database = {
           first_response_minutes: number | null
           id: string
           medida: number | null
+          motivo_perda: string | null
           observacoes: string | null
           origem: string | null
           produtos: Json | null
@@ -372,6 +373,7 @@ export type Database = {
           first_response_minutes?: number | null
           id?: string
           medida?: number | null
+          motivo_perda?: string | null
           observacoes?: string | null
           origem?: string | null
           produtos?: Json | null
@@ -390,6 +392,7 @@ export type Database = {
           first_response_minutes?: number | null
           id?: string
           medida?: number | null
+          motivo_perda?: string | null
           observacoes?: string | null
           origem?: string | null
           produtos?: Json | null
