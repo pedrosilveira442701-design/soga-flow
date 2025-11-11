@@ -126,6 +126,31 @@ export function useContatos() {
     },
   });
 
+  const deleteContato = useMutation({
+    mutationFn: async (contatoId: string) => {
+      const { error } = await supabase
+        .from("contatos")
+        .delete()
+        .eq("id", contatoId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contatos"] });
+      toast({
+        title: "Contato excluído",
+        description: "O contato foi excluído com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao excluir contato",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const naoConvertidos = contatos?.filter(c => !c.converteu_lead) || [];
 
   return {
@@ -135,5 +160,6 @@ export function useContatos() {
     createContato,
     updateContato,
     convertToLead,
+    deleteContato,
   };
 }

@@ -43,7 +43,7 @@ export default function Leads() {
   const [contatoToConvert, setContatoToConvert] = useState<{telefone: string; origem: string; contatoId?: string} | null>(null);
   
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
-  const { naoConvertidos, createContato, updateContato, convertToLead } = useContatos();
+  const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
   const { user } = useAuth();
 
   const handleCreateLead = async (values: any, contatoId?: string) => {
@@ -206,6 +206,10 @@ export default function Leads() {
     await deleteLead.mutateAsync(leadId);
   };
 
+  const handleDeleteContato = async (contato: Contato) => {
+    await deleteContato.mutateAsync(contato.id);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -287,6 +291,7 @@ export default function Leads() {
         contatosNaoConvertidos={naoConvertidos}
         onConvertContato={handleConvertContatoToLead}
         onEditContato={handleEditContato}
+        onDeleteContato={handleDeleteContato}
       />
 
       {/* Edit Contato Dialog */}
