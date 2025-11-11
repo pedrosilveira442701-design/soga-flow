@@ -13,7 +13,12 @@ import {
   Building2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Sidebar,
   SidebarContent,
@@ -52,7 +57,7 @@ export function AppSidebar() {
   const { open } = useSidebar();
   const location = useLocation();
   const { kpis } = useFinanceiro();
-  const { kpis: metasKpis } = useMetas({ status: "ativa" });
+  const { kpis: metasKpis } = useMetas({ status: 'ativa' });
   const { kpis: visitasKpis } = useVisitas();
 
   const getBadgeForItem = (title: string) => {
@@ -70,9 +75,12 @@ export function AppSidebar() {
 
   return (
     <TooltipProvider delayDuration={300}>
-      <Sidebar
-        collapsible={false} // 🔧 evita botão interno duplicado
-        className={cn("border-r bg-sidebar-background transition-all duration-200", open ? "w-[240px]" : "w-[64px]")}
+      <Sidebar 
+        collapsible="icon"
+        className={cn(
+          "border-r bg-sidebar-background transition-all duration-200",
+          open ? "w-[240px]" : "w-[64px]"
+        )}
       >
         <SidebarContent className="flex flex-col h-full">
           {/* Logo/Header */}
@@ -87,8 +95,14 @@ export function AppSidebar() {
                   transition={{ duration: 0.16 }}
                   className="flex items-center gap-3"
                 >
-                  <img src={logoImage} alt="Só Garagens Logo" className="h-9 w-9 object-contain" />
-                  <span className="text-base font-semibold text-foreground">Só Garagens</span>
+                  <img 
+                    src={logoImage} 
+                    alt="Só Garagens Logo" 
+                    className="h-9 w-9 object-contain"
+                  />
+                  <span className="text-base font-semibold text-foreground">
+                    Só Garagens
+                  </span>
                 </motion.div>
               ) : (
                 <motion.div
@@ -98,7 +112,11 @@ export function AppSidebar() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.16 }}
                 >
-                  <img src={logoImage} alt="Só Garagens" className="h-9 w-9 object-contain" />
+                  <img 
+                    src={logoImage} 
+                    alt="Só Garagens" 
+                    className="h-9 w-9 object-contain"
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -122,7 +140,11 @@ export function AppSidebar() {
           <div className="flex-1 px-2.5 py-2 overflow-y-auto">
             <SidebarGroup>
               {open && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }}>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.16 }}
+                >
                   <SidebarGroupLabel className="text-xs text-muted-foreground px-3 mb-2 uppercase tracking-wider">
                     Navegação
                   </SidebarGroupLabel>
@@ -145,7 +167,7 @@ export function AppSidebar() {
                                 "hover:bg-sidebar-hover",
                                 isActive && "bg-sidebar-active text-sidebar-active-foreground shadow-sm",
                                 !isActive && "text-sidebar-foreground",
-                                !open && "justify-center",
+                                !open && "justify-center"
                               )}
                             >
                               {/* Active Indicator */}
@@ -160,11 +182,11 @@ export function AppSidebar() {
                               <item.icon
                                 className={cn(
                                   "h-[18px] w-[18px] flex-shrink-0 transition-transform group-hover:scale-110",
-                                  isActive ? "opacity-100" : "opacity-70",
+                                  isActive ? "opacity-100" : "opacity-70"
                                 )}
                                 strokeWidth={isActive ? 2 : 1.5}
                               />
-
+                              
                               {open && (
                                 <motion.span
                                   initial={{ opacity: 0, x: -10 }}
@@ -213,7 +235,7 @@ export function AppSidebar() {
           {/* User Section */}
           <div className="p-2.5 space-y-2">
             <UserMenu collapsed={!open} />
-
+            
             {open && (
               <motion.div
                 initial={{ opacity: 0 }}
