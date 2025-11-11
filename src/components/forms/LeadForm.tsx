@@ -224,7 +224,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           <div className="flex items-center justify-between">
             <FormLabel>Produtos</FormLabel>
             <Button type="button" variant="outline" size="sm" onClick={addProduto} className="gap-2">
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               Adicionar Produto
             </Button>
           </div>
@@ -424,7 +424,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
                         {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <CalendarIcon className="ml-auto h-4.5 w-4.5 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -458,7 +458,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                         className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
                         {field.value ? format(field.value, "dd/MM/yyyy HH:mm") : <span>Selecione a data</span>}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <CalendarIcon className="ml-auto h-4.5 w-4.5 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>

@@ -182,12 +182,12 @@ export default function Clientes() {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+      return <ArrowUpDown className="h-4.5 w-4.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-4 w-4 ml-1 inline text-primary" />
+      <ArrowUp className="h-4.5 w-4.5 ml-1 inline text-primary" />
     ) : (
-      <ArrowDown className="h-4 w-4 ml-1 inline text-primary" />
+      <ArrowDown className="h-4.5 w-4.5 ml-1 inline text-primary" />
     );
   };
 
@@ -402,7 +402,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.contato ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
+                              <Mail className="h-4.5 w-4.5 text-muted-foreground" />
                               {cliente.contato}
                             </div>
                           ) : (
@@ -412,7 +412,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.telefone ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <Phone className="h-4.5 w-4.5 text-muted-foreground" />
                               {cliente.telefone}
                             </div>
                           ) : (
@@ -422,7 +422,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.cidade || cliente.bairro ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <MapPin className="h-4.5 w-4.5 text-muted-foreground" />
                               {cliente.cidade && cliente.bairro
                                 ? `${cliente.cidade} - ${cliente.bairro}`
                                 : cliente.cidade || cliente.bairro}

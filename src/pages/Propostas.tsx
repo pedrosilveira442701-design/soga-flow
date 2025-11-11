@@ -305,12 +305,12 @@ export default function Propostas() {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+      return <ArrowUpDown className="h-4.5 w-4.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-4 w-4 ml-1 inline text-primary" />
+      <ArrowUp className="h-4.5 w-4.5 ml-1 inline text-primary" />
     ) : (
-      <ArrowDown className="h-4 w-4 ml-1 inline text-primary" />
+      <ArrowDown className="h-4.5 w-4.5 ml-1 inline text-primary" />
     );
   };
 

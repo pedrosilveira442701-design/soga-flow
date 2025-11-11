@@ -80,9 +80,9 @@ export function KPICard({ title, value, subValue, delta, variant = "default", ic
               )}
             >
               {delta.direction === "up" ? (
-                <TrendingUp className="h-3 w-3" />
+                <TrendingUp className="h-4 w-4" />
               ) : (
-                <TrendingDown className="h-3 w-3" />
+                <TrendingDown className="h-4 w-4" />
               )}
               <span>{delta.value}</span>
             </div>
@@ -97,7 +97,7 @@ export function KPICard({ title, value, subValue, delta, variant = "default", ic
           >
             <Icon
               className={cn(
-                "h-5 w-5",
+                "h-6 w-6",
                 styles.iconColor
               )}
             />

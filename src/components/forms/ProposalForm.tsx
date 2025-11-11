@@ -227,7 +227,7 @@ export default function ProposalForm({
                   <h3 className="text-lg font-semibold">Serviços</h3>
                   {leadInfo && (
                     <Badge variant="secondary" className="gap-1">
-                      <Info className="w-3 h-3" />
+                      <Info className="w-4 h-4" />
                       Preenchido do {leadInfo.name}
                     </Badge>
                   )}
@@ -238,7 +238,7 @@ export default function ProposalForm({
                   size="sm"
                   onClick={() => append({ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 })}
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-5 h-5 mr-2" />
                   Adicionar Serviço
                 </Button>
               </div>
@@ -442,7 +442,7 @@ export default function ProposalForm({
                           ) : (
                             <span>Selecione uma data</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-4.5 w-4.5 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>

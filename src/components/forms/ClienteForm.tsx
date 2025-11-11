@@ -382,7 +382,7 @@ export function ClienteForm({
               disabled={loadingCep}
               className="w-full md:w-auto"
             >
-              <Search className="h-4 w-4 mr-2" />
+              <Search className="h-4.5 w-4.5 mr-2" />
               {loadingCep ? "Buscando..." : "Buscar CEP"}
             </Button>
           </div>
