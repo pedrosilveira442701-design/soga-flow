@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -87,13 +81,7 @@ const STAGE_COLORS: Record<string, string> = {
   perdido: "bg-red-500/10 text-red-700 border-red-500/20",
 };
 
-export function LeadDetailsDialog({
-  lead,
-  open,
-  onOpenChange,
-  onEdit,
-  onDelete,
-}: LeadDetailsDialogProps) {
+export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }: LeadDetailsDialogProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visitaDialogOpen, setVisitaDialogOpen] = useState(false);
   const [showTimelineForm, setShowTimelineForm] = useState(false);
@@ -118,10 +106,7 @@ export function LeadDetailsDialog({
 
   const handleWhatsApp = () => {
     if (lead.clientes?.telefone) {
-      window.open(
-        `https://wa.me/${lead.clientes.telefone.replace(/\D/g, "")}`,
-        "_blank"
-      );
+      window.open(`https://wa.me/${lead.clientes.telefone.replace(/\D/g, "")}`, "_blank");
     }
   };
 
@@ -129,27 +114,27 @@ export function LeadDetailsDialog({
     createVisita.mutate(data, {
       onSuccess: () => {
         setVisitaDialogOpen(false);
-        toast.success('Visita agendada com sucesso!');
+        toast.success("Visita agendada com sucesso!");
       },
     });
   };
 
   const getInitialVisitaData = () => {
     if (!lead.cliente_id) return {};
-    
+
     // Sugerir tipo de visita baseado no estágio do lead
-    let tipoSugerido = 'orcamento';
-    if (lead.estagio === 'contato' || lead.estagio === 'visita_agendada') {
-      tipoSugerido = 'medicao';
-    } else if (lead.estagio === 'proposta' || lead.estagio === 'contrato') {
-      tipoSugerido = 'orcamento';
+    let tipoSugerido = "orcamento";
+    if (lead.estagio === "contato" || lead.estagio === "visita_agendada") {
+      tipoSugerido = "medicao";
+    } else if (lead.estagio === "proposta" || lead.estagio === "contrato") {
+      tipoSugerido = "orcamento";
     }
 
     return {
       cliente_id: lead.cliente_id,
       marcacao_tipo: tipoSugerido,
-      assunto: `Visita - ${lead.tipo_piso || 'Lead'}`,
-      responsavel: lead.responsavel || '',
+      assunto: `Visita - ${lead.tipo_piso || "Lead"}`,
+      responsavel: lead.responsavel || "",
     };
   };
 
@@ -160,23 +145,14 @@ export function LeadDetailsDialog({
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <DialogTitle className="text-h3 mb-2">
-                  {lead.clientes?.nome || "Lead sem cliente"}
-                </DialogTitle>
+                <DialogTitle className="text-h3 mb-2">{lead.clientes?.nome || "Lead sem cliente"}</DialogTitle>
                 <DialogDescription className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={STAGE_COLORS[lead.estagio] || ""}
-                  >
+                  <Badge variant="outline" className={STAGE_COLORS[lead.estagio] || ""}>
                     {STAGE_LABELS[lead.estagio] || lead.estagio}
                   </Badge>
-                  {lead.origem && (
-                    <span className="text-caption text-muted-foreground">
-                      • Origem: {lead.origem}
-                    </span>
-                  )}
+                  {lead.origem && <span className="text-caption text-muted-foreground">• Origem: {lead.origem}</span>}
                 </DialogDescription>
-                
+
                 {/* Motivo da Perda */}
                 {lead.estagio === "perdido" && lead.motivo_perda && (
                   <motion.div
@@ -187,12 +163,8 @@ export function LeadDetailsDialog({
                     <div className="flex items-start gap-2">
                       <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                       <div className="space-y-1">
-                        <p className="text-caption font-medium text-destructive">
-                          Motivo da Perda
-                        </p>
-                        <p className="text-caption text-destructive/80">
-                          {lead.motivo_perda}
-                        </p>
+                        <p className="text-caption font-medium text-destructive">Motivo da Perda</p>
+                        <p className="text-caption text-destructive/80">{lead.motivo_perda}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -202,16 +174,13 @@ export function LeadDetailsDialog({
                 <Button
                   variant="outline"
                   size="icon"
+                  ClassName="h-9 w-9" // 👈 aumenta área de clique
                   onClick={() => onEdit(lead)}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-6 w-6" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setDeleteDialogOpen(true)}>
+                  <Trash2 className="h-6 w-6 text-destructive" />
                 </Button>
               </div>
             </div>
@@ -244,7 +213,7 @@ export function LeadDetailsDialog({
                   {(() => {
                     // Processar produtos do campo JSONB
                     const produtos = lead.produtos;
-                    
+
                     if (produtos && Array.isArray(produtos) && produtos.length > 0) {
                       return produtos.map((produto, index) => {
                         // Formatar "Outro: descrição" como "Outro — descrição"
@@ -252,7 +221,7 @@ export function LeadDetailsDialog({
                         if (produto.tipo?.startsWith("Outro:")) {
                           displayTipo = produto.tipo.replace("Outro:", "Outro —");
                         }
-                        
+
                         return (
                           <Badge
                             key={index}
@@ -265,17 +234,17 @@ export function LeadDetailsDialog({
                         );
                       });
                     }
-                    
+
                     // Fallback para dados legados (tipo_piso)
                     if (lead.tipo_piso) {
-                      const tipos = lead.tipo_piso.split(",").map(t => t.trim());
+                      const tipos = lead.tipo_piso.split(",").map((t) => t.trim());
                       return tipos.map((tipo, index) => {
                         // Formatar "Outro: descrição" como "Outro — descrição"
                         let displayTipo = tipo;
                         if (tipo?.startsWith("Outro:")) {
                           displayTipo = tipo.replace("Outro:", "Outro —");
                         }
-                        
+
                         return (
                           <Badge
                             key={index}
@@ -288,7 +257,7 @@ export function LeadDetailsDialog({
                         );
                       });
                     }
-                    
+
                     // Sem dados
                     return <span className="text-body text-muted-foreground">—</span>;
                   })()}
@@ -311,11 +280,7 @@ export function LeadDetailsDialog({
                     <Phone className="h-4 w-4" />
                     <span>Telefone</span>
                   </div>
-                  <Button
-                    variant="link"
-                    className="h-auto p-0 text-body font-medium"
-                    onClick={handleWhatsApp}
-                  >
+                  <Button variant="link" className="h-auto p-0 text-body font-medium" onClick={handleWhatsApp}>
                     {lead.clientes.telefone}
                   </Button>
                 </div>
@@ -352,12 +317,7 @@ export function LeadDetailsDialog({
                   )}
                 </h4>
                 {!showTimelineForm && (
-                  <Button
-                    variant="default"
-                    size="default"
-                    onClick={() => setShowTimelineForm(true)}
-                    className="gap-2"
-                  >
+                  <Button variant="default" size="default" onClick={() => setShowTimelineForm(true)} className="gap-2">
                     <Plus className="h-4 w-4" />
                     Nova Interação
                   </Button>
@@ -404,9 +364,7 @@ export function LeadDetailsDialog({
                     <MessageSquare className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-body font-medium text-muted-foreground">
-                      Nenhuma interação registrada ainda
-                    </p>
+                    <p className="text-body font-medium text-muted-foreground">Nenhuma interação registrada ainda</p>
                     <p className="text-caption text-muted-foreground">
                       Comece adicionando a primeira interação com este lead
                     </p>
@@ -424,10 +382,7 @@ export function LeadDetailsDialog({
                   )}
                 </div>
               ) : (
-                <LeadTimeline
-                  interacoes={interacoes}
-                  onDelete={(id) => deleteInteracao.mutate(id)}
-                />
+                <LeadTimeline interacoes={interacoes} onDelete={(id) => deleteInteracao.mutate(id)} />
               )}
             </motion.div>
 
@@ -441,10 +396,7 @@ export function LeadDetailsDialog({
               className="flex flex-wrap gap-3"
             >
               {lead.cliente_id && (
-                <Button
-                  onClick={() => setVisitaDialogOpen(true)}
-                  className="flex-1 gap-2"
-                >
+                <Button onClick={() => setVisitaDialogOpen(true)} className="flex-1 gap-2">
                   <CalendarIcon className="h-4 w-4" />
                   Agendar Visita
                 </Button>
@@ -459,11 +411,7 @@ export function LeadDetailsDialog({
                   WhatsApp
                 </Button>
               )}
-              <Button
-                variant="outline"
-                onClick={() => onEdit(lead)}
-                className="flex-1 gap-2"
-              >
+              <Button variant="outline" onClick={() => onEdit(lead)} className="flex-1 gap-2">
                 <Pencil className="h-4 w-4" />
                 Editar
               </Button>
@@ -478,8 +426,7 @@ export function LeadDetailsDialog({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este lead? Esta ação não pode ser
-              desfeita.
+              Tem certeza que deseja excluir este lead? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -499,9 +446,7 @@ export function LeadDetailsDialog({
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Agendar Visita</DialogTitle>
-            <DialogDescription>
-              Agende uma visita para o lead {lead?.clientes?.nome}
-            </DialogDescription>
+            <DialogDescription>Agende uma visita para o lead {lead?.clientes?.nome}</DialogDescription>
           </DialogHeader>
           <VisitaForm
             visita={getInitialVisitaData() as any}
