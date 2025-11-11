@@ -318,6 +318,15 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     
+    // Calcular valor bruto recebido (sem aplicar margem)
+    const recebidoBrutoAtual = parcelasPagasAtual.reduce((sum, p) => {
+      return sum + Number(p.valor_liquido_parcela || 0);
+    }, 0);
+    
+    const recebidoBrutoAnterior = parcelasPagasAnterior.reduce((sum, p) => {
+      return sum + Number(p.valor_liquido_parcela || 0);
+    }, 0);
+    
     // Calcular margem líquida real das parcelas pagas (valor × margem%)
     const recebidoLiquidoAtual = parcelasPagasAtual.reduce((sum, p) => {
       const valorParcela = Number(p.valor_liquido_parcela || 0);
@@ -374,8 +383,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
     return {
       recebidoMes: {
-        value: formatCurrency(recebidoLiquidoAtual),
-        delta: calculateDelta(recebidoLiquidoAtual, recebidoLiquidoAnterior),
+        value: formatCurrency(recebidoBrutoAtual),
+        delta: calculateDelta(recebidoBrutoAtual, recebidoBrutoAnterior),
       },
       totalPropostas: {
         value: formatCurrency(totalPropostas),
