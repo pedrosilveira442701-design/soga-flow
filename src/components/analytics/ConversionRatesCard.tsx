@@ -40,7 +40,6 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
   const contatosToLeads = total_contatos > 0 ? (contatos_convertidos / total_contatos) * 100 : 0;
   const leadsToPropostas = total_leads > 0 ? (total_propostas / total_leads) * 100 : 0;
   const propostasToContratos = total_propostas > 0 ? (total_contratos / total_propostas) * 100 : 0;
-  const contatosToContratos = total_contatos > 0 ? (total_contratos / total_contatos) * 100 : 0;
 
   // Função para determinar cor e ícone baseado no valor
   const getIndicator = (value: number, isContactConversion = false) => {
@@ -129,21 +128,12 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
       });
     }
     
-    if (contatosToContratos >= 20) {
-      recommendations.push({
-        title: "Desempenho excelente!",
-        text: "Manter estratégia atual e replicar boas práticas em todo o funil.",
-        priority: "success",
-      });
-    }
-    
     return recommendations;
   };
 
   const contatosIndicator = getIndicator(contatosToLeads, true);
   const leadsIndicator = getIndicator(leadsToPropostas);
   const propostasIndicator = getIndicator(propostasToContratos);
-  const totalIndicator = getIndicator(contatosToContratos);
   const recommendations = getRecommendations();
 
   return (
@@ -220,22 +210,6 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
           </div>
           <p className={cn("text-2xl font-bold", propostasIndicator.color)}>
             {propostasToContratos.toFixed(1)}%
-          </p>
-        </div>
-
-        {/* Total (Contatos → Contratos) */}
-        <div className="flex items-center justify-between p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-full", totalIndicator.bgColor)}>
-              <totalIndicator.icon className={cn("h-4 w-4", totalIndicator.color)} />
-            </div>
-            <div>
-              <p className="text-body font-semibold">Conversão Total (Contatos → Contratos)</p>
-              <p className="text-caption text-muted-foreground">{totalIndicator.label}</p>
-            </div>
-          </div>
-          <p className={cn("text-2xl font-bold", totalIndicator.color)}>
-            {contatosToContratos.toFixed(1)}%
           </p>
         </div>
       </div>
