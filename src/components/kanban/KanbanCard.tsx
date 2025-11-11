@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
+import { QuickActionsMenu } from "./QuickActionsMenu";
 
 interface KanbanCardProps {
   cliente: string;
@@ -24,6 +25,11 @@ interface KanbanCardProps {
   onAttachment?: () => void;
   onTask?: () => void;
   onClick?: () => void;
+  currentStage?: string;
+  onMoveToStage?: (stageId: string) => void;
+  onMarkAsLost?: () => void;
+  stages?: Array<{ id: string; title: string; section?: string }>;
+  viewMode?: "compact" | "normal" | "detailed";
 }
 
 export function KanbanCard({
@@ -37,6 +43,11 @@ export function KanbanCard({
   onAttachment,
   onTask,
   onClick,
+  currentStage,
+  onMoveToStage,
+  onMarkAsLost,
+  stages = [],
+  viewMode = "normal",
 }: KanbanCardProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -142,6 +153,10 @@ export function KanbanCard({
     return <span className="text-caption text-muted-foreground">—</span>;
   };
 
+  const cardPadding = viewMode === "compact" ? "p-3" : viewMode === "detailed" ? "p-5" : "p-4";
+  const headerSize = viewMode === "compact" ? "text-caption" : "text-body";
+  const showAvatar = viewMode !== "compact";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -155,7 +170,7 @@ export function KanbanCard({
       }}
     >
       <Card 
-        className="p-4 cursor-grab active:cursor-grabbing hover:shadow-elev2 transition-shadow"
+        className={`${cardPadding} cursor-grab active:cursor-grabbing hover:shadow-elev2 transition-shadow group`}
         onClick={(e) => {
           if (onClick && !(e.target as HTMLElement).closest('button')) {
             onClick();
@@ -164,10 +179,20 @@ export function KanbanCard({
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <h4 className="text-body font-medium text-foreground">{cliente}</h4>
-          <span className="text-caption text-muted-foreground">
-            {formatDistanceToNow(lastInteraction, { addSuffix: true, locale: ptBR })}
-          </span>
+          <h4 className={`${headerSize} font-medium text-foreground flex-1`}>{cliente}</h4>
+          <div className="flex items-center gap-1">
+            {currentStage && onMoveToStage && onMarkAsLost && (
+              <QuickActionsMenu
+                currentStage={currentStage}
+                onMoveToStage={onMoveToStage}
+                onMarkAsLost={onMarkAsLost}
+                stages={stages}
+              />
+            )}
+            <span className="text-caption text-muted-foreground">
+              {formatDistanceToNow(lastInteraction, { addSuffix: true, locale: ptBR })}
+            </span>
+          </div>
         </div>
 
         {/* Value and Services */}
@@ -179,48 +204,56 @@ export function KanbanCard({
         </div>
 
         {/* Footer - Actions */}
-        <div className="flex items-center pt-3 border-t border-border">
+        <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="flex items-center gap-2">
             {onWhatsApp && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 hover:bg-green-500/10 hover:text-green-600 transition-colors"
+                className={`${viewMode === "compact" ? "h-7 w-7" : "h-9 w-9"} hover:bg-green-500/10 hover:text-green-600 transition-colors`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onWhatsApp();
                 }}
               >
-                <Phone className="h-5 w-5" />
+                <Phone className={viewMode === "compact" ? "h-3.5 w-3.5" : "h-5 w-5"} />
               </Button>
             )}
             {onAttachment && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 hover:bg-primary/10 transition-colors"
+                className={`${viewMode === "compact" ? "h-7 w-7" : "h-9 w-9"} hover:bg-primary/10 transition-colors`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onAttachment();
                 }}
               >
-                <Paperclip className="h-5 w-5" />
+                <Paperclip className={viewMode === "compact" ? "h-3.5 w-3.5" : "h-5 w-5"} />
               </Button>
             )}
             {onTask && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 hover:bg-primary/10 transition-colors"
+                className={`${viewMode === "compact" ? "h-7 w-7" : "h-9 w-9"} hover:bg-primary/10 transition-colors`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onTask();
                 }}
               >
-                <CheckSquare className="h-5 w-5" />
+                <CheckSquare className={viewMode === "compact" ? "h-3.5 w-3.5" : "h-5 w-5"} />
               </Button>
             )}
           </div>
+          {showAvatar && (
+            <Avatar className="h-7 w-7">
+              <AvatarImage src={responsavel.avatar} />
+              <AvatarFallback className="text-[11px]">
+                {getInitials(responsavel.name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
         </div>
       </Card>
     </motion.div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -35,6 +35,9 @@ interface KanbanBoardProps {
   onEditContato?: (contato: Contato) => void;
   onDeleteContato?: (contato: Contato) => void;
   onLossReasonRequired?: (leadId: string, onConfirm: (motivo: string) => void) => void;
+  zoom?: number;
+  viewMode?: "compact" | "normal" | "detailed";
+  onNavigateToColumn?: (index: number) => void;
 }
 
 const STAGES = [
@@ -54,7 +57,19 @@ const STAGES = [
   { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
 ] as const;
 
-function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
+function SortableCard({ 
+  lead, 
+  onClick, 
+  onMoveToStage, 
+  onMarkAsLost,
+  viewMode 
+}: { 
+  lead: Lead; 
+  onClick: () => void;
+  onMoveToStage: (stageId: string) => void;
+  onMarkAsLost: () => void;
+  viewMode?: "compact" | "normal" | "detailed";
+}) {
   const {
     attributes,
     listeners,
@@ -87,6 +102,11 @@ function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
           }
         }}
         onClick={onClick}
+        currentStage={lead.estagio}
+        onMoveToStage={onMoveToStage}
+        onMarkAsLost={onMarkAsLost}
+        stages={STAGES.map(s => ({ id: s.id, title: s.title, section: s.section }))}
+        viewMode={viewMode}
       />
     </div>
   );
@@ -101,8 +121,14 @@ export function KanbanBoard({
   onEditContato,
   onDeleteContato,
   onLossReasonRequired,
+  zoom = 100,
+  viewMode = "normal",
+  onNavigateToColumn,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDraggingNearEdge, setIsDraggingNearEdge] = useState<'left' | 'right' | null>(null);
+  const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -112,8 +138,45 @@ export function KanbanBoard({
     })
   );
 
+  // Auto-scroll durante drag
+  useEffect(() => {
+    if (!isDraggingNearEdge || !containerRef.current) return;
+
+    const scrollSpeed = 15;
+    const interval = setInterval(() => {
+      if (!containerRef.current) return;
+      
+      if (isDraggingNearEdge === 'left') {
+        containerRef.current.scrollLeft -= scrollSpeed;
+      } else if (isDraggingNearEdge === 'right') {
+        containerRef.current.scrollLeft += scrollSpeed;
+      }
+    }, 16);
+
+    return () => clearInterval(interval);
+  }, [isDraggingNearEdge]);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+  };
+
+  const handleDragMove = (event: any) => {
+    if (!containerRef.current) return;
+
+    const { activatorEvent } = event;
+    if (!activatorEvent) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const clientX = activatorEvent.clientX;
+    const edgeThreshold = 100;
+
+    if (clientX < containerRect.left + edgeThreshold) {
+      setIsDraggingNearEdge('left');
+    } else if (clientX > containerRect.right - edgeThreshold) {
+      setIsDraggingNearEdge('right');
+    } else {
+      setIsDraggingNearEdge(null);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -144,21 +207,64 @@ export function KanbanBoard({
     }
 
     setActiveId(null);
+    setIsDraggingNearEdge(null);
   };
 
   const getLeadsByStage = (stage: string) => {
     return leads.filter((lead) => lead.estagio === stage);
   };
 
+  const handleMoveToStage = (leadId: string, newStage: string) => {
+    if (newStage === "perdido" && onLossReasonRequired) {
+      onLossReasonRequired(leadId, (motivo: string) => {
+        onStageChange(leadId, newStage as LeadStage, motivo);
+      });
+    } else {
+      onStageChange(leadId, newStage as LeadStage);
+    }
+  };
+
+  const handleMarkAsLost = (leadId: string) => {
+    if (onLossReasonRequired) {
+      onLossReasonRequired(leadId, (motivo: string) => {
+        onStageChange(leadId, "perdido", motivo);
+      });
+    }
+  };
+
   const activeLead = activeId ? leads.find((lead) => lead.id === activeId) : null;
+
+  // Expor função de navegação para componente pai
+  useEffect(() => {
+    if (onNavigateToColumn) {
+      (window as any).__kanbanNavigateToColumn = (index: number) => {
+        const column = columnRefs.current[index];
+        if (column && containerRef.current) {
+          column.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        }
+      };
+    }
+    return () => {
+      delete (window as any).__kanbanNavigateToColumn;
+    };
+  }, [onNavigateToColumn]);
 
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragMove={handleDragMove}
     >
-      <div className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)]">
+      <div 
+        ref={containerRef}
+        className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)] scroll-smooth"
+        style={{
+          transform: `scale(${zoom / 100})`,
+          transformOrigin: 'top left',
+          width: `${100 / (zoom / 100)}%`,
+        }}
+      >
         {STAGES.map((stage, index) => {
           const stageLeads = getLeadsByStage(stage.id);
           const isFirstOperacional = stage.section === "operacional" && 
@@ -191,6 +297,10 @@ export function KanbanBoard({
                 title={stage.title}
                 count={stageLeads.length}
                 color={stage.color}
+                viewMode={viewMode}
+                columnRef={(el) => {
+                  columnRefs.current[index] = el;
+                }}
                 additionalContent={
                   stage.id === "contato" && contatosNaoConvertidos.length > 0 && onConvertContato && onEditContato && onDeleteContato ? (
                     <div className="space-y-2">
@@ -224,6 +334,9 @@ export function KanbanBoard({
                     key={lead.id} 
                     lead={lead} 
                     onClick={() => onCardClick(lead)}
+                    onMoveToStage={(newStage) => handleMoveToStage(lead.id, newStage)}
+                    onMarkAsLost={() => handleMarkAsLost(lead.id)}
+                    viewMode={viewMode}
                   />
                 ))}
               </KanbanColumn>
@@ -234,7 +347,7 @@ export function KanbanBoard({
 
       <DragOverlay>
         {activeLead && (
-          <div className="rotate-3 scale-105">
+          <div className="rotate-3 scale-105 shadow-2xl">
             <KanbanCard
               cliente={activeLead.clientes?.nome || "Cliente não identificado"}
               lastInteraction={activeLead.ultima_interacao ? new Date(activeLead.ultima_interacao) : new Date(activeLead.created_at)}
@@ -244,6 +357,7 @@ export function KanbanBoard({
               responsavel={{
                 name: activeLead.responsavel || "Não atribuído",
               }}
+              viewMode={viewMode}
             />
           </div>
         )}

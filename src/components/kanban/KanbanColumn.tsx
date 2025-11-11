@@ -13,6 +13,8 @@ interface KanbanColumnProps {
   children: React.ReactNode;
   color?: string;
   additionalContent?: React.ReactNode;
+  viewMode?: "compact" | "normal" | "detailed";
+  columnRef?: (el: HTMLDivElement | null) => void;
 }
 
 export function KanbanColumn({
@@ -22,6 +24,8 @@ export function KanbanColumn({
   children,
   color = "default",
   additionalContent,
+  viewMode = "normal",
+  columnRef,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -36,8 +40,19 @@ export function KanbanColumn({
     perdido: "bg-red-500/5 border-red-500/20",
   };
 
+  const columnWidth = viewMode === "compact" ? "min-w-[240px]" : viewMode === "detailed" ? "min-w-[400px]" : "min-w-[320px]";
+  const spacing = viewMode === "compact" ? "space-y-2" : "space-y-3";
+  const padding = viewMode === "compact" ? "p-2" : "p-3";
+
+  const mergeRefs = (el: HTMLDivElement | null) => {
+    setNodeRef(el);
+    if (columnRef) {
+      columnRef(el);
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full min-w-[320px]">
+    <div ref={mergeRefs} className={`flex flex-col h-full ${columnWidth} scroll-mt-4`}>
       {/* Column Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="text-body font-medium text-foreground">{title}</h3>
@@ -50,11 +65,11 @@ export function KanbanColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "flex-1 rounded-xl border-2 border-dashed p-3 transition-all",
+          `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all`,
           isOver ? "border-primary bg-primary/5 shadow-elev2" : colorClasses[color as keyof typeof colorClasses] || colorClasses.default
         )}
       >
-        <div className="space-y-3">
+        <div className={spacing}>
           {additionalContent && (
             <>
               {additionalContent}

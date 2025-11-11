@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
+import { KanbanControls } from "@/components/kanban/KanbanControls";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
 import { LossReasonDialog } from "@/components/leads/LossReasonDialog";
@@ -16,7 +17,7 @@ import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
 import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useContatos, Contato } from "@/hooks/useContatos";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
@@ -47,10 +48,76 @@ export default function Leads() {
     leadId: string;
     onConfirm: (motivo: string) => void;
   } | null>(null);
+
+  // Kanban controls state
+  const [zoom, setZoom] = useState<number>(() => {
+    const saved = localStorage.getItem("kanban-zoom");
+    return saved ? parseInt(saved, 10) : 100;
+  });
+  const [viewMode, setViewMode] = useState<"compact" | "normal" | "detailed">(() => {
+    const saved = localStorage.getItem("kanban-view-mode");
+    return (saved as "compact" | "normal" | "detailed") || "normal";
+  });
+  const [activeStageIndex, setActiveStageIndex] = useState(0);
+
+  // Save preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem("kanban-zoom", zoom.toString());
+  }, [zoom]);
+
+  useEffect(() => {
+    localStorage.setItem("kanban-view-mode", viewMode);
+  }, [viewMode]);
   
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
   const { user } = useAuth();
+
+  // Navigation handlers
+  const handleNavigateLeft = () => {
+    if (activeStageIndex > 0) {
+      const newIndex = activeStageIndex - 1;
+      setActiveStageIndex(newIndex);
+      if ((window as any).__kanbanNavigateToColumn) {
+        (window as any).__kanbanNavigateToColumn(newIndex);
+      }
+    }
+  };
+
+  const handleNavigateRight = () => {
+    const maxIndex = 8; // Total de 9 stages (0-8)
+    if (activeStageIndex < maxIndex) {
+      const newIndex = activeStageIndex + 1;
+      setActiveStageIndex(newIndex);
+      if ((window as any).__kanbanNavigateToColumn) {
+        (window as any).__kanbanNavigateToColumn(newIndex);
+      }
+    }
+  };
+
+  const handleStageClick = (index: number) => {
+    setActiveStageIndex(index);
+    if ((window as any).__kanbanNavigateToColumn) {
+      (window as any).__kanbanNavigateToColumn(index);
+    }
+  };
+
+  const STAGES = [
+    { id: "contato", title: "Entrou em Contato", color: "contato", section: "comercial" },
+    { id: "visita_agendada", title: "Visita Agendada", color: "contato", section: "comercial" },
+    { id: "visita_realizada", title: "Visita Realizada", color: "contato", section: "comercial" },
+    { id: "proposta_pendente", title: "Proposta Pendente", color: "proposta", section: "comercial" },
+    { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
+    { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
+    { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
+    { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
+    { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
+  ];
+
+  const stagesWithCounts = STAGES.map((stage) => ({
+    ...stage,
+    count: leads.filter((lead) => lead.estagio === stage.id).length,
+  }));
 
   const handleCreateLead = async (values: any, contatoId?: string) => {
     // Processar produtos
@@ -325,6 +392,21 @@ export default function Leads() {
         </div>
       </div>
 
+      {/* Kanban Controls */}
+      <KanbanControls
+        zoom={zoom}
+        onZoomChange={setZoom}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onNavigateLeft={handleNavigateLeft}
+        onNavigateRight={handleNavigateRight}
+        canNavigateLeft={activeStageIndex > 0}
+        canNavigateRight={activeStageIndex < 8}
+        stages={stagesWithCounts}
+        activeStageIndex={activeStageIndex}
+        onStageClick={handleStageClick}
+      />
+
       {/* Kanban Board */}
       <KanbanBoard 
         leads={leads} 
@@ -335,6 +417,9 @@ export default function Leads() {
         onEditContato={handleEditContato}
         onDeleteContato={handleDeleteContato}
         onLossReasonRequired={handleLossReasonRequired}
+        zoom={zoom}
+        viewMode={viewMode}
+        onNavigateToColumn={(index) => setActiveStageIndex(index)}
       />
 
       {/* Edit Contato Dialog */}
