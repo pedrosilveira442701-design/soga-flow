@@ -196,7 +196,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-caption text-muted-foreground">
-                  <DollarSign className="h-4 w-4" />
+                  <DollarSign className="h-5 w-5" />
                   <span>Valor Potencial</span>
                 </div>
                 <p className="text-body font-semibold text-primary">
@@ -206,7 +206,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
 
               <div className="space-y-1 col-span-2">
                 <div className="flex items-center gap-2 text-caption text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" />
+                  <TrendingUp className="h-5 w-5" />
                   <span>Serviços</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -277,7 +277,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               {lead.clientes?.telefone && (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-caption text-muted-foreground">
-                    <Phone className="h-4 w-4" />
+                    <Phone className="h-5 w-5" />
                     <span>Telefone</span>
                   </div>
                   <Button variant="link" className="h-auto p-0 text-body font-medium" onClick={handleWhatsApp}>
@@ -289,7 +289,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               {lead.clientes?.endereco && (
                 <div className="space-y-1 col-span-2">
                   <div className="flex items-center gap-2 text-caption text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
+                    <MapPin className="h-5 w-5" />
                     <span>Endereço</span>
                   </div>
                   <p className="text-body">{lead.clientes.endereco}</p>
@@ -308,7 +308,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
             >
               <div className="flex items-center justify-between">
                 <h4 className="text-body font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-5 w-5" />
                   Timeline de Interações
                   {!isLoadingInteracoes && interacoes.length > 0 && (
                     <Badge variant="secondary" className="ml-2">
@@ -318,7 +318,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                 </h4>
                 {!showTimelineForm && (
                   <Button variant="default" size="default" onClick={() => setShowTimelineForm(true)} className="gap-2">
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-5 w-5" />
                     Nova Interação
                   </Button>
                 )}
