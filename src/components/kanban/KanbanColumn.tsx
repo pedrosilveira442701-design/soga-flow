@@ -54,17 +54,15 @@ export function KanbanColumn({
           isOver ? "border-primary bg-primary/5 shadow-elev2" : colorClasses[color as keyof typeof colorClasses] || colorClasses.default
         )}
       >
-        <SortableContext items={[]} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
-            {additionalContent && (
-              <>
-                {additionalContent}
-                {children && <div className="border-t border-border/50 pt-3 mt-3" />}
-              </>
-            )}
-            {children}
-          </div>
-        </SortableContext>
+        <div className="space-y-3">
+          {additionalContent && (
+            <>
+              {additionalContent}
+              {children && <div className="border-t border-border/50 pt-3 mt-3" />}
+            </>
+          )}
+          {children}
+        </div>
       </div>
     </div>
   );
