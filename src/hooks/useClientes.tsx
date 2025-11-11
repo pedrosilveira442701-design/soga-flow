@@ -10,9 +10,17 @@ export interface Cliente {
   contato: string | null;
   telefone: string | null;
   cpf_cnpj: string | null;
+  // Campo legado (concatenado)
   endereco: string | null;
-  cidade: string | null;
+  // Campos estruturados de endereço
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
   bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  pais: string | null;
   status: string;
   created_at: string;
   updated_at: string;
@@ -25,9 +33,17 @@ export interface CreateClienteData {
   contato?: string;
   telefone?: string;
   cpf_cnpj?: string;
+  // Campo legado
   endereco?: string;
-  cidade?: string;
+  // Campos estruturados
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
   bairro?: string;
+  cidade?: string;
+  uf?: string;
+  pais?: string;
   status?: string;
   created_at?: string;
 }
