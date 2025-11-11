@@ -226,7 +226,11 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("financeiro_parcelas")
-        .select("valor_liquido_parcela, data_pagamento")
+        .select(`
+          valor_liquido_parcela, 
+          data_pagamento,
+          contratos!inner(margem_pct)
+        `)
         .eq("user_id", user!.id)
         .eq("status", "pago")
         .gte("data_pagamento", format(startDate, "yyyy-MM-dd"))
@@ -244,7 +248,11 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("financeiro_parcelas")
-        .select("valor_liquido_parcela, data_pagamento")
+        .select(`
+          valor_liquido_parcela, 
+          data_pagamento,
+          contratos!inner(margem_pct)
+        `)
         .eq("user_id", user!.id)
         .eq("status", "pago")
         .gte("data_pagamento", format(prevStartDate, "yyyy-MM-dd"))
@@ -309,7 +317,19 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     const totalPropostas = todasPropostas - propostasPerdidas - propostasRepouso;
     
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
-    const recebidoAtual = parcelasPagasAtual.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+    
+    // Calcular margem líquida real das parcelas pagas (valor × margem%)
+    const recebidoLiquidoAtual = parcelasPagasAtual.reduce((sum, p) => {
+      const valorParcela = Number(p.valor_liquido_parcela || 0);
+      const margemPct = Number((p.contratos as any)?.margem_pct || 0);
+      return sum + (valorParcela * (margemPct / 100));
+    }, 0);
+    
+    const recebidoLiquidoAnterior = parcelasPagasAnterior.reduce((sum, p) => {
+      const valorParcela = Number(p.valor_liquido_parcela || 0);
+      const margemPct = Number((p.contratos as any)?.margem_pct || 0);
+      return sum + (valorParcela * (margemPct / 100));
+    }, 0);
 
     // Valor total a receber (bruto) - soma das parcelas pendentes de todos os contratos
     let totalAReceber = 0;
@@ -354,8 +374,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
     return {
       recebidoMes: {
-        value: formatCurrency(recebidoAtual),
-        delta: calculateDelta(recebidoAtual, recebidoAnterior),
+        value: formatCurrency(recebidoLiquidoAtual),
+        delta: calculateDelta(recebidoLiquidoAtual, recebidoLiquidoAnterior),
       },
       totalPropostas: {
         value: formatCurrency(totalPropostas),
@@ -372,8 +392,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         value: formatCurrency(totalAReceberLiquido),
       },
       totalRecebidoLiquido: {
-        value: formatCurrency(recebidoAtual),
-        delta: calculateDelta(recebidoAtual, recebidoAnterior),
+        value: formatCurrency(recebidoLiquidoAtual),
+        delta: calculateDelta(recebidoLiquidoAtual, recebidoLiquidoAnterior),
       },
       // Novos KPIs de Pipeline
       totalPropostasCount: {
