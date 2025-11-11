@@ -29,7 +29,6 @@ export function KanbanColumn({
 
   const colorClasses = {
     default: "bg-brand-surface border-border",
-    novo: "bg-blue-500/5 border-blue-500/20",
     contato: "bg-purple-500/5 border-purple-500/20",
     qualificado: "bg-amber-500/5 border-amber-500/20",
     proposta: "bg-orange-500/5 border-orange-500/20",

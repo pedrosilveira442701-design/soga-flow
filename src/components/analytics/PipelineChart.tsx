@@ -10,11 +10,15 @@ interface PipelineChartProps {
 }
 
 const COLORS = {
-  Novo: "#3b82f6",
-  Contato: "#8b5cf6",
-  Negociação: "#ec4899",
-  "Proposta Enviada": "#f59e0b",
-  Fechado: "#10b981",
+  "Entrou em Contato": "#8b5cf6",
+  "Visita Agendada": "#8b5cf6",
+  "Visita Realizada": "#8b5cf6",
+  "Proposta Pendente": "#f59e0b",
+  "Gerou Proposta": "#f59e0b",
+  "Fechou Contrato": "#10b981",
+  "Em Execução": "#ec4899",
+  "Finalizado": "#10b981",
+  "Perdido": "#ef4444",
 };
 
 export function PipelineChart({ data, isLoading }: PipelineChartProps) {

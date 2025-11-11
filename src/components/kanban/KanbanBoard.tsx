@@ -119,6 +119,14 @@ export function KanbanBoard({
     const leadId = active.id as string;
     const newStage = over.id as LeadStage;
 
+    // Debug: Log values before update
+    console.log("🔄 Kanban Drag End:", {
+      leadId,
+      newStage,
+      isValidStage: STAGES.some((stage) => stage.id === newStage),
+      validStages: STAGES.map(s => s.id)
+    });
+
     if (STAGES.some((stage) => stage.id === newStage)) {
       onStageChange(leadId, newStage);
     }
