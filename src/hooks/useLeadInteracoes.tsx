@@ -14,7 +14,7 @@ export function useLeadInteracoes(leadId?: string) {
     queryKey: ["lead-interacoes", leadId],
     queryFn: async () => {
       if (!leadId) return [];
-      
+
       const { data, error } = await supabase
         .from("lead_interacoes")
         .select("*")
@@ -29,9 +29,25 @@ export function useLeadInteracoes(leadId?: string) {
 
   const createInteracao = useMutation({
     mutationFn: async (interacao: LeadInteracaoInsert) => {
+      // 🔹 Obtém o usuário autenticado
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // 🔹 Faz o insert incluindo o user_id
       const { data, error } = await supabase
         .from("lead_interacoes")
-        .insert(interacao)
+        .insert({
+          ...interacao,
+          lead_id: interacao.lead_id || leadId, // garante o leadId
+          user_id: user.id, // 👈 ESSENCIAL
+          data_hora: new Date().toISOString(), // timestamp padrão
+        })
         .select()
         .single();
 
@@ -49,12 +65,7 @@ export function useLeadInteracoes(leadId?: string) {
 
   const updateInteracao = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: LeadInteracaoUpdate }) => {
-      const { data, error } = await supabase
-        .from("lead_interacoes")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("lead_interacoes").update(updates).eq("id", id).select().single();
 
       if (error) throw error;
       return data;
@@ -70,10 +81,7 @@ export function useLeadInteracoes(leadId?: string) {
 
   const deleteInteracao = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("lead_interacoes")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("lead_interacoes").delete().eq("id", id);
 
       if (error) throw error;
     },
