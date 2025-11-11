@@ -1,4 +1,4 @@
-import { MessageSquare, Paperclip, CheckSquare } from "lucide-react";
+import { Phone, Paperclip, CheckSquare } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -180,48 +180,48 @@ export function KanbanCard({
 
         {/* Footer - Actions and Avatar */}
         <div className="flex items-center justify-between pt-3 border-t border-border">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {onWhatsApp && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-9 w-9 hover:bg-green-500/10 hover:text-green-600 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onWhatsApp();
                 }}
               >
-                <MessageSquare className="h-5 w-5 icon-thin" />
+                <Phone className="h-5 w-5" />
               </Button>
             )}
             {onAttachment && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-9 w-9 hover:bg-primary/10 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onAttachment();
                 }}
               >
-                <Paperclip className="h-5 w-5 icon-thin" />
+                <Paperclip className="h-5 w-5" />
               </Button>
             )}
             {onTask && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-9 w-9 hover:bg-primary/10 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onTask();
                 }}
               >
-                <CheckSquare className="h-5 w-5 icon-thin" />
+                <CheckSquare className="h-5 w-5" />
               </Button>
             )}
           </div>
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-9 w-9">
             <AvatarImage src={responsavel.avatar} alt={responsavel.name} />
             <AvatarFallback className="text-[11px]">
               {getInitials(responsavel.name)}
