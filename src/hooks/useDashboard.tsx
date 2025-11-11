@@ -276,6 +276,22 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     enabled: !!user?.id,
   });
 
+  // 11. Buscar TODAS as parcelas pagas (total recebido histórico)
+  const { data: todasParcelasPagas = [] } = useQuery({
+    queryKey: ["todas-parcelas-pagas", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financeiro_parcelas")
+        .select("valor_liquido_parcela")
+        .eq("user_id", user!.id)
+        .eq("status", "pago");
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Calcular KPIs com memoização e comparação com período anterior
   const kpis = useMemo(() => {
     // Função auxiliar para calcular delta
@@ -309,6 +325,9 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     const recebidoAtual = parcelasPagasAtual.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
+
+    // Valor total recebido líquido (todas as parcelas pagas historicamente)
+    const totalRecebidoLiquido = todasParcelasPagas.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
     // Valor total a receber (bruto) - soma das parcelas pendentes de todos os contratos
     let totalAReceber = 0;
@@ -370,6 +389,9 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       totalAReceberLiquido: {
         value: formatCurrency(totalAReceberLiquido),
       },
+      totalRecebidoLiquido: {
+        value: formatCurrency(totalRecebidoLiquido),
+      },
       // Novos KPIs de Pipeline
       totalPropostasCount: {
         value: formatCurrency(todasPropostas),
@@ -419,7 +441,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         },
       ],
     };
-  }, [propostas, contratos, contratosComParcelas, propostasAnterior, contratosAnterior, parcelasPagasAtual, parcelasPagasAnterior]);
+  }, [propostas, contratos, contratosComParcelas, propostasAnterior, contratosAnterior, parcelasPagasAtual, parcelasPagasAnterior, todasParcelasPagas]);
 
   // Calcular dados de timeline (últimos 6 meses)
   const timelineData = useMemo((): TimelineData[] => {

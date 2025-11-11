@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2 } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2, Wallet } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
@@ -25,7 +25,7 @@ export default function Dashboard() {
     title: string;
     value: string;
     delta?: { value: string; direction: "up" | "down" };
-    variant?: "default" | "liquid";
+    variant?: "default" | "liquid" | "success";
     icon: any;
   }> = [
     {
@@ -33,6 +33,12 @@ export default function Dashboard() {
       value: kpis.recebidoMes.value,
       delta: kpis.recebidoMes.delta,
       icon: DollarSign,
+    },
+    {
+      title: "Total Recebido Líquido",
+      value: kpis.totalRecebidoLiquido.value,
+      variant: "success" as const,
+      icon: Wallet,
     },
     {
       title: "Volume Real de Propostas",
@@ -45,12 +51,6 @@ export default function Dashboard() {
       value: kpis.totalContratos.value,
       delta: kpis.totalContratos.delta,
       icon: HandCoins,
-    },
-    {
-      title: "Valor Total a Receber Líquido",
-      value: kpis.totalAReceberLiquido.value,
-      variant: "liquid" as const,
-      icon: Receipt,
     },
   ];
   return (
