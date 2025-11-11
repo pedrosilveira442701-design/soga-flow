@@ -12,6 +12,7 @@ interface KanbanColumnProps {
   count: number;
   children: React.ReactNode;
   color?: string;
+  additionalContent?: React.ReactNode;
 }
 
 export function KanbanColumn({
@@ -20,6 +21,7 @@ export function KanbanColumn({
   count,
   children,
   color = "default",
+  additionalContent,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -54,6 +56,12 @@ export function KanbanColumn({
       >
         <SortableContext items={[]} strategy={verticalListSortingStrategy}>
           <div className="space-y-3">
+            {additionalContent && (
+              <>
+                {additionalContent}
+                {children && <div className="border-t border-border/50 pt-3 mt-3" />}
+              </>
+            )}
             {children}
           </div>
         </SortableContext>

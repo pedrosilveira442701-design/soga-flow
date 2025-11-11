@@ -12,7 +12,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
+import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import type { Database } from "@/integrations/supabase/types";
+import type { Contato } from "@/hooks/useContatos";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
   clientes?: {
@@ -28,6 +30,8 @@ interface KanbanBoardProps {
   leads: Lead[];
   onStageChange: (leadId: string, newStage: LeadStage) => void;
   onCardClick: (lead: Lead) => void;
+  contatosNaoConvertidos?: Contato[];
+  onConvertContato?: (contato: Contato) => void;
 }
 
 const STAGES = [
@@ -82,7 +86,13 @@ function SortableCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
   );
 }
 
-export function KanbanBoard({ leads, onStageChange, onCardClick }: KanbanBoardProps) {
+export function KanbanBoard({ 
+  leads, 
+  onStageChange, 
+  onCardClick,
+  contatosNaoConvertidos = [],
+  onConvertContato,
+}: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   
   const sensors = useSensors(
@@ -146,6 +156,31 @@ export function KanbanBoard({ leads, onStageChange, onCardClick }: KanbanBoardPr
                 title={stage.title}
                 count={stageLeads.length}
                 color={stage.color}
+                additionalContent={
+                  stage.id === "contato" && contatosNaoConvertidos.length > 0 && onConvertContato ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-px flex-1 bg-border/50" />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          Contatos Não Convertidos ({contatosNaoConvertidos.length})
+                        </span>
+                        <div className="h-px flex-1 bg-border/50" />
+                      </div>
+                      {contatosNaoConvertidos.slice(0, 5).map((contato) => (
+                        <ContatoMiniCard
+                          key={contato.id}
+                          contato={contato}
+                          onConvertToLead={onConvertContato}
+                        />
+                      ))}
+                      {contatosNaoConvertidos.length > 5 && (
+                        <p className="text-xs text-muted-foreground text-center py-1">
+                          + {contatosNaoConvertidos.length - 5} contatos não exibidos
+                        </p>
+                      )}
+                    </div>
+                  ) : undefined
+                }
               >
                 {stageLeads.map((lead) => (
                   <SortableCard 

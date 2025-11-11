@@ -12,7 +12,7 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
 import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
-import { ContatosNaoConvertidos } from "@/components/contatos/ContatosNaoConvertidos";
+import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useContatos, Contato } from "@/hooks/useContatos";
 import { useState } from "react";
@@ -253,19 +253,13 @@ export default function Leads() {
         </div>
       </div>
 
-      {/* Contatos Não Convertidos */}
-      {naoConvertidos.length > 0 && (
-        <ContatosNaoConvertidos
-          contatos={naoConvertidos}
-          onConvertToLead={handleConvertContatoToLead}
-        />
-      )}
-
       {/* Kanban Board */}
       <KanbanBoard 
         leads={leads} 
         onStageChange={handleStageChange}
         onCardClick={handleCardClick}
+        contatosNaoConvertidos={naoConvertidos}
+        onConvertContato={handleConvertContatoToLead}
       />
 
       {/* Edit Lead Dialog */}
