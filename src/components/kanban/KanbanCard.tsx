@@ -178,8 +178,8 @@ export function KanbanCard({
           {renderServicos()}
         </div>
 
-        {/* Footer - Actions and Avatar */}
-        <div className="flex items-center justify-between pt-3 border-t border-border">
+        {/* Footer - Actions */}
+        <div className="flex items-center pt-3 border-t border-border">
           <div className="flex items-center gap-2">
             {onWhatsApp && (
               <Button
@@ -221,12 +221,6 @@ export function KanbanCard({
               </Button>
             )}
           </div>
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={responsavel.avatar} alt={responsavel.name} />
-            <AvatarFallback className="text-[11px]">
-              {getInitials(responsavel.name)}
-            </AvatarFallback>
-          </Avatar>
         </div>
       </Card>
     </motion.div>
