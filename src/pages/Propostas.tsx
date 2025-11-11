@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -350,83 +351,138 @@ export default function Propostas() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todos os Status</SelectItem>
-            <SelectItem value="aberta">Abertas</SelectItem>
-            <SelectItem value="fechada">Fechadas</SelectItem>
-            <SelectItem value="repouso">Repouso</SelectItem>
-            <SelectItem value="perdida">Perdidas</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={tipoFilter} onValueChange={setTipoFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os Tipos</SelectItem>
-            {tiposPiso.map((tipo) => (
-              <SelectItem key={tipo} value={tipo}>
-                {tipo}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {hasActiveFilters && (
-          <Button variant="outline" onClick={clearFilters} size="icon">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      {/* Filter badges */}
-      {hasActiveFilters && (
-        <div className="flex gap-2 flex-wrap">
-          {searchTerm && (
-            <Badge variant="secondary">
-              Busca: {searchTerm}
-              <X
-                className="h-3 w-3 ml-1 cursor-pointer"
-                onClick={() => setSearchTerm("")}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Filtros</CardTitle>
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-2">
+                  {[searchTerm, statusFilter !== "todas", tipoFilter !== "todos"].filter(Boolean).length}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filteredPropostas.length} de {propostas.length}
+              </span>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Busca */}
+            <div className="md:col-span-3">
+              <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Buscar Cliente
+              </Label>
+              <Input
+                placeholder="Digite o nome do cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-10"
               />
-            </Badge>
+            </div>
+
+            {/* Status */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">
+                    <span className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Todos os Status
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="aberta">Abertas</SelectItem>
+                  <SelectItem value="fechada">Fechadas</SelectItem>
+                  <SelectItem value="repouso">Repouso</SelectItem>
+                  <SelectItem value="perdida">Perdidas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tipo */}
+            <div className="md:col-span-2">
+              <Label className="text-sm font-medium mb-2 block">Tipo de Piso</Label>
+              <Select value={tipoFilter} onValueChange={setTipoFilter}>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os Tipos</SelectItem>
+                  {tiposPiso.map((tipo) => (
+                    <SelectItem key={tipo} value={tipo}>
+                      {tipo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Pills de filtros ativos */}
+          {hasActiveFilters && (
+            <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t">
+              {searchTerm && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  <Search className="h-3 w-3" />
+                  {searchTerm}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-transparent"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Remover filtro de busca"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {statusFilter !== "todas" && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  {statusOptions.find(s => s.value === statusFilter)?.label}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-transparent"
+                    onClick={() => setStatusFilter("todas")}
+                    aria-label="Remover filtro de status"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {tipoFilter !== "todos" && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  {tipoFilter}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-transparent"
+                    onClick={() => setTipoFilter("todos")}
+                    aria-label="Remover filtro de tipo"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+            </div>
           )}
-          {statusFilter !== "todas" && (
-            <Badge variant="secondary">
-              Status: {statusFilter}
-              <X
-                className="h-3 w-3 ml-1 cursor-pointer"
-                onClick={() => setStatusFilter("todas")}
-              />
-            </Badge>
-          )}
-          {tipoFilter !== "todos" && (
-            <Badge variant="secondary">
-              Tipo: {tipoFilter}
-              <X
-                className="h-3 w-3 ml-1 cursor-pointer"
-                onClick={() => setTipoFilter("todos")}
-              />
-            </Badge>
-          )}
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
       {/* Table */}
       <Card>

@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -44,6 +45,8 @@ import {
   Eye,
   MessageCircle,
   Users,
+  Filter,
+  X,
 } from "lucide-react";
 import { useClientes, Cliente } from "@/hooks/useClientes";
 import { ClienteForm } from "@/components/forms/ClienteForm";
@@ -134,36 +137,121 @@ export default function Clientes() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Filtros</CardTitle>
+              {(searchTerm || statusFilter !== "todos") && (
+                <Badge variant="secondary" className="ml-2">
+                  {[searchTerm, statusFilter !== "todos"].filter(Boolean).length}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filteredClientes.length} de {clientes?.length || 0}
+              </span>
+              {(searchTerm || statusFilter !== "todos") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setStatusFilter("todos");
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Busca - 3 colunas */}
+            <div className="md:col-span-3">
+              <Label className="text-sm font-medium mb-2 flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Buscar Cliente
+              </Label>
               <Input
-                placeholder="Buscar por nome, telefone ou email..."
+                placeholder="Nome, telefone ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+                className="h-10"
               />
             </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value: any) => setStatusFilter(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="ativo">Ativo</SelectItem>
-                <SelectItem value="inativo">Inativo</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Status - 1 coluna */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Status</Label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value: any) => setStatusFilter(value)}
+              >
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">
+                    <span className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Todos
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="ativo">
+                    <span className="flex items-center gap-2">
+                      <Badge variant="default" className="h-4 w-4 p-0" />
+                      Ativo
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="inativo">
+                    <span className="flex items-center gap-2">
+                      <Badge variant="secondary" className="h-4 w-4 p-0" />
+                      Inativo
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          {filteredClientes.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-4">
-              {filteredClientes.length} cliente(s) encontrado(s)
-            </p>
+
+          {/* Pills de filtros ativos */}
+          {(searchTerm || statusFilter !== "todos") && (
+            <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t">
+              {searchTerm && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  <Search className="h-3 w-3" />
+                  {searchTerm}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-transparent"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Remover filtro de busca"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+              {statusFilter !== "todos" && (
+                <Badge variant="secondary" className="gap-1 pr-1">
+                  {statusFilter === "ativo" ? "Ativo" : "Inativo"}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 hover:bg-transparent"
+                    onClick={() => setStatusFilter("todos")}
+                    aria-label="Remover filtro de status"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
