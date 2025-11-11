@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,9 +11,13 @@ import {
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
+import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
+import { ContatosNaoConvertidos } from "@/components/contatos/ContatosNaoConvertidos";
 import { useLeads } from "@/hooks/useLeads";
+import { useContatos, Contato } from "@/hooks/useContatos";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
@@ -30,13 +34,17 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
 
 export default function Leads() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [contatoDialogOpen, setContatoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [contatoToConvert, setContatoToConvert] = useState<{telefone: string; origem: string; contatoId?: string} | null>(null);
+  
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
+  const { naoConvertidos, createContato, convertToLead } = useContatos();
   const { user } = useAuth();
 
-  const handleCreateLead = async (values: any) => {
+  const handleCreateLead = async (values: any, contatoId?: string) => {
     // Processar produtos
     const produtosProcessados = values.produtos.map((p: any) => ({
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
@@ -73,8 +81,51 @@ export default function Leads() {
       leadData.ultima_interacao = new Date().toISOString();
     }
 
-    await createLead.mutateAsync(leadData);
+    const newLead = await createLead.mutateAsync(leadData);
+    
+    // Se veio de um contato, marcar como convertido
+    if (contatoId && newLead) {
+      await convertToLead.mutateAsync({ contatoId, leadId: newLead.id });
+    }
+    
     setCreateDialogOpen(false);
+    setContatoToConvert(null);
+  };
+
+  const handleContatoSubmit = async (data: any) => {
+    const dataHora = `${format(data.data, "yyyy-MM-dd")}T${data.hora}:00`;
+    
+    await createContato.mutateAsync({
+      telefone: data.telefone,
+      data_hora: dataHora,
+      origem: data.origem,
+    });
+    
+    setContatoDialogOpen(false);
+  };
+
+  const handleOpenLeadFromContato = async (telefone: string, origem: string) => {
+    // Primeiro, salvar o contato
+    const dataHora = new Date().toISOString();
+    const contato = await createContato.mutateAsync({
+      telefone,
+      data_hora: dataHora,
+      origem,
+    });
+    
+    // Guardar informações do contato e abrir formulário de lead
+    setContatoToConvert({ telefone, origem, contatoId: contato.id });
+    setContatoDialogOpen(false);
+    setCreateDialogOpen(true);
+  };
+
+  const handleConvertContatoToLead = (contato: Contato) => {
+    setContatoToConvert({ 
+      telefone: contato.telefone, 
+      origem: contato.origem,
+      contatoId: contato.id 
+    });
+    setCreateDialogOpen(true);
   };
 
   const handleUpdateLead = async (values: any) => {
@@ -150,30 +201,65 @@ export default function Leads() {
           </p>
         </div>
 
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 h-11 px-5">
-              <Plus className="h-5 w-5" />
-              Novo Lead
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
-            <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
-              <DialogTitle>Criar Novo Lead</DialogTitle>
-              <DialogDescription>
-                Adicione um novo lead ao funil de vendas
-              </DialogDescription>
-            </DialogHeader>
-            <div className="overflow-y-auto px-6 pb-6">
-              <LeadForm
-                onSubmit={handleCreateLead}
-                isLoading={createLead.isPending}
-                mode="create"
+        <div className="flex gap-2">
+          <Dialog open={contatoDialogOpen} onOpenChange={setContatoDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 h-11 px-5">
+                <UserPlus className="h-5 w-5" />
+                Registrar Contato
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Registrar Contato</DialogTitle>
+                <DialogDescription>
+                  Registre um contato inicial rapidamente
+                </DialogDescription>
+              </DialogHeader>
+              <ContatoQuickForm
+                onSubmit={handleContatoSubmit}
+                onOpenLeadForm={handleOpenLeadFromContato}
+                isLoading={createContato.isPending}
               />
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 h-11 px-5">
+                <Plus className="h-5 w-5" />
+                Novo Lead
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+              <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+                <DialogTitle>Criar Novo Lead</DialogTitle>
+                <DialogDescription>
+                  Adicione um novo lead ao funil de vendas
+                </DialogDescription>
+              </DialogHeader>
+              <div className="overflow-y-auto px-6 pb-6">
+                <LeadForm
+                  onSubmit={(values) => handleCreateLead(values, contatoToConvert?.contatoId)}
+                  isLoading={createLead.isPending}
+                  mode="create"
+                  initialData={contatoToConvert ? {
+                    origem: contatoToConvert.origem,
+                  } : undefined}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Contatos Não Convertidos */}
+      {naoConvertidos.length > 0 && (
+        <ContatosNaoConvertidos
+          contatos={naoConvertidos}
+          onConvertToLead={handleConvertContatoToLead}
+        />
+      )}
 
       {/* Kanban Board */}
       <KanbanBoard 

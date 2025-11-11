@@ -102,6 +102,8 @@ export interface LossReasonData {
 }
 
 export interface ConversionRatesData {
+  total_contatos: number;
+  contatos_convertidos: number;
   total_leads: number;
   total_propostas: number;
   total_contratos: number;
@@ -916,6 +918,25 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     queryFn: async () => {
       if (!user) return null;
 
+      // Buscar total de contatos
+      let contatosQuery = supabase
+        .from("contatos")
+        .select("id, converteu_lead", { count: "exact" })
+        .eq("user_id", user.id);
+
+      if (filters.startDate) {
+        contatosQuery = contatosQuery.gte("created_at", filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        contatosQuery = contatosQuery.lte("created_at", filters.endDate.toISOString());
+      }
+      if (filters.origem) {
+        contatosQuery = contatosQuery.eq("origem", filters.origem);
+      }
+
+      const { data: contatosData, count: total_contatos } = await contatosQuery;
+      const contatos_convertidos = contatosData?.filter(c => c.converteu_lead).length || 0;
+
       // Buscar total de leads
       let leadsQuery = supabase
         .from("leads")
@@ -971,6 +992,8 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       const { count: total_contratos } = await contratosQuery;
 
       const result: ConversionRatesData = {
+        total_contatos: total_contatos || 0,
+        contatos_convertidos: contatos_convertidos || 0,
         total_leads: total_leads || 0,
         total_propostas: total_propostas || 0,
         total_contratos: total_contratos || 0,

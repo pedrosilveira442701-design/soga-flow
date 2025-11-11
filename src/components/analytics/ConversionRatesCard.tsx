@@ -4,6 +4,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface ConversionRatesData {
+  total_contatos: number;
+  contatos_convertidos: number;
   total_leads: number;
   total_propostas: number;
   total_contratos: number;
@@ -32,15 +34,43 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
     );
   }
 
-  const { total_leads, total_propostas, total_contratos } = data;
+  const { total_contatos, contatos_convertidos, total_leads, total_propostas, total_contratos } = data;
 
   // Calcular taxas de conversão
+  const contatosToLeads = total_contatos > 0 ? (contatos_convertidos / total_contatos) * 100 : 0;
   const leadsToPropostas = total_leads > 0 ? (total_propostas / total_leads) * 100 : 0;
   const propostasToContratos = total_propostas > 0 ? (total_contratos / total_propostas) * 100 : 0;
-  const leadsToContratos = total_leads > 0 ? (total_contratos / total_leads) * 100 : 0;
+  const contatosToContratos = total_contatos > 0 ? (total_contratos / total_contatos) * 100 : 0;
 
   // Função para determinar cor e ícone baseado no valor
-  const getIndicator = (value: number) => {
+  const getIndicator = (value: number, isContactConversion = false) => {
+    // Indicadores diferentes para conversão de contatos
+    if (isContactConversion) {
+      if (value >= 50) {
+        return {
+          color: "text-success",
+          bgColor: "bg-success/10",
+          icon: CheckCircle2,
+          label: "Excelente",
+        };
+      } else if (value >= 30) {
+        return {
+          color: "text-warning",
+          bgColor: "bg-warning/10",
+          icon: AlertTriangle,
+          label: "Razoável",
+        };
+      } else {
+        return {
+          color: "text-destructive",
+          bgColor: "bg-destructive/10",
+          icon: AlertTriangle,
+          label: "Baixa",
+        };
+      }
+    }
+    
+    // Indicadores padrão para outras conversões
     if (value >= 40) {
       return {
         color: "text-success",
@@ -69,6 +99,20 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
   const getRecommendations = () => {
     const recommendations = [];
     
+    if (contatosToLeads < 30) {
+      recommendations.push({
+        title: "Conversão Contatos → Leads muito baixa",
+        text: "Melhorar qualificação inicial e tempo de resposta aos contatos. Revisar critérios de qualificação.",
+        priority: contatosToLeads < 20 ? "high" : "medium",
+      });
+    } else if (contatosToLeads >= 50) {
+      recommendations.push({
+        title: "Excelente qualificação de contatos!",
+        text: "Manter o padrão de qualidade na conversão de contatos em leads.",
+        priority: "success",
+      });
+    }
+    
     if (leadsToPropostas < 40) {
       recommendations.push({
         title: "Conversão Leads → Propostas baixa",
@@ -85,10 +129,10 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
       });
     }
     
-    if (leadsToContratos >= 40) {
+    if (contatosToContratos >= 20) {
       recommendations.push({
         title: "Desempenho excelente!",
-        text: "Manter estratégia atual e replicar boas práticas.",
+        text: "Manter estratégia atual e replicar boas práticas em todo o funil.",
         priority: "success",
       });
     }
@@ -96,9 +140,10 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
     return recommendations;
   };
 
+  const contatosIndicator = getIndicator(contatosToLeads, true);
   const leadsIndicator = getIndicator(leadsToPropostas);
   const propostasIndicator = getIndicator(propostasToContratos);
-  const totalIndicator = getIndicator(leadsToContratos);
+  const totalIndicator = getIndicator(contatosToContratos);
   const recommendations = getRecommendations();
 
   return (
@@ -109,7 +154,11 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
       </div>
 
       {/* Totais absolutos */}
-      <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+      <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+        <div className="text-center">
+          <p className="text-caption text-muted-foreground mb-1">Contatos</p>
+          <p className="text-2xl font-bold text-foreground">{total_contatos}</p>
+        </div>
         <div className="text-center">
           <p className="text-caption text-muted-foreground mb-1">Leads</p>
           <p className="text-2xl font-bold text-foreground">{total_leads}</p>
@@ -126,6 +175,22 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
 
       {/* Taxas de conversão */}
       <div className="space-y-4 mb-6">
+        {/* Contatos → Leads */}
+        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            <div className={cn("p-2 rounded-full", contatosIndicator.bgColor)}>
+              <contatosIndicator.icon className={cn("h-4 w-4", contatosIndicator.color)} />
+            </div>
+            <div>
+              <p className="text-body font-medium">Contatos → Leads</p>
+              <p className="text-caption text-muted-foreground">{contatosIndicator.label}</p>
+            </div>
+          </div>
+          <p className={cn("text-2xl font-bold", contatosIndicator.color)}>
+            {contatosToLeads.toFixed(1)}%
+          </p>
+        </div>
+
         {/* Leads → Propostas */}
         <div className="flex items-center justify-between p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
@@ -158,19 +223,19 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
           </p>
         </div>
 
-        {/* Total (Leads → Contratos) */}
+        {/* Total (Contatos → Contratos) */}
         <div className="flex items-center justify-between p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
           <div className="flex items-center gap-3">
             <div className={cn("p-2 rounded-full", totalIndicator.bgColor)}>
               <totalIndicator.icon className={cn("h-4 w-4", totalIndicator.color)} />
             </div>
             <div>
-              <p className="text-body font-semibold">Conversão Total</p>
+              <p className="text-body font-semibold">Conversão Total (Contatos → Contratos)</p>
               <p className="text-caption text-muted-foreground">{totalIndicator.label}</p>
             </div>
           </div>
           <p className={cn("text-2xl font-bold", totalIndicator.color)}>
-            {leadsToContratos.toFixed(1)}%
+            {contatosToContratos.toFixed(1)}%
           </p>
         </div>
       </div>

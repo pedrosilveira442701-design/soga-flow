@@ -143,6 +143,50 @@ export type Database = {
         }
         Relationships: []
       }
+      contatos: {
+        Row: {
+          converteu_lead: boolean | null
+          created_at: string
+          data_hora: string
+          id: string
+          lead_id: string | null
+          origem: string
+          telefone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          converteu_lead?: boolean | null
+          created_at?: string
+          data_hora?: string
+          id?: string
+          lead_id?: string | null
+          origem: string
+          telefone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          converteu_lead?: boolean | null
+          created_at?: string
+          data_hora?: string
+          id?: string
+          lead_id?: string | null
+          origem?: string
+          telefone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contatos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           cliente_id: string
