@@ -191,7 +191,7 @@ export function KanbanCard({
                   onWhatsApp();
                 }}
               >
-                <MessageSquare className="h-4 w-4 icon-thin" />
+                <MessageSquare className="h-5 w-5 icon-thin" />
               </Button>
             )}
             {onAttachment && (
@@ -204,7 +204,7 @@ export function KanbanCard({
                   onAttachment();
                 }}
               >
-                <Paperclip className="h-4 w-4 icon-thin" />
+                <Paperclip className="h-5 w-5 icon-thin" />
               </Button>
             )}
             {onTask && (
@@ -217,7 +217,7 @@ export function KanbanCard({
                   onTask();
                 }}
               >
-                <CheckSquare className="h-4 w-4 icon-thin" />
+                <CheckSquare className="h-5 w-5 icon-thin" />
               </Button>
             )}
           </div>
