@@ -2,20 +2,8 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMetas, MetaFilters } from "@/hooks/useMetas";
 import { MetaForm } from "@/components/forms/MetaForm";
 import { MetaCard } from "@/components/metas/MetaCard";
@@ -23,16 +11,7 @@ import { MetaDetailsDialog } from "@/components/metas/MetaDetailsDialog";
 import { EmptyState } from "@/components/states/EmptyState";
 import { KPICard } from "@/components/kpi/KPICard";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Target,
-  Plus,
-  Search,
-  RefreshCw,
-  TrendingUp,
-  CheckCircle2,
-  AlertTriangle,
-  Activity,
-} from "lucide-react";
+import { Target, Plus, Search, RefreshCw, TrendingUp, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function Metas() {
@@ -83,17 +62,17 @@ export default function Metas() {
 
   const handleQuickFilter = (key: string) => {
     switch (key) {
-      case 'noAlvo':
+      case "noAlvo":
         // Filtrar metas com progresso >= 100%
         setFilters({ ...filters, search: undefined });
         break;
-      case 'emAlerta':
+      case "emAlerta":
         // Mostrar todas para que os alertas sejam visíveis nos cards
-        setFilters({ ...filters, status: 'ativa' });
+        setFilters({ ...filters, status: "ativa" });
         break;
-      case 'atrasadas':
+      case "atrasadas":
         // Filtrar metas ativas
-        setFilters({ ...filters, status: 'ativa' });
+        setFilters({ ...filters, status: "ativa" });
         break;
     }
   };
@@ -120,7 +99,7 @@ export default function Metas() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-[1600px] mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -128,17 +107,11 @@ export default function Metas() {
               <Target className="h-8 w-8" />
               Metas
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Defina objetivos e acompanhe a performance
-            </p>
+            <p className="text-muted-foreground mt-1">Defina objetivos e acompanhe a performance</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => recalcularTodas.mutate()}
-              disabled={recalcularTodas.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 ${recalcularTodas.isPending ? 'animate-spin' : ''}`} />
+            <Button variant="outline" onClick={() => recalcularTodas.mutate()} disabled={recalcularTodas.isPending}>
+              <RefreshCw className={`h-4 w-4 ${recalcularTodas.isPending ? "animate-spin" : ""}`} />
               Recalcular Todas
             </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
@@ -154,39 +127,47 @@ export default function Metas() {
             title="Metas Ativas"
             value={kpis.metasAtivas.toString()}
             icon={Activity}
-            delta={kpis.metasAtivas > 0 ? {
-              value: `${((kpis.metasAtivas / kpis.totalMetas) * 100).toFixed(0)}% do total`,
-              direction: "up" as const,
-            } : undefined}
+            delta={
+              kpis.metasAtivas > 0
+                ? {
+                    value: `${((kpis.metasAtivas / kpis.totalMetas) * 100).toFixed(0)}% do total`,
+                    direction: "up" as const,
+                  }
+                : undefined
+            }
           />
-          
+
           <KPICard
             title="Performance Geral"
             value={`${kpis.performanceGeral.toFixed(1)}%`}
             icon={TrendingUp}
             delta={{
-              value: kpis.performanceGeral >= 80 ? 'Excelente' : kpis.performanceGeral >= 60 ? 'Bom' : 'Atenção',
-              direction: kpis.performanceGeral >= 60 ? "up" as const : "down" as const,
+              value: kpis.performanceGeral >= 80 ? "Excelente" : kpis.performanceGeral >= 60 ? "Bom" : "Atenção",
+              direction: kpis.performanceGeral >= 60 ? ("up" as const) : ("down" as const),
             }}
           />
-          
+
           <KPICard
             title="No Alvo"
             value={kpis.metasNoAlvo.toString()}
             icon={CheckCircle2}
-            delta={kpis.metasAtivas > 0 ? {
-              value: `${((kpis.metasNoAlvo / kpis.metasAtivas) * 100).toFixed(0)}% concluídas`,
-              direction: "up" as const,
-            } : undefined}
+            delta={
+              kpis.metasAtivas > 0
+                ? {
+                    value: `${((kpis.metasNoAlvo / kpis.metasAtivas) * 100).toFixed(0)}% concluídas`,
+                    direction: "up" as const,
+                  }
+                : undefined
+            }
           />
-          
+
           <KPICard
             title="Em Alerta"
             value={kpis.metasEmAlerta.toString()}
             icon={AlertTriangle}
             delta={{
-              value: kpis.metasEmAlerta > 0 ? 'Precisam atenção' : 'Tudo OK',
-              direction: kpis.metasEmAlerta === 0 ? "up" as const : "down" as const,
+              value: kpis.metasEmAlerta > 0 ? "Precisam atenção" : "Tudo OK",
+              direction: kpis.metasEmAlerta === 0 ? ("up" as const) : ("down" as const),
             }}
           />
         </div>
@@ -206,9 +187,7 @@ export default function Metas() {
 
             <Select
               value={filters.status || "todos"}
-              onValueChange={(value) =>
-                setFilters({ ...filters, status: value === "todos" ? "" : value })
-              }
+              onValueChange={(value) => setFilters({ ...filters, status: value === "todos" ? "" : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -224,7 +203,7 @@ export default function Metas() {
             <Select
               value={filters.periodo || "todos"}
               onValueChange={(value) =>
-                setFilters({ ...filters, periodo: value === "todos" ? undefined : value as any })
+                setFilters({ ...filters, periodo: value === "todos" ? undefined : (value as any) })
               }
             >
               <SelectTrigger>
@@ -304,13 +283,9 @@ export default function Metas() {
       >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingMeta ? "Editar Meta" : "Nova Meta"}
-            </DialogTitle>
+            <DialogTitle>{editingMeta ? "Editar Meta" : "Nova Meta"}</DialogTitle>
             <DialogDescription>
-              {editingMeta
-                ? "Atualize as informações da meta"
-                : "Defina uma nova meta para acompanhar"}
+              {editingMeta ? "Atualize as informações da meta" : "Defina uma nova meta para acompanhar"}
             </DialogDescription>
           </DialogHeader>
           <MetaForm
