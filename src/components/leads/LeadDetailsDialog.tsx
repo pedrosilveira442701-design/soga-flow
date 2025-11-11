@@ -397,7 +397,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
             >
               {lead.cliente_id && (
                 <Button onClick={() => setVisitaDialogOpen(true)} className="flex-1 gap-2">
-                  <CalendarIcon className="h-4 w-4" />
+                  <CalendarIcon className="h-5 w-5" />
                   Agendar Visita
                 </Button>
               )}
@@ -407,12 +407,12 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                   className="flex-1 gap-2"
                   variant={lead.cliente_id ? "outline" : "default"}
                 >
-                  <MessageSquare className="h-4 w-4" />
+                  <MessageSquare className="h-5 w-5" />
                   WhatsApp
                 </Button>
               )}
               <Button variant="outline" onClick={() => onEdit(lead)} className="flex-1 gap-2">
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-5 w-5" />
                 Editar
               </Button>
             </motion.div>
