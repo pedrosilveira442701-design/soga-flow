@@ -441,35 +441,23 @@ export function LeadDetailsDialog({
               className="flex flex-wrap gap-3"
             >
               {lead.cliente_id && (
-  <Button
-    onClick={() => setVisitaDialogOpen(true)}
-    className="flex-1 gap-2 px-4 py-2"  // aumenta área de clique
-  >
-    <CalendarIcon className="h-5 w-5" /> {/* 👈 ícone maior */}
-    Agendar Visita
-  </Button>
-)}
-
-{lead.clientes?.telefone && (
-  <Button
-    onClick={handleWhatsApp}
-    className="flex-1 gap-2 px-4 py-2"
-    variant={lead.cliente_id ? "outline" : "default"}
-  >
-    <MessageSquare className="h-5 w-5" /> {/* 👈 ícone maior */}
-    WhatsApp
-  </Button>
-)}
-
-<Button
-  variant="outline"
-  onClick={() => onEdit(lead)}
-  className="flex-1 gap-2 px-4 py-2"
->
-  <Pencil className="h-5 w-5" /> {/* 👈 ícone maior */}
-  Editar
-</Button>
-
+                <Button
+                  onClick={() => setVisitaDialogOpen(true)}
+                  className="flex-1 gap-2"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  Agendar Visita
+                </Button>
+              )}
+              {lead.clientes?.telefone && (
+                <Button
+                  onClick={handleWhatsApp}
+                  className="flex-1 gap-2"
+                  variant={lead.cliente_id ? "outline" : "default"}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  WhatsApp
+                </Button>
               )}
               <Button
                 variant="outline"
