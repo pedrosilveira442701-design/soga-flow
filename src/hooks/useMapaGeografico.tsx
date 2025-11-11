@@ -8,6 +8,7 @@ export interface MapaFilters {
   periodo_fim?: Date;
   origem?: string;
   bairro?: string;
+  cidade?: string;
   valor_min?: number;
   valor_max?: number;
 }
@@ -106,8 +107,12 @@ async function fetchPropostas(filters: MapaFilters): Promise<MapaDataPoint[]> {
     `
     )
     .not("clientes.cep", "is", null)
-    .not("clientes.numero", "is", null)
-    .eq("clientes.cidade", "Belo Horizonte");
+    .not("clientes.numero", "is", null);
+
+  // Filtro de cidade
+  if (filters.cidade && filters.cidade !== "all") {
+    query = query.eq("clientes.cidade", filters.cidade);
+  }
 
   // Filtros
   if (filters.status && filters.status !== "all") {
@@ -212,8 +217,12 @@ async function fetchContratos(filters: MapaFilters): Promise<MapaDataPoint[]> {
     `
     )
     .not("clientes.cep", "is", null)
-    .not("clientes.numero", "is", null)
-    .eq("clientes.cidade", "Belo Horizonte");
+    .not("clientes.numero", "is", null);
+
+  // Filtro de cidade
+  if (filters.cidade && filters.cidade !== "all") {
+    query = query.eq("clientes.cidade", filters.cidade);
+  }
 
   if (filters.status && filters.status !== "all") {
     query = query.eq("status", filters.status as any);
@@ -294,8 +303,12 @@ async function fetchObras(filters: MapaFilters): Promise<MapaDataPoint[]> {
     `
     )
     .not("contratos.clientes.cep", "is", null)
-    .not("contratos.clientes.numero", "is", null)
-    .eq("contratos.clientes.cidade", "Belo Horizonte");
+    .not("contratos.clientes.numero", "is", null);
+
+  // Filtro de cidade
+  if (filters.cidade && filters.cidade !== "all") {
+    query = query.eq("contratos.clientes.cidade", filters.cidade);
+  }
 
   if (filters.status && filters.status !== "all") {
     query = query.eq("status", filters.status as any);

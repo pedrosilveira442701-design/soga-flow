@@ -125,8 +125,11 @@ export async function geocodeEndereco(
     }
 
     // Falhou completamente - NÃO SALVAR NO CACHE
-    console.error(`❌ Geocoding falhou completamente para ${enderecoCompleto}`);
-    console.error(`Status: ${data.status}, Message: ${data.error_message || 'N/A'}`);
+    console.error(`❌ Geocoding falhou para:`);
+    console.error(`   Endereço: ${enderecoCompleto}`);
+    console.error(`   CEP: ${cep} | Número: ${numero}`);
+    console.error(`   Status API: ${data.status}, Message: ${data.error_message || 'N/A'}`);
+    console.warn(`⚠️ Usando centro de BH como fallback (marcador será filtrado)`);
     return BH_CENTER;
     
   } catch (error) {

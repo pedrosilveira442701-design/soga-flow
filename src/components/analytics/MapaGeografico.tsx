@@ -30,6 +30,11 @@ const center = {
   lng: -43.9345,
 };
 
+// Constantes para detecção de geocoding inválido
+const BH_CENTER_LAT = -19.9167;
+const BH_CENTER_LNG = -43.9345;
+const GEOCODING_TOLERANCE = 0.0001; // ~11 metros
+
 const mapOptions = {
   disableDefaultUI: false,
   zoomControl: true,
@@ -91,7 +96,10 @@ export function MapaGeografico() {
   // Geocodificar pontos
   useEffect(() => {
     const geocodePontos = async () => {
-      if (pontos.length === 0) return;
+      if (pontos.length === 0) {
+        setMarkers([]);
+        return;
+      }
       
       setIsGeocoding(true);
       const geocodedMarkers: MarkerData[] = [];
@@ -112,7 +120,20 @@ export function MapaGeografico() {
         }
       }
 
-      setMarkers(geocodedMarkers);
+      // Filtrar marcadores que estão exatamente no centro (geocoding falhou)
+      const validMarkers = geocodedMarkers.filter((marker) => {
+        const isExactCenter = 
+          Math.abs(marker.position.lat - BH_CENTER_LAT) < GEOCODING_TOLERANCE &&
+          Math.abs(marker.position.lng - BH_CENTER_LNG) < GEOCODING_TOLERANCE;
+        
+        if (isExactCenter) {
+          console.warn(`⚠️ Marcador filtrado (geocoding falhou): ${marker.cliente_nome} - CEP: ${marker.cep}`);
+        }
+        
+        return !isExactCenter;
+      });
+
+      setMarkers(validMarkers);
       setIsGeocoding(false);
     };
 
@@ -323,9 +344,10 @@ export function MapaGeografico() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Mapa Geográfico - Belo Horizonte</CardTitle>
+          <CardTitle>Mapa Geográfico</CardTitle>
           <CardDescription>
-            Visualização de {filters.modo} por localização com CEP
+            Visualização de {filters.modo} por localização
+            {filters.cidade && filters.cidade !== "all" && ` - ${filters.cidade}`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -355,12 +377,27 @@ export function MapaGeografico() {
           {/* KPIs */}
           <MapaKPICards kpis={kpis} modo={filters.modo} />
 
+          {/* Aviso de registros com geocoding inválido */}
+          {pontos.length > markers.length && markers.length > 0 && (
+            <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-yellow-900 dark:text-yellow-200">
+                  {pontos.length - markers.length} registro(s) oculto(s) no mapa
+                </p>
+                <p className="text-yellow-700 dark:text-yellow-300">
+                  Endereços com CEPs inválidos ou incompletos não aparecem. Verifique os dados dos clientes.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Aviso de sem dados */}
           {!isLoading && markers.length === 0 && pontos.length === 0 && (
             <div className="p-8 text-center bg-muted/50 rounded-lg border border-dashed">
               <AlertCircle className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
               <p className="text-muted-foreground font-medium">
-                Nenhum registro encontrado em Belo Horizonte com os filtros selecionados.
+                Nenhum registro encontrado com os filtros selecionados.
               </p>
               <p className="text-sm text-muted-foreground mt-2">
                 Certifique-se de que os clientes têm CEP e número preenchidos.

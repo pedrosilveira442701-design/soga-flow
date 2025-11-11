@@ -90,6 +90,31 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
           </Select>
         </div>
 
+        {/* Cidade */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Cidade</label>
+          <Select
+            value={filters.cidade || "all"}
+            onValueChange={(value) =>
+              onChange({ ...filters, cidade: value === "all" ? undefined : value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Todas as cidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="Belo Horizonte">Belo Horizonte</SelectItem>
+              <SelectItem value="Contagem">Contagem</SelectItem>
+              <SelectItem value="Betim">Betim</SelectItem>
+              <SelectItem value="Nova Lima">Nova Lima</SelectItem>
+              <SelectItem value="Sabará">Sabará</SelectItem>
+              <SelectItem value="Ribeirão das Neves">Ribeirão das Neves</SelectItem>
+              <SelectItem value="Santa Luzia">Santa Luzia</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Bairro */}
         <div>
           <label className="text-sm font-medium mb-2 block">Bairro</label>
@@ -261,7 +286,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
       </div>
 
       {/* Botão Limpar Filtros */}
-      {(filters.status || filters.periodo_inicio || filters.periodo_fim || filters.origem || filters.bairro || filters.valor_min || filters.valor_max) && (
+      {(filters.status || filters.periodo_inicio || filters.periodo_fim || filters.origem || filters.bairro || filters.cidade || filters.valor_min || filters.valor_max) && (
         <Button
           variant="ghost"
           size="sm"
@@ -273,6 +298,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
               periodo_fim: undefined,
               origem: undefined,
               bairro: undefined,
+              cidade: undefined,
               valor_min: undefined,
               valor_max: undefined,
             })
