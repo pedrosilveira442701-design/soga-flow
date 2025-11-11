@@ -372,24 +372,24 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       },
       // Novos KPIs de Pipeline
       totalPropostasCount: {
-        value: `${countTotal} proposta${countTotal !== 1 ? 's' : ''}`,
-        subValue: formatCurrency(todasPropostas),
-        delta: calculateDelta(countTotal, countTotalAnterior),
+        value: formatCurrency(todasPropostas),
+        subValue: `${countTotal} proposta${countTotal !== 1 ? 's' : ''}`,
+        delta: calculateDelta(todasPropostas, todasPropostasAnterior),
       },
       propostasPerdidas: {
-        value: `${countPerdidas} proposta${countPerdidas !== 1 ? 's' : ''}`,
-        subValue: formatCurrency(propostasPerdidas),
-        delta: calculateDelta(countPerdidas, countPerdidasAnterior),
+        value: formatCurrency(propostasPerdidas),
+        subValue: `${countPerdidas} proposta${countPerdidas !== 1 ? 's' : ''}`,
+        delta: calculateDelta(propostasPerdidas, propostasPerdidasAnterior),
       },
       propostasRepouso: {
-        value: `${countRepouso} proposta${countRepouso !== 1 ? 's' : ''}`,
-        subValue: formatCurrency(propostasRepouso),
-        delta: calculateDelta(countRepouso, countRepousoAnterior),
+        value: formatCurrency(propostasRepouso),
+        subValue: `${countRepouso} proposta${countRepouso !== 1 ? 's' : ''}`,
+        delta: calculateDelta(propostasRepouso, propostasRepousoAnterior),
       },
       propostasAtivas: {
-        value: `${countAtivas} proposta${countAtivas !== 1 ? 's' : ''}`,
-        subValue: formatCurrency(totalPropostas),
-        delta: calculateDelta(countAtivas, countAtivasAnterior),
+        value: formatCurrency(totalPropostas),
+        subValue: `${countAtivas} proposta${countAtivas !== 1 ? 's' : ''}`,
+        delta: calculateDelta(totalPropostas, totalPropostasAnterior),
       },
       // Dados para o gráfico
       pipelineDistribution: [
