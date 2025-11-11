@@ -107,29 +107,39 @@ export default function Propostas() {
   // KPIs - Recalculados localmente para garantir precisão
   const kpis = useMemo(() => {
     const total = propostas.length;
+    
+    // Contar propostas por status
+    const perdidas = propostas.filter((p) => p.status === "perdida").length;
+    const repouso = propostas.filter((p) => p.status === "repouso").length;
+    const ativas = total - perdidas - repouso;
+    
+    // Valores financeiros
+    const calcularValorLiquido = (p: any) => {
+      const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
+        ? p.servicos
+        : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
+      
+      const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+      const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
+      const desconto = p.desconto || 0;
+      const totalComDesconto = totalBruto - desconto;
+      return totalComDesconto - totalCusto;
+    };
+    
+    const valorTotal = propostas.reduce((sum, p) => sum + calcularValorLiquido(p), 0);
+    const valorPerdidas = propostas
+      .filter((p) => p.status === "perdida")
+      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
+    const valorRepouso = propostas
+      .filter((p) => p.status === "repouso")
+      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
+    const valorReal = valorTotal - valorPerdidas - valorRepouso;
+    
+    // Taxa de fechamento sobre volume real
     const fechadas = propostas.filter((p) => p.status === "fechada").length;
-    const taxaFechamento = total > 0 ? (fechadas / total) * 100 : 0;
+    const taxaFechamento = ativas > 0 ? (fechadas / ativas) * 100 : 0;
     
-    // Valor em Aberto: soma do VALOR LÍQUIDO (lucro) de todas as propostas abertas
-    // Valor Líquido = (Total Bruto - Desconto) - Custo Total
-    const valorEmAberto = propostas
-      .filter((p) => p.status === "aberta")
-      .reduce((sum, p) => {
-        const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
-          ? p.servicos
-          : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
-        
-        const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
-        const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
-        const desconto = p.desconto || 0;
-        const totalComDesconto = totalBruto - desconto;
-        const liquido = totalComDesconto - totalCusto;
-        
-        return sum + liquido;
-      }, 0);
-    
-    // Margem Média: média da margem percentual de todas as propostas
-    // Margem % = (Valor Líquido / Total com Desconto) * 100
+    // Margem Média de todas as propostas
     const margemMedia =
       propostas.length > 0
         ? propostas.reduce((sum, p) => {
@@ -148,7 +158,18 @@ export default function Propostas() {
           }, 0) / propostas.length
         : 0;
 
-    return { total, taxaFechamento, valorEmAberto, margemMedia };
+    return { 
+      total, 
+      perdidas, 
+      repouso, 
+      ativas, 
+      valorTotal,
+      valorPerdidas,
+      valorRepouso,
+      valorReal,
+      taxaFechamento, 
+      margemMedia 
+    };
   }, [propostas]);
 
   const formatCurrency = (value: number) => {
@@ -161,6 +182,7 @@ export default function Propostas() {
   const statusOptions = [
     { value: "aberta", label: "Aberta", variant: "default" as const },
     { value: "fechada", label: "Fechada", variant: "secondary" as const },
+    { value: "repouso", label: "Repouso", variant: "outline" as const },
     { value: "perdida", label: "Perdida", variant: "destructive" as const },
   ];
 
@@ -258,7 +280,7 @@ export default function Propostas() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
@@ -266,26 +288,48 @@ export default function Propostas() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatCurrency(kpis.valorTotal)}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa de Fechamento</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Perdidas</CardTitle>
+            <X className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kpis.taxaFechamento.toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-destructive">{kpis.perdidas}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatCurrency(kpis.valorPerdidas)}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Valor em Aberto</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Repouso</CardTitle>
+            <div className="h-4 w-4 text-muted-foreground">💤</div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(kpis.valorEmAberto)}</div>
+            <div className="text-2xl font-bold text-muted-foreground">{kpis.repouso}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatCurrency(kpis.valorRepouso)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Volume Real (Ativas)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{kpis.ativas}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatCurrency(kpis.valorReal)}
+            </p>
           </CardContent>
         </Card>
 
@@ -298,6 +342,9 @@ export default function Propostas() {
             <div className={`text-2xl font-bold ${getMargemColor(kpis.margemMedia)}`}>
               {kpis.margemMedia.toFixed(1)}%
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Taxa: {kpis.taxaFechamento.toFixed(1)}%
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -322,6 +369,7 @@ export default function Propostas() {
             <SelectItem value="todas">Todos os Status</SelectItem>
             <SelectItem value="aberta">Abertas</SelectItem>
             <SelectItem value="fechada">Fechadas</SelectItem>
+            <SelectItem value="repouso">Repouso</SelectItem>
             <SelectItem value="perdida">Perdidas</SelectItem>
           </SelectContent>
         </Select>

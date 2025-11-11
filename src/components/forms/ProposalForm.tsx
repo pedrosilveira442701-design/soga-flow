@@ -477,6 +477,7 @@ export default function ProposalForm({
                       <SelectContent>
                         <SelectItem value="aberta">Aberta</SelectItem>
                         <SelectItem value="fechada">Fechada</SelectItem>
+                        <SelectItem value="repouso">Repouso</SelectItem>
                         <SelectItem value="perdida">Perdida</SelectItem>
                       </SelectContent>
                     </Select>

@@ -298,7 +298,15 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
     // PERÍODO ATUAL
-    const totalPropostas = propostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const todasPropostas = propostas.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const propostasPerdidas = propostas
+      .filter(p => p.status === 'perdida')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const propostasRepouso = propostas
+      .filter(p => p.status === 'repouso')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const totalPropostas = todasPropostas - propostasPerdidas - propostasRepouso;
+    
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     const recebidoAtual = parcelasPagasAtual.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
@@ -319,7 +327,15 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     });
 
     // PERÍODO ANTERIOR
-    const totalPropostasAnterior = propostasAnterior.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const todasPropostasAnterior = propostasAnterior.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const propostasPerdidasAnterior = propostasAnterior
+      .filter(p => p.status === 'perdida')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const propostasRepousoAnterior = propostasAnterior
+      .filter(p => p.status === 'repouso')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    const totalPropostasAnterior = todasPropostasAnterior - propostasPerdidasAnterior - propostasRepousoAnterior;
+    
     const totalContratosAnterior = contratosAnterior.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     const recebidoAnterior = parcelasPagasAnterior.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 

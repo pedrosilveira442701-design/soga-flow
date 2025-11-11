@@ -34,7 +34,7 @@ export default function Dashboard() {
       icon: DollarSign,
     },
     {
-      title: "Valor Total de Propostas",
+      title: "Volume Real de Propostas",
       value: kpis.totalPropostas.value,
       delta: kpis.totalPropostas.delta,
       icon: FileText,
