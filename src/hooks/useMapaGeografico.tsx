@@ -8,6 +8,8 @@ export interface MapaFilters {
   periodo_fim?: Date;
   origem?: string;
   bairro?: string;
+  valor_min?: number;
+  valor_max?: number;
 }
 
 export interface MapaDataPoint {
@@ -120,6 +122,18 @@ async function fetchPropostas(filters: MapaFilters): Promise<MapaDataPoint[]> {
     query = query.lte("data", filters.periodo_fim.toISOString());
   }
 
+  if (filters.bairro && filters.bairro !== "all") {
+    query = query.eq("clientes.bairro", filters.bairro);
+  }
+
+  if (filters.valor_min) {
+    query = query.gte("valor_total", filters.valor_min);
+  }
+
+  if (filters.valor_max) {
+    query = query.lte("valor_total", filters.valor_max);
+  }
+
   const { data, error } = await query;
 
   if (error) {
@@ -164,16 +178,13 @@ async function fetchPropostas(filters: MapaFilters): Promise<MapaDataPoint[]> {
   );
 
   // Filtrar por origem se necessário
+  let resultado = propostasComOrigem;
+  
   if (filters.origem && filters.origem !== "all") {
-    return propostasComOrigem.filter((p) => p.origem === filters.origem);
+    resultado = resultado.filter((p) => p.origem === filters.origem);
   }
 
-  // Filtrar por bairro se necessário
-  if (filters.bairro && filters.bairro !== "all") {
-    return propostasComOrigem.filter((p) => p.bairro === filters.bairro);
-  }
-
-  return propostasComOrigem;
+  return resultado;
 }
 
 async function fetchContratos(filters: MapaFilters): Promise<MapaDataPoint[]> {
@@ -212,9 +223,21 @@ async function fetchContratos(filters: MapaFilters): Promise<MapaDataPoint[]> {
     query = query.gte("data_inicio", filters.periodo_inicio.toISOString());
   }
 
-  if (filters.periodo_fim) {
-    query = query.lte("data_inicio", filters.periodo_fim.toISOString());
-  }
+      if (filters.periodo_fim) {
+        query = query.lte("data_inicio", filters.periodo_fim.toISOString());
+      }
+
+      if (filters.bairro && filters.bairro !== "all") {
+        query = query.eq("clientes.bairro", filters.bairro);
+      }
+
+      if (filters.valor_min) {
+        query = query.gte("valor_negociado", filters.valor_min);
+      }
+
+      if (filters.valor_max) {
+        query = query.lte("valor_negociado", filters.valor_max);
+      }
 
   const { data, error } = await query;
 
@@ -284,6 +307,18 @@ async function fetchObras(filters: MapaFilters): Promise<MapaDataPoint[]> {
 
   if (filters.periodo_fim) {
     query = query.lte("created_at", filters.periodo_fim.toISOString());
+  }
+
+  if (filters.bairro && filters.bairro !== "all") {
+    query = query.eq("contratos.clientes.bairro", filters.bairro);
+  }
+
+  if (filters.valor_min) {
+    query = query.gte("contratos.valor_negociado", filters.valor_min);
+  }
+
+  if (filters.valor_max) {
+    query = query.lte("contratos.valor_negociado", filters.valor_max);
   }
 
   const { data, error } = await query;

@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { CalendarIcon, DollarSign } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +66,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
         </Button>
       </div>
 
-      {/* Filtros Secundários */}
+      {/* Filtros Secundários - Linha 1 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Status */}
         <div>
@@ -88,6 +89,70 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Bairro */}
+        <div>
+          <label className="text-sm font-medium mb-2 block">Bairro</label>
+          <Select
+            value={filters.bairro || "all"}
+            onValueChange={(value) =>
+              onChange({ ...filters, bairro: value === "all" ? undefined : value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="Savassi">Savassi</SelectItem>
+              <SelectItem value="Funcionários">Funcionários</SelectItem>
+              <SelectItem value="Lourdes">Lourdes</SelectItem>
+              <SelectItem value="Santo Agostinho">Santo Agostinho</SelectItem>
+              <SelectItem value="Serra">Serra</SelectItem>
+              <SelectItem value="São Bento">São Bento</SelectItem>
+              <SelectItem value="Anchieta">Anchieta</SelectItem>
+              <SelectItem value="Sion">Sion</SelectItem>
+              <SelectItem value="Gutierrez">Gutierrez</SelectItem>
+              <SelectItem value="Mangabeiras">Mangabeiras</SelectItem>
+              <SelectItem value="Belvedere">Belvedere</SelectItem>
+              <SelectItem value="Buritis">Buritis</SelectItem>
+              <SelectItem value="Castelo">Castelo</SelectItem>
+              <SelectItem value="Santa Efigênia">Santa Efigênia</SelectItem>
+              <SelectItem value="Centro">Centro</SelectItem>
+              <SelectItem value="Prado">Prado</SelectItem>
+              <SelectItem value="Santa Tereza">Santa Tereza</SelectItem>
+              <SelectItem value="Barreiro">Barreiro</SelectItem>
+              <SelectItem value="Venda Nova">Venda Nova</SelectItem>
+              <SelectItem value="Pampulha">Pampulha</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Origem - apenas para propostas */}
+        {filters.modo === "propostas" && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Origem</label>
+            <Select
+              value={filters.origem || "all"}
+              onValueChange={(value) =>
+                onChange({ ...filters, origem: value === "all" ? undefined : value })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="Instagram">Instagram</SelectItem>
+                <SelectItem value="Orgânico">Orgânico</SelectItem>
+                <SelectItem value="Indicação">Indicação</SelectItem>
+                <SelectItem value="Sindico Profissional">Síndico Profissional</SelectItem>
+                <SelectItem value="Google">Google</SelectItem>
+                <SelectItem value="Outro">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Data Início */}
         <div>
@@ -152,36 +217,51 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
             </PopoverContent>
           </Popover>
         </div>
+      </div>
 
-        {/* Origem - apenas para propostas */}
-        {filters.modo === "propostas" && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Origem</label>
-            <Select
-              value={filters.origem || "all"}
-              onValueChange={(value) =>
-                onChange({ ...filters, origem: value === "all" ? undefined : value })
+      {/* Filtros de Valor - Linha 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Valor Mínimo</label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="number"
+              placeholder="R$ 0"
+              className="pl-9"
+              value={filters.valor_min || ""}
+              onChange={(e) =>
+                onChange({
+                  ...filters,
+                  valor_min: e.target.value ? Number(e.target.value) : undefined,
+                })
               }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="Instagram">Instagram</SelectItem>
-                <SelectItem value="Orgânico">Orgânico</SelectItem>
-                <SelectItem value="Indicação">Indicação</SelectItem>
-                <SelectItem value="Sindico Profissional">Síndico Profissional</SelectItem>
-                <SelectItem value="Google">Google</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
-              </SelectContent>
-            </Select>
+            />
           </div>
-        )}
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-2 block">Valor Máximo</label>
+          <div className="relative">
+            <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="number"
+              placeholder="R$ 999.999"
+              className="pl-9"
+              value={filters.valor_max || ""}
+              onChange={(e) =>
+                onChange({
+                  ...filters,
+                  valor_max: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+            />
+          </div>
+        </div>
       </div>
 
       {/* Botão Limpar Filtros */}
-      {(filters.status || filters.periodo_inicio || filters.periodo_fim || filters.origem) && (
+      {(filters.status || filters.periodo_inicio || filters.periodo_fim || filters.origem || filters.bairro || filters.valor_min || filters.valor_max) && (
         <Button
           variant="ghost"
           size="sm"
@@ -192,6 +272,9 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
               periodo_inicio: undefined,
               periodo_fim: undefined,
               origem: undefined,
+              bairro: undefined,
+              valor_min: undefined,
+              valor_max: undefined,
             })
           }
         >
