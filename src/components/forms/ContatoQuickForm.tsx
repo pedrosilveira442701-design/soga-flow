@@ -44,6 +44,7 @@ const ORIGENS = [
 
 const contatoSchema = z.object({
   telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
+  nome: z.string().trim().max(100, "Nome deve ter no máximo 100 caracteres").optional(),
   data: z.date(),
   hora: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido (HH:MM)"),
   origem: z.string().min(1, "Selecione a origem do contato"),
@@ -65,6 +66,7 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading }: Contat
     resolver: zodResolver(contatoSchema),
     defaultValues: {
       telefone: "",
+      nome: "",
       data: new Date(),
       hora: format(new Date(), "HH:mm"),
       origem: "",
@@ -99,6 +101,23 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading }: Contat
                     field.onChange(e);
                     setShowLeadCheckbox(true);
                   }}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nome"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Nome do contato (opcional)"
+                  {...field}
                 />
               </FormControl>
               <FormMessage />

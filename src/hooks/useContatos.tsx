@@ -6,6 +6,7 @@ export interface Contato {
   id: string;
   user_id: string;
   telefone: string;
+  nome?: string | null;
   data_hora: string;
   origem: string;
   converteu_lead: boolean;
@@ -16,6 +17,7 @@ export interface Contato {
 
 export interface CreateContatoData {
   telefone: string;
+  nome?: string;
   data_hora: string;
   origem: string;
 }

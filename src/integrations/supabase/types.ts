@@ -150,6 +150,7 @@ export type Database = {
           data_hora: string
           id: string
           lead_id: string | null
+          nome: string | null
           origem: string
           telefone: string
           updated_at: string
@@ -161,6 +162,7 @@ export type Database = {
           data_hora?: string
           id?: string
           lead_id?: string | null
+          nome?: string | null
           origem: string
           telefone: string
           updated_at?: string
@@ -172,6 +174,7 @@ export type Database = {
           data_hora?: string
           id?: string
           lead_id?: string | null
+          nome?: string | null
           origem?: string
           telefone?: string
           updated_at?: string
