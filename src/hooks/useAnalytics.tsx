@@ -111,21 +111,25 @@ export interface ConversionRatesData {
 
 // Probabilidades por estágio (configuráveis futuramente)
 const STAGE_PROBABILITIES: Record<string, number> = {
-  novo: 0.1,
-  contato: 0.3,
-  negociacao: 0.5,
-  proposta_enviada: 0.7,
-  fechado_ganho: 1.0,
-  perdido: 0.0,
+  contato: 0.1,
+  visita_agendada: 0.2,
+  visita_realizada: 0.4,
+  proposta_pendente: 0.5,
+  proposta: 0.7,
+  contrato: 1.0,
+  execucao: 1.0,
+  finalizado: 1.0,
 };
 
 const STAGE_LABELS: Record<string, string> = {
-  novo: "Novo",
   contato: "Contato",
-  negociacao: "Negociação",
-  proposta_enviada: "Proposta Enviada",
-  fechado_ganho: "Fechado",
-  perdido: "Perdido",
+  visita_agendada: "Visita Agendada",
+  visita_realizada: "Visita Realizada",
+  proposta_pendente: "Proposta Pendente",
+  proposta: "Proposta",
+  contrato: "Contrato",
+  execucao: "Em Execução",
+  finalizado: "Finalizado",
 };
 
 export function useAnalytics(filters: AnalyticsFilters = {}) {
@@ -168,7 +172,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       }, {} as Record<string, typeof leads>);
 
       const totalLeads = leads.length;
-      const stages = ["novo", "contato", "negociacao", "proposta_enviada", "fechado_ganho", "perdido"];
+      const stages = ["contato", "visita_agendada", "visita_realizada", "proposta_pendente", "proposta", "contrato", "execucao", "finalizado"];
 
       const result: FunnelStageData[] = stages.map((estagio) => {
         const stageLeads = stageGroups[estagio] || [];
@@ -210,8 +214,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       let query = supabase
         .from("leads")
         .select("estagio, valor_potencial")
-        .eq("user_id", user.id)
-        .not("estagio", "eq", "perdido");
+        .eq("user_id", user.id);
 
       if (filters.startDate) {
         query = query.gte("created_at", filters.startDate.toISOString());
@@ -235,7 +238,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         return acc;
       }, {} as Record<string, typeof leads>);
 
-      const stages = ["novo", "contato", "negociacao", "proposta_enviada", "fechado_ganho"];
+      const stages = ["contato", "visita_agendada", "visita_realizada", "proposta_pendente", "proposta", "contrato", "execucao", "finalizado"];
 
       const result: PipelineData[] = stages.map((estagio) => {
         const stageLeads = stageGroups[estagio] || [];
@@ -622,7 +625,9 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
             ? data.margens.reduce((sum, m) => sum + m, 0) / data.margens.length
             : 0;
 
-          const leads_fechados = data.leads.filter((l) => l.estagio === "contrato").length;
+          const leads_fechados = data.leads.filter((l) => 
+            ["contrato", "execucao", "finalizado"].includes(l.estagio)
+          ).length;
           const taxa_conversao = data.leads.length > 0
             ? (leads_fechados / data.leads.length) * 100
             : 0;
@@ -691,7 +696,9 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       const result: ResponseSpeedData[] = buckets
         .filter((b) => b.leads.length > 0)
         .map((bucket) => {
-          const fechados = bucket.leads.filter((l) => l.estagio === "contrato").length;
+          const fechados = bucket.leads.filter((l) => 
+            ["contrato", "execucao", "finalizado"].includes(l.estagio)
+          ).length;
           const taxa_conversao = (fechados / bucket.leads.length) * 100;
 
           return {
@@ -851,7 +858,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         const cohort = cohortMap.get(mesOrigem)!;
         cohort.total += 1;
         
-        if (lead.estagio === 'fechado_ganho') {
+        if (["contrato", "execucao", "finalizado"].includes(lead.estagio)) {
           cohort.convertidos += 1;
           cohort.dias.push(15);
         }
@@ -896,9 +903,11 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         const loss = lossMap.get(mes)!;
         loss.total += 1;
         
-        if (lead.estagio === 'perdido') {
-          loss.perdidas += 1;
-        }
+        // Nota: Não existe estágio "perdido" no sistema atual.
+        // Para análise de perdas, considerar propostas com status "perdida"
+        // if (lead.estagio === 'perdido') {
+        //   loss.perdidas += 1;
+        // }
       });
 
       const result: LossReasonData[] = Array.from(lossMap.entries()).map(([mes, data]) => ({
