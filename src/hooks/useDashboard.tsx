@@ -141,8 +141,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
             .select("*")
             .eq("contrato_id", contrato.id)
             .in("status", ["pendente", "atrasado"])
-            .gte("data_vencimento", format(startDate, "yyyy-MM-dd"))
-            .lte("data_vencimento", format(endDate, "yyyy-MM-dd"));
+            .gte("vencimento", format(startDate, "yyyy-MM-dd"))
+            .lte("vencimento", format(endDate, "yyyy-MM-dd"));
 
           return {
             ...contrato,
