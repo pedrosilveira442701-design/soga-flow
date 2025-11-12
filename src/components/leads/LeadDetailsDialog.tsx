@@ -174,7 +174,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                 <Button
                   variant="outline"
                   size="icon"
-                  ClassName="h-9 w-9" // 👈 aumenta área de clique
+                  className="h-9 w-9" // 👈 aumenta área de clique
                   onClick={() => onEdit(lead)}
                 >
                   <Pencil className="h-6 w-6" />
