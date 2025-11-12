@@ -39,11 +39,17 @@ export default function Financeiro() {
     status: "",
     formaPagamento: "",
   });
+  const [apenasEmAberto, setApenasEmAberto] = useState(false);
   const [parcelasSelecionadas, setParcelasSelecionadas] = useState<string[]>([]);
   const [marcarPagoOpen, setMarcarPagoOpen] = useState(false);
 
-  const { parcelas, isLoading, kpis, fluxoCaixa, isLoadingFluxo, marcarComoPago } =
+  const { parcelas: todasParcelas, isLoading, kpis, fluxoCaixa, isLoadingFluxo, marcarComoPago } =
     useFinanceiro(filters);
+
+  // Filtrar parcelas em aberto se necessário
+  const parcelas = apenasEmAberto
+    ? todasParcelas.filter((p) => p.status === "pendente" || p.status === "atrasado")
+    : todasParcelas;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -239,6 +245,14 @@ export default function Financeiro() {
               >
                 Este Mês
               </Button>
+              <Button
+                variant={apenasEmAberto ? "default" : "outline"}
+                size="sm"
+                onClick={() => setApenasEmAberto(!apenasEmAberto)}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Apenas em Aberto
+              </Button>
             </div>
 
             {/* Filtros Avançados */}
@@ -342,6 +356,7 @@ export default function Financeiro() {
                     <TableHead>Contrato</TableHead>
                     <TableHead>Parcela</TableHead>
                     <TableHead>Valor</TableHead>
+                    <TableHead>Lucro Realizado</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data Pgto</TableHead>
@@ -379,6 +394,12 @@ export default function Financeiro() {
                         <TableCell className="font-semibold">
                           {formatCurrency(Number(parcela.valor_liquido_parcela))}
                         </TableCell>
+                        <TableCell className="font-semibold text-green-600">
+                          {formatCurrency(
+                            Number(parcela.valor_liquido_parcela) *
+                              (Number(parcela.contrato?.margem_pct || 0) / 100)
+                          )}
+                        </TableCell>
                         <TableCell>
                           {format(
                             new Date(parcela.vencimento + "T00:00:00"),
@@ -405,19 +426,51 @@ export default function Financeiro() {
 
               {/* Footer com Totalização */}
               <div className="border-t p-4 bg-muted/50">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">
-                    Total: {parcelas.length} parcela{parcelas.length !== 1 ? "s" : ""}
-                  </p>
-                  <p className="text-lg font-bold">
-                    Total:{" "}
-                    {formatCurrency(
-                      parcelas.reduce(
-                        (sum, p) => sum + Number(p.valor_liquido_parcela),
-                        0
-                      )
-                    )}
-                  </p>
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      Total: {parcelas.length} parcela{parcelas.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground mb-1">Total Recebido</span>
+                      <span className="text-lg font-bold text-blue-600">
+                        {formatCurrency(
+                          parcelas
+                            .filter((p) => p.status === "pago")
+                            .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0)
+                        )}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground mb-1">Total a Receber</span>
+                      <span className="text-lg font-bold text-amber-600">
+                        {formatCurrency(
+                          parcelas
+                            .filter((p) => p.status === "pendente" || p.status === "atrasado")
+                            .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0)
+                        )}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground mb-1">Lucro Realizado a Receber</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {formatCurrency(
+                          parcelas
+                            .filter((p) => p.status === "pendente" || p.status === "atrasado")
+                            .reduce((sum, p) => {
+                              const valor = Number(p.valor_liquido_parcela);
+                              const margemPct = Number(p.contrato?.margem_pct || 0);
+                              return sum + (valor * (margemPct / 100));
+                            }, 0)
+                        )}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
