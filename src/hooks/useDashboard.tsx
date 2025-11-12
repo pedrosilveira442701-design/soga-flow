@@ -121,9 +121,9 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     enabled: !!user?.id,
   });
 
-  // 3. Buscar todos os contratos ativos com suas parcelas e margem
+  // 3. Buscar todos os contratos ativos com suas parcelas e margem (filtrado por período)
   const { data: contratosComParcelas = [] } = useQuery({
-    queryKey: ["contratos-parcelas", user?.id],
+    queryKey: ["contratos-parcelas", user?.id, filters.period, startDate, endDate],
     queryFn: async () => {
       const { data: contratosData, error: contratosError } = await supabase
         .from("contratos")
@@ -133,14 +133,16 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
       if (contratosError) throw contratosError;
 
-      // Buscar parcelas pendentes para cada contrato
+      // Buscar parcelas pendentes que vencem no período selecionado
       const contratosComParcelasData = await Promise.all(
         (contratosData || []).map(async (contrato) => {
           const { data: parcelas } = await supabase
             .from("financeiro_parcelas")
             .select("*")
             .eq("contrato_id", contrato.id)
-            .in("status", ["pendente", "atrasado"]);
+            .in("status", ["pendente", "atrasado"])
+            .gte("data_vencimento", format(startDate, "yyyy-MM-dd"))
+            .lte("data_vencimento", format(endDate, "yyyy-MM-dd"));
 
           return {
             ...contrato,
