@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2, Wallet } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2, Wallet, TrendingUp } from "lucide-react";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
@@ -21,7 +21,7 @@ export default function Dashboard() {
     customDateRange,
   });
 
-  const kpiData: Array<{
+  const kpiDataFinanceiro: Array<{
     title: string;
     value: string;
     delta?: { value: string; direction: "up" | "down" };
@@ -40,6 +40,21 @@ export default function Dashboard() {
       variant: "success" as const,
       icon: Wallet,
     },
+    {
+      title: "Margem Líquida a Receber",
+      value: kpis.totalAReceberLiquido.value,
+      variant: "liquid" as const,
+      icon: TrendingUp,
+    },
+  ];
+
+  const kpiDataOperacional: Array<{
+    title: string;
+    value: string;
+    delta?: { value: string; direction: "up" | "down" };
+    variant?: "default" | "liquid" | "success";
+    icon: any;
+  }> = [
     {
       title: "Volume Real de Propostas",
       value: kpis.totalPropostas.value,
@@ -86,27 +101,53 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Row 1: KPI Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))
-        ) : (
-          kpiData.map((kpi) => (
-            <KPICard
-              key={kpi.title}
-              title={kpi.title}
-              value={kpi.value}
-              delta={kpi.delta}
-              variant={kpi.variant}
-              icon={kpi.icon}
-            />
-          ))
-        )}
+      {/* Row 1: KPI Cards - Indicadores Financeiros */}
+      <div>
+        <h2 className="text-h3 mb-4 text-muted-foreground">Indicadores Financeiros</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))
+          ) : (
+            kpiDataFinanceiro.map((kpi) => (
+              <KPICard
+                key={kpi.title}
+                title={kpi.title}
+                value={kpi.value}
+                delta={kpi.delta}
+                variant={kpi.variant}
+                icon={kpi.icon}
+              />
+            ))
+          )}
+        </div>
       </div>
 
-      {/* Row 2: Pipeline de Propostas */}
+      {/* Row 2: KPI Cards - Indicadores Operacionais */}
+      <div>
+        <h2 className="text-h3 mb-4 text-muted-foreground">Indicadores Operacionais</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+          {isLoading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))
+          ) : (
+            kpiDataOperacional.map((kpi) => (
+              <KPICard
+                key={kpi.title}
+                title={kpi.title}
+                value={kpi.value}
+                delta={kpi.delta}
+                variant={kpi.variant}
+                icon={kpi.icon}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Row 3: Pipeline de Propostas */}
       <div>
         <h2 className="text-h2 mb-4">Pipeline de Propostas</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -153,19 +194,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Row 3: Gráfico de Distribuição */}
+      {/* Row 4: Gráfico de Distribuição */}
       {!isLoading && <PipelineDistributionChart data={kpis.pipelineDistribution} />}
 
-      {/* Row 4: Charts */}
+      {/* Row 5: Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <TimelineChart data={timelineData} />
         <FunnelChart data={funnelData} />
       </div>
 
-      {/* Row 5: Tendência de Recebimentos */}
+      {/* Row 6: Tendência de Recebimentos */}
       <RecebimentosTendenciaChart data={recebimentosTendencia} />
 
-      {/* Row 6: Widgets de Vencimentos e Visitas */}
+      {/* Row 7: Widgets de Vencimentos e Visitas */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ProximosVencimentos />
         <ProximasVisitas />
