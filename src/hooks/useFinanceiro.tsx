@@ -16,6 +16,7 @@ export interface ParcelaFinanceira {
     id: string;
     valor_negociado: number;
     forma_pagamento: string;
+    margem_pct: number;
     cliente?: {
       id: string;
       nome: string;
@@ -57,6 +58,7 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
             id,
             valor_negociado,
             forma_pagamento,
+            margem_pct,
             cliente:clientes(
               id,
               nome,
@@ -130,6 +132,14 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
     totalAReceber: parcelasFinais
       .filter((p) => p.status === "pendente" || p.status === "atrasado")
       .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
+
+    totalLucroAReceber: parcelasFinais
+      .filter((p) => p.status === "pendente" || p.status === "atrasado")
+      .reduce((sum, p) => {
+        const valor = Number(p.valor_liquido_parcela);
+        const margemPct = Number(p.contrato?.margem_pct || 0);
+        return sum + (valor * (margemPct / 100));
+      }, 0),
 
     recebidoMes: parcelasFinais
       .filter((p) => {
