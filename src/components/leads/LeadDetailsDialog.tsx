@@ -222,14 +222,17 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                           displayTipo = produto.tipo.replace("Outro:", "Outro —");
                         }
 
+                        // Adicionar metragem se existir
+                        const medidaText = produto.medida ? ` - ${produto.medida}m²` : '';
+
                         return (
                           <Badge
                             key={index}
                             variant="secondary"
                             className="text-caption font-normal"
-                            title={displayTipo}
+                            title={`${displayTipo}${medidaText}`}
                           >
-                            {displayTipo}
+                            {displayTipo}{medidaText}
                           </Badge>
                         );
                       });
