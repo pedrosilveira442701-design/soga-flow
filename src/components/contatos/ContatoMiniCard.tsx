@@ -33,23 +33,16 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
           {contato.nome && (
             <div className="flex items-center gap-2">
               <User className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span className="text-sm font-semibold text-foreground truncate">
-                {contato.nome}
-              </span>
+              <span className="text-sm font-semibold text-foreground truncate">{contato.nome}</span>
             </div>
           )}
           <div className="flex items-center gap-2 flex-wrap">
             <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="text-sm font-medium text-foreground truncate">
-              {contato.telefone}
-            </span>
+            <span className="text-sm font-medium text-foreground truncate">{contato.telefone}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {contato.tag && (
-              <Badge 
-                variant="outline" 
-                className={cn("text-xs", TAG_STYLES[contato.tag])}
-              >
+              <Badge variant="outline" className={cn("text-xs", TAG_STYLES[contato.tag])}>
                 {TAG_LABELS[contato.tag]}
               </Badge>
             )}
@@ -61,19 +54,10 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>
-          {contato.observacoes && (
-            <p className="text-xs text-muted-foreground truncate mt-1">
-              {contato.observacoes}
-            </p>
-          )}
+          {contato.observacoes && <p className="text-xs text-muted-foreground truncate mt-1">{contato.observacoes}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onEdit(contato)}
-            className="h-8 w-8 p-0"
-          >
+          <Button size="sm" variant="ghost" onClick={() => onEdit(contato)} className="h-8 w-8 p-0">
             <Pencil className="h-3.5 w-3.5" />
           </Button>
           <Button
@@ -87,14 +71,11 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
         </div>
       </div>
       <Button
-        size="default"
-        variant="default"
         onClick={() => onConvertToLead(contato)}
-        className="w-full gap-2 h-11 text-sm font-semibold shadow-sm hover:shadow-md transition-all"
-        aria-label="Criar Lead"
+        className="mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 h-9 text-sm font-medium flex items-center gap-1 mx-auto"
       >
-        <ArrowRight className="h-4 w-4" />
-        Criar Lead
+        <span className="text-lg leading-none">＋</span>
+        Lead
       </Button>
     </div>
   );
