@@ -85,13 +85,17 @@ export function KanbanCard({
               displayTipo = produto.tipo.replace("Outro:", "Outro —");
             }
             
+            // Adicionar metragem se existir (verificar tanto number quanto string)
+            const medidaValue = produto.medida;
+            const medidaText = medidaValue && Number(medidaValue) > 0 ? ` - ${medidaValue}m²` : '';
+            
             return (
               <Badge 
                 key={index} 
                 variant="secondary" 
                 className="text-[11px] px-2 py-0.5 font-normal"
               >
-                {displayTipo}
+                {displayTipo}{medidaText}
               </Badge>
             );
           })}
