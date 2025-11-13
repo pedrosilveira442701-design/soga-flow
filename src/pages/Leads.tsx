@@ -114,10 +114,18 @@ export default function Leads() {
     { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
   ];
 
-  const stagesWithCounts = STAGES.map((stage) => ({
-    ...stage,
-    count: leads.filter((lead) => lead.estagio === stage.id).length,
-  }));
+  const stagesWithCounts = STAGES.map((stage) => {
+    const leadsCount = leads.filter((lead) => lead.estagio === stage.id).length;
+    // Para o stage "contato", incluir também os contatos não convertidos
+    const totalCount = stage.id === "contato" 
+      ? leadsCount + naoConvertidos.length 
+      : leadsCount;
+    
+    return {
+      ...stage,
+      count: totalCount,
+    };
+  });
 
   const handleCreateLead = async (values: any, contatoId?: string) => {
     // Processar produtos
