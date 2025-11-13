@@ -87,13 +87,14 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
         </div>
       </div>
       <Button
-        size="sm"
-        variant="outline"
+        size="default"
+        variant="default"
         onClick={() => onConvertToLead(contato)}
-        className="w-full gap-2 h-8 text-xs bg-background hover:bg-accent"
+        className="w-full gap-2 h-11 text-sm font-semibold shadow-sm hover:shadow-md transition-all"
+        aria-label="Criar Lead"
       >
+        <ArrowRight className="h-4 w-4" />
         Criar Lead
-        <ArrowRight className="h-3.5 w-3.5" />
       </Button>
     </div>
   );
