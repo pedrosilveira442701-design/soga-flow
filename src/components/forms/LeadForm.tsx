@@ -105,21 +105,21 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
-    defaultValues: initialData || {
-      cliente_id: "",
-      produtos: [{ tipo: "", tipo_outro: "", medida: "" }],
-      valor_potencial: "",
-      observacoes: "",
-      origem: "",
-      origem_descricao: "",
-      responsavel: "",
-      estagio: "contato",
-      created_at: new Date(),
-      ultima_interacao: new Date(),
+    defaultValues: {
+      cliente_id: initialData?.cliente_id || "",
+      produtos: initialData?.produtos || [{ tipo: "", tipo_outro: "", medida: "" }],
+      valor_potencial: initialData?.valor_potencial || "",
+      observacoes: initialData?.observacoes || "",
+      origem: initialData?.origem || "",
+      origem_descricao: initialData?.origem_descricao || "",
+      responsavel: initialData?.responsavel || "",
+      estagio: initialData?.estagio || "contato",
+      created_at: initialData?.created_at || new Date(),
+      ultima_interacao: initialData?.ultima_interacao || new Date(),
     },
   });
 
-  const produtos = form.watch("produtos");
+  const produtos = form.watch("produtos") || [];
   const origemSelecionada = form.watch("origem");
   const mostrarOrigemDescricao = origemSelecionada === "Indicação" || origemSelecionada === "Outro";
 
