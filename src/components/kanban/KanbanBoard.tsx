@@ -50,11 +50,14 @@ const STAGES = [
   { id: "em_analise", title: "Em análise", color: "qualificado", section: "comercial" },
   { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
 
+  // ANALISE
+  { id: "em_analise", title: "Em Análise", color: "qualificado", section: "comercial" },
+
   // OPERACIONAL
   { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
   { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
 
-  // ⭐ ADICIONE ESTA LINHA ⭐
+  // REPOUSO
   { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
 
   // PERDIDOS
