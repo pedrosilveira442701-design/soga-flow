@@ -414,12 +414,98 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Data de Criação do Lead</FormLabel>
-                <FormControl>
-                  <Input
-                    type="datetime-local"
-                    value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ""}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                <FormField
+                  control={form.control}
+                  name="created_at"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Data de Criação do Lead</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          placeholder="dd/mm/aaaa hh:mm"
+                          value={
+                            field.value instanceof Date
+                              ? format(field.value, "dd/MM/yyyy HH:mm")
+                              : field.value || ""
+                          }
+                          onChange={(e) => {
+                            let v = e.target.value;
+                
+                            // MÁSCARA dd/mm/aaaa HH:mm
+                            v = v
+                              .replace(/\D/g, "")
+                              .replace(/^(\d{2})(\d)/, "$1/$2")
+                              .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
+                              .replace(
+                                /^(\d{2})\/(\d{2})\/(\d{4})(\d)/,
+                                "$1/$2/$3 $4"
+                              )
+                              .replace(
+                                /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/,
+                                "$1/$2/$3 $4:$5"
+                              );
+                
+                            e.target.value = v;
+                
+                            // Quando completar 16 caracteres → converter para Date
+                            if (v.length === 16) {
+                              const [dia, mes, anoHora] = v.split("/");
+                              const [ano, hora] = anoHora.split(" ");
+                              const [hh, mm] = hora.split(":");
+                
+                              const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
+                
+                              if (!isNaN(iso.getTime())) {
+                                field.onChange(iso);
+                                return;
+                              }
+                            }
+                
+                            // Enquanto digita
+                            field.onChange(v);
+                          }}
+                          className="w-full"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                    onChange={(e) => {
+                      let v = e.target.value;
+
+                      // MÁSCARA dd/mm/aaaa HH:mm
+                      v = v
+                        .replace(/\D/g, "")
+                        .replace(/^(\d{2})(\d)/, "$1/$2")
+                        .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
+                        .replace(/^(\d{2})\/(\d{2})\/(\d{4})(\d)/, "$1/$2/$3 $4")
+                        .replace(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/, "$1/$2/$3 $4:$5");
+
+                      e.target.value = v;
+
+                      // quando completar a data (16 caracteres)
+                      if (v.length === 16) {
+                        const [dia, mes, anoHora] = v.split("/");
+                        const [ano, hora] = anoHora.split(" ");
+                        const [hh, mm] = hora.split(":");
+
+                        const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
+                
+                        if (!isNaN(iso.getTime())) {
+                          field.onChange(iso);
+                          return;
+                        }
+                      }
+                
+                      // enquanto digita
+                      field.onChange(v);
+                    }}
                     className="w-full"
+                  />
+                </FormControl>
                   />
                 </FormControl>
                 <FormMessage />
