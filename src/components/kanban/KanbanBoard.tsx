@@ -47,37 +47,32 @@ const STAGES = [
   { id: "visita_realizada", title: "Visita Realizada", color: "contato", section: "comercial" },
   { id: "proposta_pendente", title: "Proposta Pendente", color: "proposta", section: "comercial" },
   { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
+  { id: "em_analise", title: "Em análise", color: "qualificado", section: "comercial" },
+  { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
   { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
-  
+
   // OPERACIONAL
   { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
   { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
-  
+
   // PERDIDOS
   { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
 ] as const;
 
-function SortableCard({ 
-  lead, 
-  onClick, 
-  onMoveToStage, 
+function SortableCard({
+  lead,
+  onClick,
+  onMoveToStage,
   onMarkAsLost,
-  viewMode 
-}: { 
-  lead: Lead; 
+  viewMode,
+}: {
+  lead: Lead;
   onClick: () => void;
   onMoveToStage: (stageId: string) => void;
   onMarkAsLost: () => void;
   viewMode?: "compact" | "normal" | "detailed";
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: lead.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lead.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -105,16 +100,16 @@ function SortableCard({
         currentStage={lead.estagio}
         onMoveToStage={onMoveToStage}
         onMarkAsLost={onMarkAsLost}
-        stages={STAGES.map(s => ({ id: s.id, title: s.title, section: s.section }))}
+        stages={STAGES.map((s) => ({ id: s.id, title: s.title, section: s.section }))}
         viewMode={viewMode}
       />
     </div>
   );
 }
 
-export function KanbanBoard({ 
-  leads, 
-  onStageChange, 
+export function KanbanBoard({
+  leads,
+  onStageChange,
   onCardClick,
   contatosNaoConvertidos = [],
   onConvertContato,
@@ -127,15 +122,15 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isDraggingNearEdge, setIsDraggingNearEdge] = useState<'left' | 'right' | null>(null);
+  const [isDraggingNearEdge, setIsDraggingNearEdge] = useState<"left" | "right" | null>(null);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   // Auto-scroll durante drag
@@ -145,10 +140,10 @@ export function KanbanBoard({
     const scrollSpeed = 15;
     const interval = setInterval(() => {
       if (!containerRef.current) return;
-      
-      if (isDraggingNearEdge === 'left') {
+
+      if (isDraggingNearEdge === "left") {
         containerRef.current.scrollLeft -= scrollSpeed;
-      } else if (isDraggingNearEdge === 'right') {
+      } else if (isDraggingNearEdge === "right") {
         containerRef.current.scrollLeft += scrollSpeed;
       }
     }, 16);
@@ -171,9 +166,9 @@ export function KanbanBoard({
     const edgeThreshold = 100;
 
     if (clientX < containerRect.left + edgeThreshold) {
-      setIsDraggingNearEdge('left');
+      setIsDraggingNearEdge("left");
     } else if (clientX > containerRect.right - edgeThreshold) {
-      setIsDraggingNearEdge('right');
+      setIsDraggingNearEdge("right");
     } else {
       setIsDraggingNearEdge(null);
     }
@@ -181,7 +176,7 @@ export function KanbanBoard({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (!over) return;
 
     const leadId = active.id as string;
@@ -192,7 +187,7 @@ export function KanbanBoard({
       leadId,
       newStage,
       isValidStage: STAGES.some((stage) => stage.id === newStage),
-      validStages: STAGES.map(s => s.id)
+      validStages: STAGES.map((s) => s.id),
     });
 
     if (STAGES.some((stage) => stage.id === newStage)) {
@@ -240,7 +235,7 @@ export function KanbanBoard({
       (window as any).__kanbanNavigateToColumn = (index: number) => {
         const column = columnRefs.current[index];
         if (column && containerRef.current) {
-          column.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+          column.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
         }
       };
     }
@@ -250,28 +245,23 @@ export function KanbanBoard({
   }, [onNavigateToColumn]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragMove={handleDragMove}
-    >
-      <div 
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragMove={handleDragMove}>
+      <div
         ref={containerRef}
         className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)] scroll-smooth"
         style={{
           transform: `scale(${zoom / 100})`,
-          transformOrigin: 'top left',
+          transformOrigin: "top left",
           width: `${100 / (zoom / 100)}%`,
         }}
       >
         {STAGES.map((stage, index) => {
           const stageLeads = getLeadsByStage(stage.id);
-          const isFirstOperacional = stage.section === "operacional" && 
-            (index === 0 || STAGES[index - 1].section !== "operacional");
-          const isFirstPerdido = stage.section === "perdido" && 
-            (index === 0 || STAGES[index - 1].section !== "perdido");
-          
+          const isFirstOperacional =
+            stage.section === "operacional" && (index === 0 || STAGES[index - 1].section !== "operacional");
+          const isFirstPerdido =
+            stage.section === "perdido" && (index === 0 || STAGES[index - 1].section !== "perdido");
+
           return (
             <div key={stage.id} className="flex gap-6">
               {isFirstOperacional && (
@@ -302,7 +292,11 @@ export function KanbanBoard({
                   columnRefs.current[index] = el;
                 }}
                 additionalContent={
-                  stage.id === "contato" && contatosNaoConvertidos.length > 0 && onConvertContato && onEditContato && onDeleteContato ? (
+                  stage.id === "contato" &&
+                  contatosNaoConvertidos.length > 0 &&
+                  onConvertContato &&
+                  onEditContato &&
+                  onDeleteContato ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="h-px flex-1 bg-border/50" />
@@ -330,9 +324,9 @@ export function KanbanBoard({
                 }
               >
                 {stageLeads.map((lead) => (
-                  <SortableCard 
-                    key={lead.id} 
-                    lead={lead} 
+                  <SortableCard
+                    key={lead.id}
+                    lead={lead}
                     onClick={() => onCardClick(lead)}
                     onMoveToStage={(newStage) => handleMoveToStage(lead.id, newStage)}
                     onMarkAsLost={() => handleMarkAsLost(lead.id)}
@@ -350,7 +344,9 @@ export function KanbanBoard({
           <div className="rotate-3 scale-105 shadow-2xl">
             <KanbanCard
               cliente={activeLead.clientes?.nome || "Cliente não identificado"}
-              lastInteraction={activeLead.ultima_interacao ? new Date(activeLead.ultima_interacao) : new Date(activeLead.created_at)}
+              lastInteraction={
+                activeLead.ultima_interacao ? new Date(activeLead.ultima_interacao) : new Date(activeLead.created_at)
+              }
               valorEstimado={Number(activeLead.valor_potencial) || 0}
               produtos={activeLead.produtos as Array<{ tipo: string; medida: number | null }> | null}
               tipoPiso={activeLead.tipo_piso}
