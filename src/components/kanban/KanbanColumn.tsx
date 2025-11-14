@@ -1,8 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -38,9 +35,11 @@ export function KanbanColumn({
     proposta: "bg-orange-500/5 border-orange-500/20",
     ganho: "bg-green-500/5 border-green-500/20",
     perdido: "bg-red-500/5 border-red-500/20",
+    repouso: "bg-gray-500/5 border-gray-500/20",
   };
 
-  const columnWidth = viewMode === "compact" ? "min-w-[240px]" : viewMode === "detailed" ? "min-w-[400px]" : "min-w-[320px]";
+  const columnWidth =
+    viewMode === "compact" ? "min-w-[240px]" : viewMode === "detailed" ? "min-w-[400px]" : "min-w-[320px]";
   const spacing = viewMode === "compact" ? "space-y-2" : "space-y-3";
   const padding = viewMode === "compact" ? "p-2" : "p-3";
 
@@ -66,7 +65,9 @@ export function KanbanColumn({
         ref={setNodeRef}
         className={cn(
           `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all`,
-          isOver ? "border-primary bg-primary/5 shadow-elev2" : colorClasses[color as keyof typeof colorClasses] || colorClasses.default
+          isOver
+            ? "border-primary bg-primary/5 shadow-elev2"
+            : colorClasses[color as keyof typeof colorClasses] || colorClasses.default,
         )}
       >
         <div className={spacing}>
