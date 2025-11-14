@@ -29,65 +29,64 @@ const TIPOS_PRODUTO = [
   "Outro",
 ] as const;
 
-const ORIGENS = [
-  "Instagram",
-  "Orgânico",
-  "Indicação",
-  "Sindico Profissional",
-  "Google",
-  "Outro",
-] as const;
+const ORIGENS = ["Instagram", "Orgânico", "Indicação", "Sindico Profissional", "Google", "Outro"] as const;
 
-const produtoSchema = z.object({
-  tipo: z.string().min(1, "Selecione o tipo"),
-  tipo_outro: z.string().optional(),
-  medida: z.string().optional(),
-}).refine(
-  (data) => {
-    if (data.tipo === "Outro") {
-      return data.tipo_outro && data.tipo_outro.trim().length > 0;
-    }
-    return true;
-  },
-  {
-    message: "Descreva o tipo de produto",
-    path: ["tipo_outro"],
-  },
-);
+const produtoSchema = z
+  .object({
+    tipo: z.string().min(1, "Selecione o tipo"),
+    tipo_outro: z.string().optional(),
+    medida: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.tipo === "Outro") {
+        return data.tipo_outro && data.tipo_outro.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Descreva o tipo de produto",
+      path: ["tipo_outro"],
+    },
+  );
 
-const leadFormSchema = z.object({
-  cliente_id: z.string().min(1, "Selecione um cliente"),
-  produtos: z.array(produtoSchema).min(1, "Adicione pelo menos um produto"),
-  valor_potencial: z.string().min(1, "Informe o valor potencial"),
-  observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
-  origem: z.string().optional(),
-  origem_descricao: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
-  responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
-  estagio: z.enum([
-    "contato",
-    "visita_agendada",
-    "visita_realizada",
-    "proposta_pendente",
-    "proposta",
-    "contrato",
-    "execucao",
-    "finalizado",
-    "perdido",
-  ]),
-  created_at: z.date().optional(),
-  ultima_interacao: z.date().optional(),
-}).refine(
-  (data) => {
-    if (data.origem === "Indicação" || data.origem === "Outro") {
-      return data.origem_descricao && data.origem_descricao.trim().length > 0;
-    }
-    return true;
-  },
-  {
-    message: "Informe a descrição",
-    path: ["origem_descricao"],
-  },
-);
+const leadFormSchema = z
+  .object({
+    cliente_id: z.string().min(1, "Selecione um cliente"),
+    produtos: z.array(produtoSchema).min(1, "Adicione pelo menos um produto"),
+    valor_potencial: z.string().min(1, "Informe o valor potencial"),
+    observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
+    origem: z.string().optional(),
+    origem_descricao: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
+    responsavel: z.string().trim().max(100, "Máximo 100 caracteres").optional(),
+    estagio: z.enum([
+      "contato",
+      "visita_agendada",
+      "visita_realizada",
+      "proposta_pendente",
+      "proposta",
+      "em_analise",
+      "contrato",
+      "execucao",
+      "finalizado",
+      "repouso",
+      "perdido",
+    ]),
+    created_at: z.date().optional(),
+    ultima_interacao: z.date().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.origem === "Indicação" || data.origem === "Outro") {
+        return data.origem_descricao && data.origem_descricao.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Informe a descrição",
+      path: ["origem_descricao"],
+    },
+  );
 
 type LeadFormValues = z.infer<typeof leadFormSchema>;
 
@@ -131,7 +130,10 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
   const removeProduto = (index: number) => {
     const currentProdutos = form.getValues("produtos");
     if (currentProdutos.length > 1) {
-      form.setValue("produtos", currentProdutos.filter((_, i) => i !== index));
+      form.setValue(
+        "produtos",
+        currentProdutos.filter((_, i) => i !== index),
+      );
     }
   };
 
@@ -173,9 +175,11 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   <SelectItem value="visita_realizada">Visita Realizada</SelectItem>
                   <SelectItem value="proposta_pendente">Proposta Pendente</SelectItem>
                   <SelectItem value="proposta">Gerou Proposta</SelectItem>
+                  <SelectItem value="em_analise">Em Análise</SelectItem>
                   <SelectItem value="contrato">Fechou Contrato</SelectItem>
                   <SelectItem value="execucao">Em Execução</SelectItem>
                   <SelectItem value="finalizado">Finalizado</SelectItem>
+                  <SelectItem value="repouso">Repouso</SelectItem>
                   <SelectItem value="perdido">Perdido</SelectItem>
                 </SelectContent>
               </Select>
@@ -205,11 +209,11 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                     ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  type="button" 
-                  variant="default" 
-                  size="icon" 
-                  onClick={() => setIsClienteDialogOpen(true)} 
+                <Button
+                  type="button"
+                  variant="default"
+                  size="icon"
+                  onClick={() => setIsClienteDialogOpen(true)}
                   className="hover-scale shrink-0"
                 >
                   <Plus className="h-5 w-5" strokeWidth={2.5} />
@@ -308,21 +312,21 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             <FormItem>
               <FormLabel>Orçamento</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="R$ 0,00" 
+                <Input
+                  placeholder="R$ 0,00"
                   {...field}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
+                    const value = e.target.value.replace(/\D/g, "");
                     const numericValue = parseFloat(value) / 100;
                     field.onChange(numericValue.toString());
                   }}
                   value={
-                    field.value 
-                      ? new Intl.NumberFormat('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
+                    field.value
+                      ? new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
                         }).format(parseFloat(field.value) || 0)
-                      : ''
+                      : ""
                   }
                 />
               </FormControl>
@@ -376,17 +380,11 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             name="origem_descricao"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>
-                  {origemSelecionada === "Indicação" ? "Quem indicou?" : "Descreva a origem"}
-                </FormLabel>
+                <FormLabel>{origemSelecionada === "Indicação" ? "Quem indicou?" : "Descreva a origem"}</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder={
-                      origemSelecionada === "Indicação" 
-                        ? "Nome de quem indicou..." 
-                        : "Descreva a origem..."
-                    } 
-                    {...field} 
+                  <Input
+                    placeholder={origemSelecionada === "Indicação" ? "Nome de quem indicou..." : "Descreva a origem..."}
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -500,9 +498,9 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             <DialogDescription>Preencha os dados do cliente para adicioná-lo rapidamente</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto px-6 pb-6">
-            <ClienteForm 
-              onSubmit={handleCreateCliente} 
-              isLoading={createCliente.isPending} 
+            <ClienteForm
+              onSubmit={handleCreateCliente}
+              isLoading={createCliente.isPending}
               mode="create"
               onCancel={() => setIsClienteDialogOpen(false)}
             />
