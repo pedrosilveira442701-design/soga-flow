@@ -42,7 +42,11 @@ export default function Leads() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedContato, setSelectedContato] = useState<Contato | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [contatoToConvert, setContatoToConvert] = useState<{telefone: string; origem: string; contatoId?: string} | null>(null);
+  const [contatoToConvert, setContatoToConvert] = useState<{
+    telefone: string;
+    origem: string;
+    contatoId?: string;
+  } | null>(null);
   const [lossReasonDialogOpen, setLossReasonDialogOpen] = useState(false);
   const [pendingLossData, setPendingLossData] = useState<{
     leadId: string;
@@ -68,7 +72,7 @@ export default function Leads() {
   useEffect(() => {
     localStorage.setItem("kanban-view-mode", viewMode);
   }, [viewMode]);
-  
+
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
   const { user } = useAuth();
@@ -119,10 +123,8 @@ export default function Leads() {
   const stagesWithCounts = STAGES.map((stage) => {
     const leadsCount = leads.filter((lead) => lead.estagio === stage.id).length;
     // Para o stage "contato", incluir também os contatos não convertidos
-    const totalCount = stage.id === "contato" 
-      ? leadsCount + naoConvertidos.length 
-      : leadsCount;
-    
+    const totalCount = stage.id === "contato" ? leadsCount + naoConvertidos.length : leadsCount;
+
     return {
       ...stage,
       count: totalCount,
@@ -141,7 +143,7 @@ export default function Leads() {
     if (values.origem && (values.origem === "Indicação" || values.origem === "Outro") && values.origem_descricao) {
       origemFinal = `${values.origem}: ${values.origem_descricao}`;
     }
-    
+
     const leadData: any = {
       cliente_id: values.cliente_id,
       produtos: produtosProcessados,
@@ -167,19 +169,19 @@ export default function Leads() {
     }
 
     const newLead = await createLead.mutateAsync(leadData);
-    
+
     // Se veio de um contato, marcar como convertido
     if (contatoId && newLead) {
       await convertToLead.mutateAsync({ contatoId, leadId: newLead.id });
     }
-    
+
     setCreateDialogOpen(false);
     setContatoToConvert(null);
   };
 
   const handleContatoSubmit = async (data: any) => {
     const dataHora = `${format(data.data, "yyyy-MM-dd")}T${data.hora}:00`;
-    
+
     await createContato.mutateAsync({
       telefone: data.telefone,
       nome: data.nome || undefined,
@@ -188,7 +190,7 @@ export default function Leads() {
       observacoes: data.observacoes || undefined,
       tag: data.tag || undefined,
     });
-    
+
     setContatoDialogOpen(false);
   };
 
@@ -200,7 +202,7 @@ export default function Leads() {
       data_hora: dataHora,
       origem,
     });
-    
+
     // Guardar informações do contato e abrir formulário de lead
     setContatoToConvert({ telefone, origem, contatoId: contato.id });
     setContatoDialogOpen(false);
@@ -208,10 +210,10 @@ export default function Leads() {
   };
 
   const handleConvertContatoToLead = (contato: Contato) => {
-    setContatoToConvert({ 
-      telefone: contato.telefone, 
+    setContatoToConvert({
+      telefone: contato.telefone,
       origem: contato.origem,
-      contatoId: contato.id 
+      contatoId: contato.id,
     });
     setCreateDialogOpen(true);
   };
@@ -223,9 +225,9 @@ export default function Leads() {
 
   const handleUpdateContato = async (data: any) => {
     if (!selectedContato) return;
-    
+
     const dataHora = `${format(data.data, "yyyy-MM-dd")}T${data.hora}:00`;
-    
+
     await updateContato.mutateAsync({
       id: selectedContato.id,
       updates: {
@@ -237,14 +239,14 @@ export default function Leads() {
         tag: data.tag || null,
       },
     });
-    
+
     setEditContatoDialogOpen(false);
     setSelectedContato(null);
   };
 
   const handleUpdateLead = async (values: any) => {
     if (!selectedLead) return;
-    
+
     // Processar produtos
     const produtosProcessados = values.produtos.map((p: any) => ({
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
@@ -256,7 +258,7 @@ export default function Leads() {
     if (values.origem && (values.origem === "Indicação" || values.origem === "Outro") && values.origem_descricao) {
       origemFinal = `${values.origem}: ${values.origem_descricao}`;
     }
-    
+
     await updateLead.mutateAsync({
       id: selectedLead.id,
       updates: {
@@ -306,7 +308,7 @@ export default function Leads() {
 
   const getPendingLeadName = (): string | undefined => {
     if (!pendingLossData) return undefined;
-    const lead = leads.find(l => l.id === pendingLossData.leadId) as Lead | undefined;
+    const lead = leads.find((l) => l.id === pendingLossData.leadId) as Lead | undefined;
     return lead?.clientes?.nome;
   };
 
@@ -345,9 +347,7 @@ export default function Leads() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-h2 text-foreground mb-2">Leads</h1>
-          <p className="text-body text-muted-foreground">
-            Gerencie o funil de vendas com drag & drop
-          </p>
+          <p className="text-body text-muted-foreground">Gerencie o funil de vendas com drag & drop</p>
         </div>
 
         <div className="flex gap-2">
@@ -361,9 +361,7 @@ export default function Leads() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Registrar Contato</DialogTitle>
-                <DialogDescription>
-                  Registre um contato inicial rapidamente
-                </DialogDescription>
+                <DialogDescription>Registre um contato inicial rapidamente</DialogDescription>
               </DialogHeader>
               <ContatoQuickForm
                 onSubmit={handleContatoSubmit}
@@ -383,18 +381,20 @@ export default function Leads() {
             <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
               <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
                 <DialogTitle>Criar Novo Lead</DialogTitle>
-                <DialogDescription>
-                  Adicione um novo lead ao funil de vendas
-                </DialogDescription>
+                <DialogDescription>Adicione um novo lead ao funil de vendas</DialogDescription>
               </DialogHeader>
               <div className="overflow-y-auto px-6 pb-6">
                 <LeadForm
                   onSubmit={(values) => handleCreateLead(values, contatoToConvert?.contatoId)}
                   isLoading={createLead.isPending}
                   mode="create"
-                  initialData={contatoToConvert ? {
-                    origem: contatoToConvert.origem,
-                  } : undefined}
+                  initialData={
+                    contatoToConvert
+                      ? {
+                          origem: contatoToConvert.origem,
+                        }
+                      : undefined
+                  }
                 />
               </div>
             </DialogContent>
@@ -411,15 +411,15 @@ export default function Leads() {
         onNavigateLeft={handleNavigateLeft}
         onNavigateRight={handleNavigateRight}
         canNavigateLeft={activeStageIndex > 0}
-        canNavigateRight={activeStageIndex < 8}
+        canNavigateRight={activeStageIndex < STAGES.length - 1}
         stages={stagesWithCounts}
         activeStageIndex={activeStageIndex}
         onStageClick={handleStageClick}
       />
 
       {/* Kanban Board */}
-      <KanbanBoard 
-        leads={leads} 
+      <KanbanBoard
+        leads={leads}
         onStageChange={handleStageChange}
         onCardClick={handleCardClick}
         contatosNaoConvertidos={naoConvertidos}
@@ -437,9 +437,7 @@ export default function Leads() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Contato</DialogTitle>
-            <DialogDescription>
-              Atualize as informações do contato
-            </DialogDescription>
+            <DialogDescription>Atualize as informações do contato</DialogDescription>
           </DialogHeader>
           {selectedContato && (
             <ContatoQuickForm
@@ -469,9 +467,7 @@ export default function Leads() {
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
           <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Editar Lead</DialogTitle>
-            <DialogDescription>
-              Atualize as informações do lead
-            </DialogDescription>
+            <DialogDescription>Atualize as informações do lead</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto px-6 pb-6">
             {selectedLead && (
@@ -483,7 +479,11 @@ export default function Leads() {
                   cliente_id: selectedLead.cliente_id || "",
                   produtos: (() => {
                     // Se tem produtos no formato novo (JSONB)
-                    if (selectedLead.produtos && Array.isArray(selectedLead.produtos) && selectedLead.produtos.length > 0) {
+                    if (
+                      selectedLead.produtos &&
+                      Array.isArray(selectedLead.produtos) &&
+                      selectedLead.produtos.length > 0
+                    ) {
                       return selectedLead.produtos.map((p: any) => ({
                         tipo: p.tipo?.startsWith("Outro:") ? "Outro" : p.tipo,
                         tipo_outro: p.tipo?.startsWith("Outro:") ? p.tipo.replace("Outro:", "").trim() : "",
@@ -492,8 +492,8 @@ export default function Leads() {
                     }
                     // Fallback para formato antigo (tipo_piso string)
                     if (selectedLead.tipo_piso) {
-                      const tipos = selectedLead.tipo_piso.split(",").map(t => t.trim());
-                      return tipos.map(t => ({
+                      const tipos = selectedLead.tipo_piso.split(",").map((t) => t.trim());
+                      return tipos.map((t) => ({
                         tipo: t.startsWith("Outro:") ? "Outro" : t,
                         tipo_outro: t.startsWith("Outro:") ? t.replace("Outro:", "").trim() : "",
                         medida: selectedLead.medida?.toString() || "",
@@ -519,7 +519,9 @@ export default function Leads() {
                   responsavel: selectedLead.responsavel || "",
                   estagio: selectedLead.estagio as any,
                   created_at: selectedLead.created_at ? new Date(selectedLead.created_at) : new Date(),
-                  ultima_interacao: selectedLead.ultima_interacao ? new Date(selectedLead.ultima_interacao) : new Date(),
+                  ultima_interacao: selectedLead.ultima_interacao
+                    ? new Date(selectedLead.ultima_interacao)
+                    : new Date(),
                 }}
               />
             )}
