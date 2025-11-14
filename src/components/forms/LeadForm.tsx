@@ -418,38 +418,31 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   <Input
                     type="text"
                     placeholder="dd/mm/aaaa hh:mm"
-                    value={
-                      field.value instanceof Date
-                        ? format(field.value, "dd/MM/yyyy HH:mm")
-                        : field.value || ""
-                    }
+                    value={field.value instanceof Date ? format(field.value, "dd/MM/yyyy HH:mm") : field.value || ""}
                     onChange={(e) => {
                       let v = e.target.value;
-          
+
                       v = v
                         .replace(/\D/g, "")
                         .replace(/^(\d{2})(\d)/, "$1/$2")
                         .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
                         .replace(/^(\d{2})\/(\d{2})\/(\d{4})(\d)/, "$1/$2/$3 $4")
-                        .replace(
-                          /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/,
-                          "$1/$2/$3 $4:$5"
-                        );
-          
+                        .replace(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/, "$1/$2/$3 $4:$5");
+
                       e.target.value = v;
-          
+
                       if (v.length === 16) {
                         const [dia, mes, anoHora] = v.split("/");
                         const [ano, hora] = anoHora.split(" ");
                         const [hh, mm] = hora.split(":");
-          
+
                         const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
                         if (!isNaN(iso.getTime())) {
                           field.onChange(iso);
                           return;
                         }
                       }
-          
+
                       field.onChange(v);
                     }}
                     className="w-full"
@@ -469,38 +462,31 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   <Input
                     type="text"
                     placeholder="dd/mm/aaaa hh:mm"
-                    value={
-                      field.value instanceof Date
-                        ? format(field.value, "dd/MM/yyyy HH:mm")
-                        : field.value || ""
-                    }
+                    value={field.value instanceof Date ? format(field.value, "dd/MM/yyyy HH:mm") : field.value || ""}
                     onChange={(e) => {
                       let v = e.target.value;
-          
+
                       v = v
                         .replace(/\D/g, "")
                         .replace(/^(\d{2})(\d)/, "$1/$2")
                         .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
                         .replace(/^(\d{2})\/(\d{2})\/(\d{4})(\d)/, "$1/$2/$3 $4")
-                        .replace(
-                          /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/,
-                          "$1/$2/$3 $4:$5"
-                        );
-          
+                        .replace(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/, "$1/$2/$3 $4:$5");
+
                       e.target.value = v;
-          
+
                       if (v.length === 16) {
                         const [dia, mes, anoHora] = v.split("/");
                         const [ano, hora] = anoHora.split(" ");
                         const [hh, mm] = hora.split(":");
-          
+
                         const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
                         if (!isNaN(iso.getTime())) {
                           field.onChange(iso);
                           return;
                         }
                       }
-          
+
                       field.onChange(v);
                     }}
                     className="w-full"
@@ -510,7 +496,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
               </FormItem>
             )}
           />
-
+        </div>
         <div className="flex gap-3 justify-end pt-4">
           <Button type="submit" disabled={isLoading}>
             {isLoading
