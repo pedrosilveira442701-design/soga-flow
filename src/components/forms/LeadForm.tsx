@@ -414,29 +414,14 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Data de Criação do Lead</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                      >
-                        {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
-                        <CalendarIcon className="ml-auto h-4.5 w-4.5 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <FormControl>
+                  <Input
+                    type="datetime-local"
+                    value={field.value ? format(field.value, "yyyy-MM-dd'T'HH:mm") : ""}
+                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    className="w-full"
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
