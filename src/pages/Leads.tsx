@@ -85,7 +85,7 @@ export default function Leads() {
   };
 
   const handleNavigateRight = () => {
-    const maxIndex = 9; // Total de 10 stages (0-9)
+    const maxIndex = 10; // Total de 11 stages (0-10)
     if (activeStageIndex < maxIndex) {
       const newIndex = activeStageIndex + 1;
       setActiveStageIndex(newIndex);
@@ -108,10 +108,11 @@ export default function Leads() {
     { id: "visita_realizada", title: "Visita Realizada", color: "contato", section: "comercial" },
     { id: "proposta_pendente", title: "Proposta Pendente", color: "proposta", section: "comercial" },
     { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
-    { id: "em_analise", title: "Em análise", color: "proposta", section: "comercial" },
+    { id: "em_analise", title: "Em análise", color: "qualificado", section: "comercial" },
     { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
     { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
     { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
+    { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
     { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
   ];
 
