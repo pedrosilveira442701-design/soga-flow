@@ -27,7 +27,7 @@ const TAG_LABELS = {
 
 export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: ContatoMiniCardProps) {
   return (
-    <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2">
+    <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2 max-w-[520px]">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 space-y-1.5 min-w-0">
           {contato.nome && (
@@ -72,9 +72,9 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
       </div>
       <Button
         onClick={() => onConvertToLead(contato)}
-        className="mt-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 h-9 text-sm font-medium flex items-center gap-1 mx-auto"
+        className="mt-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-3 h-8 text-xs font-medium flex items-center gap-1"
       >
-        <span className="text-lg leading-none">＋</span>
+        <span className="text-base leading-none">＋</span>
         Lead
       </Button>
     </div>
