@@ -48,12 +48,14 @@ const STAGES = [
   { id: "proposta_pendente", title: "Proposta Pendente", color: "proposta", section: "comercial" },
   { id: "proposta", title: "Gerou Proposta", color: "proposta", section: "comercial" },
   { id: "em_analise", title: "Em análise", color: "qualificado", section: "comercial" },
-  { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
   { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
 
   // OPERACIONAL
   { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
   { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
+
+  // ⭐ ADICIONE ESTA LINHA ⭐
+  { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
 
   // PERDIDOS
   { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
