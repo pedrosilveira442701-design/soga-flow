@@ -58,7 +58,7 @@ const STAGES = [
   { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
 
   // REPOUSO
-  { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
+  { id: "repouso", title: "Repouso", color: "repouso", section: "perdido" },
 
   // PERDIDOS
   { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
