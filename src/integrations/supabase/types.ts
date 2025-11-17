@@ -359,6 +359,7 @@ export type Database = {
           origem: string | null
           produtos: Json | null
           responsavel: string | null
+          status_changed_at: string | null
           tipo_piso: string | null
           ultima_interacao: string | null
           updated_at: string
@@ -378,6 +379,7 @@ export type Database = {
           origem?: string | null
           produtos?: Json | null
           responsavel?: string | null
+          status_changed_at?: string | null
           tipo_piso?: string | null
           ultima_interacao?: string | null
           updated_at?: string
@@ -397,6 +399,7 @@ export type Database = {
           origem?: string | null
           produtos?: Json | null
           responsavel?: string | null
+          status_changed_at?: string | null
           tipo_piso?: string | null
           ultima_interacao?: string | null
           updated_at?: string
@@ -764,6 +767,8 @@ export type Database = {
         | "execucao"
         | "finalizado"
         | "perdido"
+        | "em_analise"
+        | "repouso"
       obra_status:
         | "mobilizacao"
         | "execucao"
@@ -911,6 +916,8 @@ export const Constants = {
         "execucao",
         "finalizado",
         "perdido",
+        "em_analise",
+        "repouso",
       ],
       obra_status: [
         "mobilizacao",
