@@ -9,11 +9,7 @@ interface DashboardLayoutProps {
 
 function DashboardHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-6 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <SidebarTrigger className="hover:bg-muted" />
-      </div>
-
+    <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-6 py-3 flex items-center justify-end gap-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
@@ -31,6 +27,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <AppSidebar />
         
         <SidebarInset className="flex-1 flex flex-col min-w-0">
+          <div className="flex items-center h-12 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+          </div>
+          
           <DashboardHeader />
 
           {/* Main Content */}
