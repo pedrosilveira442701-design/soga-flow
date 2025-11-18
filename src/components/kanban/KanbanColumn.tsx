@@ -51,7 +51,7 @@ export function KanbanColumn({
   };
 
   return (
-    <div ref={mergeRefs} className={`flex flex-col h-full ${columnWidth} scroll-mt-4`}>
+    <div ref={columnRef} className={`flex flex-col h-full ${columnWidth} scroll-mt-4`}>
       {/* Column Header */}
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="text-body font-medium text-foreground">{title}</h3>
@@ -62,7 +62,7 @@ export function KanbanColumn({
 
       {/* Column Content */}
       <div
-        ref={setNodeRef}
+        ref={mergeRefs}
         className={cn(
           `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all`,
           isOver
