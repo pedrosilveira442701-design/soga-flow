@@ -17,6 +17,7 @@ import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
 import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useContatos, Contato } from "@/hooks/useContatos";
+import { usePropostas } from "@/hooks/usePropostas";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
@@ -75,6 +76,7 @@ export default function Leads() {
 
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
+  const { updatePropostasByLeadId } = usePropostas();
   const { user } = useAuth();
 
   // Navigation handlers
@@ -290,6 +292,18 @@ export default function Leads() {
       });
     } else {
       await updateLeadStage.mutateAsync({ id: leadId, stage: newStage });
+    }
+
+    // Atualizar status das propostas relacionadas quando lead mudar para certos estágios
+    const stageToPropostaStatus: Record<string, string> = {
+      finalizado: "fechada",
+      repouso: "repouso",
+      perdido: "perdida",
+    };
+
+    const propostaStatus = stageToPropostaStatus[newStage];
+    if (propostaStatus) {
+      updatePropostasByLeadId.mutate({ leadId, status: propostaStatus });
     }
   };
 
