@@ -118,7 +118,7 @@ export default function Leads() {
     { id: "contrato", title: "Fechou Contrato", color: "ganho", section: "comercial" },
     { id: "execucao", title: "Em Execução", color: "qualificado", section: "operacional" },
     { id: "finalizado", title: "Finalizado", color: "ganho", section: "operacional" },
-    { id: "repouso", title: "Repouso", color: "muted", section: "perdido" },
+    { id: "repouso", title: "Repouso", color: "repouso", section: "perdido" },
     { id: "perdido", title: "Perdido", color: "perdido", section: "perdido" },
   ];
 
