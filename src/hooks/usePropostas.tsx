@@ -224,6 +224,30 @@ export const usePropostas = () => {
     },
   });
 
+  // Update propostas by lead_id
+  const updatePropostasByLeadId = useMutation({
+    mutationFn: async ({ leadId, status }: { leadId: string; status: string }) => {
+      const { data, error } = await supabase
+        .from("propostas")
+        .update({ status })
+        .eq("lead_id", leadId)
+        .eq("status", "aberta")
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["propostas"] });
+      if (data && data.length > 0) {
+        toast.success(`${data.length} proposta(s) atualizada(s) automaticamente`);
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar propostas por lead:", error.message);
+    },
+  });
+
   return {
     propostas,
     isLoading,
@@ -231,5 +255,6 @@ export const usePropostas = () => {
     updateProposta,
     updateStatus,
     deleteProposta,
+    updatePropostasByLeadId,
   };
 };
