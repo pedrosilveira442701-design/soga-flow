@@ -33,6 +33,7 @@ import { cn, formatDateToLocal } from "@/lib/utils";
 import { useClientes } from "@/hooks/useClientes";
 import { usePropostasFechadas } from "@/hooks/useContratos";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import ClienteCombobox from "@/components/forms/ClienteCombobox";
 
 const contratoSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
@@ -228,30 +229,15 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    disabled={isLoadingClientes || !!selectedProposta}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cliente" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientes.length === 0 ? (
-                        <SelectItem value="no-clients" disabled>
-                          Nenhum cliente cadastrado
-                        </SelectItem>
-                      ) : (
-                        clientes.map((cliente) => (
-                          <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.nome} {cliente.cidade && `- ${cliente.cidade}`}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ClienteCombobox
+                      clientes={clientes}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoadingClientes || !!selectedProposta}
+                      isLoading={isLoadingClientes}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
