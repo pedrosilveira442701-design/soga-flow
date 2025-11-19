@@ -17,6 +17,7 @@ import { ClienteForm } from "./ClienteForm";
 import { useClientes } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
+import ClienteCombobox from "@/components/forms/ClienteCombobox";
 
 const TIPOS_PRODUTO = [
   "Pintura Epóxi",
@@ -100,7 +101,7 @@ interface LeadFormProps {
 export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
   const [isClienteDialogOpen, setIsClienteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { createCliente } = useClientes();
+  const { clientes = [], isLoading: isLoadingClientes, createCliente } = useClientes();
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadFormSchema),
@@ -136,16 +137,6 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
       );
     }
   };
-
-  const { data: clientes = [] } = useQuery({
-    queryKey: ["clientes"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("clientes").select("id, nome").order("nome");
-
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const handleCreateCliente = async (values: any) => {
     const novoCliente = await createCliente.mutateAsync(values);
@@ -195,20 +186,16 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
             <FormItem>
               <FormLabel>Cliente</FormLabel>
               <div className="flex gap-2">
-                <Select onValueChange={field.onChange} value={field.value}>
+                <div className="flex-1">
                   <FormControl>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
+                    <ClienteCombobox
+                      clientes={clientes}
+                      value={field.value}
+                      onChange={field.onChange}
+                      isLoading={isLoadingClientes}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {clientes.map((cliente) => (
-                      <SelectItem key={cliente.id} value={cliente.id}>
-                        {cliente.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
                 <Button
                   type="button"
                   variant="default"

@@ -17,6 +17,7 @@ import { Calendar, Clock, MapPin, Phone, User } from 'lucide-react';
 import { useClientes } from '@/hooks/useClientes';
 import { Visita } from '@/hooks/useVisitas';
 import { useEffect } from 'react';
+import ClienteCombobox from '@/components/forms/ClienteCombobox';
 
 const visitaFormSchema = z.object({
   cliente_id: z.string().uuid('Selecione um cliente válido'),
@@ -110,28 +111,11 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       {/* Cliente */}
       <div className="space-y-2">
         <Label>Cliente *</Label>
-        <Select
+        <ClienteCombobox
+          clientes={clientes || []}
           value={watch('cliente_id') || ''}
-          onValueChange={(value) => setValue('cliente_id', value)}
-        >
-          <SelectTrigger className={errors.cliente_id ? 'border-destructive' : ''}>
-            <SelectValue placeholder="Selecione um cliente" />
-          </SelectTrigger>
-          <SelectContent>
-            {clientes?.map((cliente) => (
-              <SelectItem key={cliente.id} value={cliente.id}>
-                <div>
-                  <div className="font-medium">{cliente.nome}</div>
-                  {cliente.cidade && (
-                    <div className="text-xs text-muted-foreground">
-                      {cliente.cidade} {cliente.telefone && `• ${cliente.telefone}`}
-                    </div>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(value) => setValue('cliente_id', value)}
+        />
         {errors.cliente_id && (
           <p className="text-sm text-destructive">{errors.cliente_id.message}</p>
         )}
