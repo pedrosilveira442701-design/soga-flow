@@ -37,6 +37,7 @@ import { useClientes } from "@/hooks/useClientes";
 import ArquivosList from "@/components/arquivos/ArquivosList";
 import { Paperclip } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ClienteCombobox from "@/components/forms/ClienteCombobox";
 
 const TIPOS_PRODUTO = [
   "Pintura Epóxi",
@@ -196,26 +197,15 @@ export default function ProposalForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingClientes}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingClientes ? "Carregando clientes..." : "Selecione um cliente"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {clientes.length === 0 ? (
-                        <SelectItem value="no-clients" disabled>
-                          Nenhum cliente cadastrado
-                        </SelectItem>
-                      ) : (
-                        clientes.map((cliente) => (
-                          <SelectItem key={cliente.id} value={cliente.id}>
-                            {cliente.nome} {cliente.cidade && `- ${cliente.cidade}`}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <ClienteCombobox
+                      clientes={clientes}
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={isLoadingClientes}
+                      isLoading={isLoadingClientes}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
