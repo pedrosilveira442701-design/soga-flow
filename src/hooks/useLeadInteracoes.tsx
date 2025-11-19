@@ -46,7 +46,7 @@ export function useLeadInteracoes(leadId?: string) {
           ...interacao,
           lead_id: interacao.lead_id || leadId, // garante o leadId
           user_id: user.id, // 👈 ESSENCIAL
-          data_hora: new Date().toISOString(), // timestamp padrão
+          data_hora: interacao.data_hora ? new Date(interacao.data_hora).toISOString() : new Date().toISOString(),
         })
         .select()
         .single();
