@@ -155,7 +155,7 @@ export function ClienteForm({
           pais: "Brasil",
           endereco: "",
           status: "ativo",
-          created_at: new Date(),
+          created_at: initialData.created_at ? new Date(initialData.created_at) : new Date(),
         },
   });
 
