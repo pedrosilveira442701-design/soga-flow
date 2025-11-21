@@ -11,7 +11,11 @@ import { MapaGeografico } from "@/components/analytics/MapaGeografico";
 import { CohortChart } from "@/components/analytics/CohortChart";
 import { LossReasonsChart } from "@/components/analytics/LossReasonsChart";
 import { ConversionRatesCard } from "@/components/analytics/ConversionRatesCard";
+import { MaturacaoCardKpis } from "@/components/analytics/MaturacaoCardKpis";
+import { MaturacaoBoxplot } from "@/components/analytics/MaturacaoBoxplot";
+import { MaturacaoScatter } from "@/components/analytics/MaturacaoScatter";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
+import { useMaturacaoComercial } from "@/hooks/useMaturacaoComercial";
 import { Card, CardContent } from "@/components/ui/card";
 import { BarChart3, TrendingUp, DollarSign } from "lucide-react";
 
@@ -41,6 +45,13 @@ export default function Analytics() {
     conversionRatesData,
     loadingConversionRates,
   } = useAnalytics(filters);
+
+  const {
+    data: maturacaoData,
+    kpis: maturacaoKpis,
+    boxplotData: maturacaoBoxplot,
+    isLoading: loadingMaturacao,
+  } = useMaturacaoComercial(filters);
 
   // Calcular KPIs principais
   const totalLeads = funnelData?.reduce((sum, stage) => sum + stage.count, 0) || 0;
@@ -113,6 +124,20 @@ export default function Analytics() {
 
         {/* Funil de Conversão */}
         <FunnelChart data={funnelData} isLoading={loadingFunnel} />
+
+        {/* Tempo de Maturação Comercial */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Tempo de Maturação Comercial</h2>
+            <p className="text-muted-foreground">
+              Análise do ciclo completo: cliente, proposta e contrato
+            </p>
+          </div>
+          
+          <MaturacaoCardKpis data={maturacaoKpis} isLoading={loadingMaturacao} />
+          <MaturacaoBoxplot data={maturacaoBoxplot} isLoading={loadingMaturacao} />
+          <MaturacaoScatter data={maturacaoData} isLoading={loadingMaturacao} />
+        </div>
 
         {/* Pipeline Ponderado */}
         <PipelineChart data={pipelineData} isLoading={loadingPipeline} />
