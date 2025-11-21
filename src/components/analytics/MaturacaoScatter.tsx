@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
   Legend,
 } from "recharts";
 import { useMemo } from "react";
@@ -20,29 +21,23 @@ interface MaturacaoScatterProps {
 }
 
 const TIPO_PISO_COLORS: Record<string, string> = {
-  "Pintura Epóxi": "hsl(var(--chart-1))",
-  "Pintura PU": "hsl(var(--chart-2))",
-  "Piso Autonivelante": "hsl(var(--chart-3))",
-  "Pintura de Parede": "hsl(var(--chart-4))",
-  "Cimento Queimado": "hsl(var(--chart-5))",
-  "Revestimento": "hsl(220, 90%, 56%)",
-  "Impermeabilização": "hsl(190, 90%, 50%)",
-  "Não especificado": "hsl(var(--muted))",
+  "Pintura Epóxi": "#3B82F6",
+  "Pintura PU": "#8B5CF6",
+  "Piso Autonivelante": "#EC4899",
+  "Pintura de Parede": "#F59E0B",
+  "Cimento Queimado": "#10B981",
+  "Revestimento": "#EF4444",
+  "Impermeabilização": "#06B6D4",
+  "Não especificado": "#94A3B8",
 };
 
 const getColor = (tipoPiso: string): string => {
-  return TIPO_PISO_COLORS[tipoPiso] || "hsl(var(--muted))";
+  return TIPO_PISO_COLORS[tipoPiso] || "#94A3B8";
 };
 
 export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => {
   const chartData = useMemo(() => {
     if (!data) return [];
-
-    // Normalizar tamanhos dos pontos (min 40, max 200)
-    const valores = data.map((d) => d.valor_total);
-    const minValor = Math.min(...valores);
-    const maxValor = Math.max(...valores);
-    const range = maxValor - minValor || 1;
 
     return data.map((d) => ({
       x: d.dias_cliente_proposta,
@@ -50,10 +45,21 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
       tipo_piso: d.tipo_piso,
       cliente: d.cliente_nome,
       valor: d.valor_total,
-      z: 40 + ((d.valor_total - minValor) / range) * 160, // tamanho do ponto
+      dias_total: d.dias_cliente_contrato,
+      z: Math.min(200, Math.max(80, d.valor_total / 300)), // tamanho dinâmico do ponto
       fill: getColor(d.tipo_piso),
     }));
   }, [data]);
+
+  const maxX = useMemo(() => {
+    if (!chartData.length) return 30;
+    return Math.max(...chartData.map(d => d.x)) + 5;
+  }, [chartData]);
+
+  const maxY = useMemo(() => {
+    if (!chartData.length) return 30;
+    return Math.max(...chartData.map(d => d.y)) + 5;
+  }, [chartData]);
 
   const tiposPiso = useMemo(() => {
     if (!data) return [];
@@ -103,61 +109,164 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={500}>
-          <ScatterChart margin={{ top: 20, right: 20, bottom: 60, left: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+          <ScatterChart margin={{ top: 20, right: 30, bottom: 80, left: 70 }}>
+            {/* Quadrante ideal (verde claro) */}
+            <ReferenceArea
+              x1={0}
+              x2={7}
+              y1={0}
+              y2={14}
+              fill="#D1FAE5"
+              fillOpacity={0.3}
+              strokeOpacity={0}
+            />
+            
+            {/* Outros quadrantes (cinza claro) */}
+            <ReferenceArea
+              x1={7}
+              x2={maxX}
+              y1={0}
+              y2={14}
+              fill="#F8FAFC"
+              fillOpacity={0.5}
+              strokeOpacity={0}
+            />
+            <ReferenceArea
+              x1={0}
+              x2={7}
+              y1={14}
+              y2={maxY}
+              fill="#F8FAFC"
+              fillOpacity={0.5}
+              strokeOpacity={0}
+            />
+            <ReferenceArea
+              x1={7}
+              x2={maxX}
+              y1={14}
+              y2={maxY}
+              fill="#F8FAFC"
+              fillOpacity={0.5}
+              strokeOpacity={0}
+            />
+
+            <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" strokeWidth={1} />
+            
             <XAxis
               type="number"
               dataKey="x"
               name="Dias até Proposta"
-              label={{ value: "Dias até Proposta", position: "bottom", offset: 0 }}
+              label={{ 
+                value: "Dias até Proposta", 
+                position: "insideBottom", 
+                offset: -10,
+                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" }
+              }}
+              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              domain={[0, maxX]}
             />
             <YAxis
               type="number"
               dataKey="y"
               name="Dias até Fechamento"
-              label={{ value: "Dias até Fechamento", angle: -90, position: "insideLeft" }}
+              label={{ 
+                value: "Dias até Fechamento", 
+                angle: -90, 
+                position: "insideLeft",
+                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" }
+              }}
+              tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+              domain={[0, maxY]}
             />
+            
+            {/* Linhas de referência (metas) */}
+            <ReferenceLine 
+              x={7} 
+              stroke="#475569" 
+              strokeDasharray="5 5" 
+              strokeWidth={1.5}
+              opacity={0.9}
+              label={{ 
+                value: "Meta: 7 dias", 
+                position: "top",
+                fill: "#475569",
+                fontSize: 11,
+                fontWeight: 600
+              }}
+            />
+            <ReferenceLine 
+              y={14} 
+              stroke="#475569" 
+              strokeDasharray="5 5" 
+              strokeWidth={1.5}
+              opacity={0.9}
+              label={{ 
+                value: "Meta: 14 dias", 
+                position: "right",
+                fill: "#475569",
+                fontSize: 11,
+                fontWeight: 600
+              }}
+            />
+            
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload || !payload.length) return null;
                 const point = payload[0].payload;
 
                 return (
-                  <div className="bg-background border rounded-lg p-3 shadow-lg">
-                    <p className="font-semibold text-sm mb-2">{point.cliente}</p>
-                    <div className="space-y-1 text-xs">
-                      <p>Tipo: {point.tipo_piso}</p>
-                      <p>Dias até proposta: {point.x} dias</p>
-                      <p>Dias até fechamento: {point.y} dias</p>
-                      <p>
-                        Valor: R${" "}
-                        {point.valor.toLocaleString("pt-BR", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </p>
+                  <div className="bg-background border-2 border-border rounded-lg p-4 shadow-xl">
+                    <p className="font-bold text-base mb-3 text-foreground">{point.cliente}</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: point.fill }}
+                        />
+                        <span className="font-medium">{point.tipo_piso}</span>
+                      </div>
+                      <div className="border-t pt-2 space-y-1 text-muted-foreground">
+                        <p><span className="font-semibold text-foreground">Dias até proposta:</span> {point.x} dias</p>
+                        <p><span className="font-semibold text-foreground">Dias até fechamento:</span> {point.y} dias</p>
+                        <p><span className="font-semibold text-foreground">Tempo total:</span> {point.dias_total} dias</p>
+                        <p className="pt-1 border-t">
+                          <span className="font-semibold text-foreground">Valor:</span> R${" "}
+                          {point.valor.toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
               }}
             />
+            
             <Legend
               verticalAlign="bottom"
-              height={60}
+              height={70}
               content={() => (
-                <div className="flex flex-wrap gap-3 justify-center mt-4">
+                <div className="flex flex-wrap gap-4 justify-center mt-6 px-4">
                   {tiposPiso.map((tipo) => (
-                    <div key={tipo} className="flex items-center gap-2 text-xs">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getColor(tipo) }} />
-                      <span>{tipo}</span>
+                    <div key={tipo} className="flex items-center gap-2 text-sm">
+                      <div 
+                        className="w-4 h-4 rounded-full border-2 border-background shadow-sm" 
+                        style={{ backgroundColor: getColor(tipo) }} 
+                      />
+                      <span className="font-medium text-foreground">{tipo}</span>
                     </div>
                   ))}
                 </div>
               )}
             />
-            <ReferenceLine x={7} stroke="hsl(var(--chart-2))" strokeDasharray="3 3" strokeWidth={2} />
-            <ReferenceLine y={14} stroke="hsl(var(--chart-2))" strokeDasharray="3 3" strokeWidth={2} />
-            <Scatter name="Contratos" data={chartData} fillOpacity={0.7} />
+            
+            <Scatter 
+              name="Contratos" 
+              data={chartData} 
+              fill="#8884d8"
+              fillOpacity={0.75}
+            />
           </ScatterChart>
         </ResponsiveContainer>
       </CardContent>
