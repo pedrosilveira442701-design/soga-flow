@@ -6,28 +6,11 @@ import { CalendarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Cliente } from "@/hooks/useClientes";
 import { cn } from "@/lib/utils";
@@ -74,7 +57,7 @@ const clienteFormSchema = z.object({
         const cleaned = val.replace(/\D/g, "");
         return cleaned.length === 10 || cleaned.length === 11;
       },
-      { message: "Telefone deve ter 10 ou 11 dígitos" }
+      { message: "Telefone deve ter 10 ou 11 dígitos" },
     ),
   cpf_cnpj: z.string().optional(),
   // Campos estruturados de endereço
@@ -102,13 +85,7 @@ interface ClienteFormProps {
   onCancel?: () => void;
 }
 
-export function ClienteForm({
-  initialData,
-  onSubmit,
-  isLoading,
-  mode = "create",
-  onCancel,
-}: ClienteFormProps) {
+export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create", onCancel }: ClienteFormProps) {
   const { toast } = useToast();
   const [loadingCep, setLoadingCep] = useState(false);
 
@@ -139,9 +116,9 @@ export function ClienteForm({
           pais: initialData.pais || "Brasil",
           endereco: initialData.endereco || "",
           status: (initialData.status as "ativo" | "inativo") || "ativo",
-          created_at: initialData.created_at ? new Date(initialData.created_at) : undefined,
-            ? new Date(initialData.created_at)
-            : new Date(),
+
+          // 👇 Aqui está a linha correta
+          created_at: initialData.created_at ? new Date(initialData.created_at) : new Date(),
         }
       : {
           nome: "",
@@ -178,7 +155,7 @@ export function ClienteForm({
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     const value = e.target.value;
     const cleaned = value.replace(/\D/g, "");
-    
+
     if (cleaned.length <= 11) {
       let formatted = "";
       if (cleaned.length > 0) {
@@ -197,7 +174,7 @@ export function ClienteForm({
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     const value = e.target.value;
     const cleaned = value.replace(/\D/g, "");
-    
+
     if (cleaned.length <= 8) {
       let formatted = cleaned;
       if (cleaned.length > 5) {
@@ -209,7 +186,7 @@ export function ClienteForm({
 
   const buscarCep = async () => {
     const cep = form.getValues("cep")?.replace(/\D/g, "");
-    
+
     if (!cep || cep.length !== 8) {
       toast({
         title: "CEP inválido",
@@ -220,7 +197,7 @@ export function ClienteForm({
     }
 
     setLoadingCep(true);
-    
+
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
       const data = await response.json();
@@ -239,7 +216,7 @@ export function ClienteForm({
       form.setValue("bairro", data.bairro || "");
       form.setValue("cidade", data.localidade || "");
       form.setValue("uf", data.uf || "");
-      
+
       toast({
         title: "CEP encontrado",
         description: "Endereço preenchido automaticamente",
@@ -249,7 +226,6 @@ export function ClienteForm({
       setTimeout(() => {
         document.getElementById("numero")?.focus();
       }, 100);
-      
     } catch (error) {
       toast({
         title: "Erro ao buscar CEP",
@@ -264,7 +240,7 @@ export function ClienteForm({
   // Função para formatar endereço completo
   const formatarEnderecoCompleto = (values: ClienteFormValues) => {
     const partes = [];
-    
+
     if (values.logradouro) partes.push(values.logradouro);
     if (values.numero) partes.push(values.numero);
     if (values.complemento) partes.push(values.complemento);
@@ -275,7 +251,7 @@ export function ClienteForm({
       partes.push(values.cidade);
     }
     if (values.cep) partes.push(`CEP: ${values.cep}`);
-    
+
     return partes.join(", ");
   };
 
@@ -376,7 +352,7 @@ export function ClienteForm({
               </FormItem>
             )}
           />
-          
+
           <div className="flex items-end">
             <Button
               type="button"
@@ -414,11 +390,7 @@ export function ClienteForm({
               <FormItem>
                 <FormLabel>Número *</FormLabel>
                 <FormControl>
-                  <Input
-                    id="numero"
-                    placeholder="123 ou s/n"
-                    {...field}
-                  />
+                  <Input id="numero" placeholder="123 ou s/n" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -548,16 +520,9 @@ export function ClienteForm({
                     <FormControl>
                       <Button
                         variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? (
-                          format(field.value, "dd/MM/yyyy")
-                        ) : (
-                          <span>Selecione a data</span>
-                        )}
+                        {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione a data</span>}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
@@ -567,9 +532,7 @@ export function ClienteForm({
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("2020-01-01")
-                      }
+                      disabled={(date) => date > new Date() || date < new Date("2020-01-01")}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
@@ -588,11 +551,7 @@ export function ClienteForm({
             </Button>
           )}
           <Button type="submit" disabled={isLoading}>
-            {isLoading
-              ? "Salvando..."
-              : mode === "edit"
-              ? "Atualizar Cliente"
-              : "Criar Cliente"}
+            {isLoading ? "Salvando..." : mode === "edit" ? "Atualizar Cliente" : "Criar Cliente"}
           </Button>
         </div>
       </form>
