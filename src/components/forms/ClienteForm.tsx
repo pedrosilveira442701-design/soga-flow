@@ -139,6 +139,9 @@ export function ClienteForm({
           pais: initialData.pais || "Brasil",
           endereco: initialData.endereco || "",
           status: (initialData.status as "ativo" | "inativo") || "ativo",
+          created_at: initialData.created_at ? new Date(initialData.created_at) : undefined,
+            ? new Date(initialData.created_at)
+            : new Date(),
         }
       : {
           nome: "",
@@ -533,7 +536,7 @@ export function ClienteForm({
           )}
         />
 
-        {mode === "create" && (
+        {(mode === "create" || mode === "edit") && (
           <FormField
             control={form.control}
             name="created_at"
