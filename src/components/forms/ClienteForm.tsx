@@ -533,7 +533,7 @@ export function ClienteForm({
           )}
         />
 
-        {mode === "create" && (
+       {mode === "create" || mode === "edit" ? (
           <FormField
             control={form.control}
             name="created_at"
