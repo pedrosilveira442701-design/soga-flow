@@ -223,14 +223,8 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-w-4xl max-h-[90vh] overflow-y-auto
-                     [&>button[data-dialog-close]]:h-10
-                     [&>button[data-dialog-close]]:w-10
-                     [&>button[data-dialog-close]]:text-gray-600
-                     [&>button[data-dialog-close]]:hover:text-black
-                     [&>button[data-dialog-close]]:opacity-100
-                     [&>button[data-dialog-close]]:top-4
-                     [&>button[data-dialog-close]]:right-4"
+          className="max-w-4xl max-h-[90vh] overflow-y-auto">
+             
         >
           <DialogHeader>
             <div className="flex items-start justify-between">
