@@ -345,16 +345,16 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     variant="outline"
                     className="flex-1"
                   >
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="h-5 w-5 mr-2" />
                     Editar
                   </Button>
                   <Button onClick={() => setDeleteDialogOpen(true)} variant="outline" className="flex-1">
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-5 w-5 mr-2" />
                     Deletar
                   </Button>
                   {cliente.telefone && (
                     <Button onClick={handleWhatsApp} className="flex-1">
-                      <MessageCircle className="h-4 w-4 mr-2" />
+                      <MessageCircle className="h-5 w-5 mr-2" />
                       WhatsApp
                     </Button>
                   )}
