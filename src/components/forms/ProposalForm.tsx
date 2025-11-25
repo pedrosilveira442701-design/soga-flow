@@ -4,29 +4,12 @@ import * as z from "zod";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plus, X, Info } from "lucide-react";
@@ -47,6 +30,7 @@ const TIPOS_PRODUTO = [
   "Pintura Acrílica Quadra",
   "Pintura de Parede",
   "Piso Autonivelante",
+  "Piso Uretano",
   "Rodapé Abaulado",
   "Concretagem",
   "Outro",
@@ -55,39 +39,41 @@ const TIPOS_PRODUTO = [
 // Função para obter informações de unidade baseado no tipo
 const getUnidadeInfo = (tipo: string) => {
   if (tipo === "Rodapé Abaulado") {
-    return { 
-      unidade: "ml", 
+    return {
+      unidade: "ml",
       labelQuantidade: "Metros Lineares (ml)",
       labelPreco: "Preço/ml (R$)",
-      labelCusto: "Custo/ml (R$)"
+      labelCusto: "Custo/ml (R$)",
     };
   }
-  return { 
-    unidade: "m²", 
+  return {
+    unidade: "m²",
     labelQuantidade: "Área (m²)",
     labelPreco: "Preço/m² (R$)",
-    labelCusto: "Custo/m² (R$)"
+    labelCusto: "Custo/m² (R$)",
   };
 };
 
-const servicoSchema = z.object({
-  tipo: z.string().min(1, "Selecione o tipo"),
-  tipo_outro: z.string().optional(),
-  m2: z.number().positive("Área deve ser maior que zero"),
-  valor_m2: z.number().positive("Preço deve ser maior que zero"),
-  custo_m2: z.number().positive("Custo deve ser maior que zero"),
-}).refine(
-  (data) => {
-    if (data.tipo === "Outro") {
-      return data.tipo_outro && data.tipo_outro.trim().length > 0;
-    }
-    return true;
-  },
-  {
-    message: "Descreva o tipo de serviço",
-    path: ["tipo_outro"],
-  },
-);
+const servicoSchema = z
+  .object({
+    tipo: z.string().min(1, "Selecione o tipo"),
+    tipo_outro: z.string().optional(),
+    m2: z.number().positive("Área deve ser maior que zero"),
+    valor_m2: z.number().positive("Preço deve ser maior que zero"),
+    custo_m2: z.number().positive("Custo deve ser maior que zero"),
+  })
+  .refine(
+    (data) => {
+      if (data.tipo === "Outro") {
+        return data.tipo_outro && data.tipo_outro.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: "Descreva o tipo de serviço",
+      path: ["tipo_outro"],
+    },
+  );
 
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
@@ -106,14 +92,11 @@ interface ProposalFormProps {
   initialData?: Partial<ProposalFormValues> & { id?: string };
 }
 
-export default function ProposalForm({
-  onSubmit,
-  initialData,
-}: ProposalFormProps) {
+export default function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   const [autoFilledFromLead, setAutoFilledFromLead] = useState(false);
   const [leadInfo, setLeadInfo] = useState<{ id: string; name: string } | null>(null);
-  
+
   const form = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
     defaultValues: {
@@ -141,7 +124,7 @@ export default function ProposalForm({
     queryKey: ["leads-by-cliente", selectedClienteId],
     queryFn: async () => {
       if (!selectedClienteId) return null;
-      
+
       const { data, error } = await supabase
         .from("leads")
         .select("*")
@@ -161,19 +144,19 @@ export default function ProposalForm({
     if (leadsDoCliente && !autoFilledFromLead && !initialData) {
       const lead = leadsDoCliente;
       const produtos = lead.produtos as Array<{ tipo: string; medida: number | null }>;
-      
+
       if (produtos && Array.isArray(produtos) && produtos.length > 0) {
         // Mapear produtos do lead para serviços da proposta
-        const servicosPreenchidos = produtos.map(p => {
+        const servicosPreenchidos = produtos.map((p) => {
           let tipo = p.tipo;
           let tipo_outro = "";
-          
+
           // Se começar com "Outro:", extrair a descrição
           if (p.tipo?.startsWith("Outro:")) {
             tipo = "Outro";
             tipo_outro = p.tipo.replace("Outro:", "").trim();
           }
-          
+
           return {
             tipo,
             tipo_outro,
@@ -182,7 +165,7 @@ export default function ProposalForm({
             custo_m2: 0,
           };
         });
-        
+
         form.setValue("servicos", servicosPreenchidos);
         form.setValue("lead_id", lead.id);
         setAutoFilledFromLead(true);
@@ -191,8 +174,8 @@ export default function ProposalForm({
     }
   }, [leadsDoCliente, autoFilledFromLead, initialData, form]);
 
-  const totalBruto = servicos.reduce((acc, s) => acc + (s.m2 * s.valor_m2), 0);
-  const totalCusto = servicos.reduce((acc, s) => acc + (s.m2 * s.custo_m2), 0);
+  const totalBruto = servicos.reduce((acc, s) => acc + s.m2 * s.valor_m2, 0);
+  const totalCusto = servicos.reduce((acc, s) => acc + s.m2 * s.custo_m2, 0);
   const totalComDesconto = totalBruto - desconto;
   const valorLiquido = totalComDesconto - totalCusto;
   const margem = totalComDesconto > 0 ? (valorLiquido / totalComDesconto) * 100 : 0;
@@ -204,7 +187,7 @@ export default function ProposalForm({
     }).format(value);
   };
 
-  const selectedCliente = clientes?.find(c => c.id === form.watch("cliente_id"));
+  const selectedCliente = clientes?.find((c) => c.id === form.watch("cliente_id"));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -255,18 +238,13 @@ export default function ProposalForm({
 
               {fields.map((field, index) => {
                 const tipoSelecionado = form.watch(`servicos.${index}.tipo`);
-                
+
                 return (
                   <Card key={field.id} className="p-4 space-y-4">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Serviço {index + 1}</h4>
                       {fields.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => remove(index)}
-                        >
+                        <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
                           <X className="w-4 h-4" />
                         </Button>
                       )}
@@ -305,10 +283,7 @@ export default function ProposalForm({
                           <FormItem>
                             <FormLabel>Descreva o tipo de serviço *</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="Ex: Pintura especial, revestimento customizado..."
-                                {...field}
-                              />
+                              <Input placeholder="Ex: Pintura especial, revestimento customizado..." {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -391,7 +366,9 @@ export default function ProposalForm({
                       <div className="flex justify-between">
                         <span>Subtotal:</span>
                         <span className="font-medium">
-                          {formatCurrency(form.watch(`servicos.${index}.m2`) * form.watch(`servicos.${index}.valor_m2`))}
+                          {formatCurrency(
+                            form.watch(`servicos.${index}.m2`) * form.watch(`servicos.${index}.valor_m2`),
+                          )}
                         </span>
                       </div>
                     </div>
@@ -429,11 +406,7 @@ export default function ProposalForm({
                 <FormItem>
                   <FormLabel>Observações</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Observações sobre a proposta..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
+                    <Textarea placeholder="Observações sobre a proposta..." className="min-h-[100px]" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -451,13 +424,10 @@ export default function ProposalForm({
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? (
-                            format(new Date(field.value + 'T00:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                            format(new Date(field.value + "T00:00:00"), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -468,7 +438,7 @@ export default function ProposalForm({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
+                        selected={field.value ? new Date(field.value + "T00:00:00") : undefined}
                         onSelect={(date) => field.onChange(date ? formatDateToLocal(date) : undefined)}
                         initialFocus
                         className="pointer-events-auto"
@@ -513,12 +483,7 @@ export default function ProposalForm({
                   <Paperclip className="h-5 w-5 text-muted-foreground" />
                   <h3 className="font-semibold">Arquivos Anexados</h3>
                 </div>
-                <ArquivosList 
-                  entidade="proposta"
-                  entidadeId={initialData.id}
-                  showUpload={true}
-                  compact={false}
-                />
+                <ArquivosList entidade="proposta" entidadeId={initialData.id} showUpload={true} compact={false} />
               </Card>
             )}
 
@@ -536,9 +501,7 @@ export default function ProposalForm({
             <div className="mb-4 pb-4 border-b">
               <div className="text-sm text-muted-foreground">Cliente</div>
               <div className="font-medium">{selectedCliente.nome}</div>
-              {selectedCliente.cidade && (
-                <div className="text-xs text-muted-foreground">{selectedCliente.cidade}</div>
-              )}
+              {selectedCliente.cidade && <div className="text-xs text-muted-foreground">{selectedCliente.cidade}</div>}
             </div>
           )}
           <div className="space-y-3">
@@ -566,7 +529,9 @@ export default function ProposalForm({
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-medium">Margem</span>
-              <span className={`text-xl font-bold ${margem < 20 ? 'text-destructive' : margem < 35 ? 'text-yellow-600' : 'text-success'}`}>
+              <span
+                className={`text-xl font-bold ${margem < 20 ? "text-destructive" : margem < 35 ? "text-yellow-600" : "text-success"}`}
+              >
                 {margem.toFixed(1)}%
               </span>
             </div>
