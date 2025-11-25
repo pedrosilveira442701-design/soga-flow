@@ -148,7 +148,7 @@ export function ContratoDetailsDialog({
                     Proposta Origem
                   </p>
                   <p className="font-medium">
-                    {contrato.proposta.tipo_piso} - {contrato.proposta.m2}m²
+                    {contrato.proposta.tipo_piso} - {contrato.proposta.m2}{contrato.proposta.tipo_piso === "Rodapé Abaulado" ? "ml" : "m²"}
                   </p>
                 </div>
               )}

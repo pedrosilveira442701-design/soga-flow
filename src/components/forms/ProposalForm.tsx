@@ -47,8 +47,28 @@ const TIPOS_PRODUTO = [
   "Pintura Acrílica Quadra",
   "Pintura de Parede",
   "Piso Autonivelante",
+  "Rodapé Abaulado",
+  "Concretagem",
   "Outro",
 ] as const;
+
+// Função para obter informações de unidade baseado no tipo
+const getUnidadeInfo = (tipo: string) => {
+  if (tipo === "Rodapé Abaulado") {
+    return { 
+      unidade: "ml", 
+      labelQuantidade: "Metros Lineares (ml)",
+      labelPreco: "Preço/ml (R$)",
+      labelCusto: "Custo/ml (R$)"
+    };
+  }
+  return { 
+    unidade: "m²", 
+    labelQuantidade: "Área (m²)",
+    labelPreco: "Preço/m² (R$)",
+    labelCusto: "Custo/m² (R$)"
+  };
+};
 
 const servicoSchema = z.object({
   tipo: z.string().min(1, "Selecione o tipo"),
@@ -300,61 +320,70 @@ export default function ProposalForm({
                       <FormField
                         control={form.control}
                         name={`servicos.${index}.m2`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Área (m²) *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const unidadeInfo = getUnidadeInfo(tipoSelecionado);
+                          return (
+                            <FormItem>
+                              <FormLabel>{unidadeInfo.labelQuantidade} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <FormField
                         control={form.control}
                         name={`servicos.${index}.valor_m2`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preço/m² (R$) *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const unidadeInfo = getUnidadeInfo(tipoSelecionado);
+                          return (
+                            <FormItem>
+                              <FormLabel>{unidadeInfo.labelPreco} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <FormField
                         control={form.control}
                         name={`servicos.${index}.custo_m2`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Custo/m² (R$) *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const unidadeInfo = getUnidadeInfo(tipoSelecionado);
+                          return (
+                            <FormItem>
+                              <FormLabel>{unidadeInfo.labelCusto} *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  placeholder="0.00"
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
                     </div>
 

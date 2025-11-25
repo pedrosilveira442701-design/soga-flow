@@ -453,7 +453,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                                     {format(parseISO(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
                                   </TableCell>
                                   <TableCell>{proposta.tipo_piso}</TableCell>
-                                  <TableCell>{proposta.m2} m²</TableCell>
+                                  <TableCell>{proposta.m2} {proposta.tipo_piso === "Rodapé Abaulado" ? "ml" : "m²"}</TableCell>
                                   <TableCell className="font-semibold">
                                     {formatCurrency(Number(proposta.liquido))}
                                   </TableCell>

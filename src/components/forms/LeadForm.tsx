@@ -27,6 +27,8 @@ const TIPOS_PRODUTO = [
   "Pintura Acrílica Quadra",
   "Pintura de Parede",
   "Piso Autonivelante",
+  "Rodapé Abaulado",
+  "Concretagem",
   "Outro",
 ] as const;
 
@@ -278,15 +280,20 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
               <FormField
                 control={form.control}
                 name={`produtos.${index}.medida`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Medida (m²)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const tipoSelecionado = produtos[index]?.tipo;
+                  const unidade = tipoSelecionado === "Rodapé Abaulado" ? "ml" : "m²";
+                  const label = tipoSelecionado === "Rodapé Abaulado" ? "Metros Lineares (ml)" : "Medida (m²)";
+                  return (
+                    <FormItem>
+                      <FormLabel>{label}</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           ))}
