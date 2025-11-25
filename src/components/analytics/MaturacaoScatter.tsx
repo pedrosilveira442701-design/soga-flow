@@ -27,12 +27,13 @@ const TIPO_PISO_COLORS: Record<string, string> = {
   "Pintura Acrílica": "#F59E0B",
   "Pintura Acrílica Quadra": "#F59E0B",
   "Piso Autonivelante": "#EC4899",
+  "Piso Uretano": "#0EA5E9",
   "Pintura de Parede": "#F59E0B",
   "Rodapé Abaulado": "#D946EF",
-  "Concretagem": "#78716C",
+  Concretagem: "#78716C",
   "Cimento Queimado": "#10B981",
-  "Revestimento": "#EF4444",
-  "Impermeabilização": "#06B6D4",
+  Revestimento: "#EF4444",
+  Impermeabilização: "#06B6D4",
   "Não especificado": "#94A3B8",
 };
 
@@ -58,12 +59,12 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
 
   const maxX = useMemo(() => {
     if (!chartData.length) return 30;
-    return Math.max(...chartData.map(d => d.x)) + 5;
+    return Math.max(...chartData.map((d) => d.x)) + 5;
   }, [chartData]);
 
   const maxY = useMemo(() => {
     if (!chartData.length) return 30;
-    return Math.max(...chartData.map(d => d.y)) + 5;
+    return Math.max(...chartData.map((d) => d.y)) + 5;
   }, [chartData]);
 
   const tiposPiso = useMemo(() => {
@@ -116,56 +117,24 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
         <ResponsiveContainer width="100%" height={500}>
           <ScatterChart margin={{ top: 20, right: 30, bottom: 80, left: 70 }}>
             {/* Quadrante ideal (verde claro) */}
-            <ReferenceArea
-              x1={0}
-              x2={7}
-              y1={0}
-              y2={14}
-              fill="#D1FAE5"
-              fillOpacity={0.3}
-              strokeOpacity={0}
-            />
-            
+            <ReferenceArea x1={0} x2={7} y1={0} y2={14} fill="#D1FAE5" fillOpacity={0.3} strokeOpacity={0} />
+
             {/* Outros quadrantes (cinza claro) */}
-            <ReferenceArea
-              x1={7}
-              x2={maxX}
-              y1={0}
-              y2={14}
-              fill="#F8FAFC"
-              fillOpacity={0.5}
-              strokeOpacity={0}
-            />
-            <ReferenceArea
-              x1={0}
-              x2={7}
-              y1={14}
-              y2={maxY}
-              fill="#F8FAFC"
-              fillOpacity={0.5}
-              strokeOpacity={0}
-            />
-            <ReferenceArea
-              x1={7}
-              x2={maxX}
-              y1={14}
-              y2={maxY}
-              fill="#F8FAFC"
-              fillOpacity={0.5}
-              strokeOpacity={0}
-            />
+            <ReferenceArea x1={7} x2={maxX} y1={0} y2={14} fill="#F8FAFC" fillOpacity={0.5} strokeOpacity={0} />
+            <ReferenceArea x1={0} x2={7} y1={14} y2={maxY} fill="#F8FAFC" fillOpacity={0.5} strokeOpacity={0} />
+            <ReferenceArea x1={7} x2={maxX} y1={14} y2={maxY} fill="#F8FAFC" fillOpacity={0.5} strokeOpacity={0} />
 
             <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" strokeWidth={1} />
-            
+
             <XAxis
               type="number"
               dataKey="x"
               name="Dias até Proposta"
-              label={{ 
-                value: "Dias até Proposta", 
-                position: "insideBottom", 
+              label={{
+                value: "Dias até Proposta",
+                position: "insideBottom",
                 offset: -10,
-                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" }
+                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" },
               }}
               tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
               domain={[0, maxX]}
@@ -174,46 +143,46 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
               type="number"
               dataKey="y"
               name="Dias até Fechamento"
-              label={{ 
-                value: "Dias até Fechamento", 
-                angle: -90, 
+              label={{
+                value: "Dias até Fechamento",
+                angle: -90,
                 position: "insideLeft",
-                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" }
+                style: { fontSize: 14, fontWeight: 600, fill: "hsl(var(--foreground))" },
               }}
               tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
               domain={[0, maxY]}
             />
-            
+
             {/* Linhas de referência (metas) */}
-            <ReferenceLine 
-              x={7} 
-              stroke="#475569" 
-              strokeDasharray="5 5" 
+            <ReferenceLine
+              x={7}
+              stroke="#475569"
+              strokeDasharray="5 5"
               strokeWidth={1.5}
               opacity={0.9}
-              label={{ 
-                value: "Meta: 7 dias", 
+              label={{
+                value: "Meta: 7 dias",
                 position: "top",
                 fill: "#475569",
                 fontSize: 11,
-                fontWeight: 600
+                fontWeight: 600,
               }}
             />
-            <ReferenceLine 
-              y={14} 
-              stroke="#475569" 
-              strokeDasharray="5 5" 
+            <ReferenceLine
+              y={14}
+              stroke="#475569"
+              strokeDasharray="5 5"
               strokeWidth={1.5}
               opacity={0.9}
-              label={{ 
-                value: "Meta: 14 dias", 
+              label={{
+                value: "Meta: 14 dias",
                 position: "right",
                 fill: "#475569",
                 fontSize: 11,
-                fontWeight: 600
+                fontWeight: 600,
               }}
             />
-            
+
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload || !payload.length) return null;
@@ -224,16 +193,19 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
                     <p className="font-bold text-base mb-3 text-foreground">{point.cliente}</p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: point.fill }}
-                        />
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: point.fill }} />
                         <span className="font-medium">{point.tipo_piso}</span>
                       </div>
                       <div className="border-t pt-2 space-y-1 text-muted-foreground">
-                        <p><span className="font-semibold text-foreground">Dias até proposta:</span> {point.x} dias</p>
-                        <p><span className="font-semibold text-foreground">Dias até fechamento:</span> {point.y} dias</p>
-                        <p><span className="font-semibold text-foreground">Tempo total:</span> {point.dias_total} dias</p>
+                        <p>
+                          <span className="font-semibold text-foreground">Dias até proposta:</span> {point.x} dias
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">Dias até fechamento:</span> {point.y} dias
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">Tempo total:</span> {point.dias_total} dias
+                        </p>
                         <p className="pt-1 border-t">
                           <span className="font-semibold text-foreground">Valor:</span> R${" "}
                           {point.valor.toLocaleString("pt-BR", {
@@ -247,7 +219,7 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
                 );
               }}
             />
-            
+
             <Legend
               verticalAlign="bottom"
               height={70}
@@ -255,9 +227,9 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
                 <div className="flex flex-wrap gap-4 justify-center mt-6 px-4">
                   {tiposPiso.map((tipo) => (
                     <div key={tipo} className="flex items-center gap-2 text-sm">
-                      <div 
-                        className="w-4 h-4 rounded-full border-2 border-background shadow-sm" 
-                        style={{ backgroundColor: getColor(tipo) }} 
+                      <div
+                        className="w-4 h-4 rounded-full border-2 border-background shadow-sm"
+                        style={{ backgroundColor: getColor(tipo) }}
                       />
                       <span className="font-medium text-foreground">{tipo}</span>
                     </div>
@@ -265,13 +237,8 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
                 </div>
               )}
             />
-            
-            <Scatter 
-              name="Contratos" 
-              data={chartData} 
-              fill="#8884d8"
-              fillOpacity={0.75}
-            />
+
+            <Scatter name="Contratos" data={chartData} fill="#8884d8" fillOpacity={0.75} />
           </ScatterChart>
         </ResponsiveContainer>
       </CardContent>
