@@ -27,6 +27,7 @@ const TIPOS_PRODUTO = [
   "Pintura Acrílica Quadra",
   "Pintura de Parede",
   "Piso Autonivelante",
+  "Piso Uretano",
   "Rodapé Abaulado",
   "Concretagem",
   "Outro",
