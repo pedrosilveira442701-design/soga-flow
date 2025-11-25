@@ -108,7 +108,7 @@ export type Database = {
           complemento?: string | null
           contato?: string | null
           cpf_cnpj?: string | null
-          created_at: string
+          created_at?: string
           endereco?: string | null
           id?: string
           logradouro?: string | null
