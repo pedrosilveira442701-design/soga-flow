@@ -1,17 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FloorTypeAnalysisData } from "@/hooks/useAnalytics";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { Package, DollarSign, TrendingUp } from "lucide-react";
 
 interface FloorTypeChartProps {
@@ -27,13 +17,14 @@ const TIPO_COLORS: Record<string, string> = {
   "Pintura Acrílica Quadra": "#F59E0B",
   "Pintura de Parede": "#F59E0B",
   "Piso Autonivelante": "#EC4899",
+  "Piso Uretano": "#0EA5E9",
   "Rodapé Abaulado": "#D946EF",
-  "Concretagem": "#78716C",
-  "Porcelanato": "#3b82f6",
-  "Cerâmica": "#8b5cf6",
-  "Vinílico": "#ec4899",
-  "Laminado": "#f59e0b",
-  "Madeira": "#10b981",
+  Concretagem: "#78716C",
+  Porcelanato: "#3b82f6",
+  Cerâmica: "#8b5cf6",
+  Vinílico: "#ec4899",
+  Laminado: "#f59e0b",
+  Madeira: "#10b981",
   "Não especificado": "#94a3b8",
 };
 
@@ -194,9 +185,9 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
           <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
             <p className="text-sm font-semibold mb-1">🏆 Tipo Mais Lucrativo:</p>
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium">{maisLucrativo.tipo_piso}</span> apresenta a maior
-              margem média de <span className="font-medium text-green-500">{maisLucrativo.margem_media}%</span>.
-              Considere focar esforços comerciais neste produto.
+              <span className="font-medium">{maisLucrativo.tipo_piso}</span> apresenta a maior margem média de{" "}
+              <span className="font-medium text-green-500">{maisLucrativo.margem_media}%</span>. Considere focar
+              esforços comerciais neste produto.
             </p>
           </div>
 
@@ -230,18 +221,14 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
                         <td className="py-2 text-center">
                           {tipo.volume_m2.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
                         </td>
-                        <td className="py-2 text-center text-muted-foreground">
-                          {percentualVolume.toFixed(1)}%
-                        </td>
+                        <td className="py-2 text-center text-muted-foreground">{percentualVolume.toFixed(1)}%</td>
                         <td className="py-2 text-right">
                           R$ {tipo.ticket_medio.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </td>
                         <td className="py-2 text-center">
                           <span
                             className={
-                              tipo.margem_media >= avgMargem
-                                ? "text-green-500 font-medium"
-                                : "text-muted-foreground"
+                              tipo.margem_media >= avgMargem ? "text-green-500 font-medium" : "text-muted-foreground"
                             }
                           >
                             {tipo.margem_media}%
