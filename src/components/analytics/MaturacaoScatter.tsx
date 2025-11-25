@@ -23,8 +23,13 @@ interface MaturacaoScatterProps {
 const TIPO_PISO_COLORS: Record<string, string> = {
   "Pintura Epóxi": "#3B82F6",
   "Pintura PU": "#8B5CF6",
+  "Pintura PU Quadra": "#8B5CF6",
+  "Pintura Acrílica": "#F59E0B",
+  "Pintura Acrílica Quadra": "#F59E0B",
   "Piso Autonivelante": "#EC4899",
   "Pintura de Parede": "#F59E0B",
+  "Rodapé Abaulado": "#D946EF",
+  "Concretagem": "#78716C",
   "Cimento Queimado": "#10B981",
   "Revestimento": "#EF4444",
   "Impermeabilização": "#06B6D4",

@@ -240,6 +240,8 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                     <SelectItem value="Pintura Acrílica Quadra">Pintura Acrílica Quadra</SelectItem>
                     <SelectItem value="Pintura de Parede">Pintura de Parede</SelectItem>
                     <SelectItem value="Piso Autonivelante">Piso Autonivelante</SelectItem>
+                    <SelectItem value="Rodapé Abaulado">Rodapé Abaulado</SelectItem>
+                    <SelectItem value="Concretagem">Concretagem</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

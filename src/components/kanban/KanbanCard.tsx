@@ -87,7 +87,8 @@ export function KanbanCard({
             
             // Adicionar metragem se existir (verificar tanto number quanto string)
             const medidaValue = produto.medida;
-            const medidaText = medidaValue && Number(medidaValue) > 0 ? ` - ${medidaValue}m²` : '';
+            const unidade = produto.tipo === "Rodapé Abaulado" ? "ml" : "m²";
+            const medidaText = medidaValue && Number(medidaValue) > 0 ? ` - ${medidaValue}${unidade}` : '';
             
             return (
               <Badge 

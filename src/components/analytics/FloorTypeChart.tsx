@@ -20,6 +20,15 @@ interface FloorTypeChartProps {
 }
 
 const TIPO_COLORS: Record<string, string> = {
+  "Pintura Epóxi": "#3B82F6",
+  "Pintura PU": "#8B5CF6",
+  "Pintura PU Quadra": "#8B5CF6",
+  "Pintura Acrílica": "#F59E0B",
+  "Pintura Acrílica Quadra": "#F59E0B",
+  "Pintura de Parede": "#F59E0B",
+  "Piso Autonivelante": "#EC4899",
+  "Rodapé Abaulado": "#D946EF",
+  "Concretagem": "#78716C",
   "Porcelanato": "#3b82f6",
   "Cerâmica": "#8b5cf6",
   "Vinílico": "#ec4899",
