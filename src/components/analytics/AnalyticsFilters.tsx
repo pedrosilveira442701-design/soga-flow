@@ -2,18 +2,8 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Calendar as CalendarIcon, X, Clock } from "lucide-react";
 import { format, subDays, subWeeks, subMonths, subYears, startOfDay, endOfDay } from "date-fns";
@@ -37,12 +27,12 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
   const handlePeriodPreset = (preset: PeriodPreset) => {
     setSelectedPreset(preset);
     const today = endOfDay(new Date());
-    
+
     if (preset === "custom") {
       // Mantém as datas customizadas
       return;
     }
-    
+
     let start: Date;
     switch (preset) {
       case "7d":
@@ -63,7 +53,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
       default:
         start = startOfDay(subMonths(today, 1));
     }
-    
+
     setStartDate(start);
     setEndDate(today);
     onChange({ ...filters, startDate: start, endDate: today });
@@ -101,12 +91,10 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
             </div>
             {activeFiltersCount > 0 && (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary">{activeFiltersCount} {activeFiltersCount === 1 ? 'filtro ativo' : 'filtros ativos'}</Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearFilters}
-                >
+                <Badge variant="secondary">
+                  {activeFiltersCount} {activeFiltersCount === 1 ? "filtro ativo" : "filtros ativos"}
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={handleClearFilters}>
                   <X className="h-4 w-4 mr-1" />
                   Limpar
                 </Button>
@@ -174,7 +162,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
+                        !startDate && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -200,10 +188,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
+                      className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecione"}
@@ -240,6 +225,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                     <SelectItem value="Pintura Acrílica Quadra">Pintura Acrílica Quadra</SelectItem>
                     <SelectItem value="Pintura de Parede">Pintura de Parede</SelectItem>
                     <SelectItem value="Piso Autonivelante">Piso Autonivelante</SelectItem>
+                    <SelectItem value="Piso Uretano">Piso Uretano</SelectItem>
                     <SelectItem value="Rodapé Abaulado">Rodapé Abaulado</SelectItem>
                     <SelectItem value="Concretagem">Concretagem</SelectItem>
                   </SelectContent>
