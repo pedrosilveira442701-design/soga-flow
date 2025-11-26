@@ -13,15 +13,17 @@ import { KanbanControls } from "@/components/kanban/KanbanControls";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { LeadDetailsDialog } from "@/components/leads/LeadDetailsDialog";
 import { LossReasonDialog } from "@/components/leads/LossReasonDialog";
+import { LeadFilters, LeadFiltersState } from "@/components/leads/LeadFilters";
 import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
 import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
 import { useLeads } from "@/hooks/useLeads";
 import { useContatos, Contato } from "@/hooks/useContatos";
 import { usePropostas } from "@/hooks/usePropostas";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizeText } from "@/lib/fuzzySearch";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
   clientes?: {
@@ -54,6 +56,12 @@ export default function Leads() {
     onConfirm: (motivo: string) => void;
   } | null>(null);
 
+  // Filters state
+  const [filters, setFilters] = useState<LeadFiltersState>({
+    searchQuery: "",
+    sortBy: "date-newest",
+  });
+
   // Kanban controls state
   const [zoom, setZoom] = useState<number>(() => {
     const saved = localStorage.getItem("kanban-zoom");
@@ -78,6 +86,74 @@ export default function Leads() {
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
   const { updatePropostasByLeadId } = usePropostas();
   const { user } = useAuth();
+
+  // Filter and sort leads
+  const filteredAndSortedLeads = useMemo(() => {
+    let filtered = [...leads] as Lead[];
+
+    // Apply search filter
+    if (filters.searchQuery) {
+      const normalizedQuery = normalizeText(filters.searchQuery);
+      filtered = filtered.filter((lead) => {
+        const clientName = normalizeText(lead.clientes?.nome || "");
+        return clientName.includes(normalizedQuery);
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (filters.sortBy) {
+        case "name-asc":
+          return (a.clientes?.nome || "").localeCompare(b.clientes?.nome || "");
+        case "name-desc":
+          return (b.clientes?.nome || "").localeCompare(a.clientes?.nome || "");
+        case "date-newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "date-oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [leads, filters]);
+
+  // Listen for loss reason events from LeadDetailsDialog
+  useEffect(() => {
+    const handleMarkAsLost = () => {
+      const leadId = (window as any).__markAsLost;
+      if (leadId) {
+        handleLossReasonRequired(leadId, (motivo) => {
+          handleStageChange(leadId, "perdido", motivo);
+        });
+        (window as any).__markAsLost = undefined;
+      }
+    };
+
+    const handleEditLossReason = () => {
+      const leadId = (window as any).__editLossReason;
+      if (leadId) {
+        const lead = leads.find((l) => l.id === leadId);
+        if (lead) {
+          handleLossReasonRequired(leadId, (motivo) => {
+            updateLead.mutate({
+              id: leadId,
+              updates: { motivo_perda: motivo },
+            });
+          });
+        }
+        (window as any).__editLossReason = undefined;
+      }
+    };
+
+    const interval = setInterval(() => {
+      handleMarkAsLost();
+      handleEditLossReason();
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [leads, updateLead]);
 
   // Navigation handlers
   const handleNavigateLeft = () => {
@@ -123,7 +199,8 @@ export default function Leads() {
   ];
 
   const stagesWithCounts = STAGES.map((stage) => {
-    const leadsCount = leads.filter((lead) => lead.estagio === stage.id).length;
+    // Use filtered leads for counts, not all leads
+    const leadsCount = filteredAndSortedLeads.filter((lead) => lead.estagio === stage.id).length;
     // Para o stage "contato", incluir também os contatos não convertidos
     const totalCount = stage.id === "contato" ? leadsCount + naoConvertidos.length : leadsCount;
 
@@ -416,6 +493,14 @@ export default function Leads() {
         </div>
       </div>
 
+      {/* Lead Filters */}
+      <LeadFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        totalCount={leads.length}
+        filteredCount={filteredAndSortedLeads.length}
+      />
+
       {/* Kanban Controls */}
       <KanbanControls
         zoom={zoom}
@@ -433,7 +518,7 @@ export default function Leads() {
 
       {/* Kanban Board */}
       <KanbanBoard
-        leads={leads}
+        leads={filteredAndSortedLeads}
         onStageChange={handleStageChange}
         onCardClick={handleCardClick}
         contatosNaoConvertidos={naoConvertidos}

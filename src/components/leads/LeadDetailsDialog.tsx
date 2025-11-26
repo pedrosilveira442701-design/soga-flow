@@ -27,6 +27,7 @@ import {
   Clock,
   MessageSquare,
   Plus,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Database } from "@/integrations/supabase/types";
@@ -160,12 +161,27 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                     animate={{ opacity: 1, height: "auto" }}
                     className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg"
                   >
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                      <div className="space-y-1">
-                        <p className="text-caption font-medium text-destructive">Motivo da Perda</p>
-                        <p className="text-caption text-destructive/80">{lead.motivo_perda}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                        <div className="space-y-1">
+                          <p className="text-caption font-medium text-destructive">Motivo da Perda</p>
+                          <p className="text-caption text-destructive/80">{lead.motivo_perda}</p>
+                        </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          if (onEdit) {
+                            // Trigger parent to open loss reason dialog
+                            (window as any).__editLossReason = lead.id;
+                          }
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </motion.div>
                 )}
@@ -419,6 +435,20 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                 <Pencil className="h-5 w-5" />
                 Editar
               </Button>
+              {lead.estagio !== "perdido" && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    // Trigger parent to open loss reason dialog
+                    (window as any).__markAsLost = lead.id;
+                    onOpenChange(false);
+                  }} 
+                  className="w-full gap-2"
+                >
+                  <X className="h-5 w-5" />
+                  Marcar como Perdida
+                </Button>
+              )}
             </motion.div>
           </div>
         </DialogContent>
