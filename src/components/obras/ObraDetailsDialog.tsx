@@ -51,7 +51,20 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
   };
 
   const handleUpdateStatus = (status: string) => {
-    updateObra({ id: obra.id, status: status as any });
+    if (status === "concluida") {
+      // obra concluída SEMPRE com 100%
+      updateObra({
+        id: obra.id,
+        status: status as any,
+        progresso_pct: 100,
+      });
+      setProgresso("100"); // atualiza o input da aba Progresso
+    } else {
+      updateObra({
+        id: obra.id,
+        status: status as any,
+      });
+    }
   };
 
   const handleAdicionarOcorrencia = () => {
