@@ -23,10 +23,10 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   mobilizacao: "bg-blue-500",
-  execucao: "bg-green-500",
-  acabamento: "bg-yellow-500",
-  concluida: "bg-primary",
-  finalizada: "bg-primary",
+  execucao: "bg-yellow-500",
+  acabamento: "bg-orange-500",
+  concluida: "bg-green-500",
+  finalizada: "bg-green-500",
   pausada: "bg-gray-500",
 };
 
