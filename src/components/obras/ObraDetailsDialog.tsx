@@ -99,9 +99,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle className="text-2xl">
-                {obra.contratos?.clientes?.nome || "Obra"}
-              </DialogTitle>
+              <DialogTitle className="text-2xl">{obra.contratos?.clientes?.nome || "Obra"}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {obra.contratos?.clientes?.endereco || "Endereço não informado"}
               </p>
@@ -145,9 +143,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">Valor Negociado</Label>
-                    <p className="text-lg font-semibold">
-                      {formatCurrency(obra.contratos?.valor_negociado || 0)}
-                    </p>
+                    <p className="text-lg font-semibold">{formatCurrency(obra.contratos?.valor_negociado || 0)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Data de Início</Label>
@@ -168,11 +164,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
               <CardContent className="space-y-4">
                 <div>
                   <Label>Status Atual</Label>
-                  <Select
-                    value={obra.status}
-                    onValueChange={handleUpdateStatus}
-                    disabled={obra.status === "concluida"}
-                  >
+                  <Select value={obra.status} onValueChange={handleUpdateStatus}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -180,6 +172,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                       <SelectItem value="mobilizacao">Mobilização</SelectItem>
                       <SelectItem value="execucao">Em Execução</SelectItem>
                       <SelectItem value="acabamento">Acabamento</SelectItem>
+                      <SelectItem value="concluida">Concluída</SelectItem>
                       <SelectItem value="pausada">Pausada</SelectItem>
                     </SelectContent>
                   </Select>
@@ -265,9 +258,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                   <Textarea
                     id="ocorrencia-desc"
                     value={novaOcorrencia.descricao}
-                    onChange={(e) =>
-                      setNovaOcorrencia({ ...novaOcorrencia, descricao: e.target.value })
-                    }
+                    onChange={(e) => setNovaOcorrencia({ ...novaOcorrencia, descricao: e.target.value })}
                     placeholder="Descreva a ocorrência..."
                     rows={3}
                   />
