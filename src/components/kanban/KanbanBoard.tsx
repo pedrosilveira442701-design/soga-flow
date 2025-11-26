@@ -155,6 +155,7 @@ export function KanbanBoard({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    document.body.style.cursor = "grabbing";
   };
 
   const handleDragMove = (event: any) => {
@@ -178,8 +179,13 @@ export function KanbanBoard({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    document.body.style.cursor = "";
 
-    if (!over) return;
+    if (!over) {
+      setActiveId(null);
+      setIsDraggingNearEdge(null);
+      return;
+    }
 
     const leadId = active.id as string;
     const newStage = over.id as LeadStage;

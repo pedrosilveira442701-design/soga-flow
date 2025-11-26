@@ -64,9 +64,9 @@ export function KanbanColumn({
       <div
         ref={mergeRefs}
         className={cn(
-          `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all`,
+          `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all duration-300`,
           isOver
-            ? "border-primary bg-primary/5 shadow-elev2"
+            ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-[1.01] shadow-elev2"
             : colorClasses[color as keyof typeof colorClasses] || colorClasses.default,
         )}
       >
