@@ -13,14 +13,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, MapPin, Phone, User } from 'lucide-react';
+import { Calendar, Clock, MapPin, Phone, User, Plus } from 'lucide-react';
 import { useClientes } from '@/hooks/useClientes';
 import { Visita } from '@/hooks/useVisitas';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ClienteCombobox from '@/components/forms/ClienteCombobox';
+import { ClienteForm } from '@/components/forms/ClienteForm';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const visitaFormSchema = z.object({
-  cliente_id: z.string().uuid('Selecione um cliente válido'),
+  cliente_id: z.string().uuid().nullable(),
+  cliente_manual_name: z.string().optional(),
   marcacao_tipo: z.string().min(1, 'Tipo de visita é obrigatório'),
   assunto: z.string().min(3, 'Mínimo 3 caracteres').max(200, 'Máximo 200 caracteres'),
   data: z.string().nullable(),
@@ -30,7 +38,13 @@ const visitaFormSchema = z.object({
   responsavel: z.string().optional(),
   observacao: z.string().max(500, 'Máximo 500 caracteres').optional(),
   realizada: z.boolean().default(false),
-});
+}).refine(
+  (data) => data.cliente_id || data.cliente_manual_name,
+  {
+    message: 'Selecione um cliente ou digite um nome manualmente',
+    path: ['cliente_id'],
+  }
+);
 
 type VisitaFormData = z.infer<typeof visitaFormSchema>;
 
@@ -51,7 +65,9 @@ interface VisitaFormProps {
 }
 
 export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
-  const { clientes } = useClientes();
+  const { clientes, createCliente } = useClientes();
+  const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
+  const [useManualName, setUseManualName] = useState(false);
   
   const {
     register,
@@ -64,6 +80,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
     defaultValues: visita
       ? {
           cliente_id: visita.cliente_id,
+          cliente_manual_name: visita.cliente_manual_name || '',
           marcacao_tipo: visita.marcacao_tipo,
           assunto: visita.assunto,
           data: visita.data,
@@ -75,9 +92,21 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
           realizada: visita.realizada,
         }
       : {
+          cliente_id: null,
+          cliente_manual_name: '',
           realizada: false,
         },
   });
+
+  const handleClienteCreated = (data: any) => {
+    createCliente.mutate(data, {
+      onSuccess: (newCliente) => {
+        setValue('cliente_id', newCliente.id);
+        setUseManualName(false);
+        setClienteDialogOpen(false);
+      },
+    });
+  };
 
   const clienteId = watch('cliente_id');
   const selectedCliente = clientes?.find((c) => c.id === clienteId);
@@ -110,16 +139,68 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Cliente */}
       <div className="space-y-2">
-        <Label>Cliente *</Label>
-        <ClienteCombobox
-          clientes={clientes || []}
-          value={watch('cliente_id') || ''}
-          onChange={(value) => setValue('cliente_id', value)}
-        />
+        <div className="flex items-center justify-between">
+          <Label>Cliente *</Label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setUseManualName(!useManualName)}
+            >
+              {useManualName ? 'Selecionar da lista' : 'Digitar nome'}
+            </Button>
+            {!useManualName && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setClienteDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Novo Cliente
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {useManualName ? (
+          <Input
+            {...register('cliente_manual_name')}
+            placeholder="Digite o nome do cliente"
+            onChange={(e) => {
+              setValue('cliente_id', null);
+              setValue('cliente_manual_name', e.target.value);
+            }}
+          />
+        ) : (
+          <ClienteCombobox
+            clientes={clientes || []}
+            value={watch('cliente_id') || ''}
+            onChange={(value) => {
+              setValue('cliente_id', value);
+              setValue('cliente_manual_name', '');
+            }}
+          />
+        )}
+
         {errors.cliente_id && (
           <p className="text-sm text-destructive">{errors.cliente_id.message}</p>
         )}
       </div>
+
+      {/* Mini Dialog - Cadastro Rápido de Cliente */}
+      <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
+          </DialogHeader>
+          <ClienteForm
+            onSubmit={handleClienteCreated}
+            isLoading={createCliente.isPending}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Tipo de Visita */}
       <div className="space-y-2">

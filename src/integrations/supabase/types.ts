@@ -661,6 +661,7 @@ export type Database = {
           assunto: string
           checklist: Json | null
           cliente_id: string
+          cliente_manual_name: string | null
           complexidade: number | null
           created_at: string
           data: string | null
@@ -675,6 +676,7 @@ export type Database = {
           observacao: string | null
           realizada: boolean | null
           responsavel: string | null
+          status: Database["public"]["Enums"]["visita_status"] | null
           telefone: string | null
           updated_at: string
           user_id: string
@@ -683,6 +685,7 @@ export type Database = {
           assunto: string
           checklist?: Json | null
           cliente_id: string
+          cliente_manual_name?: string | null
           complexidade?: number | null
           created_at?: string
           data?: string | null
@@ -697,6 +700,7 @@ export type Database = {
           observacao?: string | null
           realizada?: boolean | null
           responsavel?: string | null
+          status?: Database["public"]["Enums"]["visita_status"] | null
           telefone?: string | null
           updated_at?: string
           user_id: string
@@ -705,6 +709,7 @@ export type Database = {
           assunto?: string
           checklist?: Json | null
           cliente_id?: string
+          cliente_manual_name?: string | null
           complexidade?: number | null
           created_at?: string
           data?: string | null
@@ -719,6 +724,7 @@ export type Database = {
           observacao?: string | null
           realizada?: boolean | null
           responsavel?: string | null
+          status?: Database["public"]["Enums"]["visita_status"] | null
           telefone?: string | null
           updated_at?: string
           user_id?: string
@@ -776,6 +782,7 @@ export type Database = {
         | "concluida"
         | "pausada"
       payment_status: "pendente" | "pago" | "atrasado"
+      visita_status: "agendar" | "marcada" | "atrasada" | "concluida"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -927,6 +934,7 @@ export const Constants = {
         "pausada",
       ],
       payment_status: ["pendente", "pago", "atrasado"],
+      visita_status: ["agendar", "marcada", "atrasada", "concluida"],
     },
   },
 } as const
