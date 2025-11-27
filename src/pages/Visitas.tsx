@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, Plus, Search, Filter } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Calendar, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,16 +10,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useVisitas, Visita, VisitaFilters } from '@/hooks/useVisitas';
+import { useVisitas, Visita, VisitaFilters, VisitaStatus } from '@/hooks/useVisitas';
 import { VisitaForm } from '@/components/forms/VisitaForm';
-import { VisitaCard } from '@/components/visitas/VisitaCard';
 import { VisitaDetailsDialog } from '@/components/visitas/VisitaDetailsDialog';
+import { VisitasKanbanBoard } from '@/components/visitas/VisitasKanbanBoard';
 import { KPICard } from '@/components/kpi/KPICard';
 import { EmptyState } from '@/components/states/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO, isToday, isPast, isTomorrow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Card } from '@/components/ui/card';
+import { normalizeText } from '@/lib/fuzzySearch';
 
 const TIPOS_VISITA = [
   { value: 'medicao', label: 'Medição' },
@@ -34,13 +34,40 @@ const TIPOS_VISITA = [
 export default function Visitas() {
   const [filters, setFilters] = useState<VisitaFilters>({
     realizada: 'todos',
+    search: '',
   });
+  const [sortBy, setSortBy] = useState<'date-newest' | 'date-oldest'>('date-newest');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const { visitas, kpis, isLoading, createVisita, updateVisita, marcarComoRealizada, deleteVisita } = useVisitas(filters);
+
+  // Filter and sort visitas
+  const filteredAndSortedVisitas = useMemo(() => {
+    let filtered = [...visitas];
+
+    // Apply search filter
+    if (filters.search) {
+      const normalizedQuery = normalizeText(filters.search);
+      filtered = filtered.filter((visita) => {
+        const assunto = normalizeText(visita.assunto);
+        const clienteNome = normalizeText(visita.clientes?.nome || visita.cliente_manual_name || '');
+        const endereco = normalizeText(visita.endereco || '');
+        return assunto.includes(normalizedQuery) || clienteNome.includes(normalizedQuery) || endereco.includes(normalizedQuery);
+      });
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      const dateA = a.data ? new Date(a.data).getTime() : 0;
+      const dateB = b.data ? new Date(b.data).getTime() : 0;
+      return sortBy === 'date-newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return filtered;
+  }, [visitas, filters.search, sortBy]);
 
   const handleOpenDialog = (visita?: Visita) => {
     if (visita) {
@@ -89,52 +116,20 @@ export default function Visitas() {
     setFilters((prev) => ({ ...prev, periodo }));
   };
 
-  // Agrupar visitas por data
-  const groupedVisitas = visitas.reduce((acc, visita) => {
-    if (!visita.data) {
-      const key = 'sem-data';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(visita);
-      return acc;
-    }
+  const handleStatusChange = (visitaId: string, newStatus: VisitaStatus) => {
+    const visita = visitas.find((v) => v.id === visitaId);
+    if (!visita) return;
 
-    const dataVisita = parseISO(visita.data);
-    const isAtrasada = isPast(dataVisita) && !visita.realizada;
-
-    if (isAtrasada) {
-      const key = 'atrasadas';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(visita);
-    } else if (isToday(dataVisita)) {
-      const key = 'hoje';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(visita);
-    } else if (isTomorrow(dataVisita)) {
-      const key = 'amanha';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(visita);
+    // Update based on new status
+    const updates: Partial<Visita> = { status: newStatus };
+    
+    if (newStatus === 'concluida') {
+      updates.realizada = true;
     } else {
-      const key = format(dataVisita, 'yyyy-MM-dd');
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(visita);
+      updates.realizada = false;
     }
 
-    return acc;
-  }, {} as Record<string, Visita[]>);
-
-  const getGroupTitle = (key: string) => {
-    if (key === 'atrasadas') return 'Atrasadas';
-    if (key === 'hoje') return 'Hoje';
-    if (key === 'amanha') return 'Amanhã';
-    if (key === 'sem-data') return 'Sem Data Definida';
-    return format(parseISO(key), "dd 'de' MMMM", { locale: ptBR });
-  };
-
-  const getGroupColor = (key: string) => {
-    if (key === 'atrasadas') return 'text-red-600';
-    if (key === 'hoje') return 'text-blue-600';
-    if (key === 'amanha') return 'text-green-600';
-    return 'text-foreground';
+    updateVisita.mutate({ id: visitaId, ...updates });
   };
 
   const responsaveis = Array.from(
@@ -200,17 +195,28 @@ export default function Visitas() {
       ) : null}
 
       {/* Filtros */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por assunto, cliente, tipo..."
-              className="pl-9"
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            />
-          </div>
+      <Card className="p-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por assunto, cliente, endereço..."
+                className="pl-9"
+                value={filters.search || ''}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              />
+            </div>
+
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-newest">Mais recentes</SelectItem>
+                <SelectItem value="date-oldest">Mais antigas</SelectItem>
+              </SelectContent>
+            </Select>
 
           <Select
             value={filters.realizada || 'todos'}
@@ -307,13 +313,27 @@ export default function Visitas() {
             </Badge>
           )}
         </div>
-      </div>
 
-      {/* Lista de Visitas */}
+        {/* Resultado da busca */}
+        {filters.search && (
+          <div className="text-sm text-muted-foreground">
+            {filteredAndSortedVisitas.length === 0 ? (
+              <span>Nenhum resultado encontrado</span>
+            ) : (
+              <span>
+                Mostrando {filteredAndSortedVisitas.length} de {visitas.length} visitas
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      </Card>
+
+      {/* Kanban Board */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-64" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-[600px]" />
           ))}
         </div>
       ) : visitas.length === 0 ? (
@@ -327,39 +347,14 @@ export default function Visitas() {
           }}
         />
       ) : (
-        <div className="space-y-8">
-          {Object.keys(groupedVisitas)
-            .sort((a, b) => {
-              const order = ['atrasadas', 'hoje', 'amanha'];
-              const indexA = order.indexOf(a);
-              const indexB = order.indexOf(b);
-              if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-              if (indexA !== -1) return -1;
-              if (indexB !== -1) return 1;
-              if (a === 'sem-data') return 1;
-              if (b === 'sem-data') return -1;
-              return a.localeCompare(b);
-            })
-            .map((key) => (
-              <div key={key}>
-                <h2 className={`text-xl font-semibold mb-4 ${getGroupColor(key)}`}>
-                  {getGroupTitle(key)} ({groupedVisitas[key].length})
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {groupedVisitas[key].map((visita) => (
-                    <VisitaCard
-                      key={visita.id}
-                      visita={visita}
-                      onEdit={handleOpenDialog}
-                      onToggleRealizada={handleToggleRealizada}
-                      onDelete={handleDelete}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-        </div>
+        <VisitasKanbanBoard
+          visitas={filteredAndSortedVisitas}
+          onStatusChange={handleStatusChange}
+          onEdit={handleOpenDialog}
+          onToggleRealizada={handleToggleRealizada}
+          onDelete={handleDelete}
+          onViewDetails={handleViewDetails}
+        />
       )}
 
       {/* Dialog de Criar/Editar */}

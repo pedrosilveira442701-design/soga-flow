@@ -3,10 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+export type VisitaStatus = 'agendar' | 'marcada' | 'atrasada' | 'concluida';
+
 export interface Visita {
   id: string;
   user_id: string;
-  cliente_id: string;
+  cliente_id: string | null;
+  cliente_manual_name: string | null;
   marcacao_tipo: string;
   assunto: string;
   data: string | null;
@@ -16,6 +19,7 @@ export interface Visita {
   responsavel: string | null;
   observacao: string | null;
   realizada: boolean;
+  status: VisitaStatus;
   created_at: string;
   updated_at: string;
   clientes?: {
@@ -30,6 +34,7 @@ export interface Visita {
 export interface VisitaFilters {
   search?: string;
   realizada?: 'todos' | 'pendentes' | 'realizadas';
+  status?: VisitaStatus;
   tipo?: string;
   responsavel?: string;
   periodo?: 'hoje' | 'semana' | 'mes' | 'atrasadas' | 'custom';
@@ -91,6 +96,10 @@ export function useVisitas(filters?: VisitaFilters) {
 
       if (filters?.responsavel) {
         query = query.eq('responsavel', filters.responsavel);
+      }
+
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
       }
 
       const hoje = new Date().toISOString().split('T')[0];
@@ -167,12 +176,34 @@ export function useVisitas(filters?: VisitaFilters) {
   });
 
   const createVisita = useMutation({
-    mutationFn: async (newVisita: Omit<Visita, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'clientes'>) => {
+    mutationFn: async (newVisita: Omit<Visita, 'id' | 'created_at' | 'updated_at' | 'user_id' | 'clientes' | 'status'>) => {
       if (!user) throw new Error('Usuário não autenticado');
+
+      // Calculate status based on data/hora
+      let status: VisitaStatus = 'agendar';
+      if (newVisita.data && newVisita.hora) {
+        const dataHora = new Date(`${newVisita.data}T${newVisita.hora}`);
+        if (dataHora < new Date()) {
+          status = 'atrasada';
+        } else {
+          status = 'marcada';
+        }
+      } else if (newVisita.data) {
+        const dataVisita = new Date(newVisita.data);
+        if (dataVisita < new Date()) {
+          status = 'atrasada';
+        } else {
+          status = 'marcada';
+        }
+      }
+
+      if (newVisita.realizada) {
+        status = 'concluida';
+      }
 
       const { data, error } = await supabase
         .from('visitas')
-        .insert([{ ...newVisita, user_id: user.id }])
+        .insert([{ ...newVisita, user_id: user.id, status }])
         .select()
         .single();
 
@@ -191,9 +222,34 @@ export function useVisitas(filters?: VisitaFilters) {
 
   const updateVisita = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Visita> & { id: string }) => {
+      // Recalculate status if data/hora/realizada changed
+      let status: VisitaStatus | undefined;
+      if ('data' in updates || 'hora' in updates || 'realizada' in updates) {
+        const visita = visitas.find(v => v.id === id);
+        if (visita) {
+          const newData = updates.data !== undefined ? updates.data : visita.data;
+          const newHora = updates.hora !== undefined ? updates.hora : visita.hora;
+          const newRealizada = updates.realizada !== undefined ? updates.realizada : visita.realizada;
+
+          if (newRealizada) {
+            status = 'concluida';
+          } else if (newData && newHora) {
+            const dataHora = new Date(`${newData}T${newHora}`);
+            status = dataHora < new Date() ? 'atrasada' : 'marcada';
+          } else if (newData) {
+            const dataVisita = new Date(newData);
+            status = dataVisita < new Date() ? 'atrasada' : 'marcada';
+          } else {
+            status = 'agendar';
+          }
+        }
+      }
+
+      const updatesWithStatus = status ? { ...updates, status } : updates;
+
       const { data, error } = await supabase
         .from('visitas')
-        .update(updates)
+        .update(updatesWithStatus)
         .eq('id', id)
         .select()
         .single();

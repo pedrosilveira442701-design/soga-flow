@@ -1,4 +1,4 @@
-import { Calendar, Clock, MapPin, User, MoreVertical, Check, X, MessageSquare } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, MoreVertical, Check, X, MessageSquare, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -81,7 +81,20 @@ export function VisitaCard({
   const handleWhatsApp = () => {
     if (visita.telefone) {
       const numero = visita.telefone.replace(/\D/g, '');
-      window.open(`https://wa.me/55${numero}`, '_blank');
+      const clienteNome = visita.clientes?.nome || visita.cliente_manual_name || 'Cliente';
+      const dataFormatada = visita.data ? format(parseISO(visita.data), 'dd/MM/yyyy') : '';
+      const horaFormatada = visita.hora ? visita.hora.slice(0, 5) : '';
+      const mensagem = encodeURIComponent(
+        `Olá, aqui é da Só Garagens. Assunto: ${visita.assunto} — Visita ${dataFormatada} às ${horaFormatada}. Podemos confirmar?`
+      );
+      window.open(`https://wa.me/55${numero}?text=${mensagem}`, '_blank');
+    }
+  };
+
+  const handleMaps = () => {
+    if (visita.endereco) {
+      const query = encodeURIComponent(visita.endereco);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
     }
   };
 
@@ -140,9 +153,14 @@ export function VisitaCard({
       <CardContent className="space-y-3">
         <div>
           <h3 className="font-semibold text-lg line-clamp-2">{visita.assunto}</h3>
-          {visita.clientes && (
+          {(visita.clientes || visita.cliente_manual_name) && (
             <p className="text-sm text-muted-foreground mt-1">
-              {visita.clientes.nome}
+              {visita.clientes?.nome || visita.cliente_manual_name}
+            </p>
+          )}
+          {!visita.clientes && !visita.cliente_manual_name && (
+            <p className="text-sm text-muted-foreground mt-1 italic">
+              Sem cliente cadastrado
             </p>
           )}
         </div>
@@ -173,15 +191,34 @@ export function VisitaCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-2">
+          {visita.telefone && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleWhatsApp}
+              className="flex-1"
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              WhatsApp
+            </Button>
+          )}
+          {visita.endereco && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleMaps}
+              className="flex-1"
+            >
+              <ExternalLink className="h-4 w-4 mr-1" />
+              Maps
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t">
           {getStatusBadge()}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onViewDetails(visita)}
-          >
-            Ver Detalhes
-          </Button>
         </div>
       </CardContent>
     </Card>
