@@ -63,23 +63,30 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
             {statusLabel[visita.status]}
           </Badge>
 
-          {/* Ações topo: editar / excluir (ícones maiores) */}
+          {/* Ações topo: editar / excluir */}
           <div className="flex items-center gap-1 mt-1">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-slate-100"
-              onClick={() => onEdit(visita)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(visita);
+              }}
             >
               <Edit2 className="h-5 w-5" />
             </Button>
+
             <Button
               type="button"
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-red-50 text-red-600"
-              onClick={() => onDelete(visita.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(visita.id);
+              }}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
@@ -119,7 +126,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         </div>
       </div>
 
-      {/* Botões WhatsApp / Maps (ícones maiores) */}
+      {/* Botões WhatsApp / Maps */}
       <div className="px-4 pb-3 flex gap-3">
         <Button
           type="button"
@@ -167,7 +174,10 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="flex items-center gap-1 text-slate-600 hover:text-emerald-600 transition-colors"
-          onClick={() => onToggleRealizada(visita.id, !visita.realizada)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleRealizada(visita.id, !visita.realizada);
+          }}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
           <span>{visita.realizada ? "Marcar como pendente" : "Marcar como realizada"}</span>
@@ -176,7 +186,10 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
-          onClick={() => onViewDetails(visita)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails(visita);
+          }}
         >
           Ver detalhes
         </button>
