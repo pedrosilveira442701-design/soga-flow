@@ -1,14 +1,14 @@
-import { Calendar, MapPin, User, ExternalLink } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useVisitas } from '@/hooks/useVisitas';
-import { format, parseISO, isToday, isTomorrow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar, MapPin, User, ExternalLink } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useVisitas } from "@/hooks/useVisitas";
+import { format, parseISO, isToday, isTomorrow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProximasVisitas() {
-  const { visitas, isLoading } = useVisitas({ realizada: 'pendentes' });
+  const { visitas, isLoading } = useVisitas({ realizada: "pendentes" });
 
   const proximasVisitas = visitas
     .filter((v) => v.data)
@@ -46,9 +46,7 @@ export function ProximasVisitas() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhuma visita agendada
-          </p>
+          <p className="text-sm text-muted-foreground text-center py-4">Nenhuma visita agendada</p>
         </CardContent>
       </Card>
     );
@@ -64,7 +62,7 @@ export function ProximasVisitas() {
         <Button variant="ghost" size="sm" asChild>
           <a href="/visitas">
             Ver todas
-            <ExternalLink className="h-4 w-4 ml-2" />
+            <ExternalLink className="h-5 w-5 ml-2" />
           </a>
         </Button>
       </CardHeader>
@@ -82,24 +80,14 @@ export function ProximasVisitas() {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm line-clamp-1">
-                    {visita.assunto}
-                  </h4>
+                  <h4 className="font-medium text-sm line-clamp-1">{visita.assunto}</h4>
                   {visita.clientes && (
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {visita.clientes.nome}
-                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{visita.clientes.nome}</p>
                   )}
                 </div>
-                {ehHoje && (
-                  <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-xs">
-                    HOJE
-                  </Badge>
-                )}
+                {ehHoje && <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20 text-xs">HOJE</Badge>}
                 {ehAmanha && (
-                  <Badge className="bg-green-500/10 text-green-700 border-green-500/20 text-xs">
-                    AMANHÃ
-                  </Badge>
+                  <Badge className="bg-green-500/10 text-green-700 border-green-500/20 text-xs">AMANHÃ</Badge>
                 )}
               </div>
 
