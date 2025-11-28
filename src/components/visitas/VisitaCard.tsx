@@ -72,7 +72,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               className="h-7 w-7 rounded-full hover:bg-slate-100"
               onClick={() => onEdit(visita)}
             >
-              <Edit2 className="h-4 w-4" />
+              <Edit2 className="h-5 w-5" />
             </Button>
             <Button
               type="button"
@@ -81,7 +81,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               className="h-7 w-7 rounded-full hover:bg-red-50 text-red-600"
               onClick={() => onDelete(visita.id)}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -91,14 +91,14 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
       <div className="px-4 pb-3 space-y-1.5 text-xs text-slate-600">
         {endereco && (
           <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 mt-[1px] text-slate-400 shrink-0" />
+            <MapPin className="h-5 w-5 mt-[1px] text-slate-400 shrink-0" />
             <span>{endereco}</span>
           </div>
         )}
 
         {telefone && (
           <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+            <Phone className="h-5 w-5 text-slate-400 shrink-0" />
             <span>{telefone}</span>
           </div>
         )}
@@ -130,12 +130,12 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         >
           {whatsappUrl ? (
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
             </a>
           ) : (
             <>
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
             </>
           )}
@@ -150,12 +150,12 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         >
           {mapsUrl ? (
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
-              <MapPinned className="h-4 w-4" />
+              <MapPinned className="h-5 w-5" />
               <span>Maps</span>
             </a>
           ) : (
             <>
-              <MapPinned className="h-4 w-4" />
+              <MapPinned className="h-5 w-5" />
               <span>Maps</span>
             </>
           )}
