@@ -58,6 +58,9 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
   const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
   const [useManualName, setUseManualName] = useState(false);
 
+  // Controle de "pendente de agendamento"
+  const [semDataDefinida, setSemDataDefinida] = useState(!visita?.data && !visita?.hora);
+
   // Campos de endereço (UI)
   const [cep, setCep] = useState("");
   const [enderecoRua, setEnderecoRua] = useState("");
@@ -138,6 +141,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
     const data = new Date();
     data.setDate(data.getDate() + dias);
     setValue("data", data.toISOString().split("T")[0]);
+    setSemDataDefinida(false);
   };
 
   const handleCepBlur = async (valorCep: string) => {
@@ -180,7 +184,11 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
 
     onSubmit({
       ...data,
+      // se não tiver nada montado, mantém o que já estava em data.endereco
       endereco: enderecoCompleto || data.endereco || "",
+      // se o usuário marcou "sem data definida", garante que vai como null
+      data: semDataDefinida ? null : data.data,
+      hora: semDataDefinida ? null : data.hora,
     });
   };
 
@@ -267,6 +275,25 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
         {errors.assunto && <p className="text-sm text-destructive">{errors.assunto.message}</p>}
       </div>
 
+      {/* Opção de deixar sem data (AGENDAR depois) */}
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="sem-data"
+          checked={semDataDefinida}
+          onCheckedChange={(checked) => {
+            const value = !!checked;
+            setSemDataDefinida(value);
+            if (value) {
+              setValue("data", null);
+              setValue("hora", null);
+            }
+          }}
+        />
+        <Label htmlFor="sem-data" className="cursor-pointer text-sm">
+          Deixar sem data definida (pendente de agendamento)
+        </Label>
+      </div>
+
       {/* Data e Hora */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -274,12 +301,24 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
             <Calendar className="h-4 w-4" />
             Data
           </Label>
-          <Input type="date" {...register("data")} />
+          <Input type="date" disabled={semDataDefinida} {...register("data")} />
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setDataRapida(0)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={semDataDefinida}
+              onClick={() => setDataRapida(0)}
+            >
               Hoje
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={() => setDataRapida(1)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={semDataDefinida}
+              onClick={() => setDataRapida(1)}
+            >
               Amanhã
             </Button>
           </div>
@@ -290,7 +329,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
             <Clock className="h-4 w-4" />
             Hora
           </Label>
-          <Input type="time" {...register("hora")} />
+          <Input type="time" disabled={semDataDefinida} {...register("hora")} />
         </div>
       </div>
 
