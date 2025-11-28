@@ -70,6 +70,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-slate-100"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(visita);
@@ -82,6 +83,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-red-50 text-red-600"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(visita.id);
@@ -133,10 +135,10 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!whatsappUrl}
           asChild={!!whatsappUrl}
-          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
         >
           {whatsappUrl ? (
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
               <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
             </a>
@@ -154,10 +156,10 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!mapsUrl}
           asChild={!!mapsUrl}
-          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
         >
           {mapsUrl ? (
-            <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
               <MapPinned className="h-5 w-5" />
               <span>Maps</span>
             </a>
@@ -175,6 +177,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="flex items-center gap-1 text-slate-600 hover:text-emerald-600 transition-colors"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onToggleRealizada(visita.id, !visita.realizada);
@@ -187,6 +190,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onViewDetails(visita);
