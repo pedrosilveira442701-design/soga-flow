@@ -77,7 +77,6 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
             >
               <Edit2 className="h-5 w-5" />
             </Button>
-
             <Button
               type="button"
               variant="ghost"
@@ -134,6 +133,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!whatsappUrl}
           asChild={!!whatsappUrl}
+          onClick={(e) => e.stopPropagation()}
         >
           {whatsappUrl ? (
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
@@ -154,6 +154,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!mapsUrl}
           asChild={!!mapsUrl}
+          onClick={(e) => e.stopPropagation()}
         >
           {mapsUrl ? (
             <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
