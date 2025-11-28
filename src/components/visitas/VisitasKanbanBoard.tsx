@@ -1,11 +1,9 @@
+// src/components/visitas/VisitasKanbanBoard.tsx
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners } from "@dnd-kit/core";
 import { useState } from "react";
-import { VisitasKanbanColumn } from "./VisitasKanbanColumn";
+import VisitasKanbanColumn from "./VisitasKanbanColumn"; // <-- IMPORT DEFAULT
 import { VisitaCard } from "./VisitaCard";
-import { Visita, VisitaStatus } from "@/hooks/useVisitas";
-
-// Colunas que aparecem no Kanban (concluídas ficam fora do quadro)
-type KanbanColumnId = "agendar" | "marcada" | "atrasada";
+import type { Visita, VisitaStatus } from "@/hooks/useVisitas";
 
 interface VisitasKanbanBoardProps {
   visitas: Visita[];
@@ -16,7 +14,7 @@ interface VisitasKanbanBoardProps {
   onViewDetails: (visita: Visita) => void;
 }
 
-const COLUMNS: { id: KanbanColumnId; title: string; color: string }[] = [
+const COLUMNS: { id: VisitaStatus; title: string; color: "gray" | "blue" | "red" }[] = [
   { id: "agendar", title: "Agendar", color: "gray" },
   { id: "marcada", title: "Marcadas", color: "blue" },
   { id: "atrasada", title: "Atrasadas", color: "red" },
@@ -32,10 +30,11 @@ export function VisitasKanbanBoard({
 }: VisitasKanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const visitasByStatus: Record<KanbanColumnId, Visita[]> = {
+  const visitasByStatus: Record<VisitaStatus, Visita[]> = {
     agendar: visitas.filter((v) => v.status === "agendar"),
     marcada: visitas.filter((v) => v.status === "marcada"),
     atrasada: visitas.filter((v) => v.status === "atrasada"),
+    // se no futuro tiver "concluida" no Kanban, adicionar aqui
   };
 
   const activeVisita = activeId ? visitas.find((v) => v.id === activeId) : null;
@@ -53,37 +52,12 @@ export function VisitasKanbanBoard({
     if (!over) return;
 
     const visitaId = active.id as string;
+    const targetColumnId = over.id as VisitaStatus;
 
-    // Descobrir em QUAL COLUNA o card foi solto
-    let targetColumnId: KanbanColumnId | null = null;
-
-    for (const column of COLUMNS) {
-      const colId = column.id;
-
-      // 1) Soltou na área vazia da coluna (over.id === 'agendar' | 'marcada' | 'atrasada')
-      if (over.id === colId) {
-        targetColumnId = colId;
-        break;
-      }
-
-      // 2) Soltou em cima de outro card dessa coluna (over.id === id de outra visita)
-      const isOverCardInColumn = visitasByStatus[colId].some((v) => v.id === over.id);
-      if (isOverCardInColumn) {
-        targetColumnId = colId;
-        break;
-      }
+    // Só dispara mudança se soltou em cima de uma coluna válida
+    if (COLUMNS.some((col) => col.id === targetColumnId)) {
+      onStatusChange(visitaId, targetColumnId);
     }
-
-    if (!targetColumnId) return;
-
-    const visitaAtual = visitas.find((v) => v.id === visitaId);
-    if (!visitaAtual) return;
-
-    // Se a coluna não mudou, não faz nada
-    if (visitaAtual.status === targetColumnId) return;
-
-    // Aqui você pode manter a lógica simples:
-    onStatusChange(visitaId, targetColumnId);
   };
 
   return (
