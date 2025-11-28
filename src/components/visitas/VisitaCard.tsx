@@ -1,27 +1,8 @@
-import { Calendar, Clock, MapPin, User, MoreVertical, Check, X, MessageSquare, ExternalLink } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Visita } from '@/hooks/useVisitas';
-import { format, parseISO, isPast, isToday } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-
-const TIPOS_VISITA = [
-  { value: 'medicao', label: 'Medição', icon: '📏', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  { value: 'instalacao', label: 'Instalação', icon: '🔨', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  { value: 'followup', label: 'Follow-up', icon: '📞', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
-  { value: 'orcamento', label: 'Orçamento', icon: '💰', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  { value: 'manutencao', label: 'Manutenção', icon: '🛠️', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  { value: 'reuniao', label: 'Reunião', icon: '🤝', color: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20' },
-  { value: 'outro', label: 'Outro', icon: '📋', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
-];
+import { Calendar, Clock, MapPin, Phone, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { Visita } from "@/hooks/useVisitas";
 
 interface VisitaCardProps {
   visita: Visita;
@@ -31,196 +12,198 @@ interface VisitaCardProps {
   onViewDetails: (visita: Visita) => void;
 }
 
-export function VisitaCard({
-  visita,
-  onEdit,
-  onToggleRealizada,
-  onDelete,
-  onViewDetails,
-}: VisitaCardProps) {
-  const tipo = TIPOS_VISITA.find((t) => t.value === visita.marcacao_tipo);
-  
-  const dataVisita = visita.data ? parseISO(visita.data) : null;
-  
-  // Combinar data + hora para verificação correta de atraso
-  let dataHoraCompleta = dataVisita;
-  if (dataVisita && visita.hora) {
-    const [horas, minutos] = visita.hora.split(':');
-    dataHoraCompleta = new Date(dataVisita);
-    dataHoraCompleta.setHours(parseInt(horas), parseInt(minutos), 0, 0);
-  }
-  
-  const isAtrasada = dataHoraCompleta && isPast(dataHoraCompleta) && !visita.realizada;
-  const isHoje = dataVisita && isToday(dataVisita);
+export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onViewDetails }: VisitaCardProps) {
+  // Telefones e endereço preferindo o que está na própria visita
+  const telefoneRaw = visita.telefone || visita.clientes?.telefone || "";
+  const telefoneDigits = telefoneRaw.replace(/\D/g, "");
 
-  const getStatusBadge = () => {
-    if (visita.realizada) {
-      return (
-        <Badge className="bg-green-500/10 text-green-700 border-green-500/20">
-          <Check className="h-3 w-3 mr-1" />
-          Realizada
-        </Badge>
-      );
-    }
-    if (isAtrasada) {
-      return (
-        <Badge className="bg-red-500/10 text-red-700 border-red-500/20">
-          <X className="h-3 w-3 mr-1" />
-          Atrasada
-        </Badge>
-      );
-    }
-    return (
-      <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
-        <Clock className="h-3 w-3 mr-1" />
-        Pendente
-      </Badge>
-    );
-  };
+  const baseEndereco = visita.endereco || visita.clientes?.endereco || "";
+  const bairro = visita.clientes?.bairro || "";
+  const cidade = visita.clientes?.cidade || "";
+  const enderecoCompleto = [baseEndereco, bairro, cidade].filter(Boolean).join(", ");
 
-  const handleWhatsApp = () => {
-    if (visita.telefone) {
-      const numero = visita.telefone.replace(/\D/g, '');
-      const clienteNome = visita.clientes?.nome || visita.cliente_manual_name || 'Cliente';
-      const dataFormatada = visita.data ? format(parseISO(visita.data), 'dd/MM/yyyy') : '';
-      const horaFormatada = visita.hora ? visita.hora.slice(0, 5) : '';
-      const mensagem = encodeURIComponent(
-        `Olá, aqui é da Só Garagens. Assunto: ${visita.assunto} — Visita ${dataFormatada} às ${horaFormatada}. Podemos confirmar?`
-      );
-      window.open(`https://wa.me/55${numero}?text=${mensagem}`, '_blank');
+  // Links
+  const whatsappLink =
+    telefoneDigits.length >= 10
+      ? `https://wa.me/${telefoneDigits}?text=${encodeURIComponent(
+          `Olá, estou entrando em contato sobre a visita: ${visita.assunto || ""}`,
+        )}`
+      : null;
+
+  const mapsLink = enderecoCompleto
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`
+    : null;
+
+  const isConcluida = visita.realizada || visita.status === "concluida";
+
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (whatsappLink) {
+      window.open(whatsappLink, "_blank", "noopener,noreferrer");
     }
   };
 
-  const handleMaps = () => {
-    if (visita.endereco) {
-      const query = encodeURIComponent(visita.endereco);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  const handleMapsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mapsLink) {
+      window.open(mapsLink, "_blank", "noopener,noreferrer");
     }
+  };
+
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit(visita);
+  };
+
+  const handleToggleRealizadaClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleRealizada(visita.id, !isConcluida);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(visita.id);
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            {tipo && (
-              <Badge className={tipo.color}>
-                {tipo.icon} {tipo.label}
-              </Badge>
-            )}
-            {isHoje && (
-              <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20">
-                HOJE
-              </Badge>
-            )}
+    <Card
+      className="group relative cursor-pointer rounded-2xl border border-border/70 bg-background/80 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      onClick={() => onViewDetails(visita)}
+    >
+      {/* Barra de ações (ícones maiores) */}
+      <div className="absolute left-2 top-2 z-10 flex gap-1.5">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-full border-muted-foreground/20 bg-background/90 shadow-sm hover:bg-muted"
+          onClick={handleEditClick}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant={isConcluida ? "default" : "outline"}
+          size="icon"
+          className="h-8 w-8 rounded-full border-emerald-500/40 bg-emerald-50/70 text-emerald-700 hover:bg-emerald-100"
+          onClick={handleToggleRealizadaClick}
+        >
+          <CheckCircle2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-full border-red-500/40 bg-red-50/70 text-red-600 hover:bg-red-100"
+          onClick={handleDeleteClick}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="space-y-3 p-4 pt-10">
+        {/* Tipo + status */}
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline" className="text-xs px-2 py-0.5">
+            {visita.marcacao_tipo === "medicao"
+              ? "Medição"
+              : visita.marcacao_tipo === "instalacao"
+                ? "Instalação"
+                : visita.marcacao_tipo === "orcamento"
+                  ? "Orçamento"
+                  : visita.marcacao_tipo === "followup"
+                    ? "Follow-up"
+                    : visita.marcacao_tipo === "manutencao"
+                      ? "Manutenção"
+                      : visita.marcacao_tipo === "reuniao"
+                        ? "Reunião"
+                        : "Visita"}
+          </Badge>
+
+          <Badge
+            className={
+              visita.status === "agendar"
+                ? "bg-gray-100 text-gray-700"
+                : visita.status === "marcada"
+                  ? "bg-blue-100 text-blue-700"
+                  : visita.status === "atrasada"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-emerald-100 text-emerald-700"
+            }
+          >
+            {visita.status === "agendar"
+              ? "Agendar"
+              : visita.status === "marcada"
+                ? "Marcada"
+                : visita.status === "atrasada"
+                  ? "Atrasada"
+                  : "Concluída"}
+          </Badge>
+        </div>
+
+        {/* Assunto / Cliente */}
+        <div className="space-y-1">
+          <p className="font-semibold text-sm leading-snug line-clamp-2">{visita.assunto}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">
+            {visita.clientes?.nome || visita.cliente_manual_name || "Cliente não informado"}
+          </p>
+        </div>
+
+        {/* Data / hora */}
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            <span>{visita.data ? new Date(visita.data).toLocaleDateString("pt-BR") : "Sem data"}</span>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onViewDetails(visita)}>
-                Ver Detalhes
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(visita)}>
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onToggleRealizada(visita.id, !visita.realizada)}
-              >
-                {visita.realizada ? 'Marcar como Pendente' : 'Marcar como Realizada'}
-              </DropdownMenuItem>
-              {visita.telefone && (
-                <DropdownMenuItem onClick={handleWhatsApp}>
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  WhatsApp
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(visita.id)}
-                className="text-destructive"
-              >
-                Excluir
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-3">
-        <div>
-          <h3 className="font-semibold text-lg line-clamp-2">{visita.assunto}</h3>
-          {(visita.clientes || visita.cliente_manual_name) && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {visita.clientes?.nome || visita.cliente_manual_name}
-            </p>
-          )}
-          {!visita.clientes && !visita.cliente_manual_name && (
-            <p className="text-sm text-muted-foreground mt-1 italic">
-              Sem cliente cadastrado
-            </p>
-          )}
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            <span>{visita.hora || "Sem horário"}</span>
+          </div>
         </div>
 
-        <div className="space-y-2 text-sm">
-          {visita.data && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {format(parseISO(visita.data), "dd 'de' MMMM", { locale: ptBR })}
-                {visita.hora && ` às ${visita.hora.slice(0, 5)}`}
-              </span>
+        {/* Endereço / telefone */}
+        <div className="space-y-1.5 text-xs">
+          {enderecoCompleto && (
+            <div className="flex items-start gap-1.5 text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              <span className="line-clamp-2">{enderecoCompleto}</span>
             </div>
           )}
-
-          {visita.responsavel && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <User className="h-4 w-4" />
-              <span>{visita.responsavel}</span>
-            </div>
-          )}
-
-          {visita.endereco && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span className="line-clamp-1">{visita.endereco}</span>
+          {telefoneRaw && (
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+              <span>{telefoneRaw}</span>
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          {visita.telefone && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleWhatsApp}
-              className="flex-1"
-            >
-              <MessageSquare className="h-4 w-4 mr-1" />
-              WhatsApp
-            </Button>
-          )}
-          {visita.endereco && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleMaps}
-              className="flex-1"
-            >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Maps
-            </Button>
-          )}
-        </div>
+        {/* Botões de ação – WhatsApp / Maps */}
+        <div className="mt-2 flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2 text-xs"
+            onClick={handleWhatsAppClick}
+            disabled={!whatsappLink}
+          >
+            <Phone className="h-4 w-4" />
+            WhatsApp
+          </Button>
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          {getStatusBadge()}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 gap-2 text-xs"
+            onClick={handleMapsClick}
+            disabled={!mapsLink}
+          >
+            <MapPin className="h-4 w-4" />
+            Maps
+          </Button>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }
