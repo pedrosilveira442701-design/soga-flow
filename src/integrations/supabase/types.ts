@@ -458,6 +458,129 @@ export type Database = {
         }
         Relationships: []
       }
+      notificacao_preferencias: {
+        Row: {
+          contrato_email: boolean
+          contrato_inapp: boolean
+          created_at: string
+          email_customizado: string | null
+          financeiro_email: boolean
+          financeiro_inapp: boolean
+          id: string
+          lead_email: boolean
+          lead_inapp: boolean
+          obra_email: boolean
+          obra_inapp: boolean
+          proposta_email: boolean
+          proposta_inapp: boolean
+          resumo_diario_hora: string
+          resumo_diario_visitas: boolean
+          updated_at: string
+          user_id: string
+          visita_atrasada_email: boolean
+          visita_atrasada_inapp: boolean
+          visita_email: boolean
+          visita_inapp: boolean
+        }
+        Insert: {
+          contrato_email?: boolean
+          contrato_inapp?: boolean
+          created_at?: string
+          email_customizado?: string | null
+          financeiro_email?: boolean
+          financeiro_inapp?: boolean
+          id?: string
+          lead_email?: boolean
+          lead_inapp?: boolean
+          obra_email?: boolean
+          obra_inapp?: boolean
+          proposta_email?: boolean
+          proposta_inapp?: boolean
+          resumo_diario_hora?: string
+          resumo_diario_visitas?: boolean
+          updated_at?: string
+          user_id: string
+          visita_atrasada_email?: boolean
+          visita_atrasada_inapp?: boolean
+          visita_email?: boolean
+          visita_inapp?: boolean
+        }
+        Update: {
+          contrato_email?: boolean
+          contrato_inapp?: boolean
+          created_at?: string
+          email_customizado?: string | null
+          financeiro_email?: boolean
+          financeiro_inapp?: boolean
+          id?: string
+          lead_email?: boolean
+          lead_inapp?: boolean
+          obra_email?: boolean
+          obra_inapp?: boolean
+          proposta_email?: boolean
+          proposta_inapp?: boolean
+          resumo_diario_hora?: string
+          resumo_diario_visitas?: boolean
+          updated_at?: string
+          user_id?: string
+          visita_atrasada_email?: boolean
+          visita_atrasada_inapp?: boolean
+          visita_email?: boolean
+          visita_inapp?: boolean
+        }
+        Relationships: []
+      }
+      notificacoes: {
+        Row: {
+          agendamento: string
+          created_at: string
+          descricao: string | null
+          entidade: string | null
+          entidade_id: string | null
+          excluida: boolean
+          icone: string | null
+          id: string
+          lida: boolean
+          lida_em: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agendamento?: string
+          created_at?: string
+          descricao?: string | null
+          entidade?: string | null
+          entidade_id?: string | null
+          excluida?: boolean
+          icone?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          tipo: string
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agendamento?: string
+          created_at?: string
+          descricao?: string | null
+          entidade?: string | null
+          entidade_id?: string | null
+          excluida?: boolean
+          icone?: string | null
+          id?: string
+          lida?: boolean
+          lida_em?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       obras: {
         Row: {
           completed_at: string | null
