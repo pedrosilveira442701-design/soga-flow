@@ -1,159 +1,97 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, MapPin, Pencil, Trash2, Eye, CheckCircle2, Clock } from "lucide-react";
-import type { Visita } from "@/hooks/useVisitas";
-import { toast } from "sonner";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Calendar } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { Visita, VisitaStatus } from "@/hooks/useVisitas";
+import { VisitasKanbanCard } from "./VisitasKanbanCard";
 
-interface VisitaCardProps {
-  visita: Visita;
+type ColumnColor = "gray" | "blue" | "red";
+
+interface VisitasKanbanColumnProps {
+  id: VisitaStatus;
+  title: string;
+  color: ColumnColor;
+  count: number;
+  visitas: Visita[];
   onEdit: (visita: Visita) => void;
   onToggleRealizada: (id: string, realizada: boolean) => void;
   onDelete: (id: string) => void;
   onViewDetails: (visita: Visita) => void;
 }
 
-function normalizePhoneForWhats(telefone?: string | null): string {
-  if (!telefone) return "";
-  let digits = telefone.replace(/\D/g, "");
-  // se vier só DDD+telefone, prefixa 55
-  if (digits.length <= 11) {
-    digits = `55${digits}`;
-  }
-  return digits;
-}
+const colorClasses: Record<ColumnColor, string> = {
+  gray: "border-gray-200 bg-muted/40",
+  blue: "border-blue-200 bg-blue-50/60",
+  red: "border-red-200 bg-red-50/60",
+};
 
-export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onViewDetails }: VisitaCardProps) {
-  const nomeCliente = visita.clientes?.nome || visita.cliente_manual_name || "Cliente não informado";
+const badgeColorClasses: Record<ColumnColor, string> = {
+  gray: "bg-gray-500",
+  blue: "bg-blue-500",
+  red: "bg-red-500",
+};
 
-  const telefone = visita.telefone || visita.clientes?.telefone || "";
-  const endereco = visita.endereco || visita.clientes?.endereco || "";
-
-  const telefoneWhats = normalizePhoneForWhats(telefone);
-
-  const mensagemWhats = `Olá ${nomeCliente}, tudo bem? Estou entrando em contato sobre a visita: ${visita.assunto}.`;
-  const whatsappUrl = telefoneWhats ? `https://wa.me/${telefoneWhats}?text=${encodeURIComponent(mensagemWhats)}` : "";
-
-  const mapsUrl = endereco ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}` : "";
-
-  const handleWhatsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!whatsappUrl) {
-      toast.error("Telefone não informado para esta visita");
-      return;
-    }
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-  };
-
-  const handleMapsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!mapsUrl) {
-      toast.error("Endereço não informado para esta visita");
-      return;
-    }
-    window.open(mapsUrl, "_blank", "noopener,noreferrer");
-  };
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onDelete(visita.id);
-  };
-
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onEdit(visita);
-  };
-
-  const handleToggleRealizadaClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleRealizada(visita.id, !visita.realizada);
-  };
-
-  const handleViewDetailsClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onViewDetails(visita);
-  };
-
-  const dataLabel = visita.data ? new Date(visita.data).toLocaleDateString("pt-BR") : "Sem data";
-  const horaLabel = visita.hora || "--:--";
+const VisitasKanbanColumn = ({
+  id,
+  title,
+  color,
+  count,
+  visitas,
+  onEdit,
+  onToggleRealizada,
+  onDelete,
+  onViewDetails,
+}: VisitasKanbanColumnProps) => {
+  const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <Card
-      className="
-        mb-2 rounded-xl border shadow-sm bg-background
-        hover:shadow-md hover:border-primary/50
-        transition-all duration-200
-      "
-      onClick={handleViewDetailsClick}
-    >
-      <CardHeader className="pb-2 space-y-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base font-semibold truncate">{nomeCliente}</CardTitle>
-            <p className="text-xs text-muted-foreground truncate">{visita.assunto}</p>
-          </div>
-
-          {/* Ações no canto superior direito, com ícones maiores */}
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleViewDetailsClick}>
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleEditClick}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={visita.realizada ? "outline" : "ghost"}
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleToggleRealizadaClick}
-            >
-              {visita.realizada ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <Clock className="h-4 w-4 text-amber-500" />
-              )}
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={handleDeleteClick}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-1 pb-3 space-y-2">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            <span className="font-medium">Data:</span> {dataLabel}
-          </span>
-          <span>
-            <span className="font-medium">Hora:</span> {horaLabel}
-          </span>
-        </div>
-
-        {/* Botões de ação: WhatsApp e Maps */}
-        <div className="flex gap-2 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1 justify-center gap-2"
-            onClick={handleWhatsClick}
+    <Card className="flex flex-col h-full min-h-[480px] border-0 bg-transparent shadow-none">
+      {/* Cabeçalho da coluna */}
+      <div className="px-3 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm tracking-tight">{title}</h3>
+          <Badge
+            variant="secondary"
+            className={`${badgeColorClasses[color]} text-white text-xs px-2 py-0.5 rounded-full`}
           >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="flex-1 justify-center gap-2"
-            onClick={handleMapsClick}
-          >
-            <MapPin className="h-4 w-4" />
-            Maps
-          </Button>
+            {count}
+          </Badge>
         </div>
-      </CardContent>
+      </div>
+
+      {/* Área drop / cards */}
+      <div
+        ref={setNodeRef}
+        className={`
+          flex-1 px-2 pb-3 space-y-3 overflow-y-auto rounded-2xl border
+          transition-all duration-200 ease-out
+          ${colorClasses[color]}
+          ${isOver ? "ring-2 ring-primary/40 bg-primary/5 scale-[1.01]" : ""}
+        `}
+      >
+        <SortableContext items={visitas.map((v) => v.id)} strategy={verticalListSortingStrategy}>
+          {visitas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-xs">
+              <Calendar className="h-6 w-6 mb-2 opacity-30" />
+              <p>Nenhuma visita</p>
+            </div>
+          ) : (
+            visitas.map((visita) => (
+              <VisitasKanbanCard
+                key={visita.id}
+                visita={visita}
+                onEdit={onEdit}
+                onToggleRealizada={onToggleRealizada}
+                onDelete={onDelete}
+                onViewDetails={onViewDetails}
+              />
+            ))
+          )}
+        </SortableContext>
+      </div>
     </Card>
   );
-}
+};
+
+export default VisitasKanbanColumn;
