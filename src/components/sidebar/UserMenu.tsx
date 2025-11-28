@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -9,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, HelpCircle, LogOut } from "lucide-react";
+import { User, Settings, HelpCircle, LogOut, Bell } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface UserMenuProps {
@@ -18,6 +19,7 @@ interface UserMenuProps {
 
 export function UserMenu({ collapsed = false }: UserMenuProps) {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const getUserInitials = (email?: string) => {
     if (!email) return "U";
@@ -52,6 +54,10 @@ export function UserMenu({ collapsed = false }: UserMenuProps) {
           <DropdownMenuItem>
             <Settings className="mr-2 h-4 w-4" />
             Preferências
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate("/configuracoes/notificacoes")}>
+            <Bell className="mr-2 h-4 w-4" />
+            Notificações
           </DropdownMenuItem>
           <DropdownMenuItem>
             <HelpCircle className="mr-2 h-4 w-4" />
@@ -102,6 +108,10 @@ export function UserMenu({ collapsed = false }: UserMenuProps) {
         <DropdownMenuItem>
           <Settings className="mr-2 h-4 w-4" />
           Preferências
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/configuracoes/notificacoes")}>
+          <Bell className="mr-2 h-4 w-4" />
+          Notificações
         </DropdownMenuItem>
         <DropdownMenuItem>
           <HelpCircle className="mr-2 h-4 w-4" />
