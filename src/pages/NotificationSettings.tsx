@@ -91,9 +91,9 @@ export default function NotificationSettings() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="space-y-6">
         <div>
-          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-6 w-64 mb-2" />
           <Skeleton className="h-4 w-96" />
         </div>
         <Skeleton className="h-[600px]" />
@@ -102,20 +102,14 @@ export default function NotificationSettings() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-3xl font-bold">Preferências de Notificações</h1>
-        <p className="text-muted-foreground mt-2">
-          Configure como e quando você deseja receber notificações
-        </p>
-      </div>
+    <div className="space-y-6">
 
       <Card className="p-6">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Tipos de Notificações</h2>
+              <h3 className="text-lg font-semibold">Tipos de Notificações</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Escolha os canais para cada tipo de notificação
               </p>

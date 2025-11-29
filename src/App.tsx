@@ -18,6 +18,9 @@ import Visitas from "./pages/Visitas";
 import Arquivos from "./pages/Arquivos";
 import Obras from "./pages/Obras";
 import NotificationSettings from "./pages/NotificationSettings";
+import Perfil from "./pages/conta/Perfil";
+import Preferencias from "./pages/conta/Preferencias";
+import Ajuda from "./pages/conta/Ajuda";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 
@@ -51,6 +54,9 @@ const App = () => (
             <Route path="/visitas" element={<ProtectedRoute><DashboardLayout><Visitas /></DashboardLayout></ProtectedRoute>} />
             <Route path="/arquivos" element={<ProtectedRoute><DashboardLayout><Arquivos /></DashboardLayout></ProtectedRoute>} />
             <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><DashboardLayout><NotificationSettings /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/conta/perfil" element={<ProtectedRoute><DashboardLayout><Perfil /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/conta/preferencias" element={<ProtectedRoute><DashboardLayout><Preferencias /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/conta/ajuda" element={<ProtectedRoute><DashboardLayout><Ajuda /></DashboardLayout></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
