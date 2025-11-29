@@ -2,29 +2,11 @@ import { useState, useMemo } from "react";
 import { useContratos } from "@/hooks/useContratos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   FileText,
   Plus,
@@ -41,7 +23,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
 import { ContratoForm } from "@/components/forms/ContratoForm";
@@ -61,13 +43,13 @@ import {
 
 export default function Contratos() {
   const { contratos, isLoading, createContrato, updateContrato, deleteContrato } = useContratos();
-  
+
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateFromPropostaDialog, setShowCreateFromPropostaDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedContrato, setSelectedContrato] = useState<Contrato | null>(null);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [formaPagamentoFilter, setFormaPagamentoFilter] = useState<string>("all");
@@ -109,12 +91,9 @@ export default function Contratos() {
         contrato.cliente?.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contrato.cpf_cnpj.includes(searchTerm);
 
-      const matchesStatus =
-        statusFilter === "all" || contrato.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || contrato.status === statusFilter;
 
-      const matchesFormaPagamento =
-        formaPagamentoFilter === "all" ||
-        contrato.forma_pagamento === formaPagamentoFilter;
+      const matchesFormaPagamento = formaPagamentoFilter === "all" || contrato.forma_pagamento === formaPagamentoFilter;
 
       return matchesSearch && matchesStatus && matchesFormaPagamento;
     });
@@ -176,10 +155,7 @@ export default function Contratos() {
 
   const kpis = useMemo(() => {
     const ativos = contratos.filter((c) => c.status === "ativo");
-    const valorTotalAtivo = ativos.reduce(
-      (sum, c) => sum + Number(c.valor_negociado),
-      0
-    );
+    const valorTotalAtivo = ativos.reduce((sum, c) => sum + Number(c.valor_negociado), 0);
 
     const hoje = new Date();
     const inicioMes = startOfMonth(hoje);
@@ -194,16 +170,16 @@ export default function Contratos() {
       if (contrato.parcelas) {
         valorPago += contrato.parcelas.valor_pago || 0;
         valorRestante += contrato.parcelas.valor_restante || 0;
-        
-        // Estimativa para o mês
+
+        // Estimativa para o mês (placeholder)
         const valorParcela = Number(contrato.valor_negociado) / (contrato.parcelas.total || 1);
         const parcelasPagas = contrato.parcelas.pagas || 0;
-        
+
         if (parcelasPagas > 0) {
-          recebidoMes += valorParcela * 0.3; // Aproximação
+          recebidoMes += valorParcela * 0.3;
         }
         if (contrato.parcelas.total > parcelasPagas) {
-          aReceberMes += valorParcela * 0.3; // Aproximação
+          aReceberMes += valorParcela * 0.3;
         }
       }
     });
@@ -238,32 +214,16 @@ export default function Contratos() {
     }
   };
 
-  const getSituacaoBadge = (contrato: Contrato) => {
-    if (contrato.status === "concluido") {
-      return <Badge className="bg-green-500">Concluído</Badge>;
-    }
-    if (contrato.status === "cancelado") {
-      return <Badge variant="destructive">Cancelado</Badge>;
-    }
-    
-    const parcelas = contrato.parcelas;
-    if (!parcelas) return <Badge variant="secondary">-</Badge>;
-
-    if (parcelas.pagas === parcelas.total) {
-      return <Badge className="bg-green-500">Pago</Badge>;
-    }
-
-    // Verificar se tem parcelas vencidas seria ideal aqui
-    return <Badge variant="secondary">Em Andamento</Badge>;
-  };
-
   const activeFilters = [
-    statusFilter !== "all" && { key: "status", label: `Status: ${statusFilter}` },
+    statusFilter !== "all" && {
+      key: "status",
+      label: `Status: ${statusFilter}`,
+    },
     formaPagamentoFilter !== "all" && {
       key: "forma",
       label: `Forma: ${formaPagamentoFilter}`,
     },
-  ].filter(Boolean);
+  ].filter(Boolean) as { key: string; label: string }[];
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -324,9 +284,7 @@ export default function Contratos() {
             <FileText className="h-8 w-8" />
             Contratos
           </h1>
-          <p className="text-muted-foreground">
-            Gerencie contratos, acompanhe parcelas e recebimentos
-          </p>
+          <p className="text-muted-foreground">Gerencie contratos, acompanhe parcelas e recebimentos</p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline" className="h-11 px-5">
@@ -344,66 +302,46 @@ export default function Contratos() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Contratos Ativos
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Contratos Ativos</p>
             <FileText className="h-5 w-5 text-primary" />
           </div>
           <p className="text-3xl font-bold">{kpis.contratosAtivos}</p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {contratos.length} total
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">{contratos.length} total</p>
         </div>
 
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Valor Total Ativo
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Valor Total Ativo</p>
             <DollarSign className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-3xl font-bold">
-            {formatCurrency(kpis.valorTotalAtivo)}
-          </p>
+          <p className="text-3xl font-bold">{formatCurrency(kpis.valorTotalAtivo)}</p>
           <p className="text-xs text-muted-foreground mt-2">Em contratos ativos</p>
         </div>
 
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Já Recebido
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Já Recebido</p>
             <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
           </div>
-          <p className="text-3xl font-bold text-green-700 dark:text-green-400">
-            {formatCurrency(kpis.valorPago)}
-          </p>
+          <p className="text-3xl font-bold text-green-700 dark:text-green-400">{formatCurrency(kpis.valorPago)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pagas</p>
         </div>
 
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Restante a Receber
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Restante a Receber</p>
             <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
-          <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">
-            {formatCurrency(kpis.valorRestante)}
-          </p>
+          <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(kpis.valorRestante)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pendentes</p>
         </div>
 
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-muted-foreground">
-              Este Mês
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Este Mês</p>
             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
-          <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-            {formatCurrency(kpis.aReceberMes)}
-          </p>
+          <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(kpis.aReceberMes)}</p>
           <p className="text-xs text-green-600 dark:text-green-400 mt-2">
             ↑ {formatCurrency(kpis.recebidoMes)} recebido
           </p>
@@ -434,10 +372,7 @@ export default function Contratos() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={formaPagamentoFilter}
-          onValueChange={setFormaPagamentoFilter}
-        >
+        <Select value={formaPagamentoFilter} onValueChange={setFormaPagamentoFilter}>
           <SelectTrigger className="w-full md:w-[200px]">
             <SelectValue placeholder="Forma de Pagamento" />
           </SelectTrigger>
@@ -452,11 +387,11 @@ export default function Contratos() {
         </Select>
       </div>
 
-      {/* Active Filters */}
+      {/* Filtros ativos */}
       {activeFilters.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Filtros ativos:</span>
-          {activeFilters.map((filter: any) => (
+          {activeFilters.map((filter) => (
             <Badge key={filter.key} variant="secondary" className="gap-1">
               {filter.label}
               <X
@@ -468,12 +403,7 @@ export default function Contratos() {
               />
             </Badge>
           ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="h-6 px-2"
-          >
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2">
             Limpar filtros
           </Button>
         </div>
@@ -490,11 +420,7 @@ export default function Contratos() {
               : "Crie seu primeiro contrato para começar"}
           </p>
           {!searchTerm && statusFilter === "all" && formaPagamentoFilter === "all" && (
-            <Button
-              onClick={() => setShowCreateDialog(true)}
-              className="mt-4 h-11 px-5"
-              variant="outline"
-            >
+            <Button onClick={() => setShowCreateDialog(true)} className="mt-4 h-11 px-5" variant="outline">
               <Plus className="mr-3 h-5 w-5" />
               Criar Primeiro Contrato
             </Button>
@@ -551,74 +477,45 @@ export default function Contratos() {
                   ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
                   : 0;
 
-                // Calcular valores conforme lógica da janela de contrato
-                const total = Number(contrato.valor_negociado); // Valor bruto total
-                const totalDaMargem = contrato.margem_pct 
-                  ? total * (contrato.margem_pct / 100)
-                  : total; // Lucro total
-                
-                // Cálculo de valores por parcela
-                const totalParcelas = contrato.parcelas?.total || 1;
-                const parcelasPagas = contrato.parcelas?.pagas || 0;
-                const parcelasPendentes = totalParcelas - parcelasPagas;
-                
-                // Pago (líquido) = valor líquido das parcelas pagas
+                const total = Number(contrato.valor_negociado);
+                const totalDaMargem = contrato.margem_pct ? total * (contrato.margem_pct / 100) : total;
+
                 const pago = contrato.parcelas?.valor_pago || 0;
-                
-                // Pendente (líquido) = valor líquido das parcelas pendentes
                 const pendente = contrato.parcelas?.valor_restante || 0;
-                
-                // Líquido a Receber = margem das parcelas pendentes
-                const liquidoAReceber = contrato.margem_pct 
-                  ? pendente * (contrato.margem_pct / 100)
-                  : pendente;
+
+                const liquidoAReceber = contrato.margem_pct ? pendente * (contrato.margem_pct / 100) : pendente;
 
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
                       <div>
                         <p className="font-medium">{contrato.cliente?.nome}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {contrato.cpf_cnpj}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{contrato.cpf_cnpj}</p>
                       </div>
                     </TableCell>
-                    {/* Total - Valor Negociado */}
                     <TableCell>
-                      <p className="font-semibold">
-                        {formatCurrency(total)}
-                      </p>
+                      <p className="font-semibold">{formatCurrency(total)}</p>
                     </TableCell>
-                    {/* Total da Margem - Lucro total */}
                     <TableCell>
                       <div>
                         <p className="font-semibold text-green-600 dark:text-green-400">
                           {formatCurrency(totalDaMargem)}
                         </p>
                         {contrato.margem_pct && (
-                          <p className="text-xs text-muted-foreground">
-                            {contrato.margem_pct.toFixed(1)}%
-                          </p>
+                          <p className="text-xs text-muted-foreground">{contrato.margem_pct.toFixed(1)}%</p>
                         )}
                       </div>
                     </TableCell>
-                    {/* Líquido a Receber - Lucro que falta receber */}
                     <TableCell>
                       <p className="font-semibold text-blue-600 dark:text-blue-400">
                         {formatCurrency(liquidoAReceber)}
                       </p>
                     </TableCell>
-                    {/* Pago - Valor líquido já recebido */}
                     <TableCell>
-                      <p className="font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(pago)}
-                      </p>
+                      <p className="font-semibold text-green-600 dark:text-green-400">{formatCurrency(pago)}</p>
                     </TableCell>
-                    {/* Pendente - Valor bruto pendente */}
                     <TableCell>
-                      <p className="font-semibold text-blue-600 dark:text-blue-400">
-                        {formatCurrency(pendente)}
-                      </p>
+                      <p className="font-semibold text-blue-600 dark:text-blue-400">{formatCurrency(pendente)}</p>
                     </TableCell>
                     <TableCell>{contrato.forma_pagamento}</TableCell>
                     <TableCell>
@@ -648,45 +545,44 @@ export default function Contratos() {
                         >
                           <Eye className="h-5 w-5" />
                         </Button>
+
                         {contrato.status !== "cancelado" && (
-                          <>
-                            <Button
-                              variant="default"
-                              size="icon"
-                              onClick={() => handleEdit(contrato)}
-                              title="Editar contrato"
-                              className="h-10 w-10"
-                            >
-                              <Pencil className="h-5 w-5" />
-                            </Button>
-                          </>
+                          <Button
+                            variant="default"
+                            size="icon"
+                            onClick={() => handleEdit(contrato)}
+                            title="Editar contrato"
+                            className="h-10 w-10"
+                          >
+                            <Pencil className="h-5 w-5" />
+                          </Button>
                         )}
+
                         {contrato.status !== "cancelado" && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="icon"
-                                title="Cancelar contrato"
-                                className="h-10 w-10 border-2 border-primary text-primary hover:bg-primary/10"
+                                title="Excluir contrato"
+                                className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
                               >
-                                <X className="h-5 w-5" />
+                                <Trash2 className="h-5 w-5" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Cancelar Contrato</AlertDialogTitle>
+                                <AlertDialogTitle>Excluir contrato</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja cancelar este contrato? Esta
-                                  ação não pode ser desfeita.
+                                  Tem certeza que deseja excluir este contrato? Se não houver parcelas pagas, o contrato
+                                  e suas parcelas serão removidos definitivamente. Se já houver parcelas pagas, o
+                                  contrato será apenas marcado como cancelado, mantendo o histórico financeiro.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(contrato.id)}
-                                >
-                                  Confirmar
+                                <AlertDialogAction onClick={() => handleDelete(contrato.id)}>
+                                  Confirmar exclusão
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -712,10 +608,7 @@ export default function Contratos() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={showCreateFromPropostaDialog}
-        onOpenChange={setShowCreateFromPropostaDialog}
-      >
+      <Dialog open={showCreateFromPropostaDialog} onOpenChange={setShowCreateFromPropostaDialog}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Criar Contrato a partir de Proposta</DialogTitle>
