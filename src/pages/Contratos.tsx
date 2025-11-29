@@ -567,9 +567,9 @@ export default function Contratos() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Excluir contrato</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Tem certeza que deseja excluir este contrato? Se não houver parcelas pagas, o contrato e
-                                suas parcelas serão removidos definitivamente. Se já houver parcelas pagas, o sistema
-                                manterá o histórico financeiro conforme a lógica definida.
+                                Ao confirmar, este contrato e todo o histórico de parcelas e pagamentos serão removidos
+                                definitivamente da base de dados e deixarão de ser considerados nos KPIs e relatórios.
+                                Essa ação não pode ser desfeita.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
