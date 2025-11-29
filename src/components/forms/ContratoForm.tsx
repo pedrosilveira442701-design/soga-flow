@@ -3,29 +3,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -35,38 +18,47 @@ import { usePropostasFechadas } from "@/hooks/useContratos";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ClienteCombobox from "@/components/forms/ClienteCombobox";
 
-const contratoSchema = z.object({
-  cliente_id: z.string().min(1, "Cliente é obrigatório"),
-  proposta_id: z.string().optional(),
-  valor_negociado: z.number().min(1, "Valor deve ser maior que zero"),
-  margem_pct: z.number().min(0).max(100, "Margem deve estar entre 0 e 100").optional(),
-  cpf_cnpj: z.string().min(11, "CPF/CNPJ inválido"),
-  valor_entrada: z.number().min(0, "Valor de entrada não pode ser negativo").optional(),
-  forma_pagamento_entrada: z.string().optional(),
-  forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
-  data_inicio: z.string().min(1, "Data de início é obrigatória"),
-  numero_parcelas: z.number().min(1).max(48, "Máximo 48 parcelas"),
-  dia_vencimento: z.number().min(1).max(31, "Dia deve estar entre 1 e 31"),
-  observacoes: z.string().optional(),
-}).refine((data) => {
-  // Se houver entrada, a forma de pagamento da entrada é obrigatória
-  if (data.valor_entrada && data.valor_entrada > 0) {
-    return !!data.forma_pagamento_entrada;
-  }
-  return true;
-}, {
-  message: "Forma de pagamento da entrada é obrigatória quando há valor de entrada",
-  path: ["forma_pagamento_entrada"],
-}).refine((data) => {
-  // Entrada não pode ser maior ou igual ao valor total
-  if (data.valor_entrada && data.valor_entrada >= data.valor_negociado) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Entrada não pode ser maior ou igual ao valor total",
-  path: ["valor_entrada"],
-});
+const contratoSchema = z
+  .object({
+    cliente_id: z.string().min(1, "Cliente é obrigatório"),
+    proposta_id: z.string().optional(),
+    valor_negociado: z.number().min(1, "Valor deve ser maior que zero"),
+    margem_pct: z.number().min(0).max(100, "Margem deve estar entre 0 e 100").optional(),
+    cpf_cnpj: z.string().min(11, "CPF/CNPJ inválido"),
+    valor_entrada: z.number().min(0, "Valor de entrada não pode ser negativo").optional(),
+    forma_pagamento_entrada: z.string().optional(),
+    forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
+    data_inicio: z.string().min(1, "Data de início é obrigatória"),
+    numero_parcelas: z.number().min(1).max(48, "Máximo 48 parcelas"),
+    dia_vencimento: z.number().min(1).max(31, "Dia deve estar entre 1 e 31"),
+    observacoes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Se houver entrada, a forma de pagamento da entrada é obrigatória
+      if (data.valor_entrada && data.valor_entrada > 0) {
+        return !!data.forma_pagamento_entrada;
+      }
+      return true;
+    },
+    {
+      message: "Forma de pagamento da entrada é obrigatória quando há valor de entrada",
+      path: ["forma_pagamento_entrada"],
+    },
+  )
+  .refine(
+    (data) => {
+      // Entrada não pode ser maior ou igual ao valor total
+      if (data.valor_entrada && data.valor_entrada >= data.valor_negociado) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Entrada não pode ser maior ou igual ao valor total",
+      path: ["valor_entrada"],
+    },
+  );
 
 type ContratoFormValues = z.infer<typeof contratoSchema>;
 
@@ -118,7 +110,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   const diaVencimentoWatch = form.watch("dia_vencimento");
   const dataInicioWatch = form.watch("data_inicio");
 
-  const selectedProposta = propostasFechadas.find((p) => p.id === propostaIdWatch);
+  const selectedProposta = propostasFechadas.find((p: any) => p.id === propostaIdWatch);
   const valorRestante = valorWatch - valorEntradaWatch;
   const valorParcela = valorRestante / parcelasWatch;
 
@@ -152,18 +144,18 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     const proposta = propostasFechadas.find((p: any) => p.id === propostaId);
     if (proposta) {
       form.setValue("proposta_id", propostaId);
-      
+
       // No modo fromProposta, também seta o cliente
       if (mode === "fromProposta") {
         form.setValue("cliente_id", proposta.cliente_id);
       }
-      
+
       // Valor negociado deve ser o valor bruto (valor_total)
       form.setValue("valor_negociado", Number(proposta.valor_total));
       form.setValue("margem_pct", Number(proposta.margem_pct || 0));
-      
+
       // Buscar CPF/CNPJ do cliente
-      const cliente = clientes.find(c => c.id === proposta.cliente_id);
+      const cliente = clientes.find((c) => c.id === proposta.cliente_id);
       if (cliente?.cpf_cnpj) {
         form.setValue("cpf_cnpj", cliente.cpf_cnpj);
       }
@@ -193,11 +185,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Proposta Fechada *</FormLabel>
-                    <Select
-                      onValueChange={handlePropostaChange}
-                      value={field.value}
-                      disabled={isLoadingPropostas}
-                    >
+                    <Select onValueChange={handlePropostaChange} value={field.value} disabled={isLoadingPropostas}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma proposta" />
@@ -209,9 +197,10 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                             Nenhuma proposta fechada disponível
                           </SelectItem>
                         ) : (
-                          propostasFechadas.map((proposta) => (
+                          propostasFechadas.map((proposta: any) => (
                             <SelectItem key={proposta.id} value={proposta.id}>
-                              {proposta.cliente?.nome} - {formatCurrency(Number(proposta.liquido || proposta.valor_total))}
+                              {proposta.cliente?.nome} -{" "}
+                              {formatCurrency(Number(proposta.liquido || proposta.valor_total))}
                             </SelectItem>
                           ))
                         )}
@@ -233,7 +222,18 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                     <ClienteCombobox
                       clientes={clientes}
                       value={field.value}
-                      onChange={field.onChange}
+                      onChange={(clienteId) => {
+                        // atualiza o cliente_id no form
+                        field.onChange(clienteId);
+
+                        // busca o cliente e preenche CPF/CNPJ automaticamente
+                        const cliente = clientes.find((c) => c.id === clienteId);
+                        if (cliente?.cpf_cnpj) {
+                          form.setValue("cpf_cnpj", cliente.cpf_cnpj);
+                        } else {
+                          form.setValue("cpf_cnpj", "");
+                        }
+                      }}
                       disabled={isLoadingClientes || !!selectedProposta}
                       isLoading={isLoadingClientes}
                     />
@@ -252,11 +252,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Proposta do Cliente (opcional)</FormLabel>
-                      <Select
-                        onValueChange={handlePropostaChange}
-                        value={field.value}
-                        disabled={isLoadingPropostas}
-                      >
+                      <Select onValueChange={handlePropostaChange} value={field.value} disabled={isLoadingPropostas}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione uma proposta" />
@@ -264,12 +260,9 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                         </FormControl>
                         <SelectContent>
                           {propostasPorCliente.map((proposta: any) => (
-                            <SelectItem 
-                              key={proposta.id} 
-                              value={proposta.id}
-                              disabled={proposta.has_contrato}
-                            >
-                              #{proposta.id.substring(0, 8)} - {proposta.tipo_piso} - {formatCurrency(Number(proposta.valor_total))}
+                            <SelectItem key={proposta.id} value={proposta.id} disabled={proposta.has_contrato}>
+                              #{proposta.id.substring(0, 8)} - {proposta.tipo_piso} -{" "}
+                              {formatCurrency(Number(proposta.valor_total))}
                               {proposta.has_contrato && " (já tem contrato)"}
                             </SelectItem>
                           ))}
@@ -279,12 +272,13 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                     </FormItem>
                   )}
                 />
-                
+
                 {propostaJaTemContrato && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Esta proposta já possui um contrato vinculado. Não é possível criar múltiplos contratos da mesma proposta.
+                      Esta proposta já possui um contrato vinculado. Não é possível criar múltiplos contratos da mesma
+                      proposta.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -349,7 +343,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
               <h4 className="font-medium text-sm">Entrada</h4>
-              
+
               <FormField
                 control={form.control}
                 name="valor_entrada"
@@ -400,7 +394,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
               <h4 className="font-medium text-sm">Parcelas do Restante</h4>
-              
+
               <FormField
                 control={form.control}
                 name="forma_pagamento"
@@ -438,13 +432,10 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? (
-                            format(new Date(field.value + 'T00:00:00'), "PPP", { locale: ptBR })
+                            format(new Date(field.value + "T00:00:00"), "PPP", { locale: ptBR })
                           ) : (
                             <span>Selecione uma data</span>
                           )}
@@ -455,10 +446,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
-                        onSelect={(date) =>
-                          field.onChange(date ? formatDateToLocal(date) : undefined)
-                        }
+                        selected={field.value ? new Date(field.value + "T00:00:00") : undefined}
+                        onSelect={(date) => field.onChange(date ? formatDateToLocal(date) : undefined)}
                         initialFocus
                         className="pointer-events-auto"
                       />
@@ -534,30 +523,32 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
           <div className="space-y-4">
             <div className="rounded-lg border bg-card p-4">
               <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
-              
+
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between pb-2 border-b">
                   <span className="text-muted-foreground">Valor Total:</span>
                   <span className="font-semibold">{formatCurrency(valorWatch)}</span>
                 </div>
-                
+
                 {valorEntradaWatch > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Entrada:</span>
                     <span className="font-medium text-primary">{formatCurrency(valorEntradaWatch)}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Valor a Parcelar:</span>
                   <span className="font-medium">{formatCurrency(valorRestante)}</span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Parcelas:</span>
-                  <span>{parcelasWatch}x de {formatCurrency(valorParcela)}</span>
+                  <span>
+                    {parcelasWatch}x de {formatCurrency(valorParcela)}
+                  </span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Vencimento:</span>
                   <span>Todo dia {diaVencimentoWatch}</span>
@@ -567,18 +558,14 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               {parcelasWatch > 24 && (
                 <Alert className="mt-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Muitas parcelas podem dificultar o controle financeiro
-                  </AlertDescription>
+                  <AlertDescription>Muitas parcelas podem dificultar o controle financeiro</AlertDescription>
                 </Alert>
               )}
 
               {valorEntradaWatch >= valorWatch && (
                 <Alert className="mt-4">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Entrada não pode ser maior ou igual ao valor total
-                  </AlertDescription>
+                  <AlertDescription>Entrada não pode ser maior ou igual ao valor total</AlertDescription>
                 </Alert>
               )}
             </div>
