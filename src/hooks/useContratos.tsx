@@ -81,6 +81,34 @@ export interface ContratoUpdate {
   dia_vencimento?: number | null;
 }
 
+/**
+ * Hook para listar propostas com status "fechada"
+ * usado em ContratoForm.tsx como usePropostasFechadas
+ */
+export const usePropostasFechadas = () => {
+  const { user } = useAuth();
+
+  const { data: propostasFechadas = [], isLoading } = useQuery({
+    queryKey: ["propostas-fechadas", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("propostas")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "fechada")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  return { propostasFechadas, isLoading };
+};
+
 export const useContratos = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
