@@ -7,21 +7,29 @@ export interface Contrato {
   id: string;
   user_id: string;
   cliente_id: string;
-  proposta_id?: string;
+  proposta_id?: string | null;
   status: "ativo" | "concluido" | "cancelado";
   valor_negociado: number;
   cpf_cnpj: string;
   forma_pagamento: string;
   data_inicio: string;
   observacoes?: string;
-  margem_pct?: number;
+  margem_pct?: number | null;
+  // novos campos armazenados na tabela contratos
+  valor_entrada?: number | null;
+  forma_pagamento_entrada?: string | null;
+  numero_parcelas?: number | null;
+  dia_vencimento?: number | null;
+
   created_at: string;
   updated_at: string;
+
   cliente?: {
     nome: string;
     telefone?: string;
     cidade?: string;
   };
+
   proposta?: {
     tipo_piso: string;
     m2: number;
@@ -29,6 +37,7 @@ export interface Contrato {
     servicos?: Array<{ descricao: string; valor: number }>;
     margem_pct?: number;
   };
+
   parcelas?: {
     total: number;
     pagas: number;
@@ -43,23 +52,32 @@ export interface ContratoInsert {
   valor_negociado: number;
   margem_pct?: number;
   cpf_cnpj: string;
+
   valor_entrada?: number;
   forma_pagamento_entrada?: string;
   forma_pagamento: string;
+
   data_inicio: string;
   observacoes?: string;
+
   numero_parcelas: number;
   dia_vencimento: number;
 }
 
 export interface ContratoUpdate {
   cliente_id?: string;
+  proposta_id?: string | null;
   valor_negociado?: number;
   cpf_cnpj?: string;
   forma_pagamento?: string;
   data_inicio?: string;
   observacoes?: string;
   status?: "ativo" | "concluido" | "cancelado";
+
+  valor_entrada?: number | null;
+  forma_pagamento_entrada?: string | null;
+  numero_parcelas?: number | null;
+  dia_vencimento?: number | null;
 }
 
 export const useContratos = () => {
@@ -67,18 +85,20 @@ export const useContratos = () => {
   const { user } = useAuth();
 
   const { data: contratos = [], isLoading } = useQuery({
-    queryKey: ["contratos"],
+    queryKey: ["contratos", user?.id],
     queryFn: async () => {
       if (!user) return [];
 
       const { data: contratosData, error: contratosError } = await supabase
         .from("contratos")
-        .select(`
+        .select(
+          `
           *,
           margem_pct,
           cliente:clientes!cliente_id(nome, telefone, cidade),
           proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos, margem_pct)
-        `)
+        `,
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -109,7 +129,7 @@ export const useContratos = () => {
             ...contrato,
             parcelas: parcelasInfo,
           };
-        })
+        }),
       );
 
       return contratosComParcelas as Contrato[];
@@ -121,20 +141,24 @@ export const useContratos = () => {
     mutationFn: async (data: ContratoInsert) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Usar margem definida pelo usuário ou buscar da proposta como fallback
+      if (!data.numero_parcelas || data.numero_parcelas < 1) {
+        throw new Error("Número de parcelas deve ser maior que zero");
+      }
+
+      // margem informada pelo usuário ou da proposta
       let margemPct = data.margem_pct || 0;
-      
+
       if (!margemPct && data.proposta_id) {
         const { data: proposta } = await supabase
           .from("propostas")
           .select("margem_pct")
           .eq("id", data.proposta_id)
           .single();
-        
+
         margemPct = Number(proposta?.margem_pct || 0);
       }
 
-      // Criar contrato
+      // Criar contrato (já gravando os novos campos)
       const { data: contrato, error: contratoError } = await supabase
         .from("contratos")
         .insert({
@@ -148,21 +172,31 @@ export const useContratos = () => {
           observacoes: data.observacoes,
           margem_pct: margemPct,
           status: "ativo",
+          valor_entrada: data.valor_entrada ?? null,
+          forma_pagamento_entrada: data.forma_pagamento_entrada ?? null,
+          numero_parcelas: data.numero_parcelas,
+          dia_vencimento: data.dia_vencimento,
         })
         .select()
         .single();
 
       if (contratoError) throw contratoError;
 
-      // Gerar parcelas
+      // -------- GERAÇÃO DAS PARCELAS --------
       const valorEntrada = data.valor_entrada || 0;
       const valorRestante = data.valor_negociado - valorEntrada;
-      const valorParcela = valorRestante / data.numero_parcelas;
+
+      if (valorRestante < 0) {
+        throw new Error("O valor de entrada não pode ser maior que o valor negociado");
+      }
+
+      const valorParcela = data.numero_parcelas > 0 ? valorRestante / data.numero_parcelas : 0;
+
       const dataInicio = new Date(data.data_inicio);
-      
-      const parcelas = [];
-      
-      // Se houver entrada, criar parcela de entrada (número 0)
+
+      const parcelas: any[] = [];
+
+      // parcela de entrada (nº 0)
       if (valorEntrada > 0 && data.forma_pagamento_entrada) {
         parcelas.push({
           user_id: user.id,
@@ -174,8 +208,8 @@ export const useContratos = () => {
           forma: data.forma_pagamento_entrada,
         });
       }
-      
-      // Gerar parcelas do restante
+
+      // demais parcelas
       const parcelasRestante = Array.from({ length: data.numero_parcelas }, (_, i) => {
         const vencimento = new Date(dataInicio);
         vencimento.setMonth(vencimento.getMonth() + i);
@@ -191,32 +225,25 @@ export const useContratos = () => {
           forma: data.forma_pagamento,
         };
       });
-      
+
       parcelas.push(...parcelasRestante);
 
-      const { error: parcelasError } = await supabase
-        .from("financeiro_parcelas")
-        .insert(parcelas);
+      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelas);
 
       if (parcelasError) throw parcelasError;
 
-      // Se foi criado a partir de uma proposta, atualizar status da proposta
+      // Se foi criado a partir de uma proposta, marcar proposta como fechada
       if (data.proposta_id) {
-        await supabase
-          .from("propostas")
-          .update({ status: "fechada" })
-          .eq("id", data.proposta_id);
+        await supabase.from("propostas").update({ status: "fechada" }).eq("id", data.proposta_id);
       }
 
       // Criar obra automaticamente
-      await supabase
-        .from("obras")
-        .insert({
-          user_id: user.id,
-          contrato_id: contrato.id,
-          status: "mobilizacao",
-          progresso_pct: 0,
-        });
+      await supabase.from("obras").insert({
+        user_id: user.id,
+        contrato_id: contrato.id,
+        status: "mobilizacao",
+        progresso_pct: 0,
+      });
 
       return contrato;
     },
@@ -232,10 +259,18 @@ export const useContratos = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: ContratoUpdate }) => {
-      const { error } = await supabase
-        .from("contratos")
-        .update(data)
-        .eq("id", id);
+      // Sanitizar payload para evitar uuid vazio ("") e campos inválidos
+      const payload: Record<string, any> = { ...data };
+
+      // se vier string vazia em campos uuid, remove ou seta null
+      if (payload.cliente_id === "") {
+        delete payload.cliente_id;
+      }
+      if (payload.proposta_id === "") {
+        payload.proposta_id = null;
+      }
+
+      const { error } = await supabase.from("contratos").update(payload).eq("id", id);
 
       if (error) throw error;
     },
@@ -251,27 +286,19 @@ export const useContratos = () => {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       // Verificar se há parcelas pagas
-      const { data: parcelas } = await supabase
-        .from("financeiro_parcelas")
-        .select("status")
-        .eq("contrato_id", id);
+      const { data: parcelas } = await supabase.from("financeiro_parcelas").select("status").eq("contrato_id", id);
 
       const temParcelasPagas = parcelas?.some((p) => p.status === "pago");
 
       if (temParcelasPagas) {
         // Se tem parcelas pagas, apenas marcar como cancelado
-        const { error } = await supabase
-          .from("contratos")
-          .update({ status: "cancelado" })
-          .eq("id", id);
+        const { error } = await supabase.from("contratos").update({ status: "cancelado" }).eq("id", id);
 
         if (error) throw error;
       } else {
-        // Se não tem parcelas pagas, pode deletar
-        // Primeiro deletar parcelas
+        // Se não tem parcelas pagas, pode deletar tudo
         await supabase.from("financeiro_parcelas").delete().eq("contrato_id", id);
 
-        // Depois deletar contrato
         const { error } = await supabase.from("contratos").delete().eq("id", id);
 
         if (error) throw error;
@@ -287,17 +314,8 @@ export const useContratos = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: "ativo" | "concluido" | "cancelado";
-    }) => {
-      const { error } = await supabase
-        .from("contratos")
-        .update({ status })
-        .eq("id", id);
+    mutationFn: async ({ id, status }: { id: string; status: "ativo" | "concluido" | "cancelado" }) => {
+      const { error } = await supabase.from("contratos").update({ status }).eq("id", id);
 
       if (error) throw error;
     },
@@ -325,17 +343,19 @@ export const usePropostasFechadas = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["propostas-fechadas"],
+    queryKey: ["propostas-fechadas", user?.id],
     queryFn: async () => {
       if (!user) return [];
 
       // Buscar propostas fechadas
       const { data: propostas, error: propostasError } = await supabase
         .from("propostas")
-        .select(`
+        .select(
+          `
           *,
           cliente:clientes!cliente_id(nome, cidade)
-        `)
+        `,
+        )
         .eq("user_id", user.id)
         .eq("status", "fechada")
         .order("created_at", { ascending: false });
@@ -349,14 +369,12 @@ export const usePropostasFechadas = () => {
         .eq("user_id", user.id)
         .not("proposta_id", "is", null);
 
-      const propostaIdsComContrato = new Set(
-        contratos?.map((c) => c.proposta_id) || []
-      );
+      const propostaIdsComContrato = new Set(contratos?.map((c) => c.proposta_id) || []);
 
       // Adicionar flag has_contrato em cada proposta
-      return (propostas || []).map(p => ({
+      return (propostas || []).map((p) => ({
         ...p,
-        has_contrato: propostaIdsComContrato.has(p.id)
+        has_contrato: propostaIdsComContrato.has(p.id),
       }));
     },
     enabled: !!user,
