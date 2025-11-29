@@ -98,7 +98,7 @@ export const useContratos = () => {
           margem_pct,
           cliente:clientes!cliente_id(nome, telefone, cidade),
           proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos, margem_pct)
-        `
+        `,
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -130,7 +130,7 @@ export const useContratos = () => {
             ...contrato,
             parcelas: parcelasInfo,
           };
-        })
+        }),
       );
 
       return contratosComParcelas as Contrato[];
@@ -139,7 +139,7 @@ export const useContratos = () => {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: ContratoInsert) => {
+    mutationFn: async (data: ContratoInsert): Promise<Contrato> => {
       if (!user) throw new Error("Usuário não autenticado");
 
       if (!data.numero_parcelas || data.numero_parcelas < 1) {
@@ -229,4 +229,74 @@ export const useContratos = () => {
 
       parcelas.push(...parcelasRestante);
 
-      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcel_
+      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelas);
+
+      if (parcelasError) throw parcelasError;
+
+      return contrato as Contrato;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      toast.success("Contrato criado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.message || "Erro ao criar contrato");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: ContratoUpdate }): Promise<Contrato> => {
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { data: updated, error } = await supabase
+        .from("contratos")
+        .update(data as any)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return updated as Contrato;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      toast.success("Contrato atualizado com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.message || "Erro ao atualizar contrato");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error } = await supabase.from("contratos").delete().eq("id", id).eq("user_id", user.id);
+
+      if (error) throw error;
+
+      // opcional: também apagar parcelas associadas
+      await supabase.from("financeiro_parcelas").delete().eq("contrato_id", id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      toast.success("Contrato excluído com sucesso!");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.message || "Erro ao excluir contrato");
+    },
+  });
+
+  return {
+    contratos,
+    isLoading,
+    createContrato: createMutation.mutateAsync,
+    updateContrato: updateMutation.mutateAsync,
+    deleteContrato: deleteMutation.mutateAsync,
+  };
+};
