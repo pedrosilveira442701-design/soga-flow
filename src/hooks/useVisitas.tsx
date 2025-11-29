@@ -79,31 +79,36 @@ export function useVisitas(filters?: VisitaFilters) {
         .order("data", { ascending: false, nullsFirst: false })
         .order("hora", { ascending: false, nullsFirst: false });
 
-      // Aplicar filtros
+      // Busca
       if (filters?.search) {
         query = query.or(
           `assunto.ilike.%${filters.search}%,marcacao_tipo.ilike.%${filters.search}%,responsavel.ilike.%${filters.search}%`,
         );
       }
 
+      // Realizada / pendente
       if (filters?.realizada === "pendentes") {
         query = query.eq("realizada", false);
       } else if (filters?.realizada === "realizadas") {
         query = query.eq("realizada", true);
       }
 
+      // Tipo
       if (filters?.tipo) {
         query = query.eq("marcacao_tipo", filters.tipo);
       }
 
+      // Responsável
       if (filters?.responsavel) {
         query = query.eq("responsavel", filters.responsavel);
       }
 
+      // Status (kanban)
       if (filters?.status) {
         query = query.eq("status", filters.status);
       }
 
+      // Período
       const hoje = new Date().toISOString().split("T")[0];
 
       if (filters?.periodo === "hoje") {
@@ -111,11 +116,11 @@ export function useVisitas(filters?: VisitaFilters) {
       } else if (filters?.periodo === "semana") {
         const semanaDepois = new Date();
         semanaDepois.setDate(semanaDepois.getDate() + 7);
-        query = query.gte("data", hoje).lte("data", semanaDepois.toISOString().split("T")[0]);
+        query = query.gte("data", hoje).lte(semanaDepois.toISOString().split("T")[0]);
       } else if (filters?.periodo === "mes") {
         const mesDepois = new Date();
         mesDepois.setMonth(mesDepois.getMonth() + 1);
-        query = query.gte("data", hoje).lte("data", mesDepois.toISOString().split("T")[0]);
+        query = query.gte("data", hoje).lte(mesDepois.toISOString().split("T")[0]);
       } else if (filters?.periodo === "atrasadas") {
         query = query.lt("data", hoje).eq("realizada", false);
       } else if (filters?.periodo === "custom" && filters?.dataInicio && filters?.dataFim) {
@@ -168,41 +173,36 @@ export function useVisitas(filters?: VisitaFilters) {
     enabled: !!user,
   });
 
+  // CREATE
   const createVisita = useMutation({
     mutationFn: async (
       newVisita: Omit<Visita, "id" | "created_at" | "updated_at" | "user_id" | "clientes" | "status">,
     ) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Calculate status based on data/hora
+      // 🔧 Normalizar data/hora: "" -> null
+      const cleanData = newVisita.data && newVisita.data.trim() !== "" ? newVisita.data : null;
+      const cleanHora = newVisita.hora && newVisita.hora.trim() !== "" ? newVisita.hora : null;
+
+      // Calcular status com base na data/hora limpas
       let status: VisitaStatus = "agendar";
 
-      if (newVisita.data && newVisita.hora) {
-        const dataHora = new Date(`${newVisita.data}T${newVisita.hora}`);
-        if (dataHora < new Date()) {
-          status = "atrasada";
-        } else {
-          status = "marcada";
-        }
-      } else if (newVisita.data) {
-        const dataVisita = new Date(newVisita.data);
-        if (dataVisita < new Date()) {
-          status = "atrasada";
-        } else {
-          status = "marcada";
-        }
+      if (cleanData && cleanHora) {
+        const dataHora = new Date(`${cleanData}T${cleanHora}`);
+        status = dataHora < new Date() ? "atrasada" : "marcada";
+      } else if (cleanData) {
+        const dataVisita = new Date(cleanData);
+        status = dataVisita < new Date() ? "atrasada" : "marcada";
       }
 
       if (newVisita.realizada) {
         status = "concluida";
       }
 
-      // 🔹 Normaliza cliente_id / cliente_manual_name e realizada
       const payload = {
         ...newVisita,
-        cliente_id: newVisita.cliente_id ?? null,
-        cliente_manual_name: newVisita.cliente_manual_name || null,
-        realizada: newVisita.realizada ?? false,
+        data: cleanData,
+        hora: cleanHora,
         user_id: user.id,
         status,
       };
@@ -210,7 +210,7 @@ export function useVisitas(filters?: VisitaFilters) {
       const { data, error } = await supabase.from("visitas").insert([payload]).select().single();
 
       if (error) throw error;
-      return data as Visita;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["visitas"] });
@@ -222,38 +222,55 @@ export function useVisitas(filters?: VisitaFilters) {
     },
   });
 
+  // UPDATE
   const updateVisita = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Visita> & { id: string }) => {
-      // Recalculate status if data/hora/realizada changed
+      const visitaOriginal = visitas.find((v) => v.id === id);
+
+      // 🔧 Normalizar data/hora: "" -> null se vierem no update
+      const normalizedUpdates: Partial<Visita> = {
+        ...updates,
+      };
+
+      if ("data" in updates) {
+        normalizedUpdates.data = updates.data && updates.data.trim() !== "" ? updates.data : null;
+      }
+
+      if ("hora" in updates) {
+        normalizedUpdates.hora = updates.hora && updates.hora.trim() !== "" ? updates.hora : null;
+      }
+
+      // Recalcular status se data/hora/realizada mudarem
       let status: VisitaStatus | undefined;
 
-      if ("data" in updates || "hora" in updates || "realizada" in updates) {
-        const visita = visitas.find((v) => v.id === id);
-        if (visita) {
-          const newData = updates.data !== undefined ? updates.data : visita.data;
-          const newHora = updates.hora !== undefined ? updates.hora : visita.hora;
-          const newRealizada = updates.realizada !== undefined ? updates.realizada : visita.realizada;
+      if (
+        visitaOriginal &&
+        ("data" in normalizedUpdates || "hora" in normalizedUpdates || "realizada" in normalizedUpdates)
+      ) {
+        const newData = normalizedUpdates.data !== undefined ? normalizedUpdates.data : visitaOriginal.data;
+        const newHora = normalizedUpdates.hora !== undefined ? normalizedUpdates.hora : visitaOriginal.hora;
+        const newRealizada =
+          normalizedUpdates.realizada !== undefined ? normalizedUpdates.realizada : visitaOriginal.realizada;
 
-          if (newRealizada) {
-            status = "concluida";
-          } else if (newData && newHora) {
-            const dataHora = new Date(`${newData}T${newHora}`);
-            status = dataHora < new Date() ? "atrasada" : "marcada";
-          } else if (newData) {
-            const dataVisita = new Date(newData);
-            status = dataVisita < new Date() ? "atrasada" : "marcada";
-          } else {
-            status = "agendar";
-          }
+        if (newRealizada) {
+          status = "concluida";
+        } else if (newData && newHora) {
+          const dataHora = new Date(`${newData}T${newHora}`);
+          status = dataHora < new Date() ? "atrasada" : "marcada";
+        } else if (newData) {
+          const dataVisita = new Date(newData);
+          status = dataVisita < new Date() ? "atrasada" : "marcada";
+        } else {
+          status = "agendar";
         }
       }
 
-      const updatesWithStatus = status ? { ...updates, status } : updates;
+      const updatesWithStatus = status ? { ...normalizedUpdates, status } : normalizedUpdates;
 
       const { data, error } = await supabase.from("visitas").update(updatesWithStatus).eq("id", id).select().single();
 
       if (error) throw error;
-      return data as Visita;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["visitas"] });
@@ -265,35 +282,13 @@ export function useVisitas(filters?: VisitaFilters) {
     },
   });
 
+  // MARCAR COMO REALIZADA
   const marcarComoRealizada = useMutation({
     mutationFn: async ({ id, realizada }: { id: string; realizada: boolean }) => {
-      const visita = visitas.find((v) => v.id === id);
-
-      let status: VisitaStatus | undefined;
-
-      if (visita) {
-        if (realizada) {
-          status = "concluida";
-        } else {
-          // Recalcula status com base em data/hora
-          if (visita.data && visita.hora) {
-            const dataHora = new Date(`${visita.data}T${visita.hora}`);
-            status = dataHora < new Date() ? "atrasada" : "marcada";
-          } else if (visita.data) {
-            const dataVisita = new Date(visita.data);
-            status = dataVisita < new Date() ? "atrasada" : "marcada";
-          } else {
-            status = "agendar";
-          }
-        }
-      }
-
-      const updatePayload = status ? { realizada, status } : { realizada };
-
-      const { data, error } = await supabase.from("visitas").update(updatePayload).eq("id", id).select().single();
+      const { data, error } = await supabase.from("visitas").update({ realizada }).eq("id", id).select().single();
 
       if (error) throw error;
-      return data as Visita;
+      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["visitas"] });
@@ -305,6 +300,7 @@ export function useVisitas(filters?: VisitaFilters) {
     },
   });
 
+  // DELETE
   const deleteVisita = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("visitas").delete().eq("id", id);
