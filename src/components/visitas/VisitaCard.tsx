@@ -30,7 +30,6 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
   const nomeCliente = visita.cliente_manual_name || visita.clientes?.nome || "Cliente não informado";
 
   const telefone = visita.telefone || visita.clientes?.telefone || "";
-
   const endereco = visita.endereco || visita.clientes?.endereco || "";
 
   const whatsappUrl = telefone
@@ -47,16 +46,39 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
     <Card className="w-full rounded-2xl border border-slate-200 shadow-sm bg-white">
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-3 pb-2">
-        <div className="flex flex-col gap-1">
+        {/* ===== ORDEM DO CONTEÚDO ===== */}
+        <div className="flex flex-col gap-1 text-slate-900">
+          {/* 1) Nome do cliente */}
+          <h3 className="text-sm font-semibold leading-snug">{nomeCliente}</h3>
+
+          {/* 2) Endereço */}
+          {endereco && (
+            <div className="flex items-start gap-2 text-xs text-slate-600">
+              <MapPin className="h-4 w-4 mt-[1px] text-slate-400 shrink-0" />
+              <span>{endereco}</span>
+            </div>
+          )}
+
+          {/* 3) Telefone */}
+          {telefone && (
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+              <span>{telefone}</span>
+            </div>
+          )}
+
+          {/* 4) Tipo de visita */}
           {visita.marcacao_tipo && (
             <span className="text-[11px] font-semibold tracking-[0.08em] text-slate-500 uppercase">
               {visita.marcacao_tipo}
             </span>
           )}
-          <h3 className="text-sm font-semibold text-slate-900 leading-snug">{visita.assunto}</h3>
-          <p className="text-xs text-slate-500">{nomeCliente}</p>
+
+          {/* 5) Assunto */}
+          <p className="text-xs text-slate-500">{visita.assunto}</p>
         </div>
 
+        {/* Status + ações */}
         <div className="flex flex-col items-end gap-2">
           {/* Status pill */}
           <Badge className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${statusColor[visita.status]}`}>
@@ -70,11 +92,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-slate-100"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(visita);
-              }}
+              onClick={() => onEdit(visita)}
             >
               <Edit2 className="h-5 w-5" />
             </Button>
@@ -83,11 +101,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-full hover:bg-red-50 text-red-600"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(visita.id);
-              }}
+              onClick={() => onDelete(visita.id)}
             >
               <Trash2 className="h-5 w-5" />
             </Button>
@@ -95,22 +109,8 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         </div>
       </div>
 
-      {/* Infos principais */}
+      {/* Infos extras: data / hora */}
       <div className="px-4 pb-3 space-y-1.5 text-xs text-slate-600">
-        {endereco && (
-          <div className="flex items-start gap-2">
-            <MapPin className="h-5 w-5 mt-[1px] text-slate-400 shrink-0" />
-            <span>{endereco}</span>
-          </div>
-        )}
-
-        {telefone && (
-          <div className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-slate-400 shrink-0" />
-            <span>{telefone}</span>
-          </div>
-        )}
-
         <div className="flex flex-wrap gap-3 mt-1">
           {dataFormatada && (
             <div className="flex items-center gap-1 text-[11px] text-slate-500">
@@ -135,10 +135,9 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!whatsappUrl}
           asChild={!!whatsappUrl}
-          onPointerDown={(e) => e.stopPropagation()}
         >
           {whatsappUrl ? (
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-5 w-5" />
               <span>WhatsApp</span>
             </a>
@@ -156,10 +155,9 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           className="flex-1 justify-center gap-2 rounded-full text-xs"
           disabled={!mapsUrl}
           asChild={!!mapsUrl}
-          onPointerDown={(e) => e.stopPropagation()}
         >
           {mapsUrl ? (
-            <a href={mapsUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+            <a href={mapsUrl} target="_blank" rel="noopener noreferrer">
               <MapPinned className="h-5 w-5" />
               <span>Maps</span>
             </a>
@@ -177,11 +175,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="flex items-center gap-1 text-slate-600 hover:text-emerald-600 transition-colors"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleRealizada(visita.id, !visita.realizada);
-          }}
+          onClick={() => onToggleRealizada(visita.id, !visita.realizada)}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
           <span>{visita.realizada ? "Marcar como pendente" : "Marcar como realizada"}</span>
@@ -190,11 +184,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         <button
           type="button"
           className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(visita);
-          }}
+          onClick={() => onViewDetails(visita)}
         >
           Ver detalhes
         </button>
