@@ -10,8 +10,10 @@ export interface Cliente {
   contato: string | null;
   telefone: string | null;
   cpf_cnpj: string | null;
+
   // Campo legado (concatenado)
   endereco: string | null;
+
   // Campos estruturados de endereço
   cep: string | null;
   logradouro: string | null;
@@ -21,9 +23,11 @@ export interface Cliente {
   cidade: string | null;
   uf: string | null;
   pais: string | null;
+
   status: string;
   created_at: string;
   updated_at: string;
+
   propostas?: { count: number }[];
   leads?: { count: number }[];
 }
@@ -33,8 +37,10 @@ export interface CreateClienteData {
   contato?: string;
   telefone?: string;
   cpf_cnpj?: string;
+
   // Campo legado
   endereco?: string;
+
   // Campos estruturados
   cep?: string;
   logradouro?: string;
@@ -44,6 +50,7 @@ export interface CreateClienteData {
   cidade?: string;
   uf?: string;
   pais?: string;
+
   status?: string;
   created_at?: string;
 }
@@ -59,17 +66,19 @@ export function useClientes() {
 
   // Fetch all clientes
   const { data: clientes, isLoading } = useQuery({
-    queryKey: ["clientes"],
+    queryKey: ["clientes", user?.id],
     queryFn: async () => {
       if (!user) return [];
 
       const { data, error } = await supabase
         .from("clientes")
-        .select(`
+        .select(
+          `
           *,
           propostas(count),
           leads(count)
-        `)
+        `,
+        )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -94,17 +103,13 @@ export function useClientes() {
         clienteData.updated_at = data.created_at;
       }
 
-      const { data: cliente, error } = await supabase
-        .from("clientes")
-        .insert(clienteData)
-        .select()
-        .single();
+      const { data: cliente, error } = await supabase.from("clientes").insert(clienteData).select().single();
 
       if (error) throw error;
       return cliente;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
       toast({
         title: "Cliente criado",
         description: "Cliente cadastrado com sucesso",
@@ -122,10 +127,13 @@ export function useClientes() {
   // Update cliente mutation
   const updateCliente = useMutation({
     mutationFn: async ({ id, ...data }: UpdateClienteData) => {
+      if (!user) throw new Error("User not authenticated");
+
       const { data: cliente, error } = await supabase
         .from("clientes")
         .update(data)
         .eq("id", id)
+        .eq("user_id", user.id)
         .select()
         .single();
 
@@ -133,7 +141,7 @@ export function useClientes() {
       return cliente;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
       toast({
         title: "Cliente atualizado",
         description: "Cliente atualizado com sucesso",
@@ -151,15 +159,14 @@ export function useClientes() {
   // Delete cliente mutation
   const deleteCliente = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("clientes")
-        .delete()
-        .eq("id", id);
+      if (!user) throw new Error("User not authenticated");
+
+      const { error } = await supabase.from("clientes").delete().eq("id", id).eq("user_id", user.id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
       toast({
         title: "Cliente excluído",
         description: "Cliente excluído com sucesso",
