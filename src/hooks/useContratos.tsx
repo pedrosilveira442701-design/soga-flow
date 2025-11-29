@@ -15,6 +15,7 @@ export interface Contrato {
   data_inicio: string;
   observacoes?: string;
   margem_pct?: number | null;
+
   // novos campos armazenados na tabela contratos
   valor_entrada?: number | null;
   forma_pagamento_entrada?: string | null;
@@ -97,7 +98,7 @@ export const useContratos = () => {
           margem_pct,
           cliente:clientes!cliente_id(nome, telefone, cidade),
           proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos, margem_pct)
-        `,
+        `
         )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
@@ -129,7 +130,7 @@ export const useContratos = () => {
             ...contrato,
             parcelas: parcelasInfo,
           };
-        }),
+        })
       );
 
       return contratosComParcelas as Contrato[];
@@ -228,155 +229,4 @@ export const useContratos = () => {
 
       parcelas.push(...parcelasRestante);
 
-      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelas);
-
-      if (parcelasError) throw parcelasError;
-
-      // Se foi criado a partir de uma proposta, marcar proposta como fechada
-      if (data.proposta_id) {
-        await supabase.from("propostas").update({ status: "fechada" }).eq("id", data.proposta_id);
-      }
-
-      // Criar obra automaticamente
-      await supabase.from("obras").insert({
-        user_id: user.id,
-        contrato_id: contrato.id,
-        status: "mobilizacao",
-        progresso_pct: 0,
-      });
-
-      return contrato;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contratos"] });
-      queryClient.invalidateQueries({ queryKey: ["propostas"] });
-      toast.success("Contrato criado com sucesso!");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao criar contrato: ${error.message}`);
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: ContratoUpdate }) => {
-      // Sanitizar payload para evitar uuid vazio ("") e campos inválidos
-      const payload: Record<string, any> = { ...data };
-
-      // se vier string vazia em campos uuid, remove ou seta null
-      if (payload.cliente_id === "") {
-        delete payload.cliente_id;
-      }
-      if (payload.proposta_id === "") {
-        payload.proposta_id = null;
-      }
-
-      const { error } = await supabase.from("contratos").update(payload).eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contratos"] });
-      toast.success("Contrato atualizado com sucesso!");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao atualizar contrato: ${error.message}`);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      // Verificar se há parcelas pagas
-      const { data: parcelas } = await supabase.from("financeiro_parcelas").select("status").eq("contrato_id", id);
-
-      const temParcelasPagas = parcelas?.some((p) => p.status === "pago");
-
-      if (temParcelasPagas) {
-        // Se tem parcelas pagas, apenas marcar como cancelado
-        const { error } = await supabase.from("contratos").update({ status: "cancelado" }).eq("id", id);
-
-        if (error) throw error;
-      } else {
-        // Se não tem parcelas pagas, pode deletar tudo
-        await supabase.from("financeiro_parcelas").delete().eq("contrato_id", id);
-
-        const { error } = await supabase.from("contratos").delete().eq("id", id);
-
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contratos"] });
-      toast.success("Contrato cancelado com sucesso!");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao cancelar contrato: ${error.message}`);
-    },
-  });
-
-  const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "ativo" | "concluido" | "cancelado" }) => {
-      const { error } = await supabase.from("contratos").update({ status }).eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contratos"] });
-      toast.success("Status atualizado com sucesso!");
-    },
-    onError: (error: Error) => {
-      toast.error(`Erro ao atualizar status: ${error.message}`);
-    },
-  });
-
-  return {
-    contratos,
-    isLoading,
-    createContrato: createMutation.mutateAsync,
-    updateContrato: updateMutation.mutateAsync,
-    deleteContrato: deleteMutation.mutateAsync,
-    updateStatus: updateStatusMutation.mutateAsync,
-  };
-};
-
-// Hook para buscar propostas fechadas sem contrato
-export const usePropostasFechadas = () => {
-  const { user } = useAuth();
-
-  return useQuery({
-    queryKey: ["propostas-fechadas", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-
-      // Buscar propostas fechadas
-      const { data: propostas, error: propostasError } = await supabase
-        .from("propostas")
-        .select(
-          `
-          *,
-          cliente:clientes!cliente_id(nome, cidade)
-        `,
-        )
-        .eq("user_id", user.id)
-        .eq("status", "fechada")
-        .order("created_at", { ascending: false });
-
-      if (propostasError) throw propostasError;
-
-      // Buscar contratos existentes
-      const { data: contratos } = await supabase
-        .from("contratos")
-        .select("proposta_id")
-        .eq("user_id", user.id)
-        .not("proposta_id", "is", null);
-
-      const propostaIdsComContrato = new Set(contratos?.map((c) => c.proposta_id) || []);
-
-      // Adicionar flag has_contrato em cada proposta
-      return (propostas || []).map((p) => ({
-        ...p,
-        has_contrato: propostaIdsComContrato.has(p.id),
-      }));
-    },
-    enabled: !!user,
-  });
-};
+      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcel_
