@@ -34,7 +34,7 @@ export function VisitasKanbanBoard({
     agendar: visitas.filter((v) => v.status === "agendar"),
     marcada: visitas.filter((v) => v.status === "marcada"),
     atrasada: visitas.filter((v) => v.status === "atrasada"),
-    // se no futuro tiver "concluida" no Kanban, adicionar aqui
+    concluida: visitas.filter((v) => v.status === "concluida"),
   };
 
   const activeVisita = activeId ? visitas.find((v) => v.id === activeId) : null;

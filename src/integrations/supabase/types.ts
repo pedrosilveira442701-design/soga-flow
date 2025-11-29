@@ -783,7 +783,7 @@ export type Database = {
         Row: {
           assunto: string
           checklist: Json | null
-          cliente_id: string
+          cliente_id: string | null
           cliente_manual_name: string | null
           complexidade: number | null
           created_at: string
@@ -807,7 +807,7 @@ export type Database = {
         Insert: {
           assunto: string
           checklist?: Json | null
-          cliente_id: string
+          cliente_id?: string | null
           cliente_manual_name?: string | null
           complexidade?: number | null
           created_at?: string
@@ -831,7 +831,7 @@ export type Database = {
         Update: {
           assunto?: string
           checklist?: Json | null
-          cliente_id?: string
+          cliente_id?: string | null
           cliente_manual_name?: string | null
           complexidade?: number | null
           created_at?: string
