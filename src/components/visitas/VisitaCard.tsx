@@ -54,7 +54,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           {/* 2) Endereço */}
           {endereco && (
             <div className="flex items-start gap-2 text-xs text-slate-600">
-              <MapPin className="h-4 w-4 mt-[1px] text-slate-400 shrink-0" />
+              <MapPin className="h-5 w-5 mt-[1px] text-slate-400 shrink-0" />
               <span>{endereco}</span>
             </div>
           )}
@@ -62,7 +62,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           {/* 3) Telefone */}
           {telefone && (
             <div className="flex items-center gap-2 text-xs text-slate-600">
-              <Phone className="h-4 w-4 text-slate-400 shrink-0" />
+              <Phone className="h-5 w-5 text-slate-400 shrink-0" />
               <span>{telefone}</span>
             </div>
           )}
