@@ -275,7 +275,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
                 {propostaJaTemContrato && (
                   <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
+                    <AlertCircle className="h-5 w-5" />
                     <AlertDescription>
                       Esta proposta já possui um contrato vinculado. Não é possível criar múltiplos contratos da mesma
                       proposta.
@@ -439,7 +439,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                           ) : (
                             <span>Selecione uma data</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -557,14 +557,14 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
               {parcelasWatch > 24 && (
                 <Alert className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-5 w-5" />
                   <AlertDescription>Muitas parcelas podem dificultar o controle financeiro</AlertDescription>
                 </Alert>
               )}
 
               {valorEntradaWatch >= valorWatch && (
                 <Alert className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
+                  <AlertCircle className="h-5 w-5" />
                   <AlertDescription>Entrada não pode ser maior ou igual ao valor total</AlertDescription>
                 </Alert>
               )}
