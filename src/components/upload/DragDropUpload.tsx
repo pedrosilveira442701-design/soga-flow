@@ -10,12 +10,7 @@ interface DragDropUploadProps {
   className?: string;
 }
 
-export function DragDropUpload({
-  onUpload,
-  maxFiles = 5,
-  accept = "*",
-  className,
-}: DragDropUploadProps) {
+export function DragDropUpload({ onUpload, maxFiles = 5, accept = "*", className }: DragDropUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
 
@@ -42,7 +37,7 @@ export function DragDropUpload({
         onUpload(newFiles);
       }
     },
-    [files, maxFiles, onUpload]
+    [files, maxFiles, onUpload],
   );
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,31 +60,17 @@ export function DragDropUpload({
       <div
         className={cn(
           "relative border-2 border-dashed rounded-lg p-8 transition-colors duration-200",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-border hover:border-primary/50"
+          isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50",
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <input
-          type="file"
-          id="file-upload"
-          className="sr-only"
-          onChange={handleFileInput}
-          accept={accept}
-          multiple
-        />
-        <label
-          htmlFor="file-upload"
-          className="flex flex-col items-center justify-center cursor-pointer"
-        >
+        <input type="file" id="file-upload" className="sr-only" onChange={handleFileInput} accept={accept} multiple />
+        <label htmlFor="file-upload" className="flex flex-col items-center justify-center cursor-pointer">
           <Upload className="h-10 w-10 text-muted-foreground mb-4 icon-thin" />
-          <p className="text-body font-medium mb-1">
-            Arraste arquivos ou clique para selecionar
-          </p>
+          <p className="text-body font-medium mb-1">Arraste arquivos ou clique para selecionar</p>
           <p className="text-caption text-muted-foreground">
             Sem limite de tamanho • Máximo de {maxFiles} arquivos por vez
           </p>
@@ -100,26 +81,16 @@ export function DragDropUpload({
         <div className="space-y-2">
           <p className="text-caption font-medium">Arquivos selecionados:</p>
           {files.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 bg-muted rounded-lg"
-            >
+            <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div className="flex items-center gap-3">
                 <File className="h-5 w-5 text-primary icon-thin" />
                 <div>
                   <p className="text-body font-medium">{file.name}</p>
-                  <p className="text-caption text-muted-foreground">
-                    {(file.size / 1024).toFixed(2)} KB
-                  </p>
+                  <p className="text-caption text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeFile(index)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={() => removeFile(index)} className="h-8 w-8">
+                <X className="h-5 w-5" />
               </Button>
             </div>
           ))}
