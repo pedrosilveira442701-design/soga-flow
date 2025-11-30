@@ -5,43 +5,16 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const ORIGENS = [
-  "Instagram",
-  "Facebook",
-  "Google",
-  "Indicação",
-  "Site",
-  "WhatsApp",
-  "Telefone",
-  "Orgânico",
-  "Outro",
-];
+const ORIGENS = ["Instagram", "Facebook", "Google", "Indicação", "Site", "WhatsApp", "Telefone", "Orgânico", "Outro"];
 
 const contatoSchema = z.object({
   telefone: z.string().min(10, "Telefone deve ter pelo menos 10 dígitos"),
@@ -50,7 +23,7 @@ const contatoSchema = z.object({
   hora: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Formato de hora inválido (HH:MM)"),
   origem: z.string().min(1, "Selecione a origem do contato"),
   observacoes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),
-  tag: z.enum(['anuncio', 'descoberta', 'orcamento']).optional(),
+  tag: z.enum(["anuncio", "descoberta", "orcamento"]).optional(),
   gerouLead: z.boolean().default(false),
 });
 
@@ -67,7 +40,7 @@ interface ContatoQuickFormProps {
     hora: string;
     origem: string;
     observacoes?: string;
-    tag?: 'anuncio' | 'descoberta' | 'orcamento';
+    tag?: "anuncio" | "descoberta" | "orcamento";
   };
 }
 
@@ -129,10 +102,7 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
             <FormItem>
               <FormLabel>Nome</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Nome do contato (opcional)"
-                  {...field}
-                />
+                <Input placeholder="Nome do contato (opcional)" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -151,17 +121,10 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
                     <FormControl>
                       <Button
                         variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                       >
-                        {field.value ? (
-                          format(field.value, "dd/MM/yyyy")
-                        ) : (
-                          <span>Selecione</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        {field.value ? format(field.value, "dd/MM/yyyy") : <span>Selecione</span>}
+                        <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
@@ -189,7 +152,7 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
                 <FormControl>
                   <div className="relative">
                     <Input type="time" {...field} />
-                    <Clock className="absolute right-3 top-3 h-4 w-4 opacity-50 pointer-events-none" />
+                    <Clock className="absolute right-3 top-3 h-5 w-5 opacity-50 pointer-events-none" />
                   </div>
                 </FormControl>
                 <FormMessage />
@@ -230,11 +193,7 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
             <FormItem>
               <FormLabel>Observações</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Observações sobre o contato (opcional)"
-                  className="resize-none"
-                  {...field}
-                />
+                <Textarea placeholder="Observações sobre o contato (opcional)" className="resize-none" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -271,18 +230,11 @@ export function ContatoQuickForm({ onSubmit, onOpenLeadForm, isLoading, initialD
             render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-border p-4 bg-muted/50">
                 <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="font-medium">
-                    Gerou lead?
-                  </FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    Marque se este contato se qualificou como um lead
-                  </p>
+                  <FormLabel className="font-medium">Gerou lead?</FormLabel>
+                  <p className="text-sm text-muted-foreground">Marque se este contato se qualificou como um lead</p>
                 </div>
               </FormItem>
             )}
