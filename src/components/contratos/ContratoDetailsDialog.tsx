@@ -1,22 +1,9 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import {
-  FileText,
-  Calendar,
-  DollarSign,
-  User,
-  Edit,
-  XCircle,
-  CheckCircle,
-} from "lucide-react";
+import { FileText, Calendar, DollarSign, User, Edit, XCircle, CheckCircle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
@@ -43,13 +30,7 @@ interface ContratoDetailsDialogProps {
   onCancel?: (id: string) => void;
 }
 
-export function ContratoDetailsDialog({
-  contrato,
-  open,
-  onOpenChange,
-  onEdit,
-  onCancel,
-}: ContratoDetailsDialogProps) {
+export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, onCancel }: ContratoDetailsDialogProps) {
   if (!contrato) return null;
 
   const formatCurrency = (value: number) => {
@@ -72,9 +53,7 @@ export function ContratoDetailsDialog({
     }
   };
 
-  const progressoPagamento = contrato.parcelas
-    ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100
-    : 0;
+  const progressoPagamento = contrato.parcelas ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100 : 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,9 +63,7 @@ export function ContratoDetailsDialog({
             <div className="flex items-center gap-3">
               <FileText className="h-6 w-6 text-primary" />
               <div>
-                <DialogTitle className="text-2xl">
-                  Contrato - {contrato.cliente?.nome}
-                </DialogTitle>
+                <DialogTitle className="text-2xl">Contrato - {contrato.cliente?.nome}</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   Criado em{" "}
                   {format(parseISO(contrato.created_at), "dd/MM/yyyy", {
@@ -106,13 +83,11 @@ export function ContratoDetailsDialog({
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Cliente</p>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
+                  <User className="h-5 w-5" />
                   <p className="font-medium">{contrato.cliente?.nome}</p>
                 </div>
                 {contrato.cliente?.telefone && (
-                  <p className="text-sm text-muted-foreground">
-                    {contrato.cliente.telefone}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{contrato.cliente.telefone}</p>
                 )}
               </div>
 
@@ -122,9 +97,7 @@ export function ContratoDetailsDialog({
               </div>
 
               <div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  Forma de Pagamento
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">Forma de Pagamento</p>
                 <p className="font-medium">{contrato.forma_pagamento}</p>
               </div>
             </div>
@@ -133,7 +106,7 @@ export function ContratoDetailsDialog({
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Data de Início</p>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-5 w-5" />
                   <p className="font-medium">
                     {format(parseISO(contrato.data_inicio), "dd/MM/yyyy", {
                       locale: ptBR,
@@ -144,11 +117,10 @@ export function ContratoDetailsDialog({
 
               {contrato.proposta && (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Proposta Origem
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-1">Proposta Origem</p>
                   <p className="font-medium">
-                    {contrato.proposta.tipo_piso} - {contrato.proposta.m2}{contrato.proposta.tipo_piso === "Rodapé Abaulado" ? "ml" : "m²"}
+                    {contrato.proposta.tipo_piso} - {contrato.proposta.m2}
+                    {contrato.proposta.tipo_piso === "Rodapé Abaulado" ? "ml" : "m²"}
                   </p>
                 </div>
               )}
@@ -173,12 +145,8 @@ export function ContratoDetailsDialog({
 
             <div className="grid grid-cols-4 gap-4 mb-4">
               <div className="rounded-lg border p-4">
-                <p className="text-sm text-muted-foreground mb-1">
-                  Valor Total
-                </p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(Number(contrato.valor_negociado))}
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">Valor Total</p>
+                <p className="text-2xl font-bold">{formatCurrency(Number(contrato.valor_negociado))}</p>
               </div>
 
               <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
@@ -189,9 +157,7 @@ export function ContratoDetailsDialog({
               </div>
 
               <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
-                <p className="text-sm text-muted-foreground mb-1">
-                  Saldo Restante
-                </p>
+                <p className="text-sm text-muted-foreground mb-1">Saldo Restante</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {formatCurrency(contrato.parcelas?.valor_restante || 0)}
                 </p>
@@ -217,8 +183,8 @@ export function ContratoDetailsDialog({
           <Separator />
 
           {/* Gerenciador de Parcelas */}
-          <ParcelasManager 
-            contratoId={contrato.id} 
+          <ParcelasManager
+            contratoId={contrato.id}
             valorNegociado={Number(contrato.valor_negociado)}
             margem_pct={contrato.margem_pct || 0}
             propostaInfo={contrato.proposta}
@@ -232,12 +198,7 @@ export function ContratoDetailsDialog({
               <Paperclip className="h-5 w-5 text-muted-foreground" />
               <h3 className="font-semibold">Anexos do Contrato</h3>
             </div>
-            <ArquivosList 
-              entidade="contrato"
-              entidadeId={contrato.id}
-              showUpload={true}
-              compact={false}
-            />
+            <ArquivosList entidade="contrato" entidadeId={contrato.id} showUpload={true} compact={false} />
           </div>
 
           <Separator />
@@ -247,7 +208,7 @@ export function ContratoDetailsDialog({
             <div className="flex gap-2">
               {contrato.status === "ativo" && onEdit && (
                 <Button variant="outline" onClick={() => onEdit(contrato)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-5 w-5 mr-2" />
                   Editar Contrato
                 </Button>
               )}
@@ -258,7 +219,7 @@ export function ContratoDetailsDialog({
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive">
-                      <XCircle className="h-4 w-4 mr-2" />
+                      <XCircle className="h-5 w-5 mr-2" />
                       Cancelar Contrato
                     </Button>
                   </AlertDialogTrigger>
@@ -266,9 +227,8 @@ export function ContratoDetailsDialog({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Cancelar Contrato</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Tem certeza que deseja cancelar este contrato? As parcelas
-                        pendentes serão canceladas automaticamente. Esta ação não
-                        pode ser desfeita.
+                        Tem certeza que deseja cancelar este contrato? As parcelas pendentes serão canceladas
+                        automaticamente. Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
