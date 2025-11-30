@@ -3,36 +3,14 @@ import { useParcelas } from "@/hooks/useParcelas";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  CheckCircle,
-  XCircle,
-  Edit,
-  Trash2,
-  Plus,
-  AlertCircle,
-  TrendingUp,
-  Percent,
-} from "lucide-react";
+import { CheckCircle, XCircle, Edit, Trash2, Plus, AlertCircle, TrendingUp, Percent } from "lucide-react";
 import { MarcarPagoDialog } from "@/components/financeiro/MarcarPagoDialog";
 import { format, isPast, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,37 +42,36 @@ interface ParcelasManagerProps {
 
 export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propostaInfo }: ParcelasManagerProps) {
   const queryClient = useQueryClient();
-  const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } =
-    useParcelas(contratoId);
-  
+  const { parcelas, isLoading, marcarComoPago, deleteParcela, addParcela, updateParcela } = useParcelas(contratoId);
+
   // Estado local para margem editável
   const [margemPct, setMargemPct] = useState(margem_pct || 0);
   const [isEditingMargem, setIsEditingMargem] = useState(false);
   const [margemInput, setMargemInput] = useState(String(margem_pct || 0));
-  
+
   // Sincronizar estado quando margem_pct mudar
   useEffect(() => {
     setMargemPct(margem_pct || 0);
     setMargemInput(String(margem_pct || 0));
   }, [margem_pct]);
-  
+
   // Calcular valor da margem por parcela
   const calcularMargemPorParcela = (valorParcela: number) => {
     return (valorParcela * margemPct) / 100;
   };
-  
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [novaParcelaValor, setNovaParcelaValor] = useState("");
   const [novaParcelaVencimento, setNovaParcelaVencimento] = useState<Date>();
-  
+
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editParcelaId, setEditParcelaId] = useState<string | null>(null);
   const [editParcelaValor, setEditParcelaValor] = useState("");
   const [editParcelaVencimento, setEditParcelaVencimento] = useState<Date>();
-  
+
   const [showPagarDialog, setShowPagarDialog] = useState(false);
   const [parcelaParaPagar, setParcelaParaPagar] = useState<string | null>(null);
-  
+
   const [showEditPagaDialog, setShowEditPagaDialog] = useState(false);
   const [editPagaParcelaId, setEditPagaParcelaId] = useState<string | null>(null);
   const [editPagaData, setEditPagaData] = useState<Date>();
@@ -113,11 +86,11 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
 
   const getStatusBadge = (status: string, vencimento: string) => {
     const isVencida = isPast(parseISO(vencimento)) && status === "pendente";
-    
+
     if (isVencida) {
       return <Badge variant="destructive">Vencida</Badge>;
     }
-    
+
     switch (status) {
       case "pago":
         return <Badge className="bg-green-500">Paga</Badge>;
@@ -204,17 +177,14 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
 
   const handleSalvarMargem = async () => {
     const novaMargem = parseFloat(margemInput);
-    
+
     if (isNaN(novaMargem) || novaMargem < 0 || novaMargem > 100) {
       toast.error("Margem deve ser um número entre 0 e 100");
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from("contratos")
-        .update({ margem_pct: novaMargem })
-        .eq("id", contratoId);
+      const { error } = await supabase.from("contratos").update({ margem_pct: novaMargem }).eq("id", contratoId);
 
       if (error) throw error;
 
@@ -230,15 +200,11 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
 
   const totais = {
     total: parcelas.reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
-    pago: parcelas
-      .filter((p) => p.status === "pago")
-      .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
+    pago: parcelas.filter((p) => p.status === "pago").reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
     pendente: parcelas
       .filter((p) => p.status === "pendente")
       .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0),
-    vencidas: parcelas.filter(
-      (p) => p.status === "pendente" && isPast(parseISO(p.vencimento))
-    ).length,
+    vencidas: parcelas.filter((p) => p.status === "pendente" && isPast(parseISO(p.vencimento))).length,
     margemTotal: parcelas.reduce((sum, p) => {
       const valorParcela = Number(p.valor_liquido_parcela);
       return sum + calcularMargemPorParcela(valorParcela);
@@ -261,10 +227,10 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
       <div className="flex justify-between items-center gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <h3 className="text-lg font-semibold">Parcelas do Contrato</h3>
-          
+
           {/* Campo de Margem Editável */}
           <div className="flex items-center gap-2 rounded-lg border px-3 py-1.5 bg-primary/5">
-            <Percent className="h-4 w-4 text-primary" />
+            <Percent className="h-5 w-5 text-primary" />
             <Label className="text-sm font-medium text-muted-foreground">Margem:</Label>
             {isEditingMargem ? (
               <div className="flex items-center gap-2">
@@ -280,31 +246,31 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                 />
                 <span className="text-sm">%</span>
                 <Button size="sm" variant="ghost" className="h-8 px-2" onClick={handleSalvarMargem}>
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-5 w-5" />
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => {
-                  setIsEditingMargem(false);
-                  setMargemInput(String(margemPct));
-                }}>
-                  <XCircle className="h-4 w-4" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2"
+                  onClick={() => {
+                    setIsEditingMargem(false);
+                    setMargemInput(String(margemPct));
+                  }}
+                >
+                  <XCircle className="h-5 w-5" />
                 </Button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-primary">{margemPct.toFixed(2)}%</span>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="h-7 w-7 p-0"
-                  onClick={() => setIsEditingMargem(true)}
-                >
-                  <Edit className="h-4 w-4" />
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setIsEditingMargem(true)}>
+                  <Edit className="h-5 w-5" />
                 </Button>
               </div>
             )}
           </div>
         </div>
-        
+
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
             <Button size="sm" variant="outline" className="h-11 px-5">
@@ -335,10 +301,10 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !novaParcelaVencimento && "text-muted-foreground"
+                        !novaParcelaVencimento && "text-muted-foreground",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-5 w-5" />
                       {novaParcelaVencimento ? (
                         format(novaParcelaVencimento, "PPP", { locale: ptBR })
                       ) : (
@@ -374,9 +340,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
               {totais.vencidas} parcela{totais.vencidas > 1 ? "s" : ""} vencida
               {totais.vencidas > 1 ? "s" : ""}
             </p>
-            <p className="text-sm text-muted-foreground">
-              Verifique os pagamentos em atraso
-            </p>
+            <p className="text-sm text-muted-foreground">Verifique os pagamentos em atraso</p>
           </div>
         </div>
       )}
@@ -398,39 +362,24 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
             </TableRow>
           </TableHeader>
           <TableBody>
-          {parcelas.map((parcela) => {
-              const isVencida =
-                isPast(parseISO(parcela.vencimento)) &&
-                parcela.status === "pendente";
-              
+            {parcelas.map((parcela) => {
+              const isVencida = isPast(parseISO(parcela.vencimento)) && parcela.status === "pendente";
+
               const valorParcela = Number(parcela.valor_liquido_parcela);
               const margemParcela = calcularMargemPorParcela(valorParcela);
 
               return (
-                <TableRow
-                  key={parcela.id}
-                  className={cn(isVencida && "bg-destructive/5")}
-                >
-                  <TableCell className="font-medium">
-                    {parcela.numero_parcela}ª
-                  </TableCell>
+                <TableRow key={parcela.id} className={cn(isVencida && "bg-destructive/5")}>
+                  <TableCell className="font-medium">{parcela.numero_parcela}ª</TableCell>
                   <TableCell>
                     {format(parseISO(parcela.vencimento), "dd/MM/yyyy", {
                       locale: ptBR,
                     })}
                   </TableCell>
-                  <TableCell>
-                    {formatCurrency(valorParcela)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {margemPct.toFixed(2)}%
-                  </TableCell>
-                  <TableCell className="font-semibold text-green-600">
-                    {formatCurrency(margemParcela)}
-                  </TableCell>
-                  <TableCell>
-                    {getStatusBadge(parcela.status, parcela.vencimento)}
-                  </TableCell>
+                  <TableCell>{formatCurrency(valorParcela)}</TableCell>
+                  <TableCell className="text-muted-foreground">{margemPct.toFixed(2)}%</TableCell>
+                  <TableCell className="font-semibold text-green-600">{formatCurrency(margemParcela)}</TableCell>
+                  <TableCell>{getStatusBadge(parcela.status, parcela.vencimento)}</TableCell>
                   <TableCell>
                     {parcela.data_pagamento
                       ? format(parseISO(parcela.data_pagamento), "dd/MM/yyyy", {
@@ -438,9 +387,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                         })
                       : "-"}
                   </TableCell>
-                  <TableCell>
-                    {parcela.forma || "-"}
-                  </TableCell>
+                  <TableCell>{parcela.forma || "-"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       {parcela.status === "pendente" && (
@@ -481,17 +428,12 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir Parcela</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir esta parcela? Esta
-                                  ação não pode ser desfeita.
+                                  Tem certeza que deseja excluir esta parcela? Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteParcela(parcela.id)}
-                                >
-                                  Excluir
-                                </AlertDialogAction>
+                                <AlertDialogAction onClick={() => deleteParcela(parcela.id)}>Excluir</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -526,30 +468,22 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Total da Margem</p>
-          <p className="text-lg font-semibold text-green-600">
-            {formatCurrency(totais.margemTotal)}
-          </p>
+          <p className="text-lg font-semibold text-green-600">{formatCurrency(totais.margemTotal)}</p>
         </div>
         <div className="col-span-2 md:col-span-1 rounded-lg border-2 border-primary/20 bg-primary/5 p-3">
           <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-5 w-5 text-primary" />
             <p className="text-sm font-medium text-primary">Líquido a Receber</p>
           </div>
-          <p className="text-xl font-bold text-primary">
-            {formatCurrency(totais.margemPendente)}
-          </p>
+          <p className="text-xl font-bold text-primary">{formatCurrency(totais.margemPendente)}</p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Pago</p>
-          <p className="text-lg font-semibold text-green-600">
-            {formatCurrency(totais.pago)}
-          </p>
+          <p className="text-lg font-semibold text-green-600">{formatCurrency(totais.pago)}</p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Pendente</p>
-          <p className="text-lg font-semibold text-blue-600">
-            {formatCurrency(totais.pendente)}
-          </p>
+          <p className="text-lg font-semibold text-blue-600">{formatCurrency(totais.pendente)}</p>
         </div>
       </div>
 
@@ -578,10 +512,10 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !editParcelaVencimento && "text-muted-foreground"
+                      !editParcelaVencimento && "text-muted-foreground",
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-5 w-5" />
                     {editParcelaVencimento ? (
                       format(editParcelaVencimento, "PPP", { locale: ptBR })
                     ) : (
@@ -601,11 +535,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
               </Popover>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={() => setShowEditDialog(false)} className="flex-1">
                 Cancelar
               </Button>
               <Button onClick={handleEditParcela} className="flex-1">
@@ -638,15 +568,11 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !editPagaData && "text-muted-foreground"
+                      !editPagaData && "text-muted-foreground",
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editPagaData ? (
-                      format(editPagaData, "PPP", { locale: ptBR })
-                    ) : (
-                      <span>Selecione uma data</span>
-                    )}
+                    <CalendarIcon className="mr-2 h-5 w-5" />
+                    {editPagaData ? format(editPagaData, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -677,11 +603,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
               </select>
             </div>
             <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowEditPagaDialog(false)}
-                className="flex-1"
-              >
+              <Button variant="outline" onClick={() => setShowEditPagaDialog(false)} className="flex-1">
                 Cancelar
               </Button>
               <Button onClick={handleEditParcePaga} className="flex-1">
