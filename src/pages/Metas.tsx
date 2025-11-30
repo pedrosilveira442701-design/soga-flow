@@ -99,8 +99,8 @@ export default function Metas() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-[1600px] mx-auto px-4">
-        {/* Header */}
+      <div className="space-y-6 max-w-[1600px] mx-auto">
+        {/* Page Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 flex items-center gap-3">

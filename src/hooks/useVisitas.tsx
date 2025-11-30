@@ -116,11 +116,11 @@ export function useVisitas(filters?: VisitaFilters) {
       } else if (filters?.periodo === "semana") {
         const semanaDepois = new Date();
         semanaDepois.setDate(semanaDepois.getDate() + 7);
-        query = query.gte("data", hoje).lte(semanaDepois.toISOString().split("T")[0]);
+        query = query.gte("data", hoje).lte("data", semanaDepois.toISOString().split("T")[0]);
       } else if (filters?.periodo === "mes") {
         const mesDepois = new Date();
         mesDepois.setMonth(mesDepois.getMonth() + 1);
-        query = query.gte("data", hoje).lte(mesDepois.toISOString().split("T")[0]);
+        query = query.gte("data", hoje).lte("data", mesDepois.toISOString().split("T")[0]);
       } else if (filters?.periodo === "atrasadas") {
         query = query.lt("data", hoje).eq("realizada", false);
       } else if (filters?.periodo === "custom" && filters?.dataInicio && filters?.dataFim) {

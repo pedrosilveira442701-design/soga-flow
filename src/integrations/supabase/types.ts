@@ -202,14 +202,18 @@ export type Database = {
           cpf_cnpj: string
           created_at: string
           data_inicio: string
+          dia_vencimento: number | null
           forma_pagamento: string
+          forma_pagamento_entrada: string | null
           id: string
           margem_pct: number | null
+          numero_parcelas: number | null
           observacoes: string | null
           proposta_id: string | null
           status: Database["public"]["Enums"]["contract_status"] | null
           updated_at: string
           user_id: string
+          valor_entrada: number | null
           valor_negociado: number
         }
         Insert: {
@@ -217,14 +221,18 @@ export type Database = {
           cpf_cnpj: string
           created_at?: string
           data_inicio: string
+          dia_vencimento?: number | null
           forma_pagamento: string
+          forma_pagamento_entrada?: string | null
           id?: string
           margem_pct?: number | null
+          numero_parcelas?: number | null
           observacoes?: string | null
           proposta_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           updated_at?: string
           user_id: string
+          valor_entrada?: number | null
           valor_negociado: number
         }
         Update: {
@@ -232,14 +240,18 @@ export type Database = {
           cpf_cnpj?: string
           created_at?: string
           data_inicio?: string
+          dia_vencimento?: number | null
           forma_pagamento?: string
+          forma_pagamento_entrada?: string | null
           id?: string
           margem_pct?: number | null
+          numero_parcelas?: number | null
           observacoes?: string | null
           proposta_id?: string | null
           status?: Database["public"]["Enums"]["contract_status"] | null
           updated_at?: string
           user_id?: string
+          valor_entrada?: number | null
           valor_negociado?: number
         }
         Relationships: [
