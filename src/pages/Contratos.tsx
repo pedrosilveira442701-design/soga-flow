@@ -274,7 +274,7 @@ export default function Contratos() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <FileText className="h-8 w-8" />
+            <FileText className="h-5 w-5" />
             Contratos
           </h1>
           <p className="text-muted-foreground">Gerencie contratos, acompanhe parcelas e recebimentos</p>
