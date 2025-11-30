@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -79,47 +79,45 @@ export default function Metas() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-16 w-full" />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="h-64" />
-            ))}
-          </div>
+      <div className="space-y-6 max-w-[1600px] mx-auto">
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
         </div>
-      </DashboardLayout>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6 max-w-[1600px] mx-auto">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-h1 flex items-center gap-3">
-              <Target className="h-8 w-8" />
-              Metas
-            </h1>
-            <p className="text-muted-foreground mt-1">Defina objetivos e acompanhe a performance</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => recalcularTodas.mutate()} disabled={recalcularTodas.isPending}>
-              <RefreshCw className={`h-4 w-4 ${recalcularTodas.isPending ? "animate-spin" : ""}`} />
-              Recalcular Todas
-            </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4" />
-              Nova Meta
-            </Button>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-h1 flex items-center gap-3">
+            <Target className="h-8 w-8" />
+            Metas
+          </h1>
+          <p className="text-muted-foreground mt-1">Defina objetivos e acompanhe a performance</p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => recalcularTodas.mutate()} disabled={recalcularTodas.isPending}>
+            <RefreshCw className={`h-4 w-4 ${recalcularTodas.isPending ? "animate-spin" : ""}`} />
+            Recalcular Todas
+          </Button>
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4" />
+            Nova Meta
+          </Button>
+        </div>
+      </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -310,6 +308,6 @@ export default function Metas() {
           setShowCreateDialog(true);
         }}
       />
-    </DashboardLayout>
+    </>
   );
 }
