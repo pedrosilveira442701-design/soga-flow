@@ -14,6 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      anotacoes: {
+        Row: {
+          activity_log: Json | null
+          assignee: string | null
+          attachments: Json | null
+          client_id: string | null
+          client_name: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          note: string | null
+          notify_email: boolean | null
+          notify_push: boolean | null
+          priority: Database["public"]["Enums"]["anotacao_priority"]
+          recurrence_rule: string | null
+          reminder_datetime: string | null
+          status: Database["public"]["Enums"]["anotacao_status"]
+          tags: string[] | null
+          title: string
+          type: Database["public"]["Enums"]["anotacao_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_log?: Json | null
+          assignee?: string | null
+          attachments?: Json | null
+          client_id?: string | null
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          notify_email?: boolean | null
+          notify_push?: boolean | null
+          priority?: Database["public"]["Enums"]["anotacao_priority"]
+          recurrence_rule?: string | null
+          reminder_datetime?: string | null
+          status?: Database["public"]["Enums"]["anotacao_status"]
+          tags?: string[] | null
+          title: string
+          type?: Database["public"]["Enums"]["anotacao_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_log?: Json | null
+          assignee?: string | null
+          attachments?: Json | null
+          client_id?: string | null
+          client_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          notify_email?: boolean | null
+          notify_push?: boolean | null
+          priority?: Database["public"]["Enums"]["anotacao_priority"]
+          recurrence_rule?: string | null
+          reminder_datetime?: string | null
+          status?: Database["public"]["Enums"]["anotacao_status"]
+          tags?: string[] | null
+          title?: string
+          type?: Database["public"]["Enums"]["anotacao_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anotacoes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anotacoes_saved_views: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters: Json
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      anotacoes_snoozes: {
+        Row: {
+          anotacao_id: string
+          created_at: string
+          id: string
+          original_datetime: string
+          snoozed_until: string
+        }
+        Insert: {
+          anotacao_id: string
+          created_at?: string
+          id?: string
+          original_datetime: string
+          snoozed_until: string
+        }
+        Update: {
+          anotacao_id?: string
+          created_at?: string
+          id?: string
+          original_datetime?: string
+          snoozed_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anotacoes_snoozes_anotacao_id_fkey"
+            columns: ["anotacao_id"]
+            isOneToOne: false
+            referencedRelation: "anotacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arquivo_downloads: {
         Row: {
           arquivo_id: string
@@ -886,6 +1022,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_anotacao_activity: {
+        Args: {
+          p_activity_type: string
+          p_anotacao_id: string
+          p_description: string
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -895,6 +1039,15 @@ export type Database = {
       }
     }
     Enums: {
+      anotacao_priority: "baixa" | "media" | "alta"
+      anotacao_status: "aberta" | "em_andamento" | "concluida" | "arquivada"
+      anotacao_type:
+        | "ligacao"
+        | "orcamento"
+        | "follow_up"
+        | "visita"
+        | "reuniao"
+        | "outro"
       app_role: "admin" | "comercial" | "financeiro" | "visualizador"
       contato_tag: "anuncio" | "descoberta" | "orcamento"
       contract_status: "ativo" | "concluido" | "cancelado"
@@ -1045,6 +1198,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      anotacao_priority: ["baixa", "media", "alta"],
+      anotacao_status: ["aberta", "em_andamento", "concluida", "arquivada"],
+      anotacao_type: [
+        "ligacao",
+        "orcamento",
+        "follow_up",
+        "visita",
+        "reuniao",
+        "outro",
+      ],
       app_role: ["admin", "comercial", "financeiro", "visualizador"],
       contato_tag: ["anuncio", "descoberta", "orcamento"],
       contract_status: ["ativo", "concluido", "cancelado"],

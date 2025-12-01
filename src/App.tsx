@@ -15,6 +15,7 @@ import Contratos from "./pages/Contratos";
 import Financeiro from "./pages/Financeiro";
 import Metas from "./pages/Metas";
 import Visitas from "./pages/Visitas";
+import Anotacoes from "./pages/Anotacoes";
 import Arquivos from "./pages/Arquivos";
 import Obras from "./pages/Obras";
 import NotificationSettings from "./pages/NotificationSettings";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/financeiro" element={<ProtectedRoute><DashboardLayout><Financeiro /></DashboardLayout></ProtectedRoute>} />
             <Route path="/metas" element={<ProtectedRoute><DashboardLayout><Metas /></DashboardLayout></ProtectedRoute>} />
             <Route path="/visitas" element={<ProtectedRoute><DashboardLayout><Visitas /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/anotacoes" element={<ProtectedRoute><DashboardLayout><Anotacoes /></DashboardLayout></ProtectedRoute>} />
             <Route path="/arquivos" element={<ProtectedRoute><DashboardLayout><Arquivos /></DashboardLayout></ProtectedRoute>} />
             <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><DashboardLayout><NotificationSettings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/perfil" element={<ProtectedRoute><DashboardLayout><Perfil /></DashboardLayout></ProtectedRoute>} />
