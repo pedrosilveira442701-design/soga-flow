@@ -11,6 +11,7 @@ import {
   FolderOpen,
   BarChart3,
   Building2,
+  StickyNote,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -50,6 +51,7 @@ const menuItems = [
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Metas", url: "/metas", icon: TrendingUp },
   { title: "Visitas", url: "/visitas", icon: Calendar },
+  { title: "Anotações", url: "/anotacoes", icon: StickyNote },
   { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
 ];
 
