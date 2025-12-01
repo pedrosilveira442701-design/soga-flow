@@ -24,37 +24,42 @@ export interface AnotacaoFilters {
 export const useAnotacoes = (filters?: AnotacaoFilters) => {
   const queryClient = useQueryClient();
 
-  // Fetch anotacoes with filters
+  // LISTAR ANOTAÇÕES
   const { data: anotacoes = [], isLoading } = useQuery({
     queryKey: ["anotacoes", filters],
     queryFn: async () => {
-      let query = supabase
-        .from("anotacoes")
-        .select("*, clientes(nome)")
-        .order("created_at", { ascending: false });
+      let query = supabase.from("anotacoes").select("*, clientes(nome)").order("created_at", { ascending: false });
 
-      // Apply filters
       if (filters?.status && filters.status.length > 0) {
         query = query.in("status", filters.status);
       }
+
       if (filters?.priority && filters.priority.length > 0) {
         query = query.in("priority", filters.priority);
       }
+
       if (filters?.type && filters.type.length > 0) {
         query = query.in("type", filters.type);
       }
+
       if (filters?.clientId) {
         query = query.eq("client_id", filters.clientId);
       }
+
+      if (filters?.tags && filters.tags.length > 0) {
+        // tags é TEXT[], então podemos usar contains
+        query = query.contains("tags", filters.tags);
+      }
+
       if (filters?.dateRange) {
         query = query
           .gte("reminder_datetime", filters.dateRange.start.toISOString())
           .lte("reminder_datetime", filters.dateRange.end.toISOString());
       }
+
       if (filters?.search) {
-        query = query.or(
-          `title.ilike.%${filters.search}%,note.ilike.%${filters.search}%,client_name.ilike.%${filters.search}%`
-        );
+        const s = filters.search;
+        query = query.or(`title.ilike.%${s}%,note.ilike.%${s}%,client_name.ilike.%${s}%`);
       }
 
       const { data, error } = await query;
@@ -63,10 +68,12 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
-  // Create anotacao
+  // CRIAR ANOTAÇÃO
   const createAnotacao = useMutation({
     mutationFn: async (anotacao: Omit<AnotacaoInsert, "user_id">) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
       const { data, error } = await supabase
@@ -76,7 +83,7 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Anotacao;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
@@ -88,18 +95,13 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
-  // Update anotacao
+  // ATUALIZAR ANOTAÇÃO
   const updateAnotacao = useMutation({
     mutationFn: async ({ id, ...updates }: AnotacaoUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from("anotacoes")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      const { data, error } = await supabase.from("anotacoes").update(updates).eq("id", id).select().single();
 
       if (error) throw error;
-      return data;
+      return data as Anotacao;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
@@ -111,21 +113,21 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
-  // Complete anotacao
+  // CONCLUIR ANOTAÇÃO
   const completeAnotacao = useMutation({
     mutationFn: async (id: string) => {
       const { data, error } = await supabase
         .from("anotacoes")
-        .update({ 
+        .update({
           status: "concluida" as AnotacaoStatus,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
         })
         .eq("id", id)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Anotacao;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
@@ -137,13 +139,10 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
-  // Delete anotacao
+  // EXCLUIR ANOTAÇÃO
   const deleteAnotacao = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("anotacoes")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("anotacoes").delete().eq("id", id);
 
       if (error) throw error;
     },
@@ -157,29 +156,25 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
-  // Snooze anotacao
+  // SNOOZE (ADIAR) LEMBRETE
   const snoozeAnotacao = useMutation({
-    mutationFn: async ({ 
-      anotacaoId, 
-      originalDatetime, 
-      snoozedUntil 
-    }: { 
-      anotacaoId: string; 
-      originalDatetime: string; 
-      snoozedUntil: string; 
+    mutationFn: async ({
+      anotacaoId,
+      originalDatetime,
+      snoozedUntil,
+    }: {
+      anotacaoId: string;
+      originalDatetime: string;
+      snoozedUntil: string;
     }) => {
-      // Create snooze record
-      const { error: snoozeError } = await supabase
-        .from("anotacoes_snoozes")
-        .insert({
-          anotacao_id: anotacaoId,
-          original_datetime: originalDatetime,
-          snoozed_until: snoozedUntil,
-        });
+      const { error: snoozeError } = await supabase.from("anotacoes_snoozes").insert({
+        anotacao_id: anotacaoId,
+        original_datetime: originalDatetime,
+        snoozed_until: snoozedUntil,
+      });
 
       if (snoozeError) throw snoozeError;
 
-      // Update anotacao reminder_datetime
       const { error: updateError } = await supabase
         .from("anotacoes")
         .update({ reminder_datetime: snoozedUntil })
