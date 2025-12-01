@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calendar, Clock, Bell, Mail, X, Save, Trash2 } from "lucide-react";
+import { Calendar, Clock, Bell, Mail, Save, Trash2 } from "lucide-react";
+
 import {
   Sheet,
   SheetContent,
@@ -22,24 +23,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAnotacoes, type Anotacao } from "@/hooks/useAnotacoes";
-import ClienteCombobox from "@/components/forms/ClienteCombobox";
-import { useClientes } from "@/hooks/useClientes";
 
-const anotacaoSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório"),
-  note: z.string().optional(),
-  status: z.enum(["aberta", "em_andamento", "concluida", "arquivada"]),
-  priority: z.enum(["baixa", "media", "alta"]),
-  type: z.enum(["ligacao", "orcamento", "follow_up", "visita", "reuniao", "outro"]),
-  client_id: z.string().optional(),
-  client_name: z.string().optional(),
-  reminder_date: z.string().optional(),
-  reminder_time: z.string().optional(),
-  notify_push: z.boolean().default(false),
-  notify_email: z.boolean().default(false),
-  tags: z.string().optional(),
-});
+import { useAnotacoes } from "@/hooks/useAnotacoes";
+import { useClientes } from "@/hooks/useClientes";
+import ClienteCombobox from "@/components/forms/ClienteCombobox";
+
+const anotacaoSchema = z
+  .object({
+    title: z.string().min(1, "Título é obrigatório"),
+    note: z.string().optional(),
+    status: z.enum(["aberta", "em_andamento", "concluida", "arquivada"]),
+    priority: z.enum(["baixa", "media", "alta"]),
+    type: z.enum(["ligacao", "orcamento", "follow_up", "visita", "reuniao", "outro"]),
+    client_id: z.string().optional(),
+    client_name: z.string().optional(),
+    reminder_date: z.string().optional(),
+    reminder_time: z.string().optional(),
+    notify_push: z.boolean().default(false),
+    notify_email: z.boolean().default(false),
+    tags: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const hasSomethingForReminder =
+        !!data.reminder_date ||
+        !!data.reminder_time ||
+        data.notify_push ||
+        data.notify_email;
+
+      // Nenhum lembrete configurado -> ok (anotação simples)
+      if (!hasSomethingForReminder) return true;
+
+      // Se marcou algum lembrete ou preencheu parcialmente, obrigar data + hora completos
+      return !!data.reminder_date && !!data.reminder_time;
+    },
+    {
+      message: "Defina data e hora do lembrete",
+      path: ["reminder_date"],
+    }
+  );
 
 type AnotacaoFormData = z.infer<typeof anotacaoSchema>;
 
@@ -49,8 +71,19 @@ interface AnotacaoDrawerProps {
   anotacaoId: string | null;
 }
 
-export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawerProps) {
-  const { anotacoes, createAnotacao, updateAnotacao, deleteAnotacao, isCreating, isUpdating } = useAnotacoes();
+export function AnotacaoDrawer({
+  open,
+  onOpenChange,
+  anotacaoId,
+}: AnotacaoDrawerProps) {
+  const {
+    anotacoes,
+    createAnotacao,
+    updateAnotacao,
+    deleteAnotacao,
+    isCreating,
+    isUpdating,
+  } = useAnotacoes();
   const { clientes, isLoading: isLoadingClientes } = useClientes();
   const [selectedClientId, setSelectedClientId] = useState<string>("");
 
@@ -68,20 +101,25 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
       client_name: "",
       reminder_date: "",
       reminder_time: "",
-      notify_push: true,
+      // anotação simples por padrão: sem lembretes
+      notify_push: false,
       notify_email: false,
       tags: "",
     },
   });
 
-  // Load current anotacao data when editing
+  // Carregar dados ao editar
   useEffect(() => {
     if (currentAnotacao) {
-      const reminderDate = currentAnotacao.reminder_datetime 
-        ? new Date(currentAnotacao.reminder_datetime).toISOString().split("T")[0]
+      const reminderDate = currentAnotacao.reminder_datetime
+        ? new Date(currentAnotacao.reminder_datetime)
+            .toISOString()
+            .split("T")[0]
         : "";
       const reminderTime = currentAnotacao.reminder_datetime
-        ? new Date(currentAnotacao.reminder_datetime).toTimeString().slice(0, 5)
+        ? new Date(currentAnotacao.reminder_datetime)
+            .toTimeString()
+            .slice(0, 5)
         : "";
 
       form.reset({
@@ -94,26 +132,47 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
         client_name: currentAnotacao.client_name || "",
         reminder_date: reminderDate,
         reminder_time: reminderTime,
-        notify_push: currentAnotacao.notify_push,
-        notify_email: currentAnotacao.notify_email,
+        notify_push: currentAnotacao.notify_push ?? false,
+        notify_email: currentAnotacao.notify_email ?? false,
         tags: currentAnotacao.tags?.join(", ") || "",
       });
       setSelectedClientId(currentAnotacao.client_id || "");
     } else {
-      form.reset();
+      form.reset({
+        title: "",
+        note: "",
+        status: "aberta",
+        priority: "media",
+        type: "outro",
+        client_id: "",
+        client_name: "",
+        reminder_date: "",
+        reminder_time: "",
+        notify_push: false,
+        notify_email: false,
+        tags: "",
+      });
       setSelectedClientId("");
     }
   }, [currentAnotacao, form]);
 
   const onSubmit = (data: AnotacaoFormData) => {
     const tagsArray = data.tags
-      ? data.tags.split(",").map((t) => t.trim()).filter(Boolean)
+      ? data.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
 
-    let reminderDatetime: string | undefined;
+    let reminderDatetime: string | null = null;
+
     if (data.reminder_date && data.reminder_time) {
-      reminderDatetime = new Date(`${data.reminder_date}T${data.reminder_time}`).toISOString();
+      reminderDatetime = new Date(
+        `${data.reminder_date}T${data.reminder_time}`
+      ).toISOString();
     }
+
+    const hasReminder = !!reminderDatetime;
 
     const payload = {
       title: data.title,
@@ -123,9 +182,10 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
       type: data.type,
       client_id: data.client_id || null,
       client_name: data.client_name || null,
-      reminder_datetime: reminderDatetime,
-      notify_push: data.notify_push,
-      notify_email: data.notify_email,
+      // se não tiver data/hora, grava null e garante notificações desligadas
+      reminder_datetime: hasReminder ? reminderDatetime : null,
+      notify_push: hasReminder ? data.notify_push : false,
+      notify_email: hasReminder ? data.notify_email : false,
       tags: tagsArray,
     };
 
@@ -149,14 +209,20 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-[600px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{anotacaoId ? "Editar Anotação" : "Nova Anotação"}</SheetTitle>
+          <SheetTitle>
+            {anotacaoId ? "Editar Anotação" : "Nova Anotação"}
+          </SheetTitle>
           <SheetDescription>
-            Preencha os detalhes da anotação e configure lembretes
+            Preencha os detalhes da anotação e, se quiser, configure um
+            lembrete.
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-          {/* Title */}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-6 mt-6"
+        >
+          {/* TÍTULO */}
           <div className="space-y-2">
             <Label htmlFor="title">Título *</Label>
             <Input
@@ -165,11 +231,13 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
               {...form.register("title")}
             />
             {form.formState.errors.title && (
-              <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.title.message}
+              </p>
             )}
           </div>
 
-          {/* Note */}
+          {/* DESCRIÇÃO */}
           <div className="space-y-2">
             <Label htmlFor="note">Descrição</Label>
             <Textarea
@@ -180,13 +248,15 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
             />
           </div>
 
-          {/* Status, Priority, Type */}
+          {/* STATUS / PRIORIDADE / TIPO */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
               <Select
                 value={form.watch("status")}
-                onValueChange={(value) => form.setValue("status", value as any)}
+                onValueChange={(value) =>
+                  form.setValue("status", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -204,7 +274,9 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
               <Label>Prioridade</Label>
               <Select
                 value={form.watch("priority")}
-                onValueChange={(value) => form.setValue("priority", value as any)}
+                onValueChange={(value) =>
+                  form.setValue("priority", value as any)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -238,7 +310,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
             </div>
           </div>
 
-          {/* Client */}
+          {/* CLIENTE */}
           <div className="space-y-2">
             <Label>Cliente (opcional)</Label>
             <ClienteCombobox
@@ -247,6 +319,10 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
               onChange={(value) => {
                 setSelectedClientId(value);
                 form.setValue("client_id", value);
+                const selected = clientes.find((c) => c.id === value);
+                if (selected) {
+                  form.setValue("client_name", selected.nome);
+                }
               }}
               isLoading={isLoadingClientes}
             />
@@ -258,97 +334,34 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
             )}
           </div>
 
-          {/* Reminder Date & Time */}
+          {/* LEMBRETE */}
           <div className="space-y-4">
-            <Label>Lembrete</Label>
+            <Label>Lembrete (opcional)</Label>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   Data
                 </div>
-                <Input
-                  type="date"
-                  {...form.register("reminder_date")}
-                />
+                <Input type="date" {...form.register("reminder_date")} />
+                {form.formState.errors.reminder_date && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.reminder_date.message as string}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   Hora
                 </div>
-                <Input
-                  type="time"
-                  {...form.register("reminder_time")}
-                />
+                <Input type="time" {...form.register("reminder_time")} />
               </div>
             </div>
 
-            {/* Notification Channels */}
+            {/* CANAIS DE NOTIFICAÇÃO */}
             <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Bell className="h-4 w-4" />
-                  <Label htmlFor="notify_push">Notificar no navegador</Label>
-                </div>
-                <Switch
-                  id="notify_push"
-                  checked={form.watch("notify_push")}
-                  onCheckedChange={(checked) => form.setValue("notify_push", checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <Label htmlFor="notify_email">Notificar por e-mail</Label>
-                </div>
-                <Switch
-                  id="notify_email"
-                  checked={form.watch("notify_email")}
-                  onCheckedChange={(checked) => form.setValue("notify_email", checked)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-            <Input
-              id="tags"
-              placeholder="orçamento, urgente, cliente-vip"
-              {...form.register("tags")}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex justify-between pt-4">
-            {anotacaoId && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir
-              </Button>
-            )}
-            <div className="flex gap-2 ml-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isCreating || isUpdating}>
-                <Save className="h-4 w-4 mr-2" />
-                Salvar
-              </Button>
-            </div>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}
+                  <Label htmlFor="notify_push_
