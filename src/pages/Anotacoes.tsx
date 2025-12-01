@@ -38,34 +38,36 @@ export default function Anotacoes() {
     setDrawerOpen(true);
   };
 
+  // Chamado quando o QuickAdd cria uma anotação com sucesso
   const handleQuickCreate = () => {
+    // Aqui a lista é atualizada via invalidation dentro do hook useAnotacoes
+    // e o QuickAdd limpa o próprio input internamente.
     setDrawerOpen(false);
   };
 
   return (
     <>
       <div className="space-y-6 max-w-[1800px] mx-auto">
-        {/* Page Header */}
+        {/* Cabeçalho da página */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 flex items-center gap-3">
               <StickyNote className="h-8 w-8" />
-              Anotações & Lembretes
+              Anotações &amp; Lembretes
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Registre tarefas e configure lembretes inteligentes
-            </p>
+            <p className="text-muted-foreground mt-1">Registre tarefas e configure lembretes inteligentes</p>
           </div>
+
           <Button onClick={handleCreateNew}>
             <Plus className="h-4 w-4" />
             Nova Anotação
           </Button>
         </div>
 
-        {/* Quick Add */}
+        {/* Campo de criação rápida */}
         <QuickAddAnotacao onSuccess={handleQuickCreate} />
 
-        {/* Toolbar */}
+        {/* Barra de ferramentas */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex gap-2 flex-1 max-w-md w-full">
             <div className="relative flex-1">
@@ -77,16 +79,17 @@ export default function Anotacoes() {
                 className="pl-9"
               />
             </div>
+
             <Button
               variant={showFilters ? "secondary" : "outline"}
               size="icon"
-              onClick={() => setShowFilters(!showFilters)}
+              onClick={() => setShowFilters((prev) => !prev)}
             >
               <Filter className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* View Mode Selector */}
+          {/* Seletor de visualização */}
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
             <TabsList>
               <TabsTrigger value="list" className="gap-2">
@@ -105,45 +108,27 @@ export default function Anotacoes() {
           </Tabs>
         </div>
 
-        {/* Filters Panel */}
+        {/* Painel de filtros */}
         {showFilters && (
-          <AnotacoesFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            onClose={() => setShowFilters(false)}
-          />
+          <AnotacoesFilters filters={filters} onFiltersChange={setFilters} onClose={() => setShowFilters(false)} />
         )}
 
-        {/* Content Views */}
+        {/* Conteúdos por visualização */}
         {viewMode === "list" && (
-          <AnotacoesListView
-            anotacoes={anotacoes}
-            isLoading={isLoading}
-            onEdit={handleEditAnotacao}
-          />
+          <AnotacoesListView anotacoes={anotacoes} isLoading={isLoading} onEdit={handleEditAnotacao} />
         )}
+
         {viewMode === "kanban" && (
-          <AnotacoesKanbanView
-            anotacoes={anotacoes}
-            isLoading={isLoading}
-            onEdit={handleEditAnotacao}
-          />
+          <AnotacoesKanbanView anotacoes={anotacoes} isLoading={isLoading} onEdit={handleEditAnotacao} />
         )}
+
         {viewMode === "calendar" && (
-          <AnotacoesCalendarView
-            anotacoes={anotacoes}
-            isLoading={isLoading}
-            onEdit={handleEditAnotacao}
-          />
+          <AnotacoesCalendarView anotacoes={anotacoes} isLoading={isLoading} onEdit={handleEditAnotacao} />
         )}
       </div>
 
-      {/* Drawer */}
-      <AnotacaoDrawer
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-        anotacaoId={selectedAnotacaoId}
-      />
+      {/* Drawer de criação/edição */}
+      <AnotacaoDrawer open={drawerOpen} onOpenChange={setDrawerOpen} anotacaoId={selectedAnotacaoId} />
     </>
   );
 }
