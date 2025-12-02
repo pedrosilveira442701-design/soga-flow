@@ -8,7 +8,9 @@ export type AnotacaoInsert = TablesInsert<"anotacoes">;
 export type AnotacaoUpdate = TablesUpdate<"anotacoes">;
 
 export type AnotacaoStatus = "aberta" | "em_andamento" | "concluida" | "arquivada";
+
 export type AnotacaoPriority = "baixa" | "media" | "alta";
+
 export type AnotacaoType = "ligacao" | "orcamento" | "follow_up" | "visita" | "reuniao" | "outro";
 
 export interface AnotacaoFilters {
@@ -63,7 +65,12 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+
+      if (error) {
+        console.error("Error fetching anotacoes:", error);
+        throw error;
+      }
+
       return data as Anotacao[];
     },
   });
@@ -71,10 +78,20 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
   // CRIAR ANOTAÇÃO
   const createAnotacao = useMutation({
     mutationFn: async (anotacao: Omit<AnotacaoInsert, "user_id">) => {
+      // Garante que temos o usuário logado para preencher user_id
       const {
         data: { user },
+        error: authError,
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+
+      if (authError) {
+        console.error("Error getting auth user:", authError);
+        throw authError;
+      }
+
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
 
       const { data, error } = await supabase
         .from("anotacoes")
@@ -82,7 +99,11 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting anotacao:", error);
+        throw error;
+      }
+
       return data as Anotacao;
     },
     onSuccess: () => {
@@ -100,7 +121,11 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     mutationFn: async ({ id, ...updates }: AnotacaoUpdate & { id: string }) => {
       const { data, error } = await supabase.from("anotacoes").update(updates).eq("id", id).select().single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating anotacao:", error);
+        throw error;
+      }
+
       return data as Anotacao;
     },
     onSuccess: () => {
@@ -126,7 +151,11 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error completing anotacao:", error);
+        throw error;
+      }
+
       return data as Anotacao;
     },
     onSuccess: () => {
@@ -144,7 +173,10 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("anotacoes").delete().eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting anotacao:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
@@ -173,14 +205,20 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
         snoozed_until: snoozedUntil,
       });
 
-      if (snoozeError) throw snoozeError;
+      if (snoozeError) {
+        console.error("Error inserting snooze:", snoozeError);
+        throw snoozeError;
+      }
 
       const { error: updateError } = await supabase
         .from("anotacoes")
         .update({ reminder_datetime: snoozedUntil })
         .eq("id", anotacaoId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Error updating reminder_datetime:", updateError);
+        throw updateError;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
