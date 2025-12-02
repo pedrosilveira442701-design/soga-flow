@@ -90,7 +90,7 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
       }
 
       if (!user) {
-        throw new Error("User not authenticated");
+        throw new Error("Usuário não autenticado");
       }
 
       const { data, error } = await supabase
@@ -110,12 +110,18 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
       queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
       toast.success("Anotação criada com sucesso!");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error creating anotacao:", error);
-      toast.error("Erro ao criar anotação");
+
+      const message =
+        error?.message ??
+        error?.error_description ??
+        (error?.code ? `${error.code} - ${error.details || ""}` : null) ??
+        "Erro ao criar anotação";
+
+      toast.error(`Erro ao criar anotação: ${message}`);
     },
   });
-
   // ATUALIZAR ANOTAÇÃO
   const updateAnotacao = useMutation({
     mutationFn: async ({ id, ...updates }: AnotacaoUpdate & { id: string }) => {
