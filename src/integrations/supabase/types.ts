@@ -30,6 +30,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule: string | null
           reminder_datetime: string | null
+          reminder_email_sent_at: string | null
           status: Database["public"]["Enums"]["anotacao_status"]
           tags: string[] | null
           title: string
@@ -52,6 +53,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule?: string | null
           reminder_datetime?: string | null
+          reminder_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["anotacao_status"]
           tags?: string[] | null
           title: string
@@ -74,6 +76,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule?: string | null
           reminder_datetime?: string | null
+          reminder_email_sent_at?: string | null
           status?: Database["public"]["Enums"]["anotacao_status"]
           tags?: string[] | null
           title?: string
@@ -407,6 +410,87 @@ export type Database = {
           },
         ]
       }
+      email_queue: {
+        Row: {
+          anotacao_id: string | null
+          attempts: number
+          body_html: string
+          created_at: string
+          id: string
+          last_error: string | null
+          send_at: string
+          sent_at: string | null
+          subject: string
+          to_email: string
+        }
+        Insert: {
+          anotacao_id?: string | null
+          attempts?: number
+          body_html: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          send_at?: string
+          sent_at?: string | null
+          subject: string
+          to_email: string
+        }
+        Update: {
+          anotacao_id?: string | null
+          attempts?: number
+          body_html?: string
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          send_at?: string
+          sent_at?: string | null
+          subject?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
+      email_reminders_queue: {
+        Row: {
+          body: string
+          created_at: string
+          error: string | null
+          id: string
+          send_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          to_email: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          send_at: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_email: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          send_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       financeiro_parcelas: {
         Row: {
           contrato_id: string
@@ -683,6 +767,7 @@ export type Database = {
           agendamento: string
           created_at: string
           descricao: string | null
+          email_sent_at: string | null
           entidade: string | null
           entidade_id: string | null
           excluida: boolean
@@ -690,6 +775,7 @@ export type Database = {
           id: string
           lida: boolean
           lida_em: string | null
+          status: string
           tipo: string
           titulo: string
           updated_at: string
@@ -699,6 +785,7 @@ export type Database = {
           agendamento?: string
           created_at?: string
           descricao?: string | null
+          email_sent_at?: string | null
           entidade?: string | null
           entidade_id?: string | null
           excluida?: boolean
@@ -706,6 +793,7 @@ export type Database = {
           id?: string
           lida?: boolean
           lida_em?: string | null
+          status?: string
           tipo: string
           titulo: string
           updated_at?: string
@@ -715,6 +803,7 @@ export type Database = {
           agendamento?: string
           created_at?: string
           descricao?: string | null
+          email_sent_at?: string | null
           entidade?: string | null
           entidade_id?: string | null
           excluida?: boolean
@@ -722,6 +811,7 @@ export type Database = {
           id?: string
           lida?: boolean
           lida_em?: string | null
+          status?: string
           tipo?: string
           titulo?: string
           updated_at?: string
