@@ -188,24 +188,37 @@ export function KanbanBoard({
     }
 
     const leadId = active.id as string;
-    const newStage = over.id as LeadStage;
+    let targetStage: LeadStage | null = null;
+
+    // Check if dropped directly on a column
+    const isColumn = STAGES.some((stage) => stage.id === over.id);
+    
+    if (isColumn) {
+      targetStage = over.id as LeadStage;
+    } else {
+      // Dropped on a card - find which column that card belongs to
+      const targetLead = leads.find((lead) => lead.id === over.id);
+      if (targetLead) {
+        targetStage = targetLead.estagio;
+      }
+    }
 
     // Debug: Log values before update
     console.log("🔄 Kanban Drag End:", {
       leadId,
-      newStage,
-      isValidStage: STAGES.some((stage) => stage.id === newStage),
-      validStages: STAGES.map((s) => s.id),
+      overId: over.id,
+      targetStage,
+      isColumn,
     });
 
-    if (STAGES.some((stage) => stage.id === newStage)) {
+    if (targetStage) {
       // Se estiver movendo para "perdido", solicitar motivo
-      if (newStage === "perdido" && onLossReasonRequired) {
+      if (targetStage === "perdido" && onLossReasonRequired) {
         onLossReasonRequired(leadId, (motivo: string) => {
-          onStageChange(leadId, newStage, motivo);
+          onStageChange(leadId, targetStage!, motivo);
         });
       } else {
-        onStageChange(leadId, newStage);
+        onStageChange(leadId, targetStage);
       }
     }
 
