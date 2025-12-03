@@ -30,7 +30,11 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
   const { data: anotacoes = [], isLoading } = useQuery({
     queryKey: ["anotacoes", filters],
     queryFn: async () => {
-      let query = supabase.from("anotacoes").select("*, clientes(nome)").order("created_at", { ascending: false });
+      let query = supabase
+        .from("anotacoes")
+        .select("*, clientes(nome)")
+        .order("order_index", { ascending: true })
+        .order("created_at", { ascending: false });
 
       if (filters?.status && filters.status.length > 0) {
         query = query.in("status", filters.status);
@@ -236,6 +240,47 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     },
   });
 
+  // REORDENAR ANOTAÇÃO (DnD Kanban)
+  const reorderAnotacaoMutation = useMutation({
+    mutationFn: async ({ 
+      id, 
+      status, 
+      order_index,
+      completed_at,
+    }: { 
+      id: string; 
+      status: AnotacaoStatus; 
+      order_index: number;
+      completed_at?: string;
+    }) => {
+      const updates: Record<string, any> = { 
+        status, 
+        order_index 
+      };
+      
+      if (completed_at) {
+        updates.completed_at = completed_at;
+      }
+
+      const { data, error } = await supabase
+        .from("anotacoes")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error reordering anotacao:", error);
+        throw error;
+      }
+
+      return data as Anotacao;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["anotacoes"] });
+    },
+  });
+
   return {
     anotacoes,
     isLoading,
@@ -244,6 +289,7 @@ export const useAnotacoes = (filters?: AnotacaoFilters) => {
     completeAnotacao: completeAnotacao.mutate,
     deleteAnotacao: deleteAnotacao.mutate,
     snoozeAnotacao: snoozeAnotacao.mutate,
+    reorderAnotacao: reorderAnotacaoMutation.mutate,
     isCreating: createAnotacao.isPending,
     isUpdating: updateAnotacao.isPending,
   };

@@ -1,12 +1,29 @@
-import { useMemo } from "react";
-import { Clock, Tag, User } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DragOverlay,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  MeasuringStrategy,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/states/EmptyState";
 import { useAnotacoes, type Anotacao, type AnotacaoStatus } from "@/hooks/useAnotacoes";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { AnotacoesKanbanColumn } from "./AnotacoesKanbanColumn";
+import { AnotacoesKanbanCard } from "./AnotacoesKanbanCard";
+import { toast } from "sonner";
 
 interface AnotacoesKanbanViewProps {
   anotacoes: Anotacao[];
@@ -15,29 +32,32 @@ interface AnotacoesKanbanViewProps {
 }
 
 const columns: { status: AnotacaoStatus; label: string; color: string }[] = [
-  { status: "aberta", label: "Abertas", color: "bg-blue-500/10 border-blue-500/20" },
-  { status: "em_andamento", label: "Em Andamento", color: "bg-yellow-500/10 border-yellow-500/20" },
-  { status: "concluida", label: "Concluídas", color: "bg-green-500/10 border-green-500/20" },
-  { status: "arquivada", label: "Arquivadas", color: "bg-muted border-border" },
+  { status: "aberta", label: "Abertas", color: "bg-blue-500/10" },
+  { status: "em_andamento", label: "Em Andamento", color: "bg-yellow-500/10" },
+  { status: "concluida", label: "Concluídas", color: "bg-green-500/10" },
+  { status: "arquivada", label: "Arquivadas", color: "bg-muted/50" },
 ];
 
-const priorityColors: Record<string, string> = {
-  alta: "bg-destructive/10 text-destructive border-destructive/20",
-  media: "bg-warning/10 text-warning border-warning/20",
-  baixa: "bg-muted text-muted-foreground",
-};
-
-const typeLabels: Record<string, string> = {
-  ligacao: "Ligação",
-  orcamento: "Orçamento",
-  follow_up: "Follow-up",
-  visita: "Visita",
-  reuniao: "Reunião",
-  outro: "Outro",
+const statusLabels: Record<AnotacaoStatus, string> = {
+  aberta: "Abertas",
+  em_andamento: "Em Andamento",
+  concluida: "Concluídas",
+  arquivada: "Arquivadas",
 };
 
 export function AnotacoesKanbanView({ anotacoes, isLoading, onEdit }: AnotacoesKanbanViewProps) {
-  const { updateAnotacao } = useAnotacoes();
+  const { updateAnotacao, reorderAnotacao } = useAnotacoes();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const lastOverId = useRef<string | null>(null);
+
+  // Optimistic local state for smooth DnD
+  const [localAnotacoes, setLocalAnotacoes] = useState<Anotacao[]>(anotacoes);
+
+  // Sync with server data
+  useEffect(() => {
+    setLocalAnotacoes(anotacoes);
+  }, [anotacoes]);
 
   const groupedAnotacoes = useMemo(() => {
     const groups: Record<AnotacaoStatus, Anotacao[]> = {
@@ -47,20 +67,213 @@ export function AnotacoesKanbanView({ anotacoes, isLoading, onEdit }: AnotacoesK
       arquivada: [],
     };
 
-    anotacoes.forEach((anotacao) => {
+    localAnotacoes.forEach((anotacao) => {
       groups[anotacao.status].push(anotacao);
     });
 
-    return groups;
-  }, [anotacoes]);
-
-  const handleStatusChange = (anotacaoId: string, newStatus: AnotacaoStatus) => {
-    updateAnotacao({
-      id: anotacaoId,
-      status: newStatus,
-      ...(newStatus === "concluida" ? { completed_at: new Date().toISOString() } : {}),
+    // Sort by order_index within each column
+    Object.keys(groups).forEach((status) => {
+      groups[status as AnotacaoStatus].sort((a, b) => 
+        ((a as any).order_index || 0) - ((b as any).order_index || 0)
+      );
     });
-  };
+
+    return groups;
+  }, [localAnotacoes]);
+
+  const activeAnotacao = useMemo(() => 
+    activeId ? localAnotacoes.find((a) => a.id === activeId) : null,
+    [activeId, localAnotacoes]
+  );
+
+  // Sensors with touch support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const findColumnByItemId = useCallback((itemId: string): AnotacaoStatus | null => {
+    for (const [status, items] of Object.entries(groupedAnotacoes)) {
+      if (items.some((a) => a.id === itemId)) {
+        return status as AnotacaoStatus;
+      }
+    }
+    return null;
+  }, [groupedAnotacoes]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    document.body.style.cursor = "grabbing";
+  }, []);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) {
+      setOverId(null);
+      return;
+    }
+
+    const activeItemId = active.id as string;
+    const overId = over.id as string;
+    setOverId(overId);
+
+    // Check if dropping on a column
+    const isOverColumn = columns.some((col) => col.status === overId);
+    const activeColumn = findColumnByItemId(activeItemId);
+
+    if (isOverColumn && activeColumn !== overId) {
+      // Moving to a different column
+      const overColumn = overId as AnotacaoStatus;
+      
+      setLocalAnotacoes((prev) => {
+        const activeItem = prev.find((a) => a.id === activeItemId);
+        if (!activeItem) return prev;
+
+        return prev.map((a) => 
+          a.id === activeItemId 
+            ? { ...a, status: overColumn }
+            : a
+        );
+      });
+    } else if (!isOverColumn) {
+      // Hovering over another card
+      const overColumn = findColumnByItemId(overId);
+      
+      if (activeColumn && overColumn && activeColumn !== overColumn) {
+        // Moving to different column via card hover
+        setLocalAnotacoes((prev) => {
+          const activeItem = prev.find((a) => a.id === activeItemId);
+          if (!activeItem) return prev;
+
+          return prev.map((a) => 
+            a.id === activeItemId 
+              ? { ...a, status: overColumn }
+              : a
+          );
+        });
+      }
+    }
+  }, [findColumnByItemId]);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    setActiveId(null);
+    setOverId(null);
+    document.body.style.cursor = "";
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeItem = localAnotacoes.find((a) => a.id === activeId);
+    if (!activeItem) return;
+
+    // Check if dropping on a column directly
+    const isOverColumn = columns.some((col) => col.status === overId);
+    let targetColumn: AnotacaoStatus;
+    let newOrderIndex: number;
+
+    if (isOverColumn) {
+      targetColumn = overId as AnotacaoStatus;
+      const columnItems = groupedAnotacoes[targetColumn];
+      newOrderIndex = columnItems.length > 0 
+        ? ((columnItems[columnItems.length - 1] as any).order_index || 0) + 100 
+        : 100;
+    } else {
+      // Dropping on a card
+      targetColumn = findColumnByItemId(overId) || activeItem.status;
+      const columnItems = groupedAnotacoes[targetColumn];
+      const overIndex = columnItems.findIndex((a) => a.id === overId);
+      const activeIndex = columnItems.findIndex((a) => a.id === activeId);
+
+      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+        // Reordering within same column
+        const newItems = arrayMove(columnItems, activeIndex, overIndex);
+        
+        // Calculate new order_index
+        const targetIndex = newItems.findIndex((a) => a.id === activeId);
+        const prevItem = newItems[targetIndex - 1];
+        const nextItem = newItems[targetIndex + 1];
+
+        if (!prevItem) {
+          newOrderIndex = ((nextItem as any)?.order_index || 100) / 2;
+        } else if (!nextItem) {
+          newOrderIndex = ((prevItem as any)?.order_index || 0) + 100;
+        } else {
+          newOrderIndex = (
+            ((prevItem as any)?.order_index || 0) + 
+            ((nextItem as any)?.order_index || 0)
+          ) / 2;
+        }
+      } else if (activeIndex === -1) {
+        // Moving from different column
+        const prevItem = columnItems[overIndex - 1];
+        const nextItem = columnItems[overIndex];
+
+        if (!prevItem && nextItem) {
+          newOrderIndex = ((nextItem as any)?.order_index || 100) / 2;
+        } else if (prevItem && !nextItem) {
+          newOrderIndex = ((prevItem as any)?.order_index || 0) + 100;
+        } else if (prevItem && nextItem) {
+          newOrderIndex = (
+            ((prevItem as any)?.order_index || 0) + 
+            ((nextItem as any)?.order_index || 0)
+          ) / 2;
+        } else {
+          newOrderIndex = 100;
+        }
+      } else {
+        return; // No change
+      }
+    }
+
+    // Optimistic update
+    setLocalAnotacoes((prev) => 
+      prev.map((a) => 
+        a.id === activeId 
+          ? { ...a, status: targetColumn, order_index: newOrderIndex } as Anotacao
+          : a
+      )
+    );
+
+    // Persist to database
+    const updateData: any = {
+      id: activeId,
+      status: targetColumn,
+      order_index: newOrderIndex,
+    };
+
+    if (targetColumn === "concluida" && activeItem.status !== "concluida") {
+      updateData.completed_at = new Date().toISOString();
+    }
+
+    reorderAnotacao(updateData, {
+      onError: () => {
+        // Rollback on error
+        setLocalAnotacoes(anotacoes);
+        toast.error("Erro ao salvar posição");
+      },
+      onSuccess: () => {
+        toast.success(`Movido para ${statusLabels[targetColumn]}`);
+      },
+    });
+  }, [localAnotacoes, groupedAnotacoes, findColumnByItemId, reorderAnotacao, anotacoes]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setOverId(null);
+    document.body.style.cursor = "";
+    setLocalAnotacoes(anotacoes);
+  }, [anotacoes]);
 
   if (isLoading) {
     return (
@@ -87,85 +300,43 @@ export function AnotacoesKanbanView({ anotacoes, isLoading, onEdit }: AnotacoesK
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {columns.map((column) => (
-        <div key={column.status} className="space-y-3">
-          {/* Column Header */}
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm">{column.label}</h3>
-            <Badge variant="secondary">{groupedAnotacoes[column.status].length}</Badge>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+      measuring={{
+        droppable: { strategy: MeasuringStrategy.Always },
+      }}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {columns.map((column) => (
+          <AnotacoesKanbanColumn
+            key={column.status}
+            id={column.status}
+            label={column.label}
+            color={column.color}
+            anotacoes={groupedAnotacoes[column.status]}
+            onEdit={onEdit}
+          />
+        ))}
+      </div>
+
+      <DragOverlay dropAnimation={{
+        duration: 200,
+        easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+      }}>
+        {activeAnotacao && (
+          <div className="opacity-90 rotate-2 scale-105 shadow-xl">
+            <AnotacoesKanbanCard
+              anotacao={activeAnotacao}
+              onEdit={() => {}}
+            />
           </div>
-
-          {/* Cards */}
-          <div className="space-y-2">
-            {groupedAnotacoes[column.status].length === 0 ? (
-              <Card className={`p-4 ${column.color}`}>
-                <p className="text-sm text-muted-foreground text-center">
-                  Nenhuma anotação
-                </p>
-              </Card>
-            ) : (
-              groupedAnotacoes[column.status].map((anotacao) => (
-                <Card
-                  key={anotacao.id}
-                  className="p-3 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => onEdit(anotacao.id)}
-                >
-                  <div className="space-y-2">
-                    {/* Title */}
-                    <h4 className="font-medium text-sm line-clamp-2">
-                      {anotacao.title}
-                    </h4>
-
-                    {/* Priority Badge */}
-                    <Badge className={priorityColors[anotacao.priority]} variant="outline">
-                      {anotacao.priority === "alta" ? "Alta" : anotacao.priority === "media" ? "Média" : "Baixa"}
-                    </Badge>
-
-                    {/* Type */}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Tag className="h-3 w-3" />
-                      {typeLabels[anotacao.type]}
-                    </div>
-
-                    {/* Client */}
-                    {(anotacao.client_name || (anotacao as any).clientes?.nome) && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <User className="h-3 w-3" />
-                        {anotacao.client_name || (anotacao as any).clientes?.nome}
-                      </div>
-                    )}
-
-                    {/* Reminder */}
-                    {anotacao.reminder_datetime && (
-                      <div className="flex items-center gap-1 text-xs text-primary">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(anotacao.reminder_datetime), "dd/MM HH:mm", { locale: ptBR })}
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    {anotacao.tags && anotacao.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {anotacao.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="text-xs text-primary">
-                            #{tag}
-                          </span>
-                        ))}
-                        {anotacao.tags.length > 3 && (
-                          <span className="text-xs text-muted-foreground">
-                            +{anotacao.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
+        )}
+      </DragOverlay>
+    </DndContext>
   );
 }

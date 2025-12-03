@@ -27,6 +27,7 @@ export type Database = {
           note: string | null
           notify_email: boolean | null
           notify_push: boolean | null
+          order_index: number | null
           priority: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule: string | null
           reminder_datetime: string | null
@@ -50,6 +51,7 @@ export type Database = {
           note?: string | null
           notify_email?: boolean | null
           notify_push?: boolean | null
+          order_index?: number | null
           priority?: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule?: string | null
           reminder_datetime?: string | null
@@ -73,6 +75,7 @@ export type Database = {
           note?: string | null
           notify_email?: boolean | null
           notify_push?: boolean | null
+          order_index?: number | null
           priority?: Database["public"]["Enums"]["anotacao_priority"]
           recurrence_rule?: string | null
           reminder_datetime?: string | null
