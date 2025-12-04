@@ -438,7 +438,7 @@ export default function NotificationSettings() {
                   checked={preferences?.relatorio_propostas_abertas}
                   onCheckedChange={handleRelatorioPropostasAbertasToggle}
                   disabled={!preferences?.relatorio_diario_ativo}
-                  className="mt-0.5"
+                  className="mt-0.5 h-6 w-6"
                 />
                 <div className="space-y-1">
                   <Label htmlFor="propostas-abertas" className="cursor-pointer font-medium">
@@ -456,7 +456,7 @@ export default function NotificationSettings() {
                   checked={preferences?.relatorio_propostas_repouso}
                   onCheckedChange={handleRelatorioPropostasRepousoToggle}
                   disabled={!preferences?.relatorio_diario_ativo}
-                  className="mt-0.5"
+                  className="mt-0.5 h-6 w-6"
                 />
                 <div className="space-y-1">
                   <Label htmlFor="propostas-repouso" className="cursor-pointer font-medium">
