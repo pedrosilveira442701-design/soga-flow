@@ -46,7 +46,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
           <Card key={i} className="p-4">
             <div className="space-y-3">
               <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-5 w-full" />
               <div className="flex gap-2">
                 <Skeleton className="h-5 w-5 w-20" />
                 <Skeleton className="h-5 w-5 w-20" />
