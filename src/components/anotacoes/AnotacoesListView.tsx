@@ -71,26 +71,17 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
   return (
     <div className="space-y-3">
       {anotacoes.map((anotacao) => (
-        <Card
-          key={anotacao.id}
-          className="p-4 hover:shadow-md transition-shadow"
-        >
+        <Card key={anotacao.id} className="p-4 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-2">
               {/* Title and Status */}
               <div className="flex items-start gap-3">
                 <h3 className="font-semibold text-base flex-1">{anotacao.title}</h3>
-                <Badge variant="outline">
-                  {statusLabels[anotacao.status]}
-                </Badge>
+                <Badge variant="outline">{statusLabels[anotacao.status]}</Badge>
               </div>
 
               {/* Note Preview */}
-              {anotacao.note && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {anotacao.note}
-                </p>
-              )}
+              {anotacao.note && <p className="text-sm text-muted-foreground line-clamp-2">{anotacao.note}</p>}
 
               {/* Metadata */}
               <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -137,22 +128,12 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
             {/* Actions */}
             <div className="flex items-center gap-1">
               {anotacao.status !== "concluida" && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => completeAnotacao(anotacao.id)}
-                  title="Concluir"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
+                <Button variant="ghost" size="icon" onClick={() => completeAnotacao(anotacao.id)} title="Concluir">
+                  <CheckCircle2 className="h-5 w-5" />
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onEdit(anotacao.id)}
-                title="Editar"
-              >
-                <Edit className="h-4 w-4" />
+              <Button variant="ghost" size="icon" onClick={() => onEdit(anotacao.id)} title="Editar">
+                <Edit className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
@@ -164,7 +145,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
                 }}
                 title="Excluir"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </Button>
             </div>
           </div>
