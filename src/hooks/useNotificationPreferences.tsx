@@ -41,6 +41,13 @@ export const useNotificationPreferences = () => {
           obra_email: false,
           resumo_diario_visitas: true,
           resumo_diario_hora: "08:00:00",
+          relatorio_diario_ativo: false,
+          relatorio_diario_hora: "08:00:00",
+          relatorio_diario_timezone: "America/Sao_Paulo",
+          relatorio_diario_email: true,
+          relatorio_diario_inapp: false,
+          relatorio_propostas_abertas: true,
+          relatorio_propostas_repouso: true,
         };
 
         const { data: newData, error: insertError } = await supabase
@@ -104,6 +111,14 @@ export const useNotificationPreferences = () => {
         resumo_diario_visitas: true,
         resumo_diario_hora: "08:00:00",
         email_customizado: null,
+        relatorio_diario_ativo: false,
+        relatorio_diario_hora: "08:00:00",
+        relatorio_diario_timezone: "America/Sao_Paulo",
+        relatorio_diario_email: true,
+        relatorio_diario_inapp: false,
+        relatorio_propostas_abertas: true,
+        relatorio_propostas_repouso: true,
+        relatorio_ultimo_envio: null,
       };
 
       const { error } = await supabase

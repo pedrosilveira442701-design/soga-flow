@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   Bell,
   Mail,
@@ -17,7 +20,17 @@ import {
   FileText,
   Building,
   Clock,
+  Send,
+  Loader2,
+  FileBarChart,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const notificationTypes = [
   {
@@ -71,10 +84,33 @@ const notificationTypes = [
   },
 ];
 
+const timezones = [
+  { value: "America/Sao_Paulo", label: "Brasília (GMT-3)" },
+  { value: "America/Manaus", label: "Manaus (GMT-4)" },
+  { value: "America/Belem", label: "Belém (GMT-3)" },
+  { value: "America/Fortaleza", label: "Fortaleza (GMT-3)" },
+  { value: "America/Recife", label: "Recife (GMT-3)" },
+  { value: "America/Cuiaba", label: "Cuiabá (GMT-4)" },
+  { value: "America/Porto_Velho", label: "Porto Velho (GMT-4)" },
+  { value: "America/Rio_Branco", label: "Rio Branco (GMT-5)" },
+];
+
+const hours = Array.from({ length: 24 }, (_, i) => {
+  const hour = i.toString().padStart(2, "0");
+  return { value: `${hour}:00:00`, label: `${hour}:00` };
+});
+
 export default function NotificationSettings() {
   const { preferences, isLoading, updatePreferences, resetToDefaults } =
     useNotificationPreferences();
   const [customEmail, setCustomEmail] = useState(preferences?.email_customizado || "");
+  const [isSendingReport, setIsSendingReport] = useState(false);
+
+  useEffect(() => {
+    if (preferences?.email_customizado) {
+      setCustomEmail(preferences.email_customizado);
+    }
+  }, [preferences?.email_customizado]);
 
   const handleToggle = (type: string, channel: "inapp" | "email") => {
     const key = `${type}_${channel}` as keyof typeof preferences;
@@ -87,6 +123,65 @@ export default function NotificationSettings() {
 
   const handleResumoToggle = () => {
     updatePreferences({ resumo_diario_visitas: !preferences?.resumo_diario_visitas });
+  };
+
+  const handleRelatorioDiarioToggle = () => {
+    updatePreferences({ relatorio_diario_ativo: !preferences?.relatorio_diario_ativo });
+  };
+
+  const handleRelatorioHoraChange = (value: string) => {
+    updatePreferences({ relatorio_diario_hora: value });
+  };
+
+  const handleRelatorioTimezoneChange = (value: string) => {
+    updatePreferences({ relatorio_diario_timezone: value });
+  };
+
+  const handleRelatorioEmailToggle = () => {
+    updatePreferences({ relatorio_diario_email: !preferences?.relatorio_diario_email });
+  };
+
+  const handleRelatorioInappToggle = () => {
+    updatePreferences({ relatorio_diario_inapp: !preferences?.relatorio_diario_inapp });
+  };
+
+  const handleRelatorioPropostasAbertasToggle = () => {
+    updatePreferences({ relatorio_propostas_abertas: !preferences?.relatorio_propostas_abertas });
+  };
+
+  const handleRelatorioPropostasRepousoToggle = () => {
+    updatePreferences({ relatorio_propostas_repouso: !preferences?.relatorio_propostas_repouso });
+  };
+
+  const handleSendNow = async () => {
+    try {
+      setIsSendingReport(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      const response = await supabase.functions.invoke("send-daily-report", {
+        body: { userId: user.id, immediate: true },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message || "Relatório enviado com sucesso!");
+      } else {
+        throw new Error(result.error || "Erro ao enviar relatório");
+      }
+    } catch (error: any) {
+      console.error("Error sending report:", error);
+      toast.error(error.message || "Erro ao enviar relatório");
+    } finally {
+      setIsSendingReport(false);
+    }
   };
 
   if (isLoading) {
@@ -230,6 +325,205 @@ export default function NotificationSettings() {
               <Button onClick={handleSaveEmail}>Salvar E-mail</Button>
             </div>
           </div>
+        </div>
+      </Card>
+
+      {/* Daily Report Section */}
+      <Card className="p-6">
+        <div className="space-y-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mt-1">
+              <FileBarChart className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">Relatório Diário</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Receba um resumo diário das suas propostas por e-mail
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="relatorio-ativo" className="text-base font-medium">
+                Ativar Relatório Diário
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Envio automático no horário configurado
+              </p>
+            </div>
+            <Switch
+              id="relatorio-ativo"
+              checked={preferences?.relatorio_diario_ativo}
+              onCheckedChange={handleRelatorioDiarioToggle}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Time and Timezone Selection */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Horário de Envio</Label>
+                <Select
+                  value={preferences?.relatorio_diario_hora || "08:00:00"}
+                  onValueChange={handleRelatorioHoraChange}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hours.map((hour) => (
+                      <SelectItem key={hour.value} value={hour.value}>
+                        {hour.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fuso Horário</Label>
+                <Select
+                  value={preferences?.relatorio_diario_timezone || "America/Sao_Paulo"}
+                  onValueChange={handleRelatorioTimezoneChange}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o fuso horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezones.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Channels */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Canais de Entrega</Label>
+            <div className="flex flex-wrap gap-6">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="relatorio-email"
+                  checked={preferences?.relatorio_diario_email}
+                  onCheckedChange={handleRelatorioEmailToggle}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                />
+                <Label
+                  htmlFor="relatorio-email"
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>E-mail</span>
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="relatorio-inapp"
+                  checked={preferences?.relatorio_diario_inapp}
+                  onCheckedChange={handleRelatorioInappToggle}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                />
+                <Label
+                  htmlFor="relatorio-inapp"
+                  className="flex items-center gap-2 cursor-pointer text-muted-foreground"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span>In-app (em breve)</span>
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Report Contents */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Conteúdo do Relatório</Label>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 bg-muted/30">
+                <Checkbox
+                  id="propostas-abertas"
+                  checked={preferences?.relatorio_propostas_abertas}
+                  onCheckedChange={handleRelatorioPropostasAbertasToggle}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="propostas-abertas" className="cursor-pointer font-medium">
+                    Propostas em Aberto
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Lista com cliente, m², valor total e margem líquida de cada proposta aberta
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 bg-muted/30">
+                <Checkbox
+                  id="propostas-repouso"
+                  checked={preferences?.relatorio_propostas_repouso}
+                  onCheckedChange={handleRelatorioPropostasRepousoToggle}
+                  disabled={!preferences?.relatorio_diario_ativo}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="propostas-repouso" className="cursor-pointer font-medium">
+                    Propostas em Repouso
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Lista com cliente, m², valor total e margem líquida de propostas em repouso
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={handleSendNow}
+              disabled={isSendingReport || !preferences?.relatorio_diario_email}
+              className="gap-2"
+            >
+              {isSendingReport ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Enviar Agora
+                </>
+              )}
+            </Button>
+            <p className="text-sm text-muted-foreground self-center">
+              Dispara o relatório imediatamente com as configurações atuais
+            </p>
+          </div>
+
+          {preferences?.relatorio_ultimo_envio && (
+            <p className="text-xs text-muted-foreground">
+              Último envio: {new Date(preferences.relatorio_ultimo_envio).toLocaleString("pt-BR")}
+            </p>
+          )}
         </div>
       </Card>
 

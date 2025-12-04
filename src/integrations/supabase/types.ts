@@ -708,6 +708,14 @@ export type Database = {
           obra_inapp: boolean
           proposta_email: boolean
           proposta_inapp: boolean
+          relatorio_diario_ativo: boolean
+          relatorio_diario_email: boolean
+          relatorio_diario_hora: string
+          relatorio_diario_inapp: boolean
+          relatorio_diario_timezone: string
+          relatorio_propostas_abertas: boolean
+          relatorio_propostas_repouso: boolean
+          relatorio_ultimo_envio: string | null
           resumo_diario_hora: string
           resumo_diario_visitas: boolean
           updated_at: string
@@ -731,6 +739,14 @@ export type Database = {
           obra_inapp?: boolean
           proposta_email?: boolean
           proposta_inapp?: boolean
+          relatorio_diario_ativo?: boolean
+          relatorio_diario_email?: boolean
+          relatorio_diario_hora?: string
+          relatorio_diario_inapp?: boolean
+          relatorio_diario_timezone?: string
+          relatorio_propostas_abertas?: boolean
+          relatorio_propostas_repouso?: boolean
+          relatorio_ultimo_envio?: string | null
           resumo_diario_hora?: string
           resumo_diario_visitas?: boolean
           updated_at?: string
@@ -754,6 +770,14 @@ export type Database = {
           obra_inapp?: boolean
           proposta_email?: boolean
           proposta_inapp?: boolean
+          relatorio_diario_ativo?: boolean
+          relatorio_diario_email?: boolean
+          relatorio_diario_hora?: string
+          relatorio_diario_inapp?: boolean
+          relatorio_diario_timezone?: string
+          relatorio_propostas_abertas?: boolean
+          relatorio_propostas_repouso?: boolean
+          relatorio_ultimo_envio?: string | null
           resumo_diario_hora?: string
           resumo_diario_visitas?: boolean
           updated_at?: string
