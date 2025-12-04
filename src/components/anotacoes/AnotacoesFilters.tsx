@@ -3,7 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { type AnotacaoFilters, type AnotacaoStatus, type AnotacaoPriority, type AnotacaoType } from "@/hooks/useAnotacoes";
+import {
+  type AnotacaoFilters,
+  type AnotacaoStatus,
+  type AnotacaoPriority,
+  type AnotacaoType,
+} from "@/hooks/useAnotacoes";
 
 interface AnotacoesFiltersProps {
   filters: AnotacaoFilters;
@@ -52,9 +57,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
 
   const handleTypeToggle = (type: AnotacaoType) => {
     const currentTypes = filters.type || [];
-    const newTypes = currentTypes.includes(type)
-      ? currentTypes.filter((t) => t !== type)
-      : [...currentTypes, type];
+    const newTypes = currentTypes.includes(type) ? currentTypes.filter((t) => t !== type) : [...currentTypes, type];
     onFiltersChange({ ...filters, type: newTypes.length > 0 ? newTypes : undefined });
   };
 
@@ -62,7 +65,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
     onFiltersChange({});
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     (filters.status && filters.status.length > 0) ||
     (filters.priority && filters.priority.length > 0) ||
     (filters.type && filters.type.length > 0);
@@ -78,7 +81,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
             </Button>
           )}
           <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
       </div>
@@ -94,10 +97,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
                 checked={filters.status?.includes(option.value) || false}
                 onCheckedChange={() => handleStatusToggle(option.value)}
               />
-              <Label
-                htmlFor={`status-${option.value}`}
-                className="text-sm font-normal cursor-pointer"
-              >
+              <Label htmlFor={`status-${option.value}`} className="text-sm font-normal cursor-pointer">
                 {option.label}
               </Label>
             </div>
@@ -114,10 +114,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
                 checked={filters.priority?.includes(option.value) || false}
                 onCheckedChange={() => handlePriorityToggle(option.value)}
               />
-              <Label
-                htmlFor={`priority-${option.value}`}
-                className="text-sm font-normal cursor-pointer"
-              >
+              <Label htmlFor={`priority-${option.value}`} className="text-sm font-normal cursor-pointer">
                 {option.label}
               </Label>
             </div>
@@ -134,10 +131,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
                 checked={filters.type?.includes(option.value) || false}
                 onCheckedChange={() => handleTypeToggle(option.value)}
               />
-              <Label
-                htmlFor={`type-${option.value}`}
-                className="text-sm font-normal cursor-pointer"
-              >
+              <Label htmlFor={`type-${option.value}`} className="text-sm font-normal cursor-pointer">
                 {option.label}
               </Label>
             </div>
