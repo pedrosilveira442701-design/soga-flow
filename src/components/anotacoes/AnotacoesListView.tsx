@@ -133,7 +133,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => onEdit(anotacao.id)} title="Editar">
-                <Edit className="h-5 w-5" />
+                <Edit className="h-6 w-6" />
               </Button>
               <Button
                 variant="ghost"
