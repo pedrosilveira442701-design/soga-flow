@@ -48,8 +48,8 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
               <Skeleton className="h-6 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <div className="flex gap-2">
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-5 w-20" />
+                <Skeleton className="h-5 w-5 w-20" />
               </div>
             </div>
           </Card>
@@ -92,14 +92,14 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
 
                 {/* Type */}
                 <span className="flex items-center gap-1">
-                  <Tag className="h-5 w-5" />
+                  <Tag className="h-5 w-5 w-5" />
                   {typeLabels[anotacao.type]}
                 </span>
 
                 {/* Client */}
                 {(anotacao.client_name || (anotacao as any).clientes?.nome) && (
                   <span className="flex items-center gap-1">
-                    <User className="h-5 w-5" />
+                    <User className="h-5 w-5 w-5" />
                     {anotacao.client_name || (anotacao as any).clientes?.nome}
                   </span>
                 )}
@@ -107,7 +107,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
                 {/* Reminder */}
                 {anotacao.reminder_datetime && (
                   <span className="flex items-center gap-1 text-primary">
-                    <Clock3 className="h-5 w-5" />
+                    <Clock3 className="h-5 w-5 w-5" />
                     {format(new Date(anotacao.reminder_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                   </span>
                 )}
@@ -129,7 +129,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
             <div className="flex items-center gap-1">
               {anotacao.status !== "concluida" && (
                 <Button variant="ghost" size="icon" onClick={() => completeAnotacao(anotacao.id)} title="Concluir">
-                  <CheckCircle2 className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5 w-5" />
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => onEdit(anotacao.id)} title="Editar">
@@ -145,7 +145,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
                 }}
                 title="Excluir"
               >
-                <Trash2 className="h-5 w-5" />
+                <Trash2 className="h-5 w-5 w-5" />
               </Button>
             </div>
           </div>

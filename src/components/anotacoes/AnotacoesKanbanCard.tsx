@@ -29,15 +29,9 @@ const typeLabels: Record<string, string> = {
 };
 
 export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-    isOver,
-  } = useSortable({ id: anotacao.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
+    id: anotacao.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,10 +45,8 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
       style={style}
       className={cn(
         "p-3 cursor-pointer transition-all duration-150",
-        isDragging 
-          ? "opacity-50 shadow-lg scale-105 z-50 rotate-1" 
-          : "hover:shadow-md",
-        isOver && "ring-2 ring-primary ring-offset-2"
+        isDragging ? "opacity-50 shadow-lg scale-105 z-50 rotate-1" : "hover:shadow-md",
+        isOver && "ring-2 ring-primary ring-offset-2",
       )}
       onClick={() => !isDragging && onEdit(anotacao.id)}
     >
@@ -66,14 +58,12 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
           className="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="h-4 w-4 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
+          <GripVertical className="h-5 w-5 text-muted-foreground/50 hover:text-muted-foreground transition-colors" />
         </div>
 
         <div className="flex-1 min-w-0 space-y-2">
           {/* Title */}
-          <h4 className="font-medium text-sm line-clamp-2">
-            {anotacao.title}
-          </h4>
+          <h4 className="font-medium text-sm line-clamp-2">{anotacao.title}</h4>
 
           {/* Priority Badge */}
           <Badge className={priorityColors[anotacao.priority]} variant="outline">
@@ -90,9 +80,7 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
           {(anotacao.client_name || (anotacao as any).clientes?.nome) && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <User className="h-3 w-3" />
-              <span className="truncate">
-                {anotacao.client_name || (anotacao as any).clientes?.nome}
-              </span>
+              <span className="truncate">{anotacao.client_name || (anotacao as any).clientes?.nome}</span>
             </div>
           )}
 
@@ -113,9 +101,7 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
                 </span>
               ))}
               {anotacao.tags.length > 3 && (
-                <span className="text-xs text-muted-foreground">
-                  +{anotacao.tags.length - 3}
-                </span>
+                <span className="text-xs text-muted-foreground">+{anotacao.tags.length - 3}</span>
               )}
             </div>
           )}
