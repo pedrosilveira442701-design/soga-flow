@@ -24,13 +24,7 @@ import {
   Loader2,
   FileBarChart,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const notificationTypes = [
   {
@@ -101,8 +95,7 @@ const hours = Array.from({ length: 24 }, (_, i) => {
 });
 
 export default function NotificationSettings() {
-  const { preferences, isLoading, updatePreferences, resetToDefaults } =
-    useNotificationPreferences();
+  const { preferences, isLoading, updatePreferences, resetToDefaults } = useNotificationPreferences();
   const [customEmail, setCustomEmail] = useState(preferences?.email_customizado || "");
   const [isSendingReport, setIsSendingReport] = useState(false);
 
@@ -156,7 +149,9 @@ export default function NotificationSettings() {
   const handleSendNow = async () => {
     try {
       setIsSendingReport(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("Usuário não autenticado");
         return;
@@ -198,16 +193,13 @@ export default function NotificationSettings() {
 
   return (
     <div className="space-y-6">
-
       <Card className="p-6">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Tipos de Notificações</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Escolha os canais para cada tipo de notificação
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Escolha os canais para cada tipo de notificação</p>
             </div>
             <Button variant="outline" onClick={() => resetToDefaults()}>
               Restaurar Padrão
@@ -233,9 +225,7 @@ export default function NotificationSettings() {
                       <h3 className="font-medium">{type.label}</h3>
                       <p className="text-sm text-muted-foreground">{type.description}</p>
                       <div className="mt-2 p-3 bg-muted/50 rounded-md border border-border/50">
-                        <p className="text-sm italic text-muted-foreground">
-                          Exemplo: "{type.example}"
-                        </p>
+                        <p className="text-sm italic text-muted-foreground">Exemplo: "{type.example}"</p>
                       </div>
                     </div>
                   </div>
@@ -247,11 +237,8 @@ export default function NotificationSettings() {
                         checked={preferences?.[inappKey] as boolean}
                         onCheckedChange={() => handleToggle(type.id, "inapp")}
                       />
-                      <Label
-                        htmlFor={`${type.id}-inapp`}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Bell className="h-4 w-4" />
+                      <Label htmlFor={`${type.id}-inapp`} className="flex items-center gap-2 cursor-pointer">
+                        <Bell className="h-5 w-5" />
                         <span className="text-sm">In-app (Sino)</span>
                       </Label>
                     </div>
@@ -262,11 +249,8 @@ export default function NotificationSettings() {
                         checked={preferences?.[emailKey] as boolean}
                         onCheckedChange={() => handleToggle(type.id, "email")}
                       />
-                      <Label
-                        htmlFor={`${type.id}-email`}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Mail className="h-4 w-4" />
+                      <Label htmlFor={`${type.id}-email`} className="flex items-center gap-2 cursor-pointer">
+                        <Mail className="h-5 w-5" />
                         <span className="text-sm">E-mail</span>
                       </Label>
                     </div>
@@ -286,9 +270,7 @@ export default function NotificationSettings() {
               </div>
               <div className="flex-1">
                 <h3 className="font-medium">Resumo Diário de Visitas</h3>
-                <p className="text-sm text-muted-foreground">
-                  Receba um resumo todas as manhãs com as visitas do dia
-                </p>
+                <p className="text-sm text-muted-foreground">Receba um resumo todas as manhãs com as visitas do dia</p>
               </div>
             </div>
 
@@ -351,9 +333,7 @@ export default function NotificationSettings() {
               <Label htmlFor="relatorio-ativo" className="text-base font-medium">
                 Ativar Relatório Diário
               </Label>
-              <p className="text-sm text-muted-foreground">
-                Envio automático no horário configurado
-              </p>
+              <p className="text-sm text-muted-foreground">Envio automático no horário configurado</p>
             </div>
             <Switch
               id="relatorio-ativo"
@@ -422,11 +402,8 @@ export default function NotificationSettings() {
                   onCheckedChange={handleRelatorioEmailToggle}
                   disabled={!preferences?.relatorio_diario_ativo}
                 />
-                <Label
-                  htmlFor="relatorio-email"
-                  className="flex items-center gap-2 cursor-pointer"
-                >
-                  <Mail className="h-4 w-4" />
+                <Label htmlFor="relatorio-email" className="flex items-center gap-2 cursor-pointer">
+                  <Mail className="h-5 w-5" />
                   <span>E-mail</span>
                 </Label>
               </div>
@@ -442,7 +419,7 @@ export default function NotificationSettings() {
                   htmlFor="relatorio-inapp"
                   className="flex items-center gap-2 cursor-pointer text-muted-foreground"
                 >
-                  <Bell className="h-4 w-4" />
+                  <Bell className="h-5 w-5" />
                   <span>In-app (em breve)</span>
                 </Label>
               </div>
@@ -504,12 +481,12 @@ export default function NotificationSettings() {
             >
               {isSendingReport ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Enviando...
                 </>
               ) : (
                 <>
-                  <Send className="h-4 w-4" />
+                  <Send className="h-5 w-5" />
                   Enviar Agora
                 </>
               )}
@@ -530,15 +507,14 @@ export default function NotificationSettings() {
       <Card className="p-6 bg-muted/30">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Bell className="h-4 w-4 text-primary" />
+            <Bell className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
             <h3 className="font-medium text-sm">Sobre as Notificações</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              As notificações são criadas automaticamente pelo sistema com base em eventos
-              importantes. Você pode gerenciar suas preferências a qualquer momento. Notificações
-              in-app aparecem no sino no canto superior direito, enquanto notificações por e-mail
-              são enviadas para o endereço configurado.
+              As notificações são criadas automaticamente pelo sistema com base em eventos importantes. Você pode
+              gerenciar suas preferências a qualquer momento. Notificações in-app aparecem no sino no canto superior
+              direito, enquanto notificações por e-mail são enviadas para o endereço configurado.
             </p>
           </div>
         </div>
