@@ -249,14 +249,14 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-5 w-5" />
                   Data
                 </div>
                 <Input type="date" {...form.register("reminder_date")} />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-5 w-5" />
                   Hora
                 </div>
                 <Input type="time" {...form.register("reminder_time")} />
@@ -267,7 +267,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
             <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Bell className="h-4 w-4" />
+                  <Bell className="h-5 w-5" />
                   <Label htmlFor="notify_push">Notificar no navegador</Label>
                 </div>
                 <Switch
@@ -278,7 +278,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
+                  <Mail className="h-5 w-5" />
                   <Label htmlFor="notify_email">Notificar por e-mail</Label>
                 </div>
                 <Switch
@@ -300,7 +300,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
           <div className="flex justify-between pt-4">
             {anotacaoId && (
               <Button type="button" variant="destructive" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="h-5 w-5 mr-2" />
                 Excluir
               </Button>
             )}
@@ -309,7 +309,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
                 Cancelar
               </Button>
               <Button type="submit" disabled={isCreating || isUpdating}>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-5 w-5 mr-2" />
                 Salvar
               </Button>
             </div>
