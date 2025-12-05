@@ -49,13 +49,13 @@ export function QuickActionsMenu({
           className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
-          <MoreVertical className="h-4 w-4" />
+          <MoreVertical className="icon-md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {canMoveForward && (
           <DropdownMenuItem onClick={handleMoveForward}>
-            <ChevronRight className="mr-2 h-4 w-4" />
+            <ChevronRight className="mr-2 icon-md" />
             Avançar Etapa
             <span className="ml-auto text-caption text-muted-foreground">
               {stages[currentIndex + 1]?.title}
@@ -64,7 +64,7 @@ export function QuickActionsMenu({
         )}
         {canMoveBackward && (
           <DropdownMenuItem onClick={handleMoveBackward}>
-            <ChevronLeft className="mr-2 h-4 w-4" />
+            <ChevronLeft className="mr-2 icon-md" />
             Retroceder Etapa
             <span className="ml-auto text-caption text-muted-foreground">
               {stages[currentIndex - 1]?.title}
@@ -76,7 +76,7 @@ export function QuickActionsMenu({
         
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
-            <MoveRight className="mr-2 h-4 w-4" />
+            <MoveRight className="mr-2 icon-md" />
             Ir para...
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-48">
@@ -101,7 +101,7 @@ export function QuickActionsMenu({
         <DropdownMenuSeparator />
         
         <DropdownMenuItem onClick={onMarkAsLost} className="text-destructive">
-          <XCircle className="mr-2 h-4 w-4" />
+          <XCircle className="mr-2 icon-md" />
           Marcar como Perdido
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -250,7 +250,7 @@ export default function Financeiro() {
                 size="sm"
                 onClick={() => setApenasEmAberto(!apenasEmAberto)}
               >
-                <Filter className="mr-2 h-4 w-4" />
+                <Filter className="mr-2 icon-md" />
                 Apenas em Aberto
               </Button>
             </div>
@@ -258,7 +258,7 @@ export default function Financeiro() {
             {/* Filtros Avançados */}
             <div className="grid gap-4 md:grid-cols-4">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 icon-md text-muted-foreground" />
                 <Input
                   placeholder="Buscar cliente ou CPF/CNPJ..."
                   className="pl-10"
@@ -309,7 +309,7 @@ export default function Financeiro() {
                   onClick={() => setMarcarPagoOpen(true)}
                   className="gap-2"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="icon-md" />
                   Marcar {parcelasSelecionadas.length} como Pago
                 </Button>
               )}

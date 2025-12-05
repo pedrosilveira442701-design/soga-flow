@@ -173,13 +173,13 @@ export default function ClienteCombobox({
           <span className="truncate">
             {isLoading ? "Carregando clientes..." : selectedLabel}
           </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 icon-md shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[600px] p-0 z-50" align="start">
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <Search className="mr-2 icon-md shrink-0 opacity-50" />
             <CommandInput
               placeholder="Buscar por nome, bairro ou CPF/CNPJ..."
               value={searchTerm}

@@ -236,7 +236,7 @@ export default function Clientes() {
                     setSortDirection("asc");
                   }}
                 >
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="icon-md mr-1" />
                   Limpar
                 </Button>
               )}

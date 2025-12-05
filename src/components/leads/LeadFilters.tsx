@@ -45,12 +45,12 @@ export function LeadFilters({ filters, onFiltersChange, totalCount, filteredCoun
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         {/* Busca por Cliente */}
         <div className="relative flex-1 w-full sm:w-auto">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
           <Input
             placeholder="Buscar por cliente..."
             value={filters.searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-9 h-10"
+            className="pl-10 h-10"
           />
         </div>
 
@@ -75,7 +75,7 @@ export function LeadFilters({ filters, onFiltersChange, totalCount, filteredCoun
             onClick={handleClearFilters}
             className="gap-2 h-10 shrink-0"
           >
-            <X className="h-4 w-4" />
+            <X className="icon-md" />
             Limpar
           </Button>
         )}

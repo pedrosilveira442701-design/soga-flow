@@ -444,7 +444,7 @@ export default function Propostas() {
               </span>
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="icon-md mr-1" />
                   Limpar
                 </Button>
               )}
@@ -456,7 +456,7 @@ export default function Propostas() {
             {/* Busca */}
             <div className="md:col-span-3">
               <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Search className="h-4 w-4" />
+                <Search className="icon-md" />
                 Buscar Cliente
               </Label>
               <Input
@@ -477,7 +477,7 @@ export default function Propostas() {
                 <SelectContent>
                   <SelectItem value="todas">
                     <span className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
+                      <FileText className="icon-md" />
                       Todos os Status
                     </span>
                   </SelectItem>

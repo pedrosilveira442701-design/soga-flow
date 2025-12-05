@@ -174,7 +174,7 @@ export default function Metas() {
         <div className="bg-card border rounded-lg p-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
               <Input
                 placeholder="Buscar por tipo, responsável..."
                 value={searchTerm}
