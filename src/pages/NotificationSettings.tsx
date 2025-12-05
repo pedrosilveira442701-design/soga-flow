@@ -89,9 +89,15 @@ const timezones = [
   { value: "America/Rio_Branco", label: "Rio Branco (GMT-5)" },
 ];
 
-const hours = Array.from({ length: 24 }, (_, i) => {
-  const hour = i.toString().padStart(2, "0");
-  return { value: `${hour}:00:00`, label: `${hour}:00` };
+// ✅ Intervalo do horário do relatório
+const REPORT_INTERVAL_MINUTES = 15;
+
+// ✅ Gera lista HH:mm:00 de 15 em 15 minutos
+const reportTimes = Array.from({ length: (24 * 60) / REPORT_INTERVAL_MINUTES }, (_, i) => {
+  const totalMinutes = i * REPORT_INTERVAL_MINUTES;
+  const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+  const mm = String(totalMinutes % 60).padStart(2, "0");
+  return { value: `${hh}:${mm}:00`, label: `${hh}:${mm}` };
 });
 
 export default function NotificationSettings() {
@@ -358,9 +364,9 @@ export default function NotificationSettings() {
                     <SelectValue placeholder="Selecione o horário" />
                   </SelectTrigger>
                   <SelectContent>
-                    {hours.map((hour) => (
-                      <SelectItem key={hour.value} value={hour.value}>
-                        {hour.label}
+                    {reportTimes.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
