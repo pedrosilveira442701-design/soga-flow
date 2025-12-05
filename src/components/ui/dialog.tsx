@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
 
-      {/* Close button (larger + better hit area) */}
+      {/* Close button padronizado (maior + hit area melhor) */}
       <DialogPrimitive.Close
         className={cn(
           "absolute right-3 top-3 h-9 w-9 inline-flex items-center justify-center rounded-md",
@@ -50,7 +50,7 @@ const DialogContent = React.forwardRef<
           "disabled:pointer-events-none",
         )}
       >
-        <X className="h-5 w-5" />
+        <X className="icon-md" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
