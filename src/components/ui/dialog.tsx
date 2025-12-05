@@ -5,11 +5,8 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Dialog = DialogPrimitive.Root;
-
 const DialogTrigger = DialogPrimitive.Trigger;
-
 const DialogPortal = DialogPrimitive.Portal;
-
 const DialogClose = DialogPrimitive.Close;
 
 const DialogOverlay = React.forwardRef<
@@ -42,12 +39,16 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
+
+      {/* Close button (larger + better hit area) */}
       <DialogPrimitive.Close
-        className="absolute right-3 top-3 h-9 w-9 inline-flex items-center justify-center rounded-md
-                   opacity-70 ring-offset-background transition-opacity
-                   data-[state=open]:bg-accent data-[state=open]:text-muted-foreground
-                   hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2
-                   disabled:pointer-events-none"
+        className={cn(
+          "absolute right-3 top-3 h-9 w-9 inline-flex items-center justify-center rounded-md",
+          "opacity-70 ring-offset-background transition-opacity",
+          "data-[state=open]:bg-accent data-[state=open]:text-muted-foreground",
+          "hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "disabled:pointer-events-none",
+        )}
       >
         <X className="h-5 w-5" />
         <span className="sr-only">Close</span>
