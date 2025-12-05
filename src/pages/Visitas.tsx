@@ -136,13 +136,13 @@ export default function Visitas() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Calendar className="h-7 w-7" />
+            <Calendar className="icon-xl" />
             Visitas
           </h1>
           <p className="text-muted-foreground mt-1">Agende e gerencie visitas aos clientes</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="icon-md mr-2" />
           Nova Visita
         </Button>
       </div>

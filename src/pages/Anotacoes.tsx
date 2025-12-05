@@ -52,14 +52,14 @@ export default function Anotacoes() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 flex items-center gap-3">
-              <StickyNote className="h-8 w-8" />
+              <StickyNote className="icon-xl" />
               Anotações &amp; Lembretes
             </h1>
             <p className="text-muted-foreground mt-1">Registre tarefas e configure lembretes inteligentes</p>
           </div>
 
           <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4" />
+            <Plus className="icon-md mr-1" />
             Nova Anotação
           </Button>
         </div>
@@ -71,12 +71,12 @@ export default function Anotacoes() {
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex gap-2 flex-1 max-w-md w-full">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
               <Input
                 placeholder="Buscar anotações, tags #..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-10"
               />
             </div>
 
@@ -85,7 +85,7 @@ export default function Anotacoes() {
               size="icon"
               onClick={() => setShowFilters((prev) => !prev)}
             >
-              <Filter className="h-4 w-4" />
+              <Filter className="icon-md" />
             </Button>
           </div>
 
@@ -93,15 +93,15 @@ export default function Anotacoes() {
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
             <TabsList>
               <TabsTrigger value="list" className="gap-2">
-                <List className="h-4 w-4" />
+                <List className="icon-md" />
                 Lista
               </TabsTrigger>
               <TabsTrigger value="kanban" className="gap-2">
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="icon-md" />
                 Kanban
               </TabsTrigger>
               <TabsTrigger value="calendar" className="gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="icon-md" />
                 Calendário
               </TabsTrigger>
             </TabsList>

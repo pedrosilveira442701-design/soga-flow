@@ -350,7 +350,7 @@ export default function Propostas() {
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} className="h-11 px-5">
-          <Plus className="h-5 w-5 mr-3" />
+          <Plus className="icon-md mr-2" />
           Nova Proposta
         </Button>
       </div>
@@ -360,7 +360,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
-            <FileText className="h-6 w-6 text-muted-foreground" />
+            <FileText className="icon-md text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.total}</div>
@@ -373,7 +373,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Perdidas</CardTitle>
-            <X className="h-6 w-6 text-destructive" />
+            <X className="icon-md text-destructive" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{kpis.perdidas}</div>
@@ -386,7 +386,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Repouso</CardTitle>
-            <Clock className="h-6 w-6 text-muted-foreground" />
+            <Clock className="icon-md text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-muted-foreground">{kpis.repouso}</div>
@@ -399,7 +399,7 @@ export default function Propostas() {
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Volume Real (Ativas)</CardTitle>
-            <TrendingUp className="h-6 w-6 text-primary" />
+            <TrendingUp className="icon-md text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{kpis.ativas}</div>
@@ -412,7 +412,7 @@ export default function Propostas() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Margem Média</CardTitle>
-            <Percent className="h-6 w-6 text-muted-foreground" />
+            <Percent className="icon-md text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getMargemColor(kpis.margemMedia)}`}>

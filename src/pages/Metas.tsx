@@ -102,18 +102,18 @@ export default function Metas() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-h1 flex items-center gap-3">
-              <Target className="h-8 w-8" />
+              <Target className="icon-xl" />
               Metas
             </h1>
             <p className="text-muted-foreground mt-1">Defina objetivos e acompanhe a performance</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => recalcularTodas.mutate()} disabled={recalcularTodas.isPending}>
-              <RefreshCw className={`h-4 w-4 ${recalcularTodas.isPending ? "animate-spin" : ""}`} />
+              <RefreshCw className={`icon-md mr-1 ${recalcularTodas.isPending ? "animate-spin" : ""}`} />
               Recalcular Todas
             </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4" />
+              <Plus className="icon-md mr-1" />
               Nova Meta
             </Button>
           </div>

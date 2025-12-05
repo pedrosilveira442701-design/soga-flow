@@ -203,7 +203,7 @@ export default function Clientes() {
         </div>
 
         <Button onClick={() => setCreateDialogOpen(true)} className="h-11 px-5">
-          <UserPlus className="mr-3 h-5 w-5" />
+          <UserPlus className="icon-md mr-2" />
           Novo Cliente
         </Button>
       </div>
