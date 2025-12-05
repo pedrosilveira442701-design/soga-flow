@@ -88,13 +88,13 @@ export default function Arquivos() {
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
           >
             {viewMode === "grid" ? (
-              <List className="h-4 w-4" />
+              <List className="icon-md" />
             ) : (
-              <Grid3x3 className="h-4 w-4" />
+              <Grid3x3 className="icon-md" />
             )}
           </Button>
           <Button onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="icon-md mr-2" />
             Upload de Arquivos
           </Button>
         </div>
@@ -137,10 +137,10 @@ export default function Arquivos() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
               <Input
                 placeholder="Buscar por nome..."
-                className="pl-9"
+                className="pl-10"
                 value={filters.search}
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, search: e.target.value }))
@@ -219,7 +219,7 @@ export default function Arquivos() {
             Faça upload de documentos, fotos e arquivos relacionados aos seus clientes e contratos
           </p>
           <Button onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="icon-md mr-2" />
             Fazer Primeiro Upload
           </Button>
         </div>
@@ -244,7 +244,7 @@ export default function Arquivos() {
                     <TableRow key={arquivo.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <FileText className="icon-md text-muted-foreground" />
                           <span className="font-medium">{arquivo.nome}</span>
                         </div>
                       </TableCell>
@@ -280,21 +280,21 @@ export default function Arquivos() {
                             size="icon"
                             onClick={() => setPreviewArquivo(arquivo)}
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="icon-md" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => downloadArquivo(arquivo)}
                           >
-                            <Download className="h-4 w-4" />
+                            <Download className="icon-md" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteWithConfirm(arquivo)}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="icon-md text-destructive" />
                           </Button>
                         </div>
                       </TableCell>

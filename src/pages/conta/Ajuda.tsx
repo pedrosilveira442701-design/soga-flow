@@ -85,7 +85,7 @@ export default function Ajuda() {
               Precisa de ajuda? Entre em contato com nossa equipe de suporte.
             </p>
             <Button className="w-full" variant="outline">
-              <Mail className="h-4 w-4 mr-2" />
+              <Mail className="icon-md mr-2" />
               Enviar Mensagem
             </Button>
           </div>
@@ -95,7 +95,7 @@ export default function Ajuda() {
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <HelpCircle className="h-5 w-5 text-primary" />
+            <HelpCircle className="icon-md text-primary" />
           </div>
           <h3 className="font-semibold">Perguntas Frequentes</h3>
         </div>
@@ -117,7 +117,7 @@ export default function Ajuda() {
       <Card className="p-6 bg-muted/30">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Book className="h-4 w-4 text-primary" />
+            <Book className="icon-md text-primary" />
           </div>
           <div>
             <h4 className="font-medium text-sm mb-1">Documentação Completa</h4>
