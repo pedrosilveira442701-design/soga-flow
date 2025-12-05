@@ -142,7 +142,7 @@ export default function Financeiro() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <DollarSign className="h-8 w-8" />
+          <DollarSign className="icon-xl" />
           Financeiro
         </h1>
         <p className="text-muted-foreground">

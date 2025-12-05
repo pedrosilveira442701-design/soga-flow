@@ -199,4 +199,30 @@ All colors MUST be HSL.
     stroke-width: 1.5px;
     color: hsl(var(--brand-ink) / 0.6);
   }
+
+  /* Standard icon sizes */
+  .icon-sm {
+    @apply h-4 w-4;
+  }
+
+  .icon-md {
+    @apply h-5 w-5;
+  }
+
+  .icon-lg {
+    @apply h-6 w-6;
+  }
+
+  .icon-xl {
+    @apply h-8 w-8;
+  }
+
+  /* Icon with better visibility for both themes */
+  .icon-visible {
+    @apply text-foreground/80;
+  }
+
+  .icon-muted {
+    @apply text-muted-foreground;
+  }
 }
