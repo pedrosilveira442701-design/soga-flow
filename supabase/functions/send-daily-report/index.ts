@@ -23,6 +23,7 @@ interface Proposta {
 interface ReportRequest {
   userId?: string;
   immediate?: boolean;
+  scheduled?: boolean;
 }
 
 const formatCurrency = (value: number): string => {
@@ -143,6 +144,30 @@ const generateEmailHtml = (
   `;
 };
 
+// Check if current time matches user's configured hour in their timezone
+const shouldSendNow = (userHour: string, userTimezone: string): boolean => {
+  try {
+    // Get current time in user's timezone
+    const now = new Date();
+    const userTimeStr = now.toLocaleString("en-US", { 
+      timeZone: userTimezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false 
+    });
+    
+    // Parse user's configured hour (format: "HH:MM")
+    const [configuredHour, configuredMinute] = userHour.split(":").map(Number);
+    const [currentHour, currentMinute] = userTimeStr.split(":").map(Number);
+    
+    // Only send if we're at the exact configured hour and minute (within 1 minute tolerance)
+    return currentHour === configuredHour && currentMinute === configuredMinute;
+  } catch (error) {
+    console.error("Error checking time:", error);
+    return false;
+  }
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -154,9 +179,16 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { userId, immediate } = (await req.json()) as ReportRequest;
+    let body: ReportRequest = {};
+    try {
+      body = await req.json();
+    } catch {
+      // Empty body is fine for scheduled calls
+    }
 
-    console.log("📬 Starting daily report generation", { userId, immediate });
+    const { userId, immediate, scheduled } = body;
+
+    console.log("📬 [send-daily-report] start", { userId, immediate, scheduled });
 
     // Get users to send report to
     let query = supabaseClient
@@ -177,14 +209,40 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Found ${preferences?.length || 0} users with report enabled`);
 
-    const results: { userId: string; success: boolean; error?: string }[] = [];
+    const results: { userId: string; success: boolean; error?: string; skipped?: boolean }[] = [];
 
     for (const pref of preferences || []) {
       try {
         // Check if email channel is enabled
         if (!pref.relatorio_diario_email) {
           console.log(`Skipping user ${pref.user_id} - email not enabled`);
+          results.push({ userId: pref.user_id, success: false, skipped: true, error: "Email not enabled" });
           continue;
+        }
+
+        // For scheduled calls (from cron), check if it's the right time for this user
+        if (scheduled && !immediate && !userId) {
+          const userHour = pref.relatorio_diario_hora || "09:00";
+          const userTimezone = pref.relatorio_diario_timezone || "America/Sao_Paulo";
+          
+          if (!shouldSendNow(userHour, userTimezone)) {
+            console.log(`Skipping user ${pref.user_id} - not their scheduled time (${userHour} ${userTimezone})`);
+            results.push({ userId: pref.user_id, success: false, skipped: true, error: "Not scheduled time" });
+            continue;
+          }
+          
+          // Check if already sent within the last hour to prevent duplicates
+          if (pref.relatorio_ultimo_envio) {
+            const lastSent = new Date(pref.relatorio_ultimo_envio);
+            const now = new Date();
+            const diffMinutes = (now.getTime() - lastSent.getTime()) / (1000 * 60);
+            
+            if (diffMinutes < 60) {
+              console.log(`Skipping user ${pref.user_id} - already sent ${diffMinutes.toFixed(0)} minutes ago`);
+              results.push({ userId: pref.user_id, success: false, skipped: true, error: "Already sent recently" });
+              continue;
+            }
+          }
         }
 
         // Get user email
@@ -193,6 +251,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!userEmail) {
           console.log(`Skipping user ${pref.user_id} - no email found`);
+          results.push({ userId: pref.user_id, success: false, error: "No email found" });
           continue;
         }
 
@@ -253,7 +312,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const successCount = results.filter((r) => r.success).length;
-    console.log(`📬 Report generation complete: ${successCount}/${results.length} sent successfully`);
+    const skippedCount = results.filter((r) => r.skipped).length;
+    console.log(`📬 Report generation complete: ${successCount} sent, ${skippedCount} skipped`);
 
     return new Response(
       JSON.stringify({
