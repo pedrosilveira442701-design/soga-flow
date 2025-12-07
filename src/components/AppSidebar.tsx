@@ -12,6 +12,7 @@ import {
   BarChart3,
   Building2,
   StickyNote,
+  Bell,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +53,7 @@ const menuItems = [
   { title: "Metas", url: "/metas", icon: TrendingUp },
   { title: "Visitas", url: "/visitas", icon: Calendar },
   { title: "Anotações", url: "/anotacoes", icon: StickyNote },
+  { title: "Notificações", url: "/configuracoes/notificacoes", icon: Bell },
   { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
 ];
 
