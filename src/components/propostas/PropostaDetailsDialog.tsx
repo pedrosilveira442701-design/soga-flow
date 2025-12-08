@@ -452,8 +452,9 @@ export default function PropostaDetailsDialog({
             initialData={{
               cliente_id: proposta.cliente_id,
               proposta_id: proposta.id,
-              valor_negociado: Number(liquido),
-              cpf_cnpj: "",
+              valor_negociado: Number(totalComDesconto),
+              margem_pct: Number(margem.toFixed(2)),
+              cpf_cnpj: proposta.clientes?.cpf_cnpj || "",
               forma_pagamento: "",
               data_inicio: new Date().toISOString().split("T")[0],
               observacoes: `Contrato gerado a partir da proposta - ${totalM2.toFixed(2)}m²`,
