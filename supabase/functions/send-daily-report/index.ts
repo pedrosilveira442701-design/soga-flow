@@ -156,11 +156,13 @@ const shouldSendNow = (userHour: string, userTimezone: string): boolean => {
       hour12: false 
     });
     
-    // Parse user's configured hour (format: "HH:MM")
+    // Parse user's configured hour (format: "HH:MM:SS" or "HH:MM")
     const [configuredHour, configuredMinute] = userHour.split(":").map(Number);
     const [currentHour, currentMinute] = userTimeStr.split(":").map(Number);
     
-    // Only send if we're at the exact configured hour and minute (within 1 minute tolerance)
+    console.log(`Time check: configured=${configuredHour}:${configuredMinute}, current=${currentHour}:${currentMinute} (${userTimezone})`);
+    
+    // Only send if we're at the exact configured hour and minute
     return currentHour === configuredHour && currentMinute === configuredMinute;
   } catch (error) {
     console.error("Error checking time:", error);
@@ -190,10 +192,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("📬 [send-daily-report] start", { userId, immediate, scheduled });
 
-    // Get users to send report to
+    // Get preferences - without JOIN since there's no FK relationship
     let query = supabaseClient
       .from("notificacao_preferencias")
-      .select("*, profiles:user_id(email, nome)")
+      .select("*")
       .eq("relatorio_diario_ativo", true);
 
     if (userId) {
@@ -222,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // For scheduled calls (from cron), check if it's the right time for this user
         if (scheduled && !immediate && !userId) {
-          const userHour = pref.relatorio_diario_hora || "09:00";
+          const userHour = pref.relatorio_diario_hora || "09:00:00";
           const userTimezone = pref.relatorio_diario_timezone || "America/Sao_Paulo";
           
           if (!shouldSendNow(userHour, userTimezone)) {
@@ -245,15 +247,24 @@ const handler = async (req: Request): Promise<Response> => {
           }
         }
 
-        // Get user email
-        const userEmail = pref.email_customizado || (pref.profiles as any)?.email;
-        const userName = (pref.profiles as any)?.nome || "Usuário";
+        // Fetch user profile separately (no FK relationship)
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("email, nome")
+          .eq("id", pref.user_id)
+          .single();
+
+        // Get user email - prefer custom email, then profile email
+        const userEmail = pref.email_customizado || profile?.email;
+        const userName = profile?.nome || "Usuário";
 
         if (!userEmail) {
           console.log(`Skipping user ${pref.user_id} - no email found`);
           results.push({ userId: pref.user_id, success: false, error: "No email found" });
           continue;
         }
+
+        console.log(`Processing report for ${userName} (${userEmail})`);
 
         // Fetch propostas for this user
         const { data: propostasAbertas } = await supabaseClient
@@ -267,6 +278,8 @@ const handler = async (req: Request): Promise<Response> => {
           .select("id, m2, valor_total, liquido, margem_pct, servicos, status, cliente:clientes(nome)")
           .eq("user_id", pref.user_id)
           .eq("status", "repouso");
+
+        console.log(`Found ${propostasAbertas?.length || 0} abertas, ${propostasRepouso?.length || 0} repouso`);
 
         const emailHtml = generateEmailHtml(
           (propostasAbertas || []) as unknown as Proposta[],
