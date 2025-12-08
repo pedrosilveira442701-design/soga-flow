@@ -110,6 +110,34 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   const selectedProposta = propostasFechadas.find((p: any) => p.id === propostaIdWatch);
   const valorRestante = valorWatch - valorEntradaWatch;
 
+  // Carregar dados da proposta automaticamente quando o componente monta com proposta_id
+  useEffect(() => {
+    if (initialData?.proposta_id && propostasFechadas.length > 0 && clientes.length > 0) {
+      const proposta = propostasFechadas.find((p: any) => p.id === initialData.proposta_id);
+      if (proposta) {
+        form.setValue("proposta_id", proposta.id);
+        form.setValue("cliente_id", proposta.cliente_id);
+        form.setValue("valor_negociado", Number(proposta.valor_total));
+        form.setValue("margem_pct", Number(proposta.margem_pct || 0));
+        
+        // Buscar CPF/CNPJ do cliente
+        const cliente = clientes.find((c) => c.id === proposta.cliente_id);
+        if (cliente?.cpf_cnpj) {
+          form.setValue("cpf_cnpj", cliente.cpf_cnpj);
+        }
+        
+        // Definir observação padrão
+        const servicosArr = proposta.servicos && Array.isArray(proposta.servicos) 
+          ? proposta.servicos 
+          : [];
+        const totalM2 = servicosArr.length > 0 
+          ? servicosArr.reduce((acc: number, s: any) => acc + (Number(s.m2) || 0), 0)
+          : Number(proposta.m2) || 0;
+        form.setValue("observacoes", `Contrato gerado a partir da proposta - ${Number(totalM2).toFixed(2)}m²`);
+      }
+    }
+  }, [initialData?.proposta_id, propostasFechadas, clientes, form]);
+
   // Filtrar propostas fechadas por cliente selecionado
   const propostasPorCliente = useMemo(() => {
     if (!clienteIdWatch) return [];
