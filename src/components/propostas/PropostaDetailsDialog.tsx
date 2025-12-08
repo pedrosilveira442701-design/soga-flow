@@ -456,9 +456,8 @@ export default function PropostaDetailsDialog({
               cpf_cnpj: "",
               forma_pagamento: "",
               data_inicio: new Date().toISOString().split("T")[0],
-              numero_parcelas: 1,
-              dia_vencimento: 10,
               observacoes: `Contrato gerado a partir da proposta - ${totalM2.toFixed(2)}m²`,
+              parcelas: [],
             }}
             mode="fromProposta"
           />

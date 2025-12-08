@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useClientes } from "@/hooks/useClientes";
 import { usePropostasFechadas } from "@/hooks/useContratos";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ClienteCombobox from "@/components/forms/ClienteCombobox";
+import { ParcelasFormEditor, ParcelaPreview } from "./ParcelasFormEditor";
 
 const contratoSchema = z
   .object({
@@ -29,8 +30,6 @@ const contratoSchema = z
     forma_pagamento_entrada: z.string().optional(),
     forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
     data_inicio: z.string().min(1, "Data de início é obrigatória"),
-    numero_parcelas: z.number().min(1).max(48, "Máximo 48 parcelas"),
-    dia_vencimento: z.number().min(1).max(31, "Dia deve estar entre 1 e 31"),
     observacoes: z.string().optional(),
   })
   .refine(
@@ -62,15 +61,22 @@ const contratoSchema = z
 
 type ContratoFormValues = z.infer<typeof contratoSchema>;
 
+export interface ContratoFormSubmitData extends ContratoFormValues {
+  parcelas: ParcelaPreview[];
+}
+
 interface ContratoFormProps {
-  onSubmit: (data: ContratoFormValues) => Promise<void>;
-  initialData?: Partial<ContratoFormValues>;
-  mode?: "create" | "fromProposta";
+  onSubmit: (data: ContratoFormSubmitData) => Promise<void>;
+  initialData?: Partial<ContratoFormValues> & { parcelas?: ParcelaPreview[] };
+  mode?: "create" | "fromProposta" | "edit";
 }
 
 export function ContratoForm({ onSubmit, initialData, mode = "create" }: ContratoFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   const { data: propostasFechadas = [], isLoading: isLoadingPropostas } = usePropostasFechadas();
+
+  const [parcelas, setParcelas] = useState<ParcelaPreview[]>(initialData?.parcelas || []);
+  const [parcelasErrors, setParcelasErrors] = useState<string[]>([]);
 
   const form = useForm<ContratoFormValues>({
     resolver: zodResolver(contratoSchema),
@@ -84,16 +90,9 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       forma_pagamento_entrada: initialData?.forma_pagamento_entrada || "",
       forma_pagamento: initialData?.forma_pagamento || "",
       data_inicio: initialData?.data_inicio || formatDateToLocal(new Date()),
-      numero_parcelas: initialData?.numero_parcelas || 1,
-      dia_vencimento: initialData?.dia_vencimento || 10,
       observacoes: initialData?.observacoes || "",
     },
   });
-
-  const handleSubmit = async (data: ContratoFormValues) => {
-    await onSubmit(data);
-    form.reset();
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -106,13 +105,10 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   const propostaIdWatch = form.watch("proposta_id");
   const valorWatch = form.watch("valor_negociado");
   const valorEntradaWatch = form.watch("valor_entrada") || 0;
-  const parcelasWatch = form.watch("numero_parcelas");
-  const diaVencimentoWatch = form.watch("dia_vencimento");
   const dataInicioWatch = form.watch("data_inicio");
 
   const selectedProposta = propostasFechadas.find((p: any) => p.id === propostaIdWatch);
   const valorRestante = valorWatch - valorEntradaWatch;
-  const valorParcela = valorRestante / parcelasWatch;
 
   // Filtrar propostas fechadas por cliente selecionado
   const propostasPorCliente = useMemo(() => {
@@ -126,18 +122,6 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     const proposta: any = propostasFechadas.find((p: any) => p.id === propostaIdWatch);
     return proposta?.has_contrato || false;
   }, [propostaIdWatch, propostasFechadas]);
-
-  // Calcular previsão de parcelas
-  const previewParcelas = Array.from({ length: Math.min(parcelasWatch, 5) }, (_, i) => {
-    const vencimento = new Date(dataInicioWatch);
-    vencimento.setMonth(vencimento.getMonth() + i);
-    vencimento.setDate(diaVencimentoWatch);
-    return {
-      numero: i + 1,
-      vencimento: format(vencimento, "dd/MM/yyyy", { locale: ptBR }),
-      valor: valorParcela,
-    };
-  });
 
   // Quando seleciona uma proposta, preencher dados automaticamente
   const handlePropostaChange = (propostaId: string) => {
@@ -172,11 +156,59 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
     "Cheque",
   ];
 
+  // Validar parcelas antes de submeter
+  const validateParcelas = (): boolean => {
+    const errors: string[] = [];
+    
+    if (parcelas.length === 0 && valorRestante > 0) {
+      errors.push("É necessário gerar o cronograma de parcelas");
+    }
+
+    const somaParcelas = parcelas.reduce((sum, p) => sum + p.valor, 0);
+    if (Math.abs(somaParcelas - valorRestante) > 0.01) {
+      errors.push(`A soma das parcelas (${formatCurrency(somaParcelas)}) deve ser igual ao saldo (${formatCurrency(valorRestante)})`);
+    }
+
+    // Verificar datas duplicadas
+    const datas = parcelas.map(p => p.vencimento);
+    const duplicadas = datas.filter((data, idx) => datas.indexOf(data) !== idx);
+    if (duplicadas.length > 0) {
+      errors.push("Existem datas de vencimento duplicadas");
+    }
+
+    // Verificar se a 1ª parcela é >= data de início
+    if (parcelas.length > 0 && parcelas[0].vencimento < dataInicioWatch) {
+      errors.push("A data da 1ª parcela não pode ser anterior à data de início");
+    }
+
+    // Verificar valores zerados
+    const parcelasZeradas = parcelas.filter(p => p.valor <= 0);
+    if (parcelasZeradas.length > 0) {
+      errors.push("Existem parcelas com valor zerado ou negativo");
+    }
+
+    setParcelasErrors(errors);
+    return errors.length === 0;
+  };
+
+  const handleSubmit = async (data: ContratoFormValues) => {
+    if (!validateParcelas()) {
+      return;
+    }
+
+    await onSubmit({
+      ...data,
+      parcelas,
+    });
+    form.reset();
+    setParcelas([]);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Coluna Esquerda - Formulário */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Coluna Esquerda - Dados do Contrato */}
           <div className="space-y-4">
             {mode === "fromProposta" && (
               <FormField
@@ -223,10 +255,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                       clientes={clientes}
                       value={field.value}
                       onChange={(clienteId) => {
-                        // atualiza o cliente_id no form
                         field.onChange(clienteId);
-
-                        // busca o cliente e preenche CPF/CNPJ automaticamente
                         const cliente = clientes.find((c) => c.id === clienteId);
                         if (cliente?.cpf_cnpj) {
                           form.setValue("cpf_cnpj", cliente.cpf_cnpj);
@@ -304,7 +333,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               name="valor_negociado"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Valor Negociado *</FormLabel>
+                  <FormLabel>Valor Total *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -458,48 +487,6 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="numero_parcelas"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Parcelas *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="48"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="dia_vencimento"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dia Vencimento *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="31"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 10)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
               name="observacoes"
@@ -519,7 +506,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
             />
           </div>
 
-          {/* Coluna Direita - Preview */}
+          {/* Coluna Direita - Resumo e Parcelas */}
           <div className="space-y-4">
             <div className="rounded-lg border bg-card p-4">
               <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
@@ -538,29 +525,17 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Valor a Parcelar:</span>
+                  <span className="text-muted-foreground">Saldo a Parcelar:</span>
                   <span className="font-medium">{formatCurrency(valorRestante)}</span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Parcelas:</span>
-                  <span>
-                    {parcelasWatch}x de {formatCurrency(valorParcela)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Vencimento:</span>
-                  <span>Todo dia {diaVencimentoWatch}</span>
-                </div>
+                {parcelas.length > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Parcelas Configuradas:</span>
+                    <span>{parcelas.length}x</span>
+                  </div>
+                )}
               </div>
-
-              {parcelasWatch > 24 && (
-                <Alert className="mt-4">
-                  <AlertCircle className="h-5 w-5" />
-                  <AlertDescription>Muitas parcelas podem dificultar o controle financeiro</AlertDescription>
-                </Alert>
-              )}
 
               {valorEntradaWatch >= valorWatch && (
                 <Alert className="mt-4">
@@ -569,30 +544,27 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                 </Alert>
               )}
             </div>
-
-            <div className="rounded-lg border bg-card p-4">
-              <h3 className="font-semibold mb-4">Previsão de Parcelas</h3>
-              <div className="space-y-2">
-                {previewParcelas.map((parcela) => (
-                  <div key={parcela.numero} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {parcela.numero}ª - {parcela.vencimento}
-                    </span>
-                    <span className="font-medium">{formatCurrency(parcela.valor)}</span>
-                  </div>
-                ))}
-                {parcelasWatch > 5 && (
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    ... e mais {parcelasWatch - 5} parcelas
-                  </p>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
+        {/* Seção de Parcelas - Full Width */}
+        <div className="space-y-4">
+          <h3 className="font-semibold text-lg">Cronograma de Parcelas</h3>
+          
+          <ParcelasFormEditor
+            valorTotal={valorWatch}
+            valorEntrada={valorEntradaWatch}
+            dataInicio={dataInicioWatch}
+            parcelas={parcelas}
+            onChange={setParcelas}
+            errors={parcelasErrors}
+          />
+        </div>
+
         <div className="flex justify-end gap-3">
-          <Button type="submit">Criar Contrato</Button>
+          <Button type="submit">
+            {mode === "edit" ? "Salvar Alterações" : "Criar Contrato"}
+          </Button>
         </div>
       </form>
     </Form>
