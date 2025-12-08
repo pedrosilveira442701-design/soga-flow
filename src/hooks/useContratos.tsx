@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import type { ParcelaPreview } from "@/components/forms/ParcelasFormEditor";
 
 export interface Contrato {
   id: string;
@@ -16,11 +17,9 @@ export interface Contrato {
   observacoes?: string;
   margem_pct?: number | null;
 
-  // novos campos armazenados na tabela contratos
+  // campos de entrada
   valor_entrada?: number | null;
   forma_pagamento_entrada?: string | null;
-  numero_parcelas?: number | null;
-  dia_vencimento?: number | null;
 
   created_at: string;
   updated_at: string;
@@ -61,8 +60,8 @@ export interface ContratoInsert {
   data_inicio: string;
   observacoes?: string;
 
-  numero_parcelas: number;
-  dia_vencimento: number;
+  // Parcelas personalizadas
+  parcelas: ParcelaPreview[];
 }
 
 export interface ContratoUpdate {
@@ -77,14 +76,14 @@ export interface ContratoUpdate {
 
   valor_entrada?: number | null;
   forma_pagamento_entrada?: string | null;
-  numero_parcelas?: number | null;
-  dia_vencimento?: number | null;
+
+  // Parcelas personalizadas para atualização
+  parcelas?: ParcelaPreview[];
 }
 
 /**
  * Hook para listar propostas com status "fechada"
- * usado em ContratoForm.tsx como:
- * const { data: propostasFechadas = [], isLoading: isLoadingPropostas } = usePropostasFechadas();
+ * usado em ContratoForm.tsx
  */
 export const usePropostasFechadas = () => {
   const { user } = useAuth();
@@ -165,7 +164,7 @@ export const useContratos = () => {
         }),
       );
 
-      return contratosComParcelas as Contrato[];
+      return contratosComParcelas as unknown as Contrato[];
     },
     enabled: !!user,
   });
@@ -174,8 +173,17 @@ export const useContratos = () => {
     mutationFn: async (data: ContratoInsert): Promise<Contrato> => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      if (!data.numero_parcelas || data.numero_parcelas < 1) {
-        throw new Error("Número de parcelas deve ser maior que zero");
+      if (!data.parcelas || data.parcelas.length === 0) {
+        throw new Error("É necessário configurar as parcelas do contrato");
+      }
+
+      // Validar soma das parcelas
+      const valorEntrada = data.valor_entrada || 0;
+      const saldo = data.valor_negociado - valorEntrada;
+      const somaParcelas = data.parcelas.reduce((sum, p) => sum + p.valor, 0);
+
+      if (Math.abs(somaParcelas - saldo) > 0.01) {
+        throw new Error("A soma das parcelas não corresponde ao saldo do contrato");
       }
 
       // margem informada pelo usuário ou da proposta
@@ -191,7 +199,7 @@ export const useContratos = () => {
         margemPct = Number(proposta?.margem_pct || 0);
       }
 
-      // Criar contrato (já gravando os novos campos)
+      // Criar contrato
       const { data: contrato, error: contratoError } = await supabase
         .from("contratos")
         .insert({
@@ -205,33 +213,20 @@ export const useContratos = () => {
           observacoes: data.observacoes,
           margem_pct: margemPct,
           status: "ativo",
-          valor_entrada: data.valor_entrada ?? null,
-          forma_pagamento_entrada: data.forma_pagamento_entrada ?? null,
-          numero_parcelas: data.numero_parcelas,
-          dia_vencimento: data.dia_vencimento,
+          valor_entrada: valorEntrada || null,
+          forma_pagamento_entrada: data.forma_pagamento_entrada || null,
         })
         .select()
         .single();
 
       if (contratoError) throw contratoError;
 
-      // -------- GERAÇÃO DAS PARCELAS --------
-      const valorEntrada = data.valor_entrada || 0;
-      const valorRestante = data.valor_negociado - valorEntrada;
+      // Criar parcelas
+      const parcelasToInsert: any[] = [];
 
-      if (valorRestante < 0) {
-        throw new Error("O valor de entrada não pode ser maior que o valor negociado");
-      }
-
-      const valorParcela = data.numero_parcelas > 0 ? valorRestante / data.numero_parcelas : 0;
-
-      const dataInicio = new Date(data.data_inicio);
-
-      const parcelas: any[] = [];
-
-      // parcela de entrada (nº 0)
+      // Parcela de entrada (nº 0) se houver
       if (valorEntrada > 0 && data.forma_pagamento_entrada) {
-        parcelas.push({
+        parcelasToInsert.push({
           user_id: user.id,
           contrato_id: contrato.id,
           numero_parcela: 0,
@@ -242,26 +237,20 @@ export const useContratos = () => {
         });
       }
 
-      // demais parcelas
-      const parcelasRestante = Array.from({ length: data.numero_parcelas }, (_, i) => {
-        const vencimento = new Date(dataInicio);
-        vencimento.setMonth(vencimento.getMonth() + i);
-        vencimento.setDate(data.dia_vencimento);
-
-        return {
+      // Parcelas do cronograma
+      data.parcelas.forEach((parcela) => {
+        parcelasToInsert.push({
           user_id: user.id,
           contrato_id: contrato.id,
-          numero_parcela: i + 1,
-          valor_liquido_parcela: valorParcela,
-          vencimento: vencimento.toISOString().split("T")[0],
+          numero_parcela: parcela.numero,
+          valor_liquido_parcela: parcela.valor,
+          vencimento: parcela.vencimento,
           status: "pendente" as const,
           forma: data.forma_pagamento,
-        };
+        });
       });
 
-      parcelas.push(...parcelasRestante);
-
-      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelas);
+      const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelasToInsert);
 
       if (parcelasError) throw parcelasError;
 
@@ -269,6 +258,7 @@ export const useContratos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
       toast.success("Contrato criado com sucesso!");
     },
     onError: (error: any) => {
@@ -281,9 +271,11 @@ export const useContratos = () => {
     mutationFn: async ({ id, data }: { id: string; data: ContratoUpdate }): Promise<Contrato> => {
       if (!user) throw new Error("Usuário não autenticado");
 
+      const { parcelas, ...contratoData } = data;
+
       const { data: updated, error } = await supabase
         .from("contratos")
-        .update(data as any)
+        .update(contratoData as any)
         .eq("id", id)
         .eq("user_id", user.id)
         .select()
@@ -291,10 +283,35 @@ export const useContratos = () => {
 
       if (error) throw error;
 
+      // Se houver parcelas para atualizar, deletar as antigas e criar novas
+      if (parcelas && parcelas.length > 0) {
+        // Deletar parcelas existentes (exceto as pagas)
+        await supabase
+          .from("financeiro_parcelas")
+          .delete()
+          .eq("contrato_id", id)
+          .neq("status", "pago");
+
+        // Criar novas parcelas
+        const parcelasToInsert = parcelas.map((parcela) => ({
+          user_id: user.id,
+          contrato_id: id,
+          numero_parcela: parcela.numero,
+          valor_liquido_parcela: parcela.valor,
+          vencimento: parcela.vencimento,
+          status: "pendente" as const,
+          forma: data.forma_pagamento || updated.forma_pagamento,
+        }));
+
+        const { error: parcelasError } = await supabase.from("financeiro_parcelas").insert(parcelasToInsert);
+        if (parcelasError) throw parcelasError;
+      }
+
       return updated as Contrato;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
       toast.success("Contrato atualizado com sucesso!");
     },
     onError: (error: any) => {
@@ -307,15 +324,16 @@ export const useContratos = () => {
     mutationFn: async (id: string) => {
       if (!user) throw new Error("Usuário não autenticado");
 
+      // Primeiro deletar parcelas associadas
+      await supabase.from("financeiro_parcelas").delete().eq("contrato_id", id);
+
       const { error } = await supabase.from("contratos").delete().eq("id", id).eq("user_id", user.id);
 
       if (error) throw error;
-
-      // opcional: também apagar parcelas associadas
-      await supabase.from("financeiro_parcelas").delete().eq("contrato_id", id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
       toast.success("Contrato excluído com sucesso!");
     },
     onError: (error: any) => {
