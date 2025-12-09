@@ -101,7 +101,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
             notification.tipo === "contrato" && "bg-teal-100 text-teal-600",
             notification.tipo === "obra" && "bg-amber-100 text-amber-600"
           )}>
-            <IconComponent className="h-4 w-4" />
+            <IconComponent className="h-5 w-5" />
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
               onClick={handleView}
               className="h-7 text-xs"
             >
-              <Eye className="h-3 w-3 mr-1" />
+              <Eye className="h-4 w-4 mr-1" />
               Ver
             </Button>
             
@@ -147,7 +147,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
                 onClick={handleMarkAsRead}
                 className="h-7 text-xs"
               >
-                <CheckCircle className="h-3 w-3 mr-1" />
+                <CheckCircle className="h-4 w-4 mr-1" />
                 Marcar como lida
               </Button>
             )}
@@ -158,7 +158,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
               onClick={handleDelete}
               className="h-7 text-xs text-destructive hover:text-destructive"
             >
-              <Trash2 className="h-3 w-3 mr-1" />
+              <Trash2 className="h-4 w-4 mr-1" />
               Excluir
             </Button>
           </div>

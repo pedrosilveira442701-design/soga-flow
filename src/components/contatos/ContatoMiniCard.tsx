@@ -32,12 +32,12 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
         <div className="flex-1 space-y-1.5 min-w-0">
           {contato.nome && (
             <div className="flex items-center gap-2">
-              <User className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <User className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
               <span className="text-sm font-semibold text-foreground truncate">{contato.nome}</span>
             </div>
           )}
           <div className="flex items-center gap-2 flex-wrap">
-            <Phone className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Phone className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium text-foreground truncate">{contato.telefone}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -50,7 +50,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               {contato.origem}
             </Badge>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
+              <Calendar className="h-4 w-4" />
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>
@@ -58,7 +58,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button size="sm" variant="ghost" onClick={() => onEdit(contato)} className="h-8 w-8 p-0">
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
@@ -66,7 +66,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             onClick={() => onDelete(contato)}
             className="h-8 w-8 p-0 text-destructive hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>

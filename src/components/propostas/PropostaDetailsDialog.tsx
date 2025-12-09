@@ -371,7 +371,7 @@ export default function PropostaDetailsDialog({
                   </div>
                   {margem < 20 && (
                     <div className="text-xs text-destructive mt-2 flex items-center gap-1">
-                      <TrendingDown className="h-3 w-3" />
+                      <TrendingDown className="h-4 w-4" />
                       Atenção: margem abaixo do recomendado
                     </div>
                   )}

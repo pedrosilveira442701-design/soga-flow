@@ -40,7 +40,7 @@ export function ContatosNaoConvertidos({ contatos, onConvertToLead }: ContatosNa
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-4 w-4" />
                   {format(new Date(contato.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </div>
               </div>

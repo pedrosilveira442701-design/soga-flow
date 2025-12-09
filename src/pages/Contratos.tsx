@@ -388,7 +388,7 @@ export default function Contratos() {
             <Badge key={filter.key} variant="secondary" className="gap-1">
               {filter.label}
               <X
-                className="h-3 w-3 cursor-pointer"
+                className="h-4 w-4 cursor-pointer"
                 onClick={() => {
                   if (filter.key === "status") setStatusFilter("all");
                   if (filter.key === "forma") setFormaPagamentoFilter("all");

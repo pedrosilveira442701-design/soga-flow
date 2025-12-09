@@ -26,7 +26,7 @@ export function ProximosVencimentos() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-5 w-5" />
             Próximos Vencimentos
           </CardTitle>
         </CardHeader>
@@ -44,7 +44,7 @@ export function ProximosVencimentos() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-5 w-5" />
             Próximos Vencimentos
           </CardTitle>
         </CardHeader>
@@ -61,7 +61,7 @@ export function ProximosVencimentos() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-5 w-5" />
           Próximos Vencimentos
         </CardTitle>
       </CardHeader>
@@ -85,7 +85,7 @@ export function ProximosVencimentos() {
                     {parcela.contrato?.cliente?.nome || "Cliente"}
                   </p>
                   {isAtrasado && (
-                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <AlertCircle className="h-5 w-5 text-destructive" />
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">

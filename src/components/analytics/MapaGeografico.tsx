@@ -503,11 +503,11 @@ export function MapaGeografico() {
                     </div>
                     <div className="flex gap-2 mt-3 flex-wrap">
                       <Button size="sm" variant="outline" onClick={handleAbrirCRM}>
-                        <ExternalLink className="h-3 w-3 mr-1" />
+                        <ExternalLink className="h-4 w-4 mr-1" />
                         Abrir no CRM
                       </Button>
                       <Button size="sm" variant="outline" onClick={handleVerRota}>
-                        <Navigation className="h-3 w-3 mr-1" />
+                        <Navigation className="h-4 w-4 mr-1" />
                         Ver Rota
                       </Button>
                       <Button
@@ -521,7 +521,7 @@ export function MapaGeografico() {
                           }
                         }}
                       >
-                        <RefreshCw className="h-3 w-3 mr-1" />
+                        <RefreshCw className="h-4 w-4 mr-1" />
                         Recalcular
                       </Button>
                     </div>
