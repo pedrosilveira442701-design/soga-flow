@@ -346,7 +346,10 @@ export default function Propostas() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Propostas</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <FileText className="icon-xl" />
+            Propostas
+          </h1>
           <p className="text-muted-foreground">
             Gerencie propostas comerciais com análise de margem
           </p>

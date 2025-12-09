@@ -61,7 +61,10 @@ export default function Obras() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Obras</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Building2 className="icon-xl" />
+            Obras
+          </h1>
           <p className="text-muted-foreground mt-2">
             Gestão operacional e acompanhamento de execução
           </p>
