@@ -1,14 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragOverEvent,
   PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
+  MeasuringStrategy,
 } from "@dnd-kit/core";
-import { useSortable } from "@dnd-kit/sortable";
+import { useSortable, SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard } from "./KanbanCard";
@@ -123,17 +131,53 @@ export function KanbanBoard({
   onNavigateToColumn,
 }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDraggingNearEdge, setIsDraggingNearEdge] = useState<"left" | "right" | null>(null);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const lastOverId = useRef<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
+
+  // Memoized list of all lead IDs for sortable context
+  const allLeadIds = useMemo(() => leads.map((lead) => lead.id), [leads]);
+
+  // Custom collision detection algorithm for better drop targeting
+  const collisionDetectionStrategy = (args: any) => {
+    // First, check if we're over a droppable column
+    const pointerCollisions = pointerWithin(args);
+    const intersectionCollisions = rectIntersection(args);
+    
+    // Get all collisions
+    const collisions = [...pointerCollisions, ...intersectionCollisions];
+    
+    // Find the first collision with a column (stage)
+    const columnCollision = collisions.find((collision) => 
+      STAGES.some((stage) => stage.id === collision.id)
+    );
+    
+    if (columnCollision) {
+      return [columnCollision];
+    }
+    
+    // Otherwise, use closest center for cards
+    return closestCenter(args);
+  };
 
   // Auto-scroll durante drag
   useEffect(() => {
@@ -155,22 +199,32 @@ export function KanbanBoard({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+    setOverId(null);
     document.body.style.cursor = "grabbing";
   };
 
-  const handleDragMove = (event: any) => {
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over, active } = event;
+    
+    if (!over) {
+      setOverId(null);
+      return;
+    }
+
+    const overId = over.id as string;
+    setOverId(overId);
+    lastOverId.current = overId;
+
+    // Handle horizontal auto-scroll
     if (!containerRef.current) return;
 
-    const { activatorEvent } = event;
-    if (!activatorEvent) return;
-
     const containerRect = containerRef.current.getBoundingClientRect();
-    const clientX = activatorEvent.clientX;
+    const pointerX = (event as any).activatorEvent?.clientX || 0;
     const edgeThreshold = 100;
 
-    if (clientX < containerRect.left + edgeThreshold) {
+    if (pointerX < containerRect.left + edgeThreshold) {
       setIsDraggingNearEdge("left");
-    } else if (clientX > containerRect.right - edgeThreshold) {
+    } else if (pointerX > containerRect.right - edgeThreshold) {
       setIsDraggingNearEdge("right");
     } else {
       setIsDraggingNearEdge(null);
@@ -181,37 +235,35 @@ export function KanbanBoard({
     const { active, over } = event;
     document.body.style.cursor = "";
 
-    if (!over) {
+    // Use lastOverId if over is null (edge case when dropping at column edges)
+    const targetId = over?.id ?? lastOverId.current;
+
+    if (!targetId) {
       setActiveId(null);
+      setOverId(null);
       setIsDraggingNearEdge(null);
       return;
     }
 
     const leadId = active.id as string;
+    const currentLead = leads.find((l) => l.id === leadId);
     let targetStage: LeadStage | null = null;
 
     // Check if dropped directly on a column
-    const isColumn = STAGES.some((stage) => stage.id === over.id);
+    const isColumn = STAGES.some((stage) => stage.id === targetId);
     
     if (isColumn) {
-      targetStage = over.id as LeadStage;
+      targetStage = targetId as LeadStage;
     } else {
       // Dropped on a card - find which column that card belongs to
-      const targetLead = leads.find((lead) => lead.id === over.id);
+      const targetLead = leads.find((lead) => lead.id === targetId);
       if (targetLead) {
         targetStage = targetLead.estagio;
       }
     }
 
-    // Debug: Log values before update
-    console.log("🔄 Kanban Drag End:", {
-      leadId,
-      overId: over.id,
-      targetStage,
-      isColumn,
-    });
-
-    if (targetStage) {
+    // Only update if stage actually changed
+    if (targetStage && currentLead && currentLead.estagio !== targetStage) {
       // Se estiver movendo para "perdido", solicitar motivo
       if (targetStage === "perdido" && onLossReasonRequired) {
         onLossReasonRequired(leadId, (motivo: string) => {
@@ -223,7 +275,17 @@ export function KanbanBoard({
     }
 
     setActiveId(null);
+    setOverId(null);
     setIsDraggingNearEdge(null);
+    lastOverId.current = null;
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+    setOverId(null);
+    setIsDraggingNearEdge(null);
+    lastOverId.current = null;
+    document.body.style.cursor = "";
   };
 
   const getLeadsByStage = (stage: string) => {
@@ -265,8 +327,22 @@ export function KanbanBoard({
     };
   }, [onNavigateToColumn]);
 
+  const measuringConfig = {
+    droppable: {
+      strategy: MeasuringStrategy.Always,
+    },
+  };
+
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragMove={handleDragMove}>
+    <DndContext 
+      sensors={sensors} 
+      collisionDetection={collisionDetectionStrategy}
+      measuring={measuringConfig}
+      onDragStart={handleDragStart} 
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd} 
+      onDragCancel={handleDragCancel}
+    >
       <div
         ref={containerRef}
         className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)] scroll-smooth"
@@ -309,6 +385,8 @@ export function KanbanBoard({
                 count={stageLeads.length}
                 color={stage.color}
                 viewMode={viewMode}
+                itemIds={stageLeads.map((l) => l.id)}
+                isOver={overId === stage.id || stageLeads.some((l) => l.id === overId)}
                 columnRef={(el) => {
                   columnRefs.current[index] = el;
                 }}
