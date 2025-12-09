@@ -21,6 +21,7 @@ import { useContatos, Contato } from "@/hooks/useContatos";
 import { usePropostas } from "@/hooks/usePropostas";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizeText } from "@/lib/fuzzySearch";
@@ -38,7 +39,8 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
 };
 
 export default function Leads() {
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [createDialogOpen, setCreateDialogOpen] = useState(searchParams.get("new") === "true");
   const [contatoDialogOpen, setContatoDialogOpen] = useState(false);
   const [editContatoDialogOpen, setEditContatoDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
