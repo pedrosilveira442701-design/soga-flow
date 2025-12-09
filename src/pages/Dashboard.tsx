@@ -88,7 +88,7 @@ export default function Dashboard() {
               asChild
               className="group relative overflow-hidden border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
             >
-              <Link to="/leads" className="flex items-center gap-3 px-6">
+              <Link to="/leads?new=true" className="flex items-center gap-3 px-6">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                   <UserPlus className="h-5 w-5 text-primary" strokeWidth={1.5} />
                 </div>
@@ -100,7 +100,7 @@ export default function Dashboard() {
               asChild
               className="group relative overflow-hidden shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
             >
-              <Link to="/propostas" className="flex items-center gap-3 px-6">
+              <Link to="/propostas?new=true" className="flex items-center gap-3 px-6">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
                   <FileText className="h-5 w-5" strokeWidth={1.5} />
                 </div>

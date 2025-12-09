@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,8 +64,9 @@ import { ptBR } from "date-fns/locale";
 import type { Proposta } from "@/hooks/usePropostas";
 
 export default function Propostas() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { propostas, isLoading, createProposta, updateStatus, deleteProposta } = usePropostas();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(searchParams.get("new") === "true");
   const [selectedProposta, setSelectedProposta] = useState<Proposta | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
