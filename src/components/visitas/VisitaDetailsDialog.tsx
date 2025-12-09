@@ -66,7 +66,7 @@ export function VisitaDetailsDialog({
     if (visita.realizada) {
       return (
         <Badge className="bg-green-500/10 text-green-700 border-green-500/20">
-          <Check className="h-3 w-3 mr-1" />
+          <Check className="h-4 w-4 mr-1" />
           Realizada
         </Badge>
       );

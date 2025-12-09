@@ -91,19 +91,19 @@ export function KanbanControls({
             <SelectContent>
               <SelectItem value="compact">
                 <div className="flex items-center gap-2">
-                  <Minimize2 className="h-3 w-3" />
+                  <Minimize2 className="h-4 w-4" />
                   Compacta
                 </div>
               </SelectItem>
               <SelectItem value="normal">
                 <div className="flex items-center gap-2">
-                  <Maximize2 className="h-3 w-3" />
+                  <Maximize2 className="h-4 w-4" />
                   Normal
                 </div>
               </SelectItem>
               <SelectItem value="detailed">
                 <div className="flex items-center gap-2">
-                  <Maximize2 className="h-3 w-3" />
+                  <Maximize2 className="h-4 w-4" />
                   Detalhada
                 </div>
               </SelectItem>

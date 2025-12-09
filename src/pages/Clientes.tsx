@@ -298,7 +298,7 @@ export default function Clientes() {
             <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t">
               {searchTerm && (
                 <Badge variant="secondary" className="gap-1 pr-1">
-                  <Search className="h-3 w-3" />
+                  <Search className="h-4 w-4" />
                   {searchTerm}
                   <Button
                     variant="ghost"
@@ -307,7 +307,7 @@ export default function Clientes() {
                     onClick={() => setSearchTerm("")}
                     aria-label="Remover filtro de busca"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </Badge>
               )}
@@ -321,7 +321,7 @@ export default function Clientes() {
                     onClick={() => setStatusFilter("todos")}
                     aria-label="Remover filtro de status"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </Badge>
               )}

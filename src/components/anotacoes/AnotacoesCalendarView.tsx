@@ -135,7 +135,7 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
                       } hover:shadow-sm transition-shadow`}
                     >
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3 flex-shrink-0" />
+                        <Clock className="h-4 w-4 flex-shrink-0" />
                         <span className="truncate">
                           {format(new Date(anotacao.reminder_datetime!), "HH:mm")} {anotacao.title}
                         </span>

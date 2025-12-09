@@ -94,7 +94,7 @@ export function ProximasVisitas() {
               <div className="space-y-1">
                 {dataVisita && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
+                    <Calendar className="h-4 w-4" />
                     <span>
                       {format(dataVisita, "dd 'de' MMMM", { locale: ptBR })}
                       {visita.hora && ` às ${visita.hora.slice(0, 5)}`}
@@ -104,14 +104,14 @@ export function ProximasVisitas() {
 
                 {visita.endereco && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
+                    <MapPin className="h-4 w-4" />
                     <span className="line-clamp-1">{visita.endereco}</span>
                   </div>
                 )}
 
                 {visita.responsavel && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <User className="h-3 w-3" />
+                    <User className="h-4 w-4" />
                     <span>{visita.responsavel}</span>
                   </div>
                 )}

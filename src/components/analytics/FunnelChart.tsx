@@ -65,7 +65,7 @@ export function FunnelChart({ data, isLoading }: FunnelChartProps) {
             <span className="font-medium">{data.taxa_conversao}%</span>
           </p>
           <p className="text-sm flex items-center gap-1">
-            <Clock className="h-3 w-3 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">Tempo médio:</span>{" "}
             <span className="font-medium">{data.tempo_medio_dias} dias</span>
           </p>
