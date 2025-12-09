@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 interface KanbanColumnProps {
   id: string;
@@ -12,6 +13,8 @@ interface KanbanColumnProps {
   additionalContent?: React.ReactNode;
   viewMode?: "compact" | "normal" | "detailed";
   columnRef?: (el: HTMLDivElement | null) => void;
+  itemIds?: string[];
+  isOver?: boolean;
 }
 
 export function KanbanColumn({
@@ -23,10 +26,14 @@ export function KanbanColumn({
   additionalContent,
   viewMode = "normal",
   columnRef,
+  itemIds = [],
+  isOver: externalIsOver,
 }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef, isOver: dropIsOver } = useDroppable({
     id,
   });
+
+  const isOver = externalIsOver ?? dropIsOver;
 
   const colorClasses = {
     default: "bg-brand-surface border-border",
@@ -50,6 +57,14 @@ export function KanbanColumn({
     }
   };
 
+  // Extract item IDs from children if not provided
+  const sortableItems = itemIds.length > 0 
+    ? itemIds 
+    : React.Children.toArray(children)
+        .filter((child): child is React.ReactElement => React.isValidElement(child))
+        .map((child) => child.key as string)
+        .filter(Boolean);
+
   return (
     <div ref={columnRef} className={`flex flex-col h-full ${columnWidth} scroll-mt-4`}>
       {/* Column Header */}
@@ -64,21 +79,39 @@ export function KanbanColumn({
       <div
         ref={mergeRefs}
         className={cn(
-          `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all duration-300`,
+          `flex-1 rounded-xl border-2 border-dashed ${padding} transition-all duration-200 min-h-[200px]`,
           isOver
             ? "border-primary bg-primary/10 ring-2 ring-primary/30 scale-[1.01] shadow-elev2"
             : colorClasses[color as keyof typeof colorClasses] || colorClasses.default,
         )}
       >
-        <div className={spacing}>
-          {additionalContent && (
-            <>
-              {additionalContent}
-              {children && <div className="border-t border-border/50 pt-3 mt-3" />}
-            </>
-          )}
-          {children}
-        </div>
+        <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
+          <div className={cn(spacing, "min-h-[60px]")}>
+            {additionalContent && (
+              <>
+                {additionalContent}
+                {children && <div className="border-t border-border/50 pt-3 mt-3" />}
+              </>
+            )}
+            {children}
+            
+            {/* Drop placeholder when column is empty or being hovered */}
+            {count === 0 && !additionalContent && (
+              <div 
+                className={cn(
+                  "flex items-center justify-center h-24 rounded-lg border-2 border-dashed transition-colors",
+                  isOver 
+                    ? "border-primary/50 bg-primary/5" 
+                    : "border-transparent"
+                )}
+              >
+                <span className="text-xs text-muted-foreground">
+                  {isOver ? "Solte aqui" : "Arraste cards para esta coluna"}
+                </span>
+              </div>
+            )}
+          </div>
+        </SortableContext>
       </div>
     </div>
   );
