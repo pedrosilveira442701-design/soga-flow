@@ -55,15 +55,15 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
   const getSituacaoIcon = () => {
     switch (meta.situacao) {
       case 'acima':
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
+        return <TrendingUp className="h-5 w-5 text-green-500" />;
       case 'no_ritmo':
-        return <Activity className="h-4 w-4 text-blue-500" />;
+        return <Activity className="h-5 w-5 text-blue-500" />;
       case 'atrasado':
-        return <TrendingDown className="h-4 w-4 text-red-500" />;
+        return <TrendingDown className="h-5 w-5 text-red-500" />;
       case 'concluido':
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       case 'cancelado':
-        return <XCircle className="h-4 w-4 text-muted-foreground" />;
+        return <XCircle className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -110,7 +110,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
+              <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -138,7 +138,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       {/* Responsável */}
       {meta.responsavel && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <User className="h-4 w-4" />
+          <User className="h-5 w-5" />
           <span>{meta.responsavel}</span>
         </div>
       )}
@@ -198,7 +198,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
         <div className="space-y-1 mb-4">
           {meta.alertas.map((alerta, index) => (
             <div key={index} className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-500">
-              <AlertTriangle className="h-3 w-3" />
+              <AlertTriangle className="h-5 w-5" />
               <span>{alerta}</span>
             </div>
           ))}
@@ -208,7 +208,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3 w-3" />
+          <Calendar className="h-4 w-4" />
           <span>
             {format(new Date(meta.periodo_inicio), "dd/MM/yy")} → {format(new Date(meta.periodo_fim), "dd/MM/yy")}
           </span>

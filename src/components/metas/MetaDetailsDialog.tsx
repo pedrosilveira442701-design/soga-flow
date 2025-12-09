@@ -119,8 +119,8 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
             {/* Informações Básicas */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-card border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Target className="h-4 w-4" />
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Target className="h-5 w-5" />
                   <span className="text-sm">Meta</span>
                 </div>
                 <div className="text-2xl font-bold">{formatarValor(meta.valor_alvo)}</div>
@@ -128,7 +128,7 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
 
               <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <DollarSign className="h-4 w-4" />
+                  <DollarSign className="h-5 w-5" />
                   <span className="text-sm">Falta</span>
                 </div>
                 <div className="text-2xl font-bold">{formatarValor(Math.max(0, valorRestante))}</div>
@@ -137,7 +137,7 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
               {meta.responsavel && (
                 <div className="bg-card border rounded-lg p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <User className="h-4 w-4" />
+                    <User className="h-5 w-5" />
                     <span className="text-sm">Responsável</span>
                   </div>
                   <div className="font-medium">{meta.responsavel}</div>
@@ -146,7 +146,7 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
 
               <div className="bg-card border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-5 w-5" />
                   <span className="text-sm">Tempo Restante</span>
                 </div>
                 <div className="text-xl font-bold">
@@ -166,13 +166,13 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
               <Progress value={Math.min(meta.tempoDecorrido, 100)} className="h-3 mb-2" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-4 w-4" />
                   {format(new Date(meta.periodo_inicio), "dd/MM/yy")}
                 </div>
                 <div>Hoje</div>
                 <div className="flex items-center gap-1">
                   {format(new Date(meta.periodo_fim), "dd/MM/yy")}
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-4 w-4" />
                 </div>
               </div>
             </div>
