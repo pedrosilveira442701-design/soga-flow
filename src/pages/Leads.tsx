@@ -1,4 +1,4 @@
-import { Plus, UserPlus } from "lucide-react";
+import { Plus, UserPlus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -439,7 +439,10 @@ export default function Leads() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h2 text-foreground mb-2">Leads</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <TrendingUp className="icon-xl" />
+            Leads
+          </h1>
           <p className="text-body text-muted-foreground">Gerencie o funil de vendas com drag & drop</p>
         </div>
 

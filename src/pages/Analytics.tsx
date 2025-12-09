@@ -64,7 +64,10 @@ export default function Analytics() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <BarChart3 className="icon-xl" />
+          Analytics
+        </h1>
         <p className="text-muted-foreground mt-1">
           Análise detalhada de funil, pipeline e performance
         </p>
