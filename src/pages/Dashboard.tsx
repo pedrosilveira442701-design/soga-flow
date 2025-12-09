@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, HandCoins, Receipt, XCircle, Clock, CheckCircle2, Wallet, TrendingUp } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, XCircle, Clock, CheckCircle2, Wallet, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
 import { FunnelChart } from "@/components/charts/FunnelChart";
@@ -81,13 +82,17 @@ export default function Dashboard() {
           </div>
           
           <div className="flex gap-3">
-            <Button variant="outline">
-              <UserPlus className="mr-3 h-5 w-5" strokeWidth={1.5} />
-              Novo Cliente
+            <Button variant="outline" asChild>
+              <Link to="/leads">
+                <UserPlus className="mr-3 h-5 w-5" strokeWidth={1.5} />
+                Adicionar Lead
+              </Link>
             </Button>
-            <Button>
-              <FileText className="mr-3 h-5 w-5" strokeWidth={1.5} />
-              Nova Proposta
+            <Button asChild>
+              <Link to="/propostas">
+                <FileText className="mr-3 h-5 w-5" strokeWidth={1.5} />
+                Nova Proposta
+              </Link>
             </Button>
           </div>
         </div>
