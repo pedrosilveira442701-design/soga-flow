@@ -38,6 +38,7 @@ import {
   FileText,
   FileCheck,
   ExternalLink,
+  CreditCard,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -228,6 +229,16 @@ export default function PropostaDetailsDialog({
                   </div>
                 </div>
               </div>
+              {proposta.forma_pagamento && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
+                  <CreditCard className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="flex-1">
+                    <div className="text-xs text-muted-foreground mb-1">Forma de Pagamento</div>
+                    <div className="font-semibold">{proposta.forma_pagamento}</div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
             {/* Serviços */}
@@ -415,6 +426,7 @@ export default function PropostaDetailsDialog({
                 custo_m2: s.custo_m2 || 0,
               })),
               desconto,
+              forma_pagamento: proposta.forma_pagamento || "",
               data: proposta.data,
               status: proposta.status,
               observacao: proposta.observacao,
