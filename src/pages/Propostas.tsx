@@ -586,6 +586,7 @@ export default function Propostas() {
                 <SortIcon column="valor" />
               </TableHead>
               <TableHead className="text-right">Margem</TableHead>
+              <TableHead className="text-right">Valor Margem</TableHead>
               <TableHead onClick={() => handleSort("status")} className="group">
                 Status
                 <SortIcon column="status" />
@@ -600,7 +601,7 @@ export default function Propostas() {
           <TableBody>
             {sortedPropostas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12">
+                <TableCell colSpan={9} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <FileText className="h-12 w-12 text-muted-foreground" />
                     <p className="text-lg font-medium">Nenhuma proposta encontrada</p>
@@ -667,6 +668,9 @@ export default function Propostas() {
                       <span className={`font-bold ${getMargemColor(margem)}`}>
                         {margem.toFixed(1)}%
                       </span>
+                    </TableCell>
+                    <TableCell className="text-right font-medium text-primary">
+                      {formatCurrency(liquido)}
                     </TableCell>
                     <TableCell>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
                     <TableCell>
