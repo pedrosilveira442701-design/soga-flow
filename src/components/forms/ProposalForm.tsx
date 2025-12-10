@@ -75,22 +75,13 @@ const servicoSchema = z
     },
   );
 
-const FORMAS_PAGAMENTO = [
-  "À Vista",
-  "Boleto",
-  "Cartão de Crédito",
-  "Cartão de Débito",
-  "PIX",
-  "Transferência Bancária",
-  "Cheque",
-] as const;
-
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
   lead_id: z.string().optional(),
   servicos: z.array(servicoSchema).min(1, "Adicione pelo menos um serviço"),
   desconto: z.number().min(0, "Desconto não pode ser negativo").default(0),
-  forma_pagamento: z.string().optional(),
+  valor_entrada: z.number().min(0, "Entrada não pode ser negativa").default(0),
+  numero_parcelas: z.number().min(0, "Número de parcelas não pode ser negativo").default(0),
   data: z.string().optional(),
   status: z.string().optional(),
   observacao: z.string().optional(),
