@@ -23,6 +23,7 @@ import {
   Send,
   Loader2,
   FileBarChart,
+  BarChart3,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -89,10 +90,8 @@ const timezones = [
   { value: "America/Rio_Branco", label: "Rio Branco (GMT-5)" },
 ];
 
-// ✅ Intervalo do horário do relatório
 const REPORT_INTERVAL_MINUTES = 15;
 
-// ✅ Gera lista HH:mm:00 de 15 em 15 minutos
 const reportTimes = Array.from({ length: (24 * 60) / REPORT_INTERVAL_MINUTES }, (_, i) => {
   const totalMinutes = i * REPORT_INTERVAL_MINUTES;
   const hh = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
@@ -100,10 +99,26 @@ const reportTimes = Array.from({ length: (24 * 60) / REPORT_INTERVAL_MINUTES }, 
   return { value: `${hh}:${mm}:00`, label: `${hh}:${mm}` };
 });
 
+const diasSemana = [
+  { value: 0, label: "Domingo" },
+  { value: 1, label: "Segunda-feira" },
+  { value: 2, label: "Terça-feira" },
+  { value: 3, label: "Quarta-feira" },
+  { value: 4, label: "Quinta-feira" },
+  { value: 5, label: "Sexta-feira" },
+  { value: 6, label: "Sábado" },
+];
+
+const diasMes = Array.from({ length: 31 }, (_, i) => ({
+  value: i + 1,
+  label: `Dia ${i + 1}`,
+}));
+
 export default function NotificationSettings() {
   const { preferences, isLoading, updatePreferences, resetToDefaults } = useNotificationPreferences();
   const [customEmail, setCustomEmail] = useState(preferences?.email_customizado || "");
   const [isSendingReport, setIsSendingReport] = useState(false);
+  const [isSendingManagementReport, setIsSendingManagementReport] = useState(false);
 
   useEffect(() => {
     if (preferences?.email_customizado) {
@@ -182,6 +197,68 @@ export default function NotificationSettings() {
       toast.error(error.message || "Erro ao enviar relatório");
     } finally {
       setIsSendingReport(false);
+    }
+  };
+
+  // ========== Management Report Handlers ==========
+  const handleGestaoToggle = () => {
+    updatePreferences({ relatorio_gestao_ativo: !preferences?.relatorio_gestao_ativo });
+  };
+
+  const handleGestaoFrequenciaChange = (value: string) => {
+    updatePreferences({ relatorio_gestao_frequencia: value });
+  };
+
+  const handleGestaoHoraChange = (value: string) => {
+    updatePreferences({ relatorio_gestao_hora: value });
+  };
+
+  const handleGestaoDiaSemanaChange = (value: string) => {
+    updatePreferences({ relatorio_gestao_dia_semana: parseInt(value) });
+  };
+
+  const handleGestaoDiaMesChange = (value: string) => {
+    updatePreferences({ relatorio_gestao_dia_mes: parseInt(value) });
+  };
+
+  const handleGestaoEmailToggle = () => {
+    updatePreferences({ relatorio_gestao_email: !preferences?.relatorio_gestao_email });
+  };
+
+  const handleGestaoInappToggle = () => {
+    updatePreferences({ relatorio_gestao_inapp: !preferences?.relatorio_gestao_inapp });
+  };
+
+  const handleSendManagementReportNow = async () => {
+    try {
+      setIsSendingManagementReport(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+
+      const response = await supabase.functions.invoke("send-management-report", {
+        body: { userId: user.id, immediate: true },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      if (result.success) {
+        toast.success(result.message || "Relatório de gestão enviado com sucesso!");
+      } else {
+        throw new Error(result.error || "Erro ao enviar relatório de gestão");
+      }
+    } catch (error: any) {
+      console.error("Error sending management report:", error);
+      toast.error(error.message || "Erro ao enviar relatório de gestão");
+    } finally {
+      setIsSendingManagementReport(false);
     }
   };
 
@@ -505,6 +582,268 @@ export default function NotificationSettings() {
           {preferences?.relatorio_ultimo_envio && (
             <p className="text-xs text-muted-foreground">
               Último envio: {new Date(preferences.relatorio_ultimo_envio).toLocaleString("pt-BR")}
+            </p>
+          )}
+        </div>
+      </Card>
+
+      {/* Management Report Section */}
+      <Card className="p-6">
+        <div className="space-y-6">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mt-1">
+              <BarChart3 className="h-5 w-5 text-purple-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">Relatório de Gestão (Overview)</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Resumo automático de leads, propostas, obras, financeiro e regiões
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Enable/Disable Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="gestao-ativo" className="text-base font-medium">
+                Ativar Relatório de Gestão
+              </Label>
+              <p className="text-sm text-muted-foreground">Envio automático conforme frequência configurada</p>
+            </div>
+            <Switch
+              id="gestao-ativo"
+              checked={preferences?.relatorio_gestao_ativo}
+              onCheckedChange={handleGestaoToggle}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Frequency Selection */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Frequência de Envio</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Frequência</Label>
+                <Select
+                  value={preferences?.relatorio_gestao_frequencia || "diaria"}
+                  onValueChange={handleGestaoFrequenciaChange}
+                  disabled={!preferences?.relatorio_gestao_ativo}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a frequência" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="diaria">Diária</SelectItem>
+                    <SelectItem value="semanal">Semanal</SelectItem>
+                    <SelectItem value="mensal">Mensal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Horário de Envio</Label>
+                <Select
+                  value={preferences?.relatorio_gestao_hora || "08:00:00"}
+                  onValueChange={handleGestaoHoraChange}
+                  disabled={!preferences?.relatorio_gestao_ativo}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o horário" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {reportTimes.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {preferences?.relatorio_gestao_frequencia === "semanal" && (
+                <div className="space-y-2">
+                  <Label>Dia da Semana</Label>
+                  <Select
+                    value={String(preferences?.relatorio_gestao_dia_semana ?? 1)}
+                    onValueChange={handleGestaoDiaSemanaChange}
+                    disabled={!preferences?.relatorio_gestao_ativo}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o dia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {diasSemana.map((dia) => (
+                        <SelectItem key={dia.value} value={String(dia.value)}>
+                          {dia.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {preferences?.relatorio_gestao_frequencia === "mensal" && (
+                <div className="space-y-2">
+                  <Label>Dia do Mês</Label>
+                  <Select
+                    value={String(preferences?.relatorio_gestao_dia_mes ?? 1)}
+                    onValueChange={handleGestaoDiaMesChange}
+                    disabled={!preferences?.relatorio_gestao_ativo}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o dia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {diasMes.map((dia) => (
+                        <SelectItem key={dia.value} value={String(dia.value)}>
+                          {dia.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Channels */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Canais de Entrega</Label>
+            <div className="flex flex-wrap gap-6">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="gestao-email"
+                  checked={preferences?.relatorio_gestao_email}
+                  onCheckedChange={handleGestaoEmailToggle}
+                  disabled={!preferences?.relatorio_gestao_ativo}
+                />
+                <Label htmlFor="gestao-email" className="flex items-center gap-2 cursor-pointer">
+                  <Mail className="h-5 w-5" />
+                  <span>E-mail</span>
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="gestao-inapp"
+                  checked={preferences?.relatorio_gestao_inapp}
+                  onCheckedChange={handleGestaoInappToggle}
+                  disabled={!preferences?.relatorio_gestao_ativo}
+                />
+                <Label
+                  htmlFor="gestao-inapp"
+                  className="flex items-center gap-2 cursor-pointer text-muted-foreground"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span>In-app (em breve)</span>
+                </Label>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Report Content Description */}
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Conteúdo do Relatório</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                  <span className="font-medium text-sm">Leads</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Sem movimentação 24h/72h, novos no período
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-green-500" />
+                  <span className="font-medium text-sm">Propostas</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Abertas, fechadas, perdidas, em repouso
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building className="h-4 w-4 text-orange-500" />
+                  <span className="font-medium text-sm">Obras</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Ativas, paradas, sem fotos/registros
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  <span className="font-medium text-sm">Financeiro</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Parcelas vencidas/a vencer, contratos ativos
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-4 w-4 text-red-500" />
+                  <span className="font-medium text-sm">Tarefas & Metas</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Vencidas, atrasadas, atingidas no período
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="h-4 w-4 text-purple-500" />
+                  <span className="font-medium text-sm">Geográfico</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Propostas por região, taxa de conversão
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={handleSendManagementReportNow}
+              disabled={isSendingManagementReport || !preferences?.relatorio_gestao_email}
+              className="gap-2"
+              variant="default"
+            >
+              {isSendingManagementReport ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Send className="h-5 w-5" />
+                  Enviar Agora
+                </>
+              )}
+            </Button>
+            <p className="text-sm text-muted-foreground self-center">
+              Dispara o relatório de gestão imediatamente
+            </p>
+          </div>
+
+          {preferences?.relatorio_gestao_ultimo_envio && (
+            <p className="text-xs text-muted-foreground">
+              Último envio: {new Date(preferences.relatorio_gestao_ultimo_envio).toLocaleString("pt-BR")}
             </p>
           )}
         </div>

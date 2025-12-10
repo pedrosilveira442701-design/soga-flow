@@ -2,3 +2,6 @@ project_id = "jtfvqbgqenrsmsmmbydu"
 
 [functions.send-daily-report]
 verify_jwt = false
+
+[functions.send-management-report]
+verify_jwt = false

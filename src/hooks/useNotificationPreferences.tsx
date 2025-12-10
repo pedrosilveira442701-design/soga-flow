@@ -48,6 +48,13 @@ export const useNotificationPreferences = () => {
           relatorio_diario_inapp: false,
           relatorio_propostas_abertas: true,
           relatorio_propostas_repouso: true,
+          relatorio_gestao_ativo: false,
+          relatorio_gestao_frequencia: "diaria",
+          relatorio_gestao_hora: "08:00:00",
+          relatorio_gestao_dia_semana: 1,
+          relatorio_gestao_dia_mes: 1,
+          relatorio_gestao_email: true,
+          relatorio_gestao_inapp: false,
         };
 
         const { data: newData, error: insertError } = await supabase
@@ -119,6 +126,14 @@ export const useNotificationPreferences = () => {
         relatorio_propostas_abertas: true,
         relatorio_propostas_repouso: true,
         relatorio_ultimo_envio: null,
+        relatorio_gestao_ativo: false,
+        relatorio_gestao_frequencia: "diaria",
+        relatorio_gestao_hora: "08:00:00",
+        relatorio_gestao_dia_semana: 1,
+        relatorio_gestao_dia_mes: 1,
+        relatorio_gestao_email: true,
+        relatorio_gestao_inapp: false,
+        relatorio_gestao_ultimo_envio: null,
       };
 
       const { error } = await supabase
