@@ -716,6 +716,14 @@ export type Database = {
           relatorio_diario_hora: string
           relatorio_diario_inapp: boolean
           relatorio_diario_timezone: string
+          relatorio_gestao_ativo: boolean
+          relatorio_gestao_dia_mes: number | null
+          relatorio_gestao_dia_semana: number | null
+          relatorio_gestao_email: boolean
+          relatorio_gestao_frequencia: string
+          relatorio_gestao_hora: string
+          relatorio_gestao_inapp: boolean
+          relatorio_gestao_ultimo_envio: string | null
           relatorio_propostas_abertas: boolean
           relatorio_propostas_repouso: boolean
           relatorio_ultimo_envio: string | null
@@ -747,6 +755,14 @@ export type Database = {
           relatorio_diario_hora?: string
           relatorio_diario_inapp?: boolean
           relatorio_diario_timezone?: string
+          relatorio_gestao_ativo?: boolean
+          relatorio_gestao_dia_mes?: number | null
+          relatorio_gestao_dia_semana?: number | null
+          relatorio_gestao_email?: boolean
+          relatorio_gestao_frequencia?: string
+          relatorio_gestao_hora?: string
+          relatorio_gestao_inapp?: boolean
+          relatorio_gestao_ultimo_envio?: string | null
           relatorio_propostas_abertas?: boolean
           relatorio_propostas_repouso?: boolean
           relatorio_ultimo_envio?: string | null
@@ -778,6 +794,14 @@ export type Database = {
           relatorio_diario_hora?: string
           relatorio_diario_inapp?: boolean
           relatorio_diario_timezone?: string
+          relatorio_gestao_ativo?: boolean
+          relatorio_gestao_dia_mes?: number | null
+          relatorio_gestao_dia_semana?: number | null
+          relatorio_gestao_email?: boolean
+          relatorio_gestao_frequencia?: string
+          relatorio_gestao_hora?: string
+          relatorio_gestao_inapp?: boolean
+          relatorio_gestao_ultimo_envio?: string | null
           relatorio_propostas_abertas?: boolean
           relatorio_propostas_repouso?: boolean
           relatorio_ultimo_envio?: string | null
