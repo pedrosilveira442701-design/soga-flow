@@ -469,6 +469,7 @@ const handler = async (req: Request): Promise<Response> => {
           };
         }
 
+        // Todas as parcelas pendentes (vencidas + a vencer)
         const parcelasVencidas = (parcelas || []).filter(p => p.status === "atrasado" || (p.status === "pendente" && new Date(p.vencimento) < now));
         const parcelasAVencer = (parcelas || []).filter(p => {
           const venc = new Date(p.vencimento);
@@ -477,49 +478,116 @@ const handler = async (req: Request): Promise<Response> => {
         
         const contratosAtivos = (contratos || []).filter(c => c.status === "ativo");
 
-        // Calculate bruto vs liquido for vencidas
-        // valor_liquido_parcela é o valor da parcela (bruto a receber)
-        // O líquido real (margem) = bruto × (margem_pct / 100)
+        // ===== CÁLCULOS FINANCEIROS =====
+        // Bruto = valor da parcela (o que recebo)
+        // Líquido = bruto × (margem_pct / 100) = lucro real após descontar custos
+
+        // Parcelas VENCIDAS (em atraso)
         const valorBrutoVencidas = parcelasVencidas.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
-        
-        // Calcular o valor líquido real (margem) baseado na margem do contrato
         let valorLiquidoVencidas = 0;
         for (const p of parcelasVencidas) {
           const contrato = contratoMap[p.contrato_id];
           const valorParcela = p.valor_liquido_parcela || 0;
           if (contrato && contrato.margemPct > 0) {
-            // Líquido (margem) = valor da parcela × margem%
             valorLiquidoVencidas += valorParcela * (contrato.margemPct / 100);
-          } else {
-            // Sem margem definida, assume 0 de lucro
-            valorLiquidoVencidas += 0;
           }
         }
 
-        // Enrich parcelas a vencer with client names
+        // Parcelas A VENCER
+        const valorBrutoAVencer = parcelasAVencer.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
+        let valorLiquidoAVencer = 0;
+        for (const p of parcelasAVencer) {
+          const contrato = contratoMap[p.contrato_id];
+          const valorParcela = p.valor_liquido_parcela || 0;
+          if (contrato && contrato.margemPct > 0) {
+            valorLiquidoAVencer += valorParcela * (contrato.margemPct / 100);
+          }
+        }
+
+        // TOTAL A RECEBER (vencidas + a vencer)
+        const totalBrutoAReceber = valorBrutoVencidas + valorBrutoAVencer;
+        const totalLiquidoAReceber = valorLiquidoVencidas + valorLiquidoAVencer;
+
+        // Enriquecer parcelas com nomes dos clientes
+        const parcelasVencidasEnriquecidas = parcelasVencidas
+          .map(p => ({
+            ...p,
+            clienteNome: contratoMap[p.contrato_id]?.clienteNome || 'N/A'
+          }))
+          .sort((a, b) => new Date(a.vencimento).getTime() - new Date(b.vencimento).getTime());
+
         const parcelasAVencerEnriquecidas = parcelasAVencer.map(p => ({
           ...p,
           clienteNome: contratoMap[p.contrato_id]?.clienteNome || 'N/A'
         }));
 
-        const valorParcelasAVencer = parcelasAVencer.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
-
-        // Build financeiro HTML with table for parcelas
+        // Build financeiro HTML com todas as informações
         const financeiroHtml = `
           <div style="margin-bottom: 24px;">
             <h3 style="color: #374151; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-              💰 Financeiro
+              💰 Financeiro (Todo o Período)
             </h3>
-            <ul style="margin: 0; padding-left: 20px; color: #4b5563; margin-bottom: 16px;">
-              <li style="margin-bottom: 6px;">Parcelas vencidas: <strong>${parcelasVencidas.length}</strong></li>
-              <li style="margin-bottom: 6px; padding-left: 20px; color: #6b7280;">
-                Valor bruto: <strong>${formatCurrency(valorBrutoVencidas)}</strong> | Valor líquido (margem): <strong>${formatCurrency(valorLiquidoVencidas)}</strong>
-              </li>
-              <li style="margin-bottom: 6px;">Contratos ativos: <strong>${contratosAtivos.length}</strong></li>
-            </ul>
             
-            <h4 style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">📅 Parcelas a Vencer (${parcelasAVencer.length}) - Total: ${formatCurrency(valorParcelasAVencer)}</h4>
-            ${generateParcelasTable(parcelasAVencerEnriquecidas)}
+            <!-- TOTAL A RECEBER -->
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <h4 style="color: #166534; font-size: 14px; margin: 0 0 8px 0;">📊 Total a Receber</h4>
+              <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Bruto:</span><br/>
+                  <strong style="color: #166534; font-size: 18px;">${formatCurrency(totalBrutoAReceber)}</strong>
+                </div>
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Líquido (margem):</span><br/>
+                  <strong style="color: #166534; font-size: 18px;">${formatCurrency(totalLiquidoAReceber)}</strong>
+                </div>
+              </div>
+              <p style="color: #6b7280; font-size: 11px; margin: 8px 0 0 0;">
+                ${parcelasVencidas.length + parcelasAVencer.length} parcelas (${parcelasVencidas.length} vencidas + ${parcelasAVencer.length} a vencer)
+              </p>
+            </div>
+
+            <!-- PARCELAS EM ATRASO -->
+            ${parcelasVencidas.length > 0 ? `
+            <div style="background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <h4 style="color: #991b1b; font-size: 14px; margin: 0 0 8px 0;">⚠️ Parcelas em Atraso (${parcelasVencidas.length})</h4>
+              <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Bruto:</span><br/>
+                  <strong style="color: #991b1b; font-size: 16px;">${formatCurrency(valorBrutoVencidas)}</strong>
+                </div>
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Líquido (margem):</span><br/>
+                  <strong style="color: #991b1b; font-size: 16px;">${formatCurrency(valorLiquidoVencidas)}</strong>
+                </div>
+              </div>
+              ${generateParcelasTable(parcelasVencidasEnriquecidas)}
+            </div>
+            ` : `
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <p style="color: #166534; margin: 0;">✅ Nenhuma parcela em atraso</p>
+            </div>
+            `}
+
+            <!-- PARCELAS A VENCER -->
+            <div style="background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+              <h4 style="color: #1e40af; font-size: 14px; margin: 0 0 8px 0;">📅 Parcelas a Vencer (${parcelasAVencer.length})</h4>
+              <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px;">
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Bruto:</span><br/>
+                  <strong style="color: #1e40af; font-size: 16px;">${formatCurrency(valorBrutoAVencer)}</strong>
+                </div>
+                <div>
+                  <span style="color: #4b5563; font-size: 12px;">Valor Líquido (margem):</span><br/>
+                  <strong style="color: #1e40af; font-size: 16px;">${formatCurrency(valorLiquidoAVencer)}</strong>
+                </div>
+              </div>
+              ${generateParcelasTable(parcelasAVencerEnriquecidas)}
+            </div>
+
+            <!-- INFO CONTRATOS -->
+            <p style="color: #6b7280; font-size: 12px; margin: 0;">
+              Contratos ativos: <strong>${contratosAtivos.length}</strong>
+            </p>
           </div>
         `;
 
