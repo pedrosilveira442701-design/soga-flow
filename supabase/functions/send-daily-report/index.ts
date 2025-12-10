@@ -296,7 +296,7 @@ const handler = async (req: Request): Promise<Response> => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: Deno.env.get("REMINDERS_FROM_EMAIL") || "Só Garagens <onboarding@resend.dev>",
+            from: "Só Garagens <no-reply@sogaragens.com.br>",
             to: [userEmail],
             subject: `📊 Relatório Diário - Só Garagens Hub`,
             html: emailHtml,
