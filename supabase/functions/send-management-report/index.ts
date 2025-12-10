@@ -478,21 +478,21 @@ const handler = async (req: Request): Promise<Response> => {
         const contratosAtivos = (contratos || []).filter(c => c.status === "ativo");
 
         // Calculate bruto vs liquido for vencidas
-        const valorLiquidoVencidas = parcelasVencidas.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
+        // valor_liquido_parcela é o valor da parcela (bruto a receber)
+        // O líquido real (margem) = bruto × (margem_pct / 100)
+        const valorBrutoVencidas = parcelasVencidas.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
         
-        // For bruto we need to calculate from contrato valor_negociado / numero_parcelas
-        // But simpler: bruto = liquido / (1 - margem_pct/100) approximately
-        // Or we can estimate bruto from the contrato
-        let valorBrutoVencidas = 0;
+        // Calcular o valor líquido real (margem) baseado na margem do contrato
+        let valorLiquidoVencidas = 0;
         for (const p of parcelasVencidas) {
           const contrato = contratoMap[p.contrato_id];
+          const valorParcela = p.valor_liquido_parcela || 0;
           if (contrato && contrato.margemPct > 0) {
-            // Bruto = Liquido / (margem_pct / 100) approximately
-            // Actually bruto = liquido + (liquido * margem / (100 - margem))
-            // Simpler: just show liquido for now and note it
-            valorBrutoVencidas += (p.valor_liquido_parcela || 0) / ((100 - contrato.margemPct) / 100);
+            // Líquido (margem) = valor da parcela × margem%
+            valorLiquidoVencidas += valorParcela * (contrato.margemPct / 100);
           } else {
-            valorBrutoVencidas += p.valor_liquido_parcela || 0;
+            // Sem margem definida, assume 0 de lucro
+            valorLiquidoVencidas += 0;
           }
         }
 
