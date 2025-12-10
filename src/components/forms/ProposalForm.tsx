@@ -106,7 +106,8 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
       lead_id: initialData?.lead_id || "",
       servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
       desconto: initialData?.desconto || 0,
-      forma_pagamento: initialData?.forma_pagamento || "",
+      valor_entrada: initialData?.valor_entrada || 0,
+      numero_parcelas: initialData?.numero_parcelas || 0,
       data: initialData?.data || formatDateToLocal(new Date()),
       status: initialData?.status || "aberta",
       observacao: initialData?.observacao || "",
@@ -402,31 +403,50 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
               )}
             />
 
-            {/* Campo de Forma de Pagamento */}
-            <FormField
-              control={form.control}
-              name="forma_pagamento"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Forma de Pagamento</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+            {/* Campos de Forma de Pagamento */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="valor_entrada"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor da Entrada (R$)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a forma de pagamento" />
-                      </SelectTrigger>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {FORMAS_PAGAMENTO.map((forma) => (
-                        <SelectItem key={forma} value={forma}>
-                          {forma}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="numero_parcelas"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Parcelas</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="1"
+                        min="0"
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
