@@ -125,6 +125,39 @@ const generateSection = (title: string, icon: string, items: string[]): string =
   `;
 };
 
+// Generate parcelas table for "a vencer"
+const generateParcelasTable = (parcelas: any[]): string => {
+  if (parcelas.length === 0) {
+    return `<p style="color: #6b7280; font-style: italic;">Nenhuma parcela a vencer</p>`;
+  }
+
+  const rows = parcelas.slice(0, 15).map(p => `
+    <tr>
+      <td style="padding: 6px 10px; border-bottom: 1px solid #e5e7eb;">${p.clienteNome || 'N/A'}</td>
+      <td style="padding: 6px 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${formatDate(p.vencimento)}</td>
+      <td style="padding: 6px 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatCurrency(p.valor_liquido_parcela)}</td>
+    </tr>
+  `).join("");
+
+  return `
+    <div style="overflow-x: auto; margin-top: 8px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+        <thead>
+          <tr style="background-color: #f3f4f6;">
+            <th style="padding: 8px 10px; text-align: left; border-bottom: 2px solid #d1d5db;">Cliente</th>
+            <th style="padding: 8px 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Vencimento</th>
+            <th style="padding: 8px 10px; text-align: right; border-bottom: 2px solid #d1d5db;">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+      ${parcelas.length > 15 ? `<p style="color: #6b7280; font-size: 12px; margin-top: 8px;">... e mais ${parcelas.length - 15} parcelas</p>` : ''}
+    </div>
+  `;
+};
+
 // Generate geographic table
 const generateGeographicTable = (regionData: any[]): string => {
   if (regionData.length === 0) {
@@ -138,6 +171,17 @@ const generateGeographicTable = (regionData: any[]): string => {
     `;
   }
 
+  // Calculate totals
+  const totals = regionData.reduce((acc, r) => ({
+    abertas: acc.abertas + r.abertas,
+    fechadas: acc.fechadas + r.fechadas,
+    repouso: acc.repouso + r.repouso,
+    perdidas: acc.perdidas + r.perdidas,
+    total: acc.total + r.total,
+  }), { abertas: 0, fechadas: 0, repouso: 0, perdidas: 0, total: 0 });
+
+  const totalConversao = totals.total > 0 ? (totals.fechadas / totals.total) * 100 : 0;
+
   const rows = regionData.slice(0, 10).map(r => `
     <tr>
       <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${r.regiao}</td>
@@ -145,6 +189,7 @@ const generateGeographicTable = (regionData: any[]): string => {
       <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${r.fechadas}</td>
       <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${r.repouso}</td>
       <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center;">${r.perdidas}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: 600;">${r.total}</td>
       <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: 600; color: ${r.conversao >= 50 ? '#059669' : r.conversao >= 25 ? '#d97706' : '#dc2626'};">
         ${r.conversao.toFixed(1)}%
       </td>
@@ -153,7 +198,7 @@ const generateGeographicTable = (regionData: any[]): string => {
 
   return `
     <div style="margin-bottom: 24px;">
-      <h3 style="color: #374151; font-size: 16px; margin-bottom: 12px;">📍 Resumo Geográfico (Top 10 Regiões)</h3>
+      <h3 style="color: #374151; font-size: 16px; margin-bottom: 12px;">📍 Resumo Geográfico (Top 10 Regiões - por quantidade)</h3>
       <div style="overflow-x: auto;">
         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
           <thead>
@@ -163,11 +208,23 @@ const generateGeographicTable = (regionData: any[]): string => {
               <th style="padding: 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Fechadas</th>
               <th style="padding: 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Repouso</th>
               <th style="padding: 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Perdidas</th>
+              <th style="padding: 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Total</th>
               <th style="padding: 10px; text-align: center; border-bottom: 2px solid #d1d5db;">Conversão</th>
             </tr>
           </thead>
           <tbody>
             ${rows}
+            <tr style="background-color: #f9fafb; font-weight: 700;">
+              <td style="padding: 10px; border-top: 2px solid #d1d5db;">TOTAL GERAL</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center;">${totals.abertas}</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center;">${totals.fechadas}</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center;">${totals.repouso}</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center;">${totals.perdidas}</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center;">${totals.total}</td>
+              <td style="padding: 10px; border-top: 2px solid #d1d5db; text-align: center; color: ${totalConversao >= 50 ? '#059669' : totalConversao >= 25 ? '#d97706' : '#dc2626'};">
+                ${totalConversao.toFixed(1)}%
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -203,7 +260,7 @@ const generateEmailHtml = (data: any, frequencia: string): string => {
         ${generateSection("Leads", "🎯", data.leads)}
         ${generateSection("Propostas", "📋", data.propostas)}
         ${generateSection("Obras", "🏗️", data.obras)}
-        ${generateSection("Financeiro", "💰", data.financeiro)}
+        ${data.financeiroHtml}
         ${generateSection("Tarefas & Metas", "✅", data.tarefas)}
         ${generateGeographicTable(data.geografico)}
       </div>
@@ -320,10 +377,12 @@ const handler = async (req: Request): Promise<Response> => {
 
         console.log(`Processing management report for ${userName} (${userEmail})`);
 
-        // Calculate time ranges based on frequency
+        // Calculate time ranges
         const now = new Date();
-        let periodStart: Date;
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
         
+        let periodStart: Date;
         if (pref.relatorio_gestao_frequencia === "semanal") {
           periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         } else if (pref.relatorio_gestao_frequencia === "mensal") {
@@ -332,7 +391,6 @@ const handler = async (req: Request): Promise<Response> => {
           periodStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         }
 
-        const periodStartStr = periodStart.toISOString();
         const periodLabel = pref.relatorio_gestao_frequencia === "semanal" ? "7 dias" : 
                            pref.relatorio_gestao_frequencia === "mensal" ? "30 dias" : "24h";
 
@@ -360,15 +418,17 @@ const handler = async (req: Request): Promise<Response> => {
         // ========== PROPOSTAS DATA ==========
         const { data: propostas } = await supabaseClient
           .from("propostas")
-          .select("id, status, valor_total, created_at, updated_at, cliente:clientes(nome, bairro, cidade)")
+          .select("id, status, valor_total, liquido, created_at, updated_at, cliente:clientes(nome, bairro, cidade)")
           .eq("user_id", pref.user_id);
 
         const propostasAbertas = (propostas || []).filter(p => p.status === "aberta");
-        const propostasFechadas = (propostas || []).filter(p => p.status === "fechada" && new Date(p.updated_at) >= periodStart);
-        const propostasPerdidas = (propostas || []).filter(p => p.status === "perdida" && new Date(p.updated_at) >= periodStart);
+        const propostasFechadasMes = (propostas || []).filter(p => p.status === "fechada" && new Date(p.updated_at) >= startOfMonth);
+        const propostasFechadasAno = (propostas || []).filter(p => p.status === "fechada" && new Date(p.updated_at) >= startOfYear);
+        const propostasPerdidasMes = (propostas || []).filter(p => p.status === "perdida" && new Date(p.updated_at) >= startOfMonth);
         const propostasRepouso = (propostas || []).filter(p => p.status === "repouso");
 
         const valorPropostasAbertas = propostasAbertas.reduce((sum, p) => sum + (p.valor_total || 0), 0);
+        const margemLiquidaAbertas = propostasAbertas.reduce((sum, p) => sum + (p.liquido || 0), 0);
 
         // ========== OBRAS DATA ==========
         const { data: obras } = await supabaseClient
@@ -390,23 +450,78 @@ const handler = async (req: Request): Promise<Response> => {
         // ========== FINANCEIRO DATA ==========
         const { data: parcelas } = await supabaseClient
           .from("financeiro_parcelas")
-          .select("id, status, vencimento, valor_liquido_parcela")
+          .select("id, status, vencimento, valor_liquido_parcela, contrato_id")
           .eq("user_id", pref.user_id);
 
         const { data: contratos } = await supabaseClient
           .from("contratos")
-          .select("id, status")
+          .select("id, status, valor_negociado, margem_pct, cliente:clientes(nome)")
           .eq("user_id", pref.user_id);
+
+        // Build contrato map for getting bruto values
+        const contratoMap: { [key: string]: { valorNegociado: number; margemPct: number; clienteNome: string } } = {};
+        for (const c of contratos || []) {
+          const cliente = c.cliente as any;
+          contratoMap[c.id] = {
+            valorNegociado: c.valor_negociado || 0,
+            margemPct: c.margem_pct || 0,
+            clienteNome: cliente?.nome || 'N/A'
+          };
+        }
 
         const parcelasVencidas = (parcelas || []).filter(p => p.status === "atrasado" || (p.status === "pendente" && new Date(p.vencimento) < now));
         const parcelasAVencer = (parcelas || []).filter(p => {
           const venc = new Date(p.vencimento);
-          return p.status === "pendente" && venc >= now && venc <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        });
+          return p.status === "pendente" && venc >= now;
+        }).sort((a, b) => new Date(a.vencimento).getTime() - new Date(b.vencimento).getTime());
+        
         const contratosAtivos = (contratos || []).filter(c => c.status === "ativo");
 
-        const valorParcelasVencidas = parcelasVencidas.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
+        // Calculate bruto vs liquido for vencidas
+        const valorLiquidoVencidas = parcelasVencidas.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
+        
+        // For bruto we need to calculate from contrato valor_negociado / numero_parcelas
+        // But simpler: bruto = liquido / (1 - margem_pct/100) approximately
+        // Or we can estimate bruto from the contrato
+        let valorBrutoVencidas = 0;
+        for (const p of parcelasVencidas) {
+          const contrato = contratoMap[p.contrato_id];
+          if (contrato && contrato.margemPct > 0) {
+            // Bruto = Liquido / (margem_pct / 100) approximately
+            // Actually bruto = liquido + (liquido * margem / (100 - margem))
+            // Simpler: just show liquido for now and note it
+            valorBrutoVencidas += (p.valor_liquido_parcela || 0) / ((100 - contrato.margemPct) / 100);
+          } else {
+            valorBrutoVencidas += p.valor_liquido_parcela || 0;
+          }
+        }
+
+        // Enrich parcelas a vencer with client names
+        const parcelasAVencerEnriquecidas = parcelasAVencer.map(p => ({
+          ...p,
+          clienteNome: contratoMap[p.contrato_id]?.clienteNome || 'N/A'
+        }));
+
         const valorParcelasAVencer = parcelasAVencer.reduce((sum, p) => sum + (p.valor_liquido_parcela || 0), 0);
+
+        // Build financeiro HTML with table for parcelas
+        const financeiroHtml = `
+          <div style="margin-bottom: 24px;">
+            <h3 style="color: #374151; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              💰 Financeiro
+            </h3>
+            <ul style="margin: 0; padding-left: 20px; color: #4b5563; margin-bottom: 16px;">
+              <li style="margin-bottom: 6px;">Parcelas vencidas: <strong>${parcelasVencidas.length}</strong></li>
+              <li style="margin-bottom: 6px; padding-left: 20px; color: #6b7280;">
+                Valor bruto: <strong>${formatCurrency(valorBrutoVencidas)}</strong> | Valor líquido (margem): <strong>${formatCurrency(valorLiquidoVencidas)}</strong>
+              </li>
+              <li style="margin-bottom: 6px;">Contratos ativos: <strong>${contratosAtivos.length}</strong></li>
+            </ul>
+            
+            <h4 style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">📅 Parcelas a Vencer (${parcelasAVencer.length}) - Total: ${formatCurrency(valorParcelasAVencer)}</h4>
+            ${generateParcelasTable(parcelasAVencerEnriquecidas)}
+          </div>
+        `;
 
         // ========== TAREFAS/METAS DATA ==========
         const { data: anotacoes } = await supabaseClient
@@ -467,8 +582,10 @@ const handler = async (req: Request): Promise<Response> => {
           propostas: [
             `Propostas em aberto: <strong>${propostasAbertas.length}</strong>`,
             `Valor total em aberto: <strong>${formatCurrency(valorPropostasAbertas)}</strong>`,
-            `Propostas fechadas (${periodLabel}): <strong>${propostasFechadas.length}</strong>`,
-            `Propostas perdidas (${periodLabel}): <strong>${propostasPerdidas.length}</strong>`,
+            `Margem líquida em aberto: <strong>${formatCurrency(margemLiquidaAbertas)}</strong>`,
+            `Propostas fechadas (mês): <strong>${propostasFechadasMes.length}</strong>`,
+            `Propostas fechadas (ano): <strong>${propostasFechadasAno.length}</strong>`,
+            `Propostas perdidas (mês): <strong>${propostasPerdidasMes.length}</strong>`,
             `Propostas em repouso: <strong>${propostasRepouso.length}</strong>`,
           ],
           obras: [
@@ -476,11 +593,7 @@ const handler = async (req: Request): Promise<Response> => {
             `Obras paradas (sem atualização 7+ dias): <strong>${obrasParadas.length}</strong>`,
             `Obras sem fotos: <strong>${obrasSemFotos.length}</strong>`,
           ],
-          financeiro: [
-            `Parcelas vencidas: <strong>${parcelasVencidas.length}</strong> (${formatCurrency(valorParcelasVencidas)})`,
-            `Parcelas a vencer (próx. 7 dias): <strong>${parcelasAVencer.length}</strong> (${formatCurrency(valorParcelasAVencer)})`,
-            `Contratos ativos: <strong>${contratosAtivos.length}</strong>`,
-          ],
+          financeiroHtml,
           tarefas: [
             `Tarefas vencidas: <strong>${tarefasVencidas.length}</strong>`,
             `Metas atrasadas: <strong>${metasAtrasadas.length}</strong>`,
