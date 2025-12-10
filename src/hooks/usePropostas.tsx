@@ -19,6 +19,7 @@ export interface Proposta {
   created_at: string;
   updated_at: string;
   observacao?: string;
+  forma_pagamento?: string;
   servicos?: Array<{
     tipo: string;
     tipo_outro?: string;
@@ -46,6 +47,7 @@ export interface PropostaInsert {
     custo_m2: number;
   }>;
   desconto?: number;
+  forma_pagamento?: string;
   data?: string;
   status?: string;
   observacao?: string;
@@ -113,6 +115,7 @@ export const usePropostas = () => {
           lead_id: data.lead_id || null,
           servicos: servicos,
           desconto,
+          forma_pagamento: data.forma_pagamento || null,
           m2: m2_total,
           valor_m2: primeiroServico.valor_m2,
           custo_m2: primeiroServico.custo_m2,
@@ -162,6 +165,7 @@ export const usePropostas = () => {
           lead_id: data.lead_id || null,
           servicos: servicos,
           desconto,
+          forma_pagamento: data.forma_pagamento || null,
           m2: m2_total,
           valor_m2: primeiroServico.valor_m2,
           custo_m2: primeiroServico.custo_m2,

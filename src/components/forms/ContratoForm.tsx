@@ -120,6 +120,11 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
         form.setValue("valor_negociado", Number(proposta.valor_total));
         form.setValue("margem_pct", Number(proposta.margem_pct || 0));
         
+        // Preencher forma de pagamento da proposta
+        if (proposta.forma_pagamento) {
+          form.setValue("forma_pagamento", proposta.forma_pagamento);
+        }
+        
         // Buscar CPF/CNPJ do cliente
         const cliente = clientes.find((c) => c.id === proposta.cliente_id);
         if (cliente?.cpf_cnpj) {
@@ -165,6 +170,11 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       // Valor negociado deve ser o valor bruto (valor_total)
       form.setValue("valor_negociado", Number(proposta.valor_total));
       form.setValue("margem_pct", Number(proposta.margem_pct || 0));
+
+      // Preencher forma de pagamento da proposta
+      if (proposta.forma_pagamento) {
+        form.setValue("forma_pagamento", proposta.forma_pagamento);
+      }
 
       // Buscar CPF/CNPJ do cliente
       const cliente = clientes.find((c) => c.id === proposta.cliente_id);

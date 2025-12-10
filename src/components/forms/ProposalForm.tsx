@@ -75,11 +75,22 @@ const servicoSchema = z
     },
   );
 
+const FORMAS_PAGAMENTO = [
+  "À Vista",
+  "Boleto",
+  "Cartão de Crédito",
+  "Cartão de Débito",
+  "PIX",
+  "Transferência Bancária",
+  "Cheque",
+] as const;
+
 const proposalSchema = z.object({
   cliente_id: z.string().min(1, "Cliente é obrigatório"),
   lead_id: z.string().optional(),
   servicos: z.array(servicoSchema).min(1, "Adicione pelo menos um serviço"),
   desconto: z.number().min(0, "Desconto não pode ser negativo").default(0),
+  forma_pagamento: z.string().optional(),
   data: z.string().optional(),
   status: z.string().optional(),
   observacao: z.string().optional(),
@@ -104,6 +115,7 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
       lead_id: initialData?.lead_id || "",
       servicos: initialData?.servicos || [{ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 }],
       desconto: initialData?.desconto || 0,
+      forma_pagamento: initialData?.forma_pagamento || "",
       data: initialData?.data || formatDateToLocal(new Date()),
       status: initialData?.status || "aberta",
       observacao: initialData?.observacao || "",
@@ -394,6 +406,32 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
                       onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Campo de Forma de Pagamento */}
+            <FormField
+              control={form.control}
+              name="forma_pagamento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Forma de Pagamento</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a forma de pagamento" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {FORMAS_PAGAMENTO.map((forma) => (
+                        <SelectItem key={forma} value={forma}>
+                          {forma}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
