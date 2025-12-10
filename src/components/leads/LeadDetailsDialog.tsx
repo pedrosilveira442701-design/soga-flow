@@ -46,7 +46,9 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
   } | null;
   produtos?: Array<{
     tipo: string;
-    medida: number | null;
+    tipo_outro?: string;
+    medida?: number | string | null;
+    valor?: number | string | null;
   }>;
 };
 
@@ -232,24 +234,33 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
 
                     if (produtos && Array.isArray(produtos) && produtos.length > 0) {
                       return produtos.map((produto, index) => {
-                        // Formatar "Outro: descrição" como "Outro — descrição"
+                        // Formatar tipo
                         let displayTipo = produto.tipo;
-                        if (produto.tipo?.startsWith("Outro:")) {
+                        if (produto.tipo === "Outro" && produto.tipo_outro) {
+                          displayTipo = `Outro — ${produto.tipo_outro}`;
+                        } else if (produto.tipo?.startsWith("Outro:")) {
                           displayTipo = produto.tipo.replace("Outro:", "Outro —");
                         }
 
-                        // Adicionar metragem se existir (verificar tanto number quanto string)
+                        // Adicionar metragem se existir
                         const medidaValue = produto.medida;
-                        const medidaText = medidaValue && Number(medidaValue) > 0 ? ` - ${medidaValue}m²` : '';
+                        const unidade = produto.tipo === "Rodapé Abaulado" ? "ml" : "m²";
+                        const medidaText = medidaValue && Number(medidaValue) > 0 ? ` - ${medidaValue}${unidade}` : '';
+                        
+                        // Adicionar valor se existir
+                        const valorValue = produto.valor;
+                        const valorText = valorValue && Number(valorValue) > 0 
+                          ? ` - ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(valorValue))}`
+                          : '';
 
                         return (
                           <Badge
                             key={index}
                             variant="secondary"
                             className="text-caption font-normal"
-                            title={`${displayTipo}${medidaText}`}
+                            title={`${displayTipo}${medidaText}${valorText}`}
                           >
-                            {displayTipo}{medidaText}
+                            {displayTipo}{medidaText}{valorText}
                           </Badge>
                         );
                       });
