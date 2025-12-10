@@ -975,12 +975,14 @@ export type Database = {
           liquido: number | null
           m2: number
           margem_pct: number | null
+          numero_parcelas: number | null
           observacao: string | null
           servicos: Json | null
           status: string | null
           tipo_piso: string
           updated_at: string
           user_id: string
+          valor_entrada: number | null
           valor_m2: number
           valor_total: number | null
           visita_id: string | null
@@ -997,12 +999,14 @@ export type Database = {
           liquido?: number | null
           m2: number
           margem_pct?: number | null
+          numero_parcelas?: number | null
           observacao?: string | null
           servicos?: Json | null
           status?: string | null
           tipo_piso: string
           updated_at?: string
           user_id: string
+          valor_entrada?: number | null
           valor_m2: number
           valor_total?: number | null
           visita_id?: string | null
@@ -1019,12 +1023,14 @@ export type Database = {
           liquido?: number | null
           m2?: number
           margem_pct?: number | null
+          numero_parcelas?: number | null
           observacao?: string | null
           servicos?: Json | null
           status?: string | null
           tipo_piso?: string
           updated_at?: string
           user_id?: string
+          valor_entrada?: number | null
           valor_m2?: number
           valor_total?: number | null
           visita_id?: string | null
