@@ -402,95 +402,142 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="created_at"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Data de Criação do Lead</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    placeholder="dd/mm/aaaa hh:mm"
-                    value={field.value instanceof Date ? format(field.value, "dd/MM/yyyy HH:mm") : field.value || ""}
-                    onChange={(e) => {
-                      let v = e.target.value;
+        {/* Data de Criação do Lead */}
+        <div className="space-y-2">
+          <FormLabel>Data de Criação do Lead</FormLabel>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="created_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value instanceof Date ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value instanceof Date ? field.value : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const currentDate = field.value instanceof Date ? field.value : new Date();
+                            date.setHours(currentDate.getHours(), currentDate.getMinutes());
+                            field.onChange(date);
+                          }
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="created_at"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormControl>
+                    <Input
+                      type="time"
+                      value={field.value instanceof Date ? format(field.value, "HH:mm") : ""}
+                      onChange={(e) => {
+                        const [hours, minutes] = e.target.value.split(":").map(Number);
+                        const currentDate = field.value instanceof Date ? new Date(field.value) : new Date();
+                        currentDate.setHours(hours, minutes);
+                        field.onChange(currentDate);
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
-                      v = v
-                        .replace(/\D/g, "")
-                        .replace(/^(\d{2})(\d)/, "$1/$2")
-                        .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
-                        .replace(/^(\d{2})\/(\d{2})\/(\d{4})(\d)/, "$1/$2/$3 $4")
-                        .replace(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/, "$1/$2/$3 $4:$5");
-
-                      e.target.value = v;
-
-                      if (v.length === 16) {
-                        const [dia, mes, anoHora] = v.split("/");
-                        const [ano, hora] = anoHora.split(" ");
-                        const [hh, mm] = hora.split(":");
-
-                        const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
-                        if (!isNaN(iso.getTime())) {
-                          field.onChange(iso);
-                          return;
-                        }
-                      }
-
-                      field.onChange(v);
-                    }}
-                    className="w-full"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ultima_interacao"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Última Interação</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    placeholder="dd/mm/aaaa hh:mm"
-                    value={field.value instanceof Date ? format(field.value, "dd/MM/yyyy HH:mm") : field.value || ""}
-                    onChange={(e) => {
-                      let v = e.target.value;
-
-                      v = v
-                        .replace(/\D/g, "")
-                        .replace(/^(\d{2})(\d)/, "$1/$2")
-                        .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
-                        .replace(/^(\d{2})\/(\d{2})\/(\d{4})(\d)/, "$1/$2/$3 $4")
-                        .replace(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2})(\d)/, "$1/$2/$3 $4:$5");
-
-                      e.target.value = v;
-
-                      if (v.length === 16) {
-                        const [dia, mes, anoHora] = v.split("/");
-                        const [ano, hora] = anoHora.split(" ");
-                        const [hh, mm] = hora.split(":");
-
-                        const iso = new Date(`${ano}-${mes}-${dia}T${hh}:${mm}`);
-                        if (!isNaN(iso.getTime())) {
-                          field.onChange(iso);
-                          return;
-                        }
-                      }
-
-                      field.onChange(v);
-                    }}
-                    className="w-full"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Última Interação */}
+        <div className="space-y-2">
+          <FormLabel>Última Interação</FormLabel>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField
+              control={form.control}
+              name="ultima_interacao"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value instanceof Date ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value instanceof Date ? field.value : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const currentDate = field.value instanceof Date ? field.value : new Date();
+                            date.setHours(currentDate.getHours(), currentDate.getMinutes());
+                            field.onChange(date);
+                          }
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ultima_interacao"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormControl>
+                    <Input
+                      type="time"
+                      value={field.value instanceof Date ? format(field.value, "HH:mm") : ""}
+                      onChange={(e) => {
+                        const [hours, minutes] = e.target.value.split(":").map(Number);
+                        const currentDate = field.value instanceof Date ? new Date(field.value) : new Date();
+                        currentDate.setHours(hours, minutes);
+                        field.onChange(currentDate);
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </div>
         <div className="flex gap-3 justify-end pt-4">
           <Button type="submit" disabled={isLoading}>
