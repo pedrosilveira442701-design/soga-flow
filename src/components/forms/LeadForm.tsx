@@ -40,6 +40,7 @@ const produtoSchema = z
     tipo: z.string().min(1, "Selecione o tipo"),
     tipo_outro: z.string().optional(),
     medida: z.string().optional(),
+    valor: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -58,7 +59,7 @@ const leadFormSchema = z
   .object({
     cliente_id: z.string().min(1, "Selecione um cliente"),
     produtos: z.array(produtoSchema).min(1, "Adicione pelo menos um produto"),
-    valor_potencial: z.string().min(1, "Informe o valor potencial"),
+    valor_potencial: z.string().optional(),
     observacoes: z.string().trim().max(500, "Máximo 500 caracteres").optional(),
     origem: z.string().optional(),
     origem_descricao: z.string().trim().max(200, "Máximo 200 caracteres").optional(),
@@ -110,7 +111,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     resolver: zodResolver(leadFormSchema),
     defaultValues: {
       cliente_id: initialData?.cliente_id || "",
-      produtos: initialData?.produtos || [{ tipo: "", tipo_outro: "", medida: "" }],
+      produtos: initialData?.produtos || [{ tipo: "", tipo_outro: "", medida: "", valor: "" }],
       valor_potencial: initialData?.valor_potencial || "",
       observacoes: initialData?.observacoes || "",
       origem: initialData?.origem || "",
@@ -122,13 +123,23 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     },
   });
 
+  // Calcular valor_potencial como soma dos valores dos produtos
+  const calcularValorTotal = () => {
+    const produtosAtuais = form.getValues("produtos");
+    const total = produtosAtuais.reduce((acc, p) => {
+      const valor = parseFloat(p.valor || "0") || 0;
+      return acc + valor;
+    }, 0);
+    form.setValue("valor_potencial", total.toString());
+  };
+
   const produtos = form.watch("produtos") || [];
   const origemSelecionada = form.watch("origem");
   const mostrarOrigemDescricao = origemSelecionada === "Indicação" || origemSelecionada === "Outro";
 
   const addProduto = () => {
     const currentProdutos = form.getValues("produtos");
-    form.setValue("produtos", [...currentProdutos, { tipo: "", tipo_outro: "", medida: "" }]);
+    form.setValue("produtos", [...currentProdutos, { tipo: "", tipo_outro: "", medida: "", valor: "" }]);
   };
 
   const removeProduto = (index: number) => {
@@ -138,6 +149,8 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
         "produtos",
         currentProdutos.filter((_, i) => i !== index),
       );
+      // Recalcular valor total após remover
+      setTimeout(calcularValorTotal, 0);
     }
   };
 
@@ -278,24 +291,56 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                 />
               )}
 
-              <FormField
-                control={form.control}
-                name={`produtos.${index}.medida`}
-                render={({ field }) => {
-                  const tipoSelecionado = produtos[index]?.tipo;
-                  const unidade = tipoSelecionado === "Rodapé Abaulado" ? "ml" : "m²";
-                  const label = tipoSelecionado === "Rodapé Abaulado" ? "Metros Lineares (ml)" : "Medida (m²)";
-                  return (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name={`produtos.${index}.medida`}
+                  render={({ field }) => {
+                    const tipoSelecionado = produtos[index]?.tipo;
+                    const label = tipoSelecionado === "Rodapé Abaulado" ? "Metros Lineares (ml)" : "Medida (m²)";
+                    return (
+                      <FormItem>
+                        <FormLabel>{label}</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`produtos.${index}.valor`}
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{label}</FormLabel>
+                      <FormLabel>Valor (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0" step="0.01" {...field} />
+                        <Input
+                          placeholder="R$ 0,00"
+                          value={
+                            field.value
+                              ? new Intl.NumberFormat("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                }).format(parseFloat(field.value) || 0)
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "");
+                            const numericValue = parseFloat(value) / 100;
+                            field.onChange(numericValue.toString());
+                            // Recalcular valor total
+                            setTimeout(calcularValorTotal, 0);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  );
-                }}
-              />
+                  )}
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -305,27 +350,25 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
           name="valor_potencial"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Orçamento</FormLabel>
+              <FormLabel>Orçamento Total (calculado)</FormLabel>
               <FormControl>
                 <Input
                   placeholder="R$ 0,00"
-                  {...field}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, "");
-                    const numericValue = parseFloat(value) / 100;
-                    field.onChange(numericValue.toString());
-                  }}
+                  readOnly
+                  className="bg-muted cursor-not-allowed"
                   value={
                     field.value
                       ? new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",
                         }).format(parseFloat(field.value) || 0)
-                      : ""
+                      : "R$ 0,00"
                   }
                 />
               </FormControl>
-              <FormMessage />
+              <p className="text-xs text-muted-foreground">
+                Soma dos valores de cada produto
+              </p>
             </FormItem>
           )}
         />

@@ -34,7 +34,9 @@ type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
   } | null;
   produtos?: Array<{
     tipo: string;
-    medida: number | null;
+    tipo_outro?: string;
+    medida?: number | string | null;
+    valor?: number | string | null;
   }>;
 };
 
@@ -217,6 +219,7 @@ export default function Leads() {
     const produtosProcessados = values.produtos.map((p: any) => ({
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
       medida: p.medida ? parseFloat(p.medida) : null,
+      valor: p.valor ? parseFloat(p.valor) : null,
     }));
 
     // Processar origem
@@ -332,6 +335,7 @@ export default function Leads() {
     const produtosProcessados = values.produtos.map((p: any) => ({
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
       medida: p.medida ? parseFloat(p.medida) : null,
+      valor: p.valor ? parseFloat(p.valor) : null,
     }));
 
     // Processar origem
@@ -592,6 +596,7 @@ export default function Leads() {
                         tipo: p.tipo?.startsWith("Outro:") ? "Outro" : p.tipo,
                         tipo_outro: p.tipo?.startsWith("Outro:") ? p.tipo.replace("Outro:", "").trim() : "",
                         medida: p.medida?.toString() || "",
+                        valor: p.valor?.toString() || "",
                       }));
                     }
                     // Fallback para formato antigo (tipo_piso string)
@@ -601,9 +606,10 @@ export default function Leads() {
                         tipo: t.startsWith("Outro:") ? "Outro" : t,
                         tipo_outro: t.startsWith("Outro:") ? t.replace("Outro:", "").trim() : "",
                         medida: selectedLead.medida?.toString() || "",
+                        valor: "",
                       }));
                     }
-                    return [{ tipo: "", tipo_outro: "", medida: "" }];
+                    return [{ tipo: "", tipo_outro: "", medida: "", valor: "" }];
                   })(),
                   valor_potencial: selectedLead.valor_potencial?.toString() || "",
                   observacoes: selectedLead.observacoes || "",
