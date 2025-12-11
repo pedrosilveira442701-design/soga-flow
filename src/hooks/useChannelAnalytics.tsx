@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { startOfDay, endOfDay, startOfWeek, startOfMonth, startOfYear, subDays } from "date-fns";
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
 
 export interface ChannelFilters {
   period: "today" | "7d" | "week" | "month" | "30d" | "year" | "custom";
@@ -68,33 +68,41 @@ export interface OverviewKPIs {
 
 function getDateRange(filters: ChannelFilters): { start: Date; end: Date } {
   const now = new Date();
-  const end = endOfDay(now);
   let start: Date;
+  let end: Date;
 
   switch (filters.period) {
     case "today":
       start = startOfDay(now);
+      end = endOfDay(now);
       break;
     case "7d":
       start = startOfDay(subDays(now, 7));
+      end = endOfDay(now);
       break;
     case "week":
       start = startOfWeek(now, { weekStartsOn: 1 });
+      end = endOfWeek(now, { weekStartsOn: 1 });
       break;
     case "month":
       start = startOfMonth(now);
+      end = endOfMonth(now);
       break;
     case "30d":
       start = startOfDay(subDays(now, 30));
+      end = endOfDay(now);
       break;
     case "year":
       start = startOfYear(now);
+      end = endOfYear(now);
       break;
     case "custom":
       start = filters.startDate || startOfDay(subDays(now, 30));
-      return { start, end: filters.endDate || end };
+      end = filters.endDate || endOfDay(now);
+      break;
     default:
       start = startOfDay(subDays(now, 30));
+      end = endOfDay(now);
   }
 
   return { start, end };
