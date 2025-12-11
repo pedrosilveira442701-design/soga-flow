@@ -13,32 +13,57 @@ interface ChannelBairroTableProps {
 
 type ViewMode = "leads" | "propostas" | "fechados" | "valor";
 
-// Cores HSL fixas por canal - consistente com outros gráficos de Analytics
+// Cores HSL distintas por canal - paleta expandida sem repetições
 const CHANNEL_COLORS: Record<string, { hue: number; sat: number; light: number }> = {
-  "Instagram": { hue: 330, sat: 80, light: 55 },
-  "Google": { hue: 4, sat: 90, light: 58 },
-  "Indicação": { hue: 262, sat: 83, light: 58 },
-  "Site": { hue: 199, sat: 89, light: 48 },
-  "WhatsApp": { hue: 142, sat: 70, light: 45 },
-  "Facebook": { hue: 221, sat: 83, light: 53 },
-  "Telefone": { hue: 38, sat: 92, light: 50 },
-  "Outros": { hue: 215, sat: 16, light: 47 },
+  "Instagram": { hue: 330, sat: 75, light: 50 },      // Rosa magenta
+  "Google": { hue: 4, sat: 85, light: 55 },           // Vermelho
+  "Indicação": { hue: 280, sat: 70, light: 55 },      // Roxo
+  "Indicação: Ana": { hue: 280, sat: 70, light: 55 }, // Roxo
+  "Site": { hue: 199, sat: 85, light: 45 },           // Azul petróleo
+  "WhatsApp": { hue: 142, sat: 65, light: 42 },       // Verde
+  "Facebook": { hue: 221, sat: 75, light: 50 },       // Azul royal
+  "Telefone": { hue: 28, sat: 90, light: 52 },        // Laranja
+  "Orgânico": { hue: 160, sat: 60, light: 40 },       // Verde azulado/teal
+  "Não informado": { hue: 220, sat: 12, light: 55 },  // Cinza azulado
+  "Outros": { hue: 45, sat: 85, light: 50 },          // Amarelo dourado
+  "MKT": { hue: 350, sat: 80, light: 48 },            // Vermelho rosado
+  "Síndico": { hue: 190, sat: 70, light: 45 },        // Ciano
+  "Envio massivo": { hue: 260, sat: 65, light: 58 },  // Violeta claro
 };
 
-const FALLBACK_COLORS = [
-  { hue: 280, sat: 65, light: 55 },
-  { hue: 173, sat: 58, light: 39 },
-  { hue: 24, sat: 95, light: 53 },
-  { hue: 47, sat: 96, light: 53 },
+// Cores de fallback bem distribuídas no espectro (espaçamento ~40° de hue)
+const FALLBACK_PALETTE = [
+  { hue: 15, sat: 80, light: 52 },   // Coral
+  { hue: 55, sat: 75, light: 48 },   // Amarelo mostarda
+  { hue: 95, sat: 55, light: 45 },   // Verde limão
+  { hue: 175, sat: 60, light: 42 },  // Turquesa
+  { hue: 235, sat: 65, light: 55 },  // Índigo
+  { hue: 295, sat: 55, light: 52 },  // Magenta suave
+  { hue: 340, sat: 70, light: 50 },  // Rosa escuro
+  { hue: 70, sat: 65, light: 45 },   // Verde oliva
 ];
 
-function getChannelColor(canal: string): { hue: number; sat: number; light: number } {
+function getChannelColor(canal: string, index?: number): { hue: number; sat: number; light: number } {
+  // Verificar match exato
   if (CHANNEL_COLORS[canal]) {
     return CHANNEL_COLORS[canal];
   }
-  // Fallback consistente baseado no hash do nome
+  
+  // Verificar match parcial (ex: "Indicação: João" -> "Indicação")
+  const partialMatch = Object.keys(CHANNEL_COLORS).find(key => 
+    canal.toLowerCase().startsWith(key.toLowerCase())
+  );
+  if (partialMatch) {
+    return CHANNEL_COLORS[partialMatch];
+  }
+  
+  // Fallback: usar índice se fornecido, senão usar hash
+  if (index !== undefined) {
+    return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+  }
+  
   const hash = canal.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  return FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
+  return FALLBACK_PALETTE[hash % FALLBACK_PALETTE.length];
 }
 
 function formatCurrency(value: number): string {
@@ -166,37 +191,45 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
     )
   );
 
+  // Criar mapa de índices para canais (garante cores únicas mesmo com fallback)
+  const canalIndexMap = new Map<string, number>();
+  canais.forEach((canal, idx) => canalIndexMap.set(canal, idx));
+
   const getCellStyle = (value: number, canal: string) => {
     if (globalMax === 0 || value === 0) return {};
     
-    const { hue, sat } = getChannelColor(canal);
+    const idx = canalIndexMap.get(canal) ?? 0;
+    const { hue, sat } = getChannelColor(canal, idx);
     const intensity = value / globalMax;
     
     // Borda esquerda colorida pelo canal + fundo com intensidade sutil
-    const bgAlpha = 0.08 + (intensity * 0.25); // 8% a 33%
+    const bgAlpha = 0.06 + (intensity * 0.22); // 6% a 28%
     
     return {
-      borderLeft: `3px solid hsl(${hue}, ${sat}%, 50%)`,
+      borderLeft: `3px solid hsl(${hue}, ${sat}%, 48%)`,
       background: `hsla(${hue}, ${sat}%, 50%, ${bgAlpha})`,
       fontWeight: intensity > 0.5 ? 600 : 400,
     };
   };
 
   const getHeaderBadgeStyle = (canal: string) => {
-    const { hue, sat, light } = getChannelColor(canal);
+    const idx = canalIndexMap.get(canal) ?? 0;
+    const { hue, sat, light } = getChannelColor(canal, idx);
     return {
-      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light - 8}%) 100%)`,
+      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light - 10}%) 100%)`,
       color: 'white',
-      textShadow: '0 1px 1px rgba(0,0,0,0.15)',
+      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
       border: 'none',
+      boxShadow: `0 2px 4px hsla(${hue}, ${sat}%, ${light}%, 0.3)`,
     };
   };
 
   const getFooterCellStyle = (canal: string) => {
-    const { hue, sat } = getChannelColor(canal);
+    const idx = canalIndexMap.get(canal) ?? 0;
+    const { hue, sat } = getChannelColor(canal, idx);
     return {
       borderLeft: `3px solid hsl(${hue}, ${sat}%, 45%)`,
-      background: `hsla(${hue}, ${sat}%, 50%, 0.12)`,
+      background: `hsla(${hue}, ${sat}%, 50%, 0.15)`,
       fontWeight: 600,
     };
   };
