@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Badge } from "@/components/ui/badge";
@@ -86,6 +86,25 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
     (bairroTotals.get(b) || 0) - (bairroTotals.get(a) || 0)
   ).slice(0, 15); // Top 15 bairros
 
+  // Calcular totais por canal (para rodapé)
+  const canalTotals = new Map<string, number>();
+  canais.forEach((canal) => {
+    let total = 0;
+    sortedBairros.forEach((bairro) => {
+      const cellData = matrix.get(bairro)?.get(canal);
+      if (cellData) {
+        total += viewMode === "leads" ? cellData.leads
+          : viewMode === "propostas" ? cellData.propostas
+          : viewMode === "fechados" ? cellData.fechados
+          : cellData.valor_fechados;
+      }
+    });
+    canalTotals.set(canal, total);
+  });
+
+  // Calcular total geral
+  const grandTotal = Array.from(canalTotals.values()).reduce((sum, val) => sum + val, 0);
+
   // Calcular max para escala de cores
   const maxValue = Math.max(
     ...data.map((d) => 
@@ -105,15 +124,29 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
     };
   };
 
+  const getViewModeLabel = () => {
+    switch (viewMode) {
+      case "leads": return "quantidade de leads";
+      case "propostas": return "quantidade de propostas";
+      case "fechados": return "quantidade de contratos fechados";
+      case "valor": return "valor total dos contratos fechados";
+    }
+  };
+
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Canal x Bairros (Top 15)</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+        <div>
+          <CardTitle>Canal x Bairros (Top 15)</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground mt-1">
+            Exibindo {getViewModeLabel()} por canal de origem e bairro do cliente
+          </CardDescription>
+        </div>
         <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
           <ToggleGroupItem value="leads" size="sm">Leads</ToggleGroupItem>
           <ToggleGroupItem value="propostas" size="sm">Propostas</ToggleGroupItem>
           <ToggleGroupItem value="fechados" size="sm">Fechados</ToggleGroupItem>
-          <ToggleGroupItem value="valor" size="sm">Valor</ToggleGroupItem>
+          <ToggleGroupItem value="valor" size="sm">Valor Fechados</ToggleGroupItem>
         </ToggleGroup>
       </CardHeader>
       <CardContent>
@@ -121,7 +154,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 bg-card">Bairro</TableHead>
+                <TableHead className="sticky left-0 bg-card z-10">Bairro</TableHead>
                 {canais.map((canal) => (
                   <TableHead key={canal} className="text-center min-w-[80px]">
                     {canal}
@@ -133,7 +166,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
             <TableBody>
               {sortedBairros.map((bairro) => (
                 <TableRow key={bairro}>
-                  <TableCell className="sticky left-0 bg-card font-medium">
+                  <TableCell className="sticky left-0 bg-card z-10 font-medium">
                     <Badge variant="outline" className="whitespace-nowrap">
                       {bairro}
                     </Badge>
@@ -153,7 +186,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
                         className="text-center"
                         style={getCellStyle(value)}
                       >
-                        {viewMode === "valor" ? formatCurrency(value) : value || "-"}
+                        {viewMode === "valor" ? (value > 0 ? formatCurrency(value) : "-") : (value || "-")}
                       </TableCell>
                     );
                   })}
@@ -165,6 +198,21 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
                 </TableRow>
               ))}
             </TableBody>
+            <TableFooter>
+              <TableRow className="bg-muted/50 font-bold">
+                <TableCell className="sticky left-0 bg-muted/50 z-10">TOTAL GERAL</TableCell>
+                {canais.map((canal) => (
+                  <TableCell key={canal} className="text-center">
+                    {viewMode === "valor" 
+                      ? formatCurrency(canalTotals.get(canal) || 0)
+                      : canalTotals.get(canal) || 0}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right">
+                  {viewMode === "valor" ? formatCurrency(grandTotal) : grandTotal}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
           </Table>
         </div>
       </CardContent>
