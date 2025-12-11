@@ -128,6 +128,23 @@ export function useChannelAnalytics(filters: ChannelFilters) {
     enabled: !!user,
   });
 
+  // Buscar TODAS as propostas para mapeamento proposta_id -> lead_id (sem filtro de data)
+  const { data: allPropostasForMap } = useQuery({
+    queryKey: ["channel-analytics", "all-propostas-map", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data: propostas, error } = await supabase
+        .from("propostas")
+        .select("id, lead_id")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      return propostas || [];
+    },
+    enabled: !!user,
+  });
+
   // Busca dados brutos de leads com cliente (para bairro) - FILTRADO POR PERÍODO
   const { data: rawData, isLoading: loadingRaw } = useQuery({
     queryKey: ["channel-analytics", "raw", filters, user?.id],
@@ -214,9 +231,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
   // Métricas por Canal
   const { data: channelMetrics, isLoading: loadingChannelMetrics } = useQuery({
-    queryKey: ["channel-analytics", "metrics", rawData, allLeadsForOriginMap, filters.canais],
+    queryKey: ["channel-analytics", "metrics", rawData, allLeadsForOriginMap, allPropostasForMap, filters.canais],
     queryFn: async () => {
-      if (!rawData || !allLeadsForOriginMap) return [];
+      if (!rawData || !allLeadsForOriginMap || !allPropostasForMap) return [];
 
       const { leads, propostas, contratos } = rawData;
       
@@ -278,9 +295,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         data.valor_propostas += parseFloat(String(proposta.valor_total || 0));
       });
 
-      // Mapear proposta_id -> lead_id (apenas propostas com lead)
+      // Mapear proposta_id -> lead_id usando TODAS as propostas (sem filtro de período)
       const propostaLeadMap = new Map<string, string>();
-      propostas.forEach((p: any) => {
+      allPropostasForMap.forEach((p: any) => {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
@@ -326,14 +343,14 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return Array.from(channelData.values()).sort((a, b) => b.valor_fechados - a.valor_fechados);
     },
-    enabled: !!rawData && !!allLeadsForOriginMap,
+    enabled: !!rawData && !!allLeadsForOriginMap && !!allPropostasForMap,
   });
 
   // Heatmap Dia x Hora
   const { data: heatmapData, isLoading: loadingHeatmap } = useQuery({
-    queryKey: ["channel-analytics", "heatmap", rawData, allLeadsForOriginMap, filters.canais],
+    queryKey: ["channel-analytics", "heatmap", rawData, allLeadsForOriginMap, allPropostasForMap, filters.canais],
     queryFn: async () => {
-      if (!rawData || !allLeadsForOriginMap) return [];
+      if (!rawData || !allLeadsForOriginMap || !allPropostasForMap) return [];
 
       const { leads, contratos } = rawData;
       
@@ -364,9 +381,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         heatmap[idx].valor += parseFloat(String(lead.valor_potencial || 0));
       });
 
-      // Preencher fechados - apenas contratos rastreáveis até um lead
+      // Preencher fechados - usando TODAS as propostas para mapeamento
       const propostaLeadMap = new Map<string, string>();
-      rawData.propostas.forEach((p: any) => {
+      allPropostasForMap.forEach((p: any) => {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
@@ -389,7 +406,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return heatmap;
     },
-    enabled: !!rawData && !!allLeadsForOriginMap,
+    enabled: !!rawData && !!allLeadsForOriginMap && !!allPropostasForMap,
   });
 
   // Canal x Dia da Semana
@@ -431,9 +448,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
   // Canal x Bairro
   const { data: bairroChannelData, isLoading: loadingBairroChannel } = useQuery({
-    queryKey: ["channel-analytics", "bairro-channel", rawData, allLeadsForOriginMap, filters.canais, filters.bairros],
+    queryKey: ["channel-analytics", "bairro-channel", rawData, allLeadsForOriginMap, allPropostasForMap, filters.canais, filters.bairros],
     queryFn: async () => {
-      if (!rawData || !allLeadsForOriginMap) return [];
+      if (!rawData || !allLeadsForOriginMap || !allPropostasForMap) return [];
 
       const { leads, propostas, contratos } = rawData;
       
@@ -502,9 +519,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         data.valor_propostas += parseFloat(String(proposta.valor_total || 0));
       });
 
-      // Processar contratos
+      // Usar TODAS as propostas para mapeamento proposta_id -> lead_id
       const propostaLeadMap = new Map<string, string>();
-      propostas.forEach((p: any) => {
+      allPropostasForMap.forEach((p: any) => {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
@@ -541,7 +558,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return Array.from(dataMap.values()).sort((a, b) => b.valor_fechados - a.valor_fechados);
     },
-    enabled: !!rawData && !!allLeadsForOriginMap,
+    enabled: !!rawData && !!allLeadsForOriginMap && !!allPropostasForMap,
   });
 
   // KPIs Gerais - usa rawData para totais REAIS do período
