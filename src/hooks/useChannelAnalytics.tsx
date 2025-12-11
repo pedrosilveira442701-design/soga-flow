@@ -401,9 +401,13 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
-        const date = new Date(contrato.data_inicio);
-        const dia = (date.getDay() + 6) % 7;
-        const hora = date.getHours();
+        // Usar created_at para hora real do registro (data_inicio é DATE sem hora)
+        const createdDate = new Date(contrato.created_at);
+        // Usar data_inicio com meio-dia para evitar offset de timezone
+        const dataInicioDate = new Date(contrato.data_inicio + "T12:00:00");
+        
+        const dia = (dataInicioDate.getDay() + 6) % 7; // Dia da semana baseado em data_inicio
+        const hora = createdDate.getHours(); // Hora real do registro
         const idx = dia * 24 + hora;
         heatmap[idx].fechados++;
       });
