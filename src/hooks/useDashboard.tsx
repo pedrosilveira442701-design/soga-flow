@@ -316,7 +316,16 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     const propostasRepouso = propostas
       .filter(p => p.status === 'repouso')
       .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const totalPropostas = todasPropostas - propostasPerdidas - propostasRepouso;
+    
+    // Propostas APENAS abertas (status === 'aberta') - Volume Real
+    const propostasAbertas = propostas
+      .filter(p => p.status === 'aberta')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
+    
+    // Propostas fechadas (status === 'fechada')
+    const propostasFechadas = propostas
+      .filter(p => p.status === 'fechada')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
     
     const totalContratos = contratos.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
     
@@ -362,7 +371,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     const countTotal = propostas.length;
     const countPerdidas = propostas.filter(p => p.status === 'perdida').length;
     const countRepouso = propostas.filter(p => p.status === 'repouso').length;
-    const countAtivas = countTotal - countPerdidas - countRepouso;
+    const countAbertas = propostas.filter(p => p.status === 'aberta').length;
+    const countFechadas = propostas.filter(p => p.status === 'fechada').length;
 
     // PERÍODO ANTERIOR
     const todasPropostasAnterior = propostasAnterior.reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
@@ -372,16 +382,17 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     const propostasRepousoAnterior = propostasAnterior
       .filter(p => p.status === 'repouso')
       .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
-    const totalPropostasAnterior = todasPropostasAnterior - propostasPerdidasAnterior - propostasRepousoAnterior;
+    const propostasAbertasAnterior = propostasAnterior
+      .filter(p => p.status === 'aberta')
+      .reduce((sum, p) => sum + Number(p.valor_total || 0), 0);
     
     const totalContratosAnterior = contratosAnterior.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0);
-    const recebidoAnterior = parcelasPagasAnterior.reduce((sum, p) => sum + Number(p.valor_liquido_parcela || 0), 0);
 
     // Contadores do período anterior
     const countTotalAnterior = propostasAnterior.length;
     const countPerdidasAnterior = propostasAnterior.filter(p => p.status === 'perdida').length;
     const countRepousoAnterior = propostasAnterior.filter(p => p.status === 'repouso').length;
-    const countAtivasAnterior = countTotalAnterior - countPerdidasAnterior - countRepousoAnterior;
+    const countAbertasAnterior = propostasAnterior.filter(p => p.status === 'aberta').length;
 
     return {
       recebidoMes: {
@@ -389,8 +400,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         delta: calculateDelta(recebidoBrutoAtual, recebidoBrutoAnterior),
       },
       totalPropostas: {
-        value: formatCurrency(totalPropostas),
-        delta: calculateDelta(totalPropostas, totalPropostasAnterior),
+        value: formatCurrency(propostasAbertas),
+        delta: calculateDelta(propostasAbertas, propostasAbertasAnterior),
       },
       totalContratos: {
         value: formatCurrency(totalContratos),
@@ -423,9 +434,14 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         delta: calculateDelta(propostasRepouso, propostasRepousoAnterior),
       },
       propostasAtivas: {
-        value: formatCurrency(totalPropostas),
-        subValue: `${countAtivas} proposta${countAtivas !== 1 ? 's' : ''}`,
-        delta: calculateDelta(totalPropostas, totalPropostasAnterior),
+        value: formatCurrency(propostasAbertas),
+        subValue: `${countAbertas} proposta${countAbertas !== 1 ? 's' : ''}`,
+        delta: calculateDelta(propostasAbertas, propostasAbertasAnterior),
+      },
+      contratosFechados: {
+        value: formatCurrency(totalContratos),
+        subValue: `${contratos.length} contrato${contratos.length !== 1 ? 's' : ''}`,
+        delta: calculateDelta(totalContratos, totalContratosAnterior),
       },
       // Dados para o gráfico
       pipelineDistribution: [
@@ -436,10 +452,16 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
           color: '#2E90FA' 
         },
         { 
-          name: 'Perdidas', 
-          value: propostasPerdidas, 
-          count: countPerdidas,
-          color: '#F04438' 
+          name: 'Abertas', 
+          value: propostasAbertas, 
+          count: countAbertas,
+          color: '#12B76A' 
+        },
+        { 
+          name: 'Fechadas', 
+          value: propostasFechadas, 
+          count: countFechadas,
+          color: '#17B26A' 
         },
         { 
           name: 'Repouso', 
@@ -448,10 +470,10 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
           color: '#FDB022' 
         },
         { 
-          name: 'Ativas', 
-          value: totalPropostas, 
-          count: countAtivas,
-          color: '#12B76A' 
+          name: 'Perdidas', 
+          value: propostasPerdidas, 
+          count: countPerdidas,
+          color: '#F04438' 
         },
       ],
     };

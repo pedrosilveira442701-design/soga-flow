@@ -168,21 +168,47 @@ export default function Dashboard() {
       {/* Row 3: Pipeline de Propostas */}
       <div>
         <h2 className="text-h2 mb-4">Pipeline de Propostas</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-4">
           {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => (
+            Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-32 w-full" />
             ))
           ) : (
             <>
               <KPICard
-                title="Total de Propostas"
+                title="Volume Total de Propostas"
                 value={kpis.totalPropostasCount.value}
                 subValue={kpis.totalPropostasCount.subValue}
                 delta={kpis.totalPropostasCount.delta}
                 variant="default"
                 icon={FileText}
               />
+              <KPICard
+                title="Volume Real (Abertas)"
+                value={kpis.propostasAtivas.value}
+                subValue={kpis.propostasAtivas.subValue}
+                delta={kpis.propostasAtivas.delta}
+                variant="success"
+                icon={CheckCircle2}
+              />
+              <KPICard
+                title="Contratos Fechados"
+                value={kpis.contratosFechados.value}
+                subValue={kpis.contratosFechados.subValue}
+                delta={kpis.contratosFechados.delta}
+                variant="success"
+                icon={HandCoins}
+              />
+            </>
+          )}
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {isLoading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))
+          ) : (
+            <>
               <KPICard
                 title="Propostas Perdidas"
                 value={kpis.propostasPerdidas.value}
@@ -198,14 +224,6 @@ export default function Dashboard() {
                 delta={kpis.propostasRepouso.delta}
                 variant="repouso"
                 icon={Clock}
-              />
-              <KPICard
-                title="Volume Real (Ativas)"
-                value={kpis.propostasAtivas.value}
-                subValue={kpis.propostasAtivas.subValue}
-                delta={kpis.propostasAtivas.delta}
-                variant="success"
-                icon={CheckCircle2}
               />
             </>
           )}
