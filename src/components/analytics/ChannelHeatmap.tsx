@@ -105,20 +105,28 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
       <CardContent>
         <div className="overflow-x-auto">
           <TooltipProvider>
-            <div className="min-w-[600px]">
-              {/* Header com horas */}
-              <div className="flex gap-1 mb-1 ml-12">
+            <div className="min-w-[700px]">
+              {/* Header com horas - usando grid */}
+              <div 
+                className="grid gap-1 mb-1"
+                style={{ gridTemplateColumns: `40px repeat(${horasVisiveis.length}, 32px)` }}
+              >
+                <div /> {/* Espaço para labels dos dias */}
                 {horasVisiveis.map((hora) => (
-                  <div key={hora} className="w-8 text-center text-xs text-muted-foreground">
+                  <div key={hora} className="text-center text-xs text-muted-foreground">
                     {hora}h
                   </div>
                 ))}
               </div>
 
-              {/* Grid */}
+              {/* Grid de células */}
               {DIAS.map((dia, diaIdx) => (
-                <div key={dia} className="flex gap-1 mb-1">
-                  <div className="w-10 flex items-center text-sm font-medium text-muted-foreground">
+                <div 
+                  key={dia} 
+                  className="grid gap-1 mb-1"
+                  style={{ gridTemplateColumns: `40px repeat(${horasVisiveis.length}, 32px)` }}
+                >
+                  <div className="flex items-center text-sm font-medium text-muted-foreground">
                     {dia}
                   </div>
                   {horasVisiveis.map((hora) => {
@@ -133,7 +141,7 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
                       <Tooltip key={hora}>
                         <TooltipTrigger asChild>
                           <div
-                            className={`w-8 h-8 rounded cursor-pointer transition-colors ${getIntensityColor(value, maxValue, viewMode)}`}
+                            className={`h-8 rounded cursor-pointer transition-colors ${getIntensityColor(value, maxValue, viewMode)}`}
                           />
                         </TooltipTrigger>
                         <TooltipContent>
