@@ -123,7 +123,7 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
   const desconto = form.watch("desconto") || 0;
   const selectedClienteId = form.watch("cliente_id");
 
-  // Buscar leads do cliente selecionado
+  // Buscar leads do cliente selecionado (qualquer lead, independente de ter produtos)
   const { data: leadsDoCliente } = useQuery({
     queryKey: ["leads-by-cliente", selectedClienteId],
     queryFn: async () => {
@@ -133,7 +133,6 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
         .from("leads")
         .select("*")
         .eq("cliente_id", selectedClienteId)
-        .not("produtos", "is", null)
         .order("created_at", { ascending: false })
         .limit(1);
 
@@ -143,19 +142,22 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
     enabled: !!selectedClienteId && !initialData,
   });
 
-  // Auto-preencher serviços do lead quando cliente for selecionado
+  // Auto-vincular lead_id e preencher serviços quando cliente for selecionado
   useEffect(() => {
     if (leadsDoCliente && !autoFilledFromLead && !initialData) {
       const lead = leadsDoCliente;
-      const produtos = lead.produtos as Array<{ tipo: string; medida: number | null }>;
-
+      
+      // SEMPRE vincular o lead_id se existir um lead para o cliente
+      form.setValue("lead_id", lead.id);
+      setLeadInfo({ id: lead.id, name: `Lead #${lead.id.slice(0, 8)}` });
+      
+      // Só auto-preenche serviços se o lead tiver produtos
+      const produtos = lead.produtos as Array<{ tipo: string; medida: number | null }> | null;
       if (produtos && Array.isArray(produtos) && produtos.length > 0) {
-        // Mapear produtos do lead para serviços da proposta
         const servicosPreenchidos = produtos.map((p) => {
           let tipo = p.tipo;
           let tipo_outro = "";
 
-          // Se começar com "Outro:", extrair a descrição
           if (p.tipo?.startsWith("Outro:")) {
             tipo = "Outro";
             tipo_outro = p.tipo.replace("Outro:", "").trim();
@@ -171,10 +173,9 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
         });
 
         form.setValue("servicos", servicosPreenchidos);
-        form.setValue("lead_id", lead.id);
-        setAutoFilledFromLead(true);
-        setLeadInfo({ id: lead.id, name: `Lead #${lead.id.slice(0, 8)}` });
       }
+      
+      setAutoFilledFromLead(true);
     }
   }, [leadsDoCliente, autoFilledFromLead, initialData, form]);
 
