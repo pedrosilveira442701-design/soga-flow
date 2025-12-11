@@ -102,13 +102,19 @@ function getDateRange(filters: ChannelFilters): { start: Date; end: Date } {
 
 export function useChannelAnalytics(filters: ChannelFilters) {
   const { user } = useAuth();
-  const { start, end } = getDateRange(filters);
 
   // Busca dados brutos de leads com cliente (para bairro)
   const { data: rawData, isLoading: loadingRaw } = useQuery({
     queryKey: ["channel-analytics", "raw", filters, user?.id],
     queryFn: async () => {
       if (!user) return { leads: [], propostas: [], contratos: [] };
+
+      // Calcular datas DENTRO do queryFn para evitar problemas de closure
+      const { start, end } = getDateRange(filters);
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+
+      console.log("[ChannelAnalytics] Período:", filters.period, "De:", startISO, "Até:", endISO);
 
       // Buscar leads com cliente
       const { data: leads, error: leadsError } = await supabase
@@ -123,8 +129,8 @@ export function useChannelAnalytics(filters: ChannelFilters) {
           clientes(bairro, cidade)
         `)
         .eq("user_id", user.id)
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString());
+        .gte("created_at", startISO)
+        .lte("created_at", endISO);
 
       if (leadsError) throw leadsError;
 
@@ -143,8 +149,8 @@ export function useChannelAnalytics(filters: ChannelFilters) {
           clientes(bairro, cidade)
         `)
         .eq("user_id", user.id)
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString());
+        .gte("created_at", startISO)
+        .lte("created_at", endISO);
 
       if (propostasError) throw propostasError;
 
@@ -161,10 +167,16 @@ export function useChannelAnalytics(filters: ChannelFilters) {
           clientes(bairro, cidade)
         `)
         .eq("user_id", user.id)
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString());
+        .gte("created_at", startISO)
+        .lte("created_at", endISO);
 
       if (contratosError) throw contratosError;
+
+      console.log("[ChannelAnalytics] Dados:", {
+        leads: leads?.length || 0,
+        propostas: propostas?.length || 0,
+        contratos: contratos?.length || 0
+      });
 
       return { leads: leads || [], propostas: propostas || [], contratos: contratos || [] };
     },
