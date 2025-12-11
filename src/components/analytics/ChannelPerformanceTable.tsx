@@ -1,31 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend, LabelList, Cell } from "recharts";
 import type { ChannelMetrics } from "@/hooks/useChannelAnalytics";
+import { getChannelColor, getChannelColorHSL, getChannelColorHSLA } from "@/lib/channelColors";
 
 interface ChannelPerformanceTableProps {
   data?: ChannelMetrics[];
   isLoading: boolean;
-}
-
-// Cores consistentes por canal
-const CHANNEL_COLORS: Record<string, string> = {
-  "Orgânico": "hsl(195, 60%, 35%)", // Azul petróleo
-  "Síndico Profissional": "hsl(145, 55%, 40%)", // Verde
-  "Sindico Profissional": "hsl(145, 55%, 40%)", // Verde (variante)
-  "Instagram": "hsl(330, 70%, 55%)", // Rosa
-  "Google": "hsl(217, 90%, 50%)", // Azul Google
-  "Indicação": "hsl(45, 90%, 50%)", // Amarelo
-  "Não informado": "hsl(220, 10%, 50%)", // Cinza
-  "Outros": "hsl(220, 10%, 60%)", // Cinza claro
-};
-
-const DEFAULT_COLOR = "hsl(var(--primary))";
-
-function getChannelColor(canal: string): string {
-  return CHANNEL_COLORS[canal] || DEFAULT_COLOR;
 }
 
 function formatCurrency(value: number): string {
@@ -125,47 +107,13 @@ const CustomLineLabel = (props: any) => {
     <text
       x={x}
       y={y - 12}
-      fill="hsl(var(--chart-2))"
+      fill="hsl(142, 65%, 42%)"
       textAnchor="middle"
       fontSize={10}
       fontWeight={600}
     >
       {formatPercent(value)}
     </text>
-  );
-};
-
-// Custom tick para eixo X com mini-métricas
-const CustomXAxisTick = (props: any) => {
-  const { x, y, payload, data } = props;
-  const channelData = data?.find((d: any) => d.canal === payload.value);
-  
-  return (
-    <g transform={`translate(${x},${y})`}>
-      <text
-        x={0}
-        y={0}
-        dy={12}
-        textAnchor="middle"
-        fill="hsl(var(--foreground))"
-        fontSize={12}
-        fontWeight={500}
-      >
-        {payload.value}
-      </text>
-      {channelData && (
-        <text
-          x={0}
-          y={0}
-          dy={26}
-          textAnchor="middle"
-          fill="hsl(var(--muted-foreground))"
-          fontSize={9}
-        >
-          {channelData.leads}L • {channelData.propostas}P • {channelData.fechados}F
-        </text>
-      )}
-    </g>
   );
 };
 
@@ -216,7 +164,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
     const mainChannels = filteredData.filter((ch) => ch.valor_fechados >= threshold);
     const otherChannels = filteredData.filter((ch) => ch.valor_fechados < threshold && ch.valor_fechados > 0);
     
-    chartData = mainChannels.slice(0, 8).map((ch) => ({
+    chartData = mainChannels.slice(0, 8).map((ch, idx) => ({
       canal: ch.canal,
       "Valor Fechado": ch.valor_fechados,
       "Taxa Conversão": ch.taxa_proposta_fechado,
@@ -225,6 +173,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
       fechados: ch.fechados,
       taxa_lead_proposta: ch.taxa_lead_proposta,
       taxa_proposta_fechado: ch.taxa_proposta_fechado,
+      colorIndex: idx,
     }));
     
     // Adicionar "Outros" se houver canais agrupados
@@ -243,10 +192,11 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
         fechados: outrosFechados,
         taxa_lead_proposta: outrosLeads > 0 ? (outrosPropostas / outrosLeads) * 100 : 0,
         taxa_proposta_fechado: outrosPropostas > 0 ? (outrosFechados / outrosPropostas) * 100 : 0,
+        colorIndex: chartData.length,
       });
     }
   } else {
-    chartData = filteredData.slice(0, 8).map((ch) => ({
+    chartData = filteredData.slice(0, 8).map((ch, idx) => ({
       canal: ch.canal,
       "Valor Fechado": ch.valor_fechados,
       "Taxa Conversão": ch.taxa_proposta_fechado,
@@ -255,12 +205,64 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
       fechados: ch.fechados,
       taxa_lead_proposta: ch.taxa_lead_proposta,
       taxa_proposta_fechado: ch.taxa_proposta_fechado,
+      colorIndex: idx,
     }));
   }
 
   // Calcular max value para escala do eixo Y
   const maxValor = Math.max(...chartData.map((d) => d["Valor Fechado"]));
   const yAxisMax = Math.ceil(maxValor * 1.15 / 10000) * 10000; // Add 15% headroom for labels
+
+  // Custom tick para eixo X com mini-métricas e cores por canal
+  const CustomXAxisTick = (props: any) => {
+    const { x, y, payload } = props;
+    const channelData = chartData.find((d: any) => d.canal === payload.value);
+    const { hue, sat, light } = getChannelColor(payload.value, channelData?.colorIndex);
+    
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text
+          x={0}
+          y={0}
+          dy={12}
+          textAnchor="middle"
+          fill={`hsl(${hue}, ${sat}%, ${Math.max(light - 5, 30)}%)`}
+          fontSize={12}
+          fontWeight={600}
+        >
+          {payload.value}
+        </text>
+        {channelData && (
+          <text
+            x={0}
+            y={0}
+            dy={26}
+            textAnchor="middle"
+            fill="hsl(var(--muted-foreground))"
+            fontSize={9}
+          >
+            {channelData.leads}L • {channelData.propostas}P • {channelData.fechados}F
+          </text>
+        )}
+      </g>
+    );
+  };
+
+  // Estilo para tag de canal na tabela
+  const getChannelTagStyle = (canal: string, idx: number) => {
+    const { hue, sat, light } = getChannelColor(canal, idx);
+    return {
+      display: 'inline-flex',
+      alignItems: 'center',
+      height: '26px',
+      padding: '0 10px',
+      borderRadius: '4px',
+      background: `hsla(${hue}, ${sat}%, ${light}%, 0.15)`,
+      color: `hsl(${hue}, ${sat}%, ${Math.max(light - 10, 30)}%)`,
+      fontSize: '12px',
+      fontWeight: 600,
+    };
+  };
 
   return (
     <Card>
@@ -279,12 +281,15 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
             <ComposedChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 40 }}>
               <defs>
                 {/* Gradientes para cada canal */}
-                {chartData.map((item, index) => (
-                  <linearGradient key={`gradient-${index}`} id={`gradient-${index}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={getChannelColor(item.canal)} stopOpacity={1} />
-                    <stop offset="100%" stopColor={getChannelColor(item.canal)} stopOpacity={0.6} />
-                  </linearGradient>
-                ))}
+                {chartData.map((item, index) => {
+                  const { hue, sat, light } = getChannelColor(item.canal, item.colorIndex);
+                  return (
+                    <linearGradient key={`gradient-${index}`} id={`gradient-perf-${index}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={`hsl(${hue}, ${sat}%, ${light}%)`} stopOpacity={1} />
+                      <stop offset="100%" stopColor={`hsl(${hue}, ${sat}%, ${light + 10}%)`} stopOpacity={0.7} />
+                    </linearGradient>
+                  );
+                })}
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
               <XAxis 
@@ -292,7 +297,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
                 stroke="hsl(var(--muted-foreground))"
                 tickLine={false}
                 axisLine={{ stroke: "hsl(var(--border))" }}
-                tick={(props) => <CustomXAxisTick {...props} data={chartData} />}
+                tick={(props) => <CustomXAxisTick {...props} />}
                 height={50}
               />
               <YAxis 
@@ -326,7 +331,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
                 maxBarSize={60}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={`url(#gradient-${index})`} />
+                  <Cell key={`cell-${index}`} fill={`url(#gradient-perf-${index})`} />
                 ))}
                 <LabelList dataKey="Valor Fechado" content={<CustomBarLabel />} />
               </Bar>
@@ -334,9 +339,9 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
                 yAxisId="right"
                 type="monotone"
                 dataKey="Taxa Conversão" 
-                stroke="hsl(var(--chart-2))"
+                stroke="hsl(142, 65%, 42%)"
                 strokeWidth={2.5}
-                dot={{ fill: "hsl(var(--chart-2))", r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
+                dot={{ fill: "hsl(142, 65%, 42%)", r: 5, strokeWidth: 2, stroke: "hsl(var(--background))" }}
                 activeDot={{ r: 7, strokeWidth: 2 }}
                 connectNulls
               >
@@ -363,10 +368,10 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((row) => (
+              {data.map((row, idx) => (
                 <TableRow key={row.canal}>
                   <TableCell className="font-medium">
-                    <Badge variant="outline">{row.canal}</Badge>
+                    <span style={getChannelTagStyle(row.canal, idx)}>{row.canal}</span>
                   </TableCell>
                   <TableCell className="text-right">{row.leads}</TableCell>
                   <TableCell className="text-right">{row.propostas}</TableCell>

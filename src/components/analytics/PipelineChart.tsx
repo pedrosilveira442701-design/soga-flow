@@ -3,23 +3,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PipelineData } from "@/hooks/useAnalytics";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { DollarSign, TrendingUp } from "lucide-react";
+import { FALLBACK_PALETTE } from "@/lib/channelColors";
 
 interface PipelineChartProps {
   data?: PipelineData[];
   isLoading?: boolean;
 }
 
-const COLORS = {
-  "Entrou em Contato": "#8b5cf6",
-  "Visita Agendada": "#8b5cf6",
-  "Visita Realizada": "#8b5cf6",
-  "Proposta Pendente": "#f59e0b",
-  "Gerou Proposta": "#f59e0b",
-  "Fechou Contrato": "#10b981",
-  "Em Execução": "#ec4899",
-  "Finalizado": "#10b981",
-  "Perdido": "#ef4444",
+// Cores HSL fixas para estágios do pipeline
+const PIPELINE_COLORS: Record<string, { hue: number; sat: number; light: number }> = {
+  "Entrou em Contato": { hue: 262, sat: 83, light: 58 },
+  "Visita Agendada": { hue: 199, sat: 85, light: 48 },
+  "Visita Realizada": { hue: 199, sat: 85, light: 42 },
+  "Proposta Pendente": { hue: 38, sat: 92, light: 50 },
+  "Gerou Proposta": { hue: 38, sat: 92, light: 55 },
+  "Fechou Contrato": { hue: 142, sat: 71, light: 45 },
+  "Em Execução": { hue: 330, sat: 81, light: 60 },
+  "Finalizado": { hue: 142, sat: 65, light: 42 },
+  "Perdido": { hue: 0, sat: 84, light: 60 },
 };
+
+function getPipelineColor(estagio: string, index: number = 0): { hue: number; sat: number; light: number } {
+  if (PIPELINE_COLORS[estagio]) {
+    return PIPELINE_COLORS[estagio];
+  }
+  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
 
 export function PipelineChart({ data, isLoading }: PipelineChartProps) {
   if (isLoading) {
@@ -59,22 +68,24 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-background border rounded-lg p-3 shadow-lg">
-          <p className="font-semibold mb-2">{data.estagio}</p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Leads:</span>{" "}
-            <span className="font-medium">{data.count}</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Probabilidade:</span>{" "}
-            <span className="font-medium">{data.probabilidade}%</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Valor Ponderado:</span>{" "}
-            <span className="font-medium">
-              R$ {data.valor_ponderado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </span>
-          </p>
+        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+          <p className="font-semibold text-base mb-3">{data.estagio}</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Leads:</span>
+              <span className="font-medium">{data.count}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Probabilidade:</span>
+              <span className="font-medium">{data.probabilidade}%</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Valor Ponderado:</span>
+              <span className="font-medium text-green-600">
+                R$ {data.valor_ponderado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
         </div>
       );
     }
@@ -97,28 +108,42 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <defs>
+              {data.map((entry, index) => {
+                const { hue, sat, light } = getPipelineColor(entry.estagio, index);
+                return (
+                  <linearGradient key={`gradient-pipeline-${index}`} id={`gradient-pipeline-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={`hsl(${hue}, ${sat}%, ${light}%)`} stopOpacity={1} />
+                    <stop offset="100%" stopColor={`hsl(${hue}, ${sat}%, ${light + 12}%)`} stopOpacity={0.7} />
+                  </linearGradient>
+                );
+              })}
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
             <XAxis 
               dataKey="estagio" 
-              className="text-xs"
               tick={{ fontSize: 12 }}
+              stroke="hsl(var(--muted-foreground))"
+              tickLine={false}
             />
             <YAxis 
-              label={{ value: "Valor Ponderado (R$)", angle: -90, position: "insideLeft" }}
-              className="text-xs"
+              label={{ value: "Valor Ponderado (R$)", angle: -90, position: "insideLeft", fontSize: 11 }}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
               tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.2 }} />
             <Legend />
             <Bar 
               dataKey="valor_ponderado" 
               name="Valor Ponderado"
-              radius={[8, 8, 0, 0]}
+              radius={[6, 6, 0, 0]}
             >
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={COLORS[entry.estagio as keyof typeof COLORS] || "#94a3b8"} 
+                  fill={`url(#gradient-pipeline-${index})`}
                 />
               ))}
             </Bar>
@@ -128,24 +153,31 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
         {/* Insights */}
         <div className="mt-4 pt-4 border-t">
           <p className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+            <TrendingUp className="h-5 w-5" />
             Distribuição por Estágio:
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {data.map((stage) => (
-              <div 
-                key={stage.estagio} 
-                className="p-3 rounded-lg bg-muted/50 border"
-              >
-                <p className="text-xs text-muted-foreground">{stage.estagio}</p>
-                <p className="text-sm font-semibold">
-                  {stage.count} leads ({stage.probabilidade}%)
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  R$ {stage.valor_ponderado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            ))}
+            {data.map((stage, idx) => {
+              const { hue, sat, light } = getPipelineColor(stage.estagio, idx);
+              return (
+                <div 
+                  key={stage.estagio} 
+                  className="p-3 rounded-lg border"
+                  style={{ 
+                    background: `hsla(${hue}, ${sat}%, ${light}%, 0.1)`,
+                    borderColor: `hsla(${hue}, ${sat}%, ${light}%, 0.3)`,
+                  }}
+                >
+                  <p className="text-xs text-muted-foreground">{stage.estagio}</p>
+                  <p className="text-sm font-semibold">
+                    {stage.count} leads ({stage.probabilidade}%)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    R$ {stage.valor_ponderado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </CardContent>

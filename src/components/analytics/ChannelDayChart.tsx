@@ -2,48 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import type { ChannelDayData } from "@/hooks/useChannelAnalytics";
+import { getChannelColor, FALLBACK_PALETTE } from "@/lib/channelColors";
 
 interface ChannelDayChartProps {
   data?: ChannelDayData[];
   isLoading: boolean;
 }
 
-// Cores fixas por canal - consistente com ChannelPerformanceTable
-const CHANNEL_COLORS: Record<string, string> = {
-  "Orgânico": "0 84% 60%",           // HSL vermelho coral
-  "Síndico Profissional": "142 76% 36%", // HSL verde
-  "Instagram": "330 81% 60%",        // HSL rosa
-  "Google": "217 91% 60%",           // HSL azul
-  "Indicação": "45 93% 47%",         // HSL amarelo/âmbar
-  "Não informado": "215 16% 47%",    // HSL cinza
-  "WhatsApp": "142 69% 58%",         // HSL verde claro
-  "Facebook": "221 83% 53%",         // HSL azul escuro
-  "Site": "263 70% 50%",             // HSL roxo
-  "Telefone": "215 25% 27%",         // HSL cinza escuro
-  "Outros": "174 42% 41%",           // HSL teal
-};
-
-// Cores de fallback para canais não mapeados
-const FALLBACK_COLORS = [
-  "24 95% 53%",   // Laranja
-  "174 42% 41%",  // Teal
-  "270 60% 70%",  // Roxo claro
-  "0 72% 51%",    // Vermelho
-  "84 81% 44%",   // Lima
-];
-
 function getChannelColorHSL(canal: string, index: number = 0): string {
-  if (CHANNEL_COLORS[canal]) {
-    return CHANNEL_COLORS[canal];
-  }
-  
-  // Verificar prefixos comuns
-  if (canal.startsWith("Indicação")) return CHANNEL_COLORS["Indicação"];
-  if (canal.startsWith("Outro")) return CHANNEL_COLORS["Outros"];
-  if (canal.includes("Síndico")) return CHANNEL_COLORS["Síndico Profissional"];
-  if (canal.includes("MKT") || canal.includes("Marketing")) return "270 60% 70%";
-  
-  return FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+  const { hue, sat, light } = getChannelColor(canal, index);
+  return `${hue} ${sat}% ${light}%`;
 }
 
 function getGradientId(canal: string): string {
