@@ -115,7 +115,11 @@ export default function Anotacoes() {
 
         {/* Conteúdos por visualização */}
         {viewMode === "list" && (
-          <AnotacoesListView anotacoes={anotacoes} isLoading={isLoading} onEdit={handleEditAnotacao} />
+          <AnotacoesListView 
+            anotacoes={anotacoes.filter(a => a.status !== 'concluida')} 
+            isLoading={isLoading} 
+            onEdit={handleEditAnotacao} 
+          />
         )}
 
         {viewMode === "kanban" && (
