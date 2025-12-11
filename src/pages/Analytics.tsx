@@ -14,9 +14,11 @@ import { ConversionRatesCard } from "@/components/analytics/ConversionRatesCard"
 import { MaturacaoCardKpis } from "@/components/analytics/MaturacaoCardKpis";
 import { MaturacaoBoxplot } from "@/components/analytics/MaturacaoBoxplot";
 import { MaturacaoScatter } from "@/components/analytics/MaturacaoScatter";
+import { ChannelAnalyticsSection } from "@/components/analytics/ChannelAnalyticsSection";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { useMaturacaoComercial } from "@/hooks/useMaturacaoComercial";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { BarChart3, TrendingUp, DollarSign } from "lucide-react";
 
 export default function Analytics() {
@@ -121,6 +123,11 @@ export default function Analytics() {
       <div className="space-y-6">
         {/* Taxas de Conversão */}
         <ConversionRatesCard data={conversionRatesData} isLoading={loadingConversionRates} />
+
+        {/* Analytics de Canais de Venda */}
+        <Separator className="my-8" />
+        <ChannelAnalyticsSection />
+        <Separator className="my-8" />
 
         {/* Mapa Geográfico */}
         <MapaGeografico />
