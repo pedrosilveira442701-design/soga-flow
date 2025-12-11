@@ -13,6 +13,34 @@ interface ChannelBairroTableProps {
 
 type ViewMode = "leads" | "propostas" | "fechados" | "valor";
 
+// Cores HSL fixas por canal - consistente com outros gráficos de Analytics
+const CHANNEL_COLORS: Record<string, { hue: number; sat: number; light: number }> = {
+  "Instagram": { hue: 330, sat: 80, light: 55 },
+  "Google": { hue: 4, sat: 90, light: 58 },
+  "Indicação": { hue: 262, sat: 83, light: 58 },
+  "Site": { hue: 199, sat: 89, light: 48 },
+  "WhatsApp": { hue: 142, sat: 70, light: 45 },
+  "Facebook": { hue: 221, sat: 83, light: 53 },
+  "Telefone": { hue: 38, sat: 92, light: 50 },
+  "Outros": { hue: 215, sat: 16, light: 47 },
+};
+
+const FALLBACK_COLORS = [
+  { hue: 280, sat: 65, light: 55 },
+  { hue: 173, sat: 58, light: 39 },
+  { hue: 24, sat: 95, light: 53 },
+  { hue: 47, sat: 96, light: 53 },
+];
+
+function getChannelColor(canal: string): { hue: number; sat: number; light: number } {
+  if (CHANNEL_COLORS[canal]) {
+    return CHANNEL_COLORS[canal];
+  }
+  // Fallback consistente baseado no hash do nome
+  const hash = canal.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  return FALLBACK_COLORS[hash % FALLBACK_COLORS.length];
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -127,22 +155,53 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
   // Calcular percentual que os top 15 representam do total
   const top15Percentage = grandTotalAll > 0 ? ((top15Total / grandTotalAll) * 100).toFixed(1) : "0";
 
-  // Calcular max para escala de cores
-  const maxValue = Math.max(
-    ...data.map((d) => 
-      viewMode === "leads" ? d.leads
-        : viewMode === "propostas" ? d.propostas
-        : viewMode === "fechados" ? d.fechados
-        : d.valor_fechados
-    )
-  );
+  // Calcular max para escala de cores por canal
+  const maxByCanal = new Map<string, number>();
+  canais.forEach((canal) => {
+    let max = 0;
+    data.forEach((d) => {
+      if (d.canal === canal) {
+        const value = viewMode === "leads" ? d.leads
+          : viewMode === "propostas" ? d.propostas
+          : viewMode === "fechados" ? d.fechados
+          : d.valor_fechados;
+        if (value > max) max = value;
+      }
+    });
+    maxByCanal.set(canal, max);
+  });
 
-  const getCellStyle = (value: number) => {
+  const getCellStyle = (value: number, canal: string) => {
+    const maxValue = maxByCanal.get(canal) || 0;
     if (maxValue === 0 || value === 0) return {};
+    
+    const { hue, sat, light } = getChannelColor(canal);
     const intensity = value / maxValue;
-    const alpha = Math.max(0.1, intensity * 0.5);
+    
+    // Calcular lightness baseado na intensidade (mais intenso = mais saturado)
+    const baseLightness = 92 - (intensity * 35); // 92% a 57%
+    
     return {
-      backgroundColor: `hsla(var(--primary), ${alpha})`,
+      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${baseLightness}%) 0%, hsl(${hue}, ${sat}%, ${baseLightness + 5}%) 100%)`,
+      color: intensity > 0.6 ? `hsl(${hue}, ${sat}%, 15%)` : undefined,
+    };
+  };
+
+  const getHeaderStyle = (canal: string) => {
+    const { hue, sat, light } = getChannelColor(canal);
+    return {
+      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light + 10}%) 100%)`,
+      color: 'white',
+      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+    };
+  };
+
+  const getFooterCellStyle = (canal: string) => {
+    const { hue, sat } = getChannelColor(canal);
+    return {
+      background: `hsl(${hue}, ${sat}%, 92%)`,
+      color: `hsl(${hue}, ${sat}%, 25%)`,
+      fontWeight: 600,
     };
   };
 
@@ -178,7 +237,11 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
               <TableRow>
                 <TableHead className="sticky left-0 bg-card z-10">Bairro</TableHead>
                 {canais.map((canal) => (
-                  <TableHead key={canal} className="text-center min-w-[80px]">
+                  <TableHead 
+                    key={canal} 
+                    className="text-center min-w-[80px] rounded-t"
+                    style={getHeaderStyle(canal)}
+                  >
                     {canal}
                   </TableHead>
                 ))}
@@ -206,7 +269,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
                       <TableCell 
                         key={canal} 
                         className="text-center"
-                        style={getCellStyle(value)}
+                        style={getCellStyle(value, canal)}
                       >
                         {viewMode === "valor" ? (value > 0 ? formatCurrency(value) : "-") : (value || "-")}
                       </TableCell>
@@ -221,33 +284,47 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="bg-muted/30">
+              <TableRow>
                 <TableCell className="sticky left-0 bg-muted/30 z-10 font-medium">
                   Subtotal Top 15
                 </TableCell>
                 {canais.map((canal) => (
-                  <TableCell key={canal} className="text-center">
+                  <TableCell 
+                    key={canal} 
+                    className="text-center"
+                    style={getFooterCellStyle(canal)}
+                  >
                     {viewMode === "valor" 
                       ? formatCurrency(canalTotalsTop15.get(canal) || 0)
                       : canalTotalsTop15.get(canal) || 0}
                   </TableCell>
                 ))}
-                <TableCell className="text-right font-medium">
+                <TableCell className="text-right font-medium bg-muted/30">
                   {viewMode === "valor" ? formatCurrency(top15Total) : top15Total}
                 </TableCell>
               </TableRow>
-              <TableRow className="bg-muted/50 font-bold">
-                <TableCell className="sticky left-0 bg-muted/50 z-10">
+              <TableRow>
+                <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold">
                   TOTAL GERAL
                 </TableCell>
-                {canais.map((canal) => (
-                  <TableCell key={canal} className="text-center">
-                    {viewMode === "valor" 
-                      ? formatCurrency(canalTotalsAll.get(canal) || 0)
-                      : canalTotalsAll.get(canal) || 0}
-                  </TableCell>
-                ))}
-                <TableCell className="text-right">
+                {canais.map((canal) => {
+                  const { hue, sat } = getChannelColor(canal);
+                  return (
+                    <TableCell 
+                      key={canal} 
+                      className="text-center font-bold"
+                      style={{
+                        background: `hsl(${hue}, ${sat}%, 88%)`,
+                        color: `hsl(${hue}, ${sat}%, 20%)`,
+                      }}
+                    >
+                      {viewMode === "valor" 
+                        ? formatCurrency(canalTotalsAll.get(canal) || 0)
+                        : canalTotalsAll.get(canal) || 0}
+                    </TableCell>
+                  );
+                })}
+                <TableCell className="text-right font-bold bg-muted/50">
                   {viewMode === "valor" ? formatCurrency(grandTotalAll) : grandTotalAll}
                 </TableCell>
               </TableRow>
