@@ -86,8 +86,8 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
     (bairroTotals.get(b) || 0) - (bairroTotals.get(a) || 0)
   ).slice(0, 15); // Top 15 bairros
 
-  // Calcular totais por canal (para rodapé)
-  const canalTotals = new Map<string, number>();
+  // Calcular totais por canal (para rodapé) - SOMENTE dos top 15 bairros
+  const canalTotalsTop15 = new Map<string, number>();
   canais.forEach((canal) => {
     let total = 0;
     sortedBairros.forEach((bairro) => {
@@ -99,11 +99,33 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
           : cellData.valor_fechados;
       }
     });
-    canalTotals.set(canal, total);
+    canalTotalsTop15.set(canal, total);
   });
 
-  // Calcular total geral
-  const grandTotal = Array.from(canalTotals.values()).reduce((sum, val) => sum + val, 0);
+  // Calcular total dos top 15 bairros
+  const top15Total = Array.from(canalTotalsTop15.values()).reduce((sum, val) => sum + val, 0);
+
+  // Calcular totais por canal (TODOS os bairros, não apenas top 15)
+  const canalTotalsAll = new Map<string, number>();
+  canais.forEach((canal) => {
+    let total = 0;
+    bairros.forEach((bairro) => {
+      const cellData = matrix.get(bairro)?.get(canal);
+      if (cellData) {
+        total += viewMode === "leads" ? cellData.leads
+          : viewMode === "propostas" ? cellData.propostas
+          : viewMode === "fechados" ? cellData.fechados
+          : cellData.valor_fechados;
+      }
+    });
+    canalTotalsAll.set(canal, total);
+  });
+
+  // Calcular total geral absoluto (todos os bairros)
+  const grandTotalAll = Array.from(canalTotalsAll.values()).reduce((sum, val) => sum + val, 0);
+
+  // Calcular percentual que os top 15 representam do total
+  const top15Percentage = grandTotalAll > 0 ? ((top15Total / grandTotalAll) * 100).toFixed(1) : "0";
 
   // Calcular max para escala de cores
   const maxValue = Math.max(
@@ -199,17 +221,42 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="bg-muted/50 font-bold">
-                <TableCell className="sticky left-0 bg-muted/50 z-10">TOTAL GERAL</TableCell>
+              <TableRow className="bg-muted/30">
+                <TableCell className="sticky left-0 bg-muted/30 z-10 font-medium">
+                  Subtotal Top 15
+                </TableCell>
                 {canais.map((canal) => (
                   <TableCell key={canal} className="text-center">
                     {viewMode === "valor" 
-                      ? formatCurrency(canalTotals.get(canal) || 0)
-                      : canalTotals.get(canal) || 0}
+                      ? formatCurrency(canalTotalsTop15.get(canal) || 0)
+                      : canalTotalsTop15.get(canal) || 0}
+                  </TableCell>
+                ))}
+                <TableCell className="text-right font-medium">
+                  {viewMode === "valor" ? formatCurrency(top15Total) : top15Total}
+                </TableCell>
+              </TableRow>
+              <TableRow className="bg-muted/50 font-bold">
+                <TableCell className="sticky left-0 bg-muted/50 z-10">
+                  TOTAL GERAL
+                </TableCell>
+                {canais.map((canal) => (
+                  <TableCell key={canal} className="text-center">
+                    {viewMode === "valor" 
+                      ? formatCurrency(canalTotalsAll.get(canal) || 0)
+                      : canalTotalsAll.get(canal) || 0}
                   </TableCell>
                 ))}
                 <TableCell className="text-right">
-                  {viewMode === "valor" ? formatCurrency(grandTotal) : grandTotal}
+                  {viewMode === "valor" ? formatCurrency(grandTotalAll) : grandTotalAll}
+                </TableCell>
+              </TableRow>
+              <TableRow className="bg-primary/10 text-primary">
+                <TableCell className="sticky left-0 bg-primary/10 z-10 font-medium" colSpan={canais.length + 1}>
+                  Top 15 representa
+                </TableCell>
+                <TableCell className="text-right font-bold">
+                  {top15Percentage}%
                 </TableCell>
               </TableRow>
             </TableFooter>
