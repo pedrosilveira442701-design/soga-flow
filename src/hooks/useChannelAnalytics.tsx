@@ -154,12 +154,16 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       if (propostasError) throw propostasError;
 
-      // Buscar contratos (fechados)
+      // Buscar contratos (fechados) - filtrar por data_inicio (data do contrato)
+      const startDate = start.toISOString().split('T')[0]; // YYYY-MM-DD
+      const endDate = end.toISOString().split('T')[0];
+      
       const { data: contratos, error: contratosError } = await supabase
         .from("contratos")
         .select(`
           id,
           created_at,
+          data_inicio,
           valor_negociado,
           margem_pct,
           proposta_id,
@@ -167,8 +171,8 @@ export function useChannelAnalytics(filters: ChannelFilters) {
           clientes(bairro, cidade)
         `)
         .eq("user_id", user.id)
-        .gte("created_at", startISO)
-        .lte("created_at", endISO);
+        .gte("data_inicio", startDate)
+        .lte("data_inicio", endDate);
 
       if (contratosError) throw contratosError;
 
@@ -351,7 +355,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         const canal = leadOrigemMap.get(leadId) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
-        const date = new Date(contrato.created_at);
+        const date = new Date(contrato.data_inicio);
         const dia = (date.getDay() + 6) % 7;
         const hora = date.getHours();
         const idx = dia * 24 + hora;
