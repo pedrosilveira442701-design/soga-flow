@@ -210,9 +210,12 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         channelData.get(canal)!.leads++;
       });
 
-      // Processar propostas
+      // Processar propostas - APENAS as que têm lead_id (propostas vinculadas a leads)
       propostas.forEach((proposta: any) => {
-        const canal = proposta.lead_id ? leadOrigemMap.get(proposta.lead_id) || "Não informado" : "Não informado";
+        // Ignorar propostas sem lead_id para análise de canal
+        if (!proposta.lead_id) return;
+        
+        const canal = leadOrigemMap.get(proposta.lead_id) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
         if (!channelData.has(canal)) {
@@ -234,20 +237,21 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         data.valor_propostas += parseFloat(String(proposta.valor_total || 0));
       });
 
-      // Processar contratos (fechados)
+      // Mapear proposta_id -> lead_id (apenas propostas com lead)
       const propostaLeadMap = new Map<string, string>();
       propostas.forEach((p: any) => {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
+      // Processar contratos (fechados) - APENAS os que podem ser rastreados até um lead
       contratos.forEach((contrato: any) => {
-        let canal = "Não informado";
-        if (contrato.proposta_id) {
-          const leadId = propostaLeadMap.get(contrato.proposta_id);
-          if (leadId) {
-            canal = leadOrigemMap.get(leadId) || "Não informado";
-          }
-        }
+        // Ignorar contratos que não podem ser rastreados até um lead
+        if (!contrato.proposta_id) return;
+        
+        const leadId = propostaLeadMap.get(contrato.proposta_id);
+        if (!leadId) return; // Proposta sem lead_id, ignorar
+        
+        const canal = leadOrigemMap.get(leadId) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
         if (!channelData.has(canal)) {
@@ -319,20 +323,20 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         heatmap[idx].valor += parseFloat(String(lead.valor_potencial || 0));
       });
 
-      // Preencher fechados
+      // Preencher fechados - apenas contratos rastreáveis até um lead
       const propostaLeadMap = new Map<string, string>();
       rawData.propostas.forEach((p: any) => {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
       contratos.forEach((contrato: any) => {
-        let canal = "Não informado";
-        if (contrato.proposta_id) {
-          const leadId = propostaLeadMap.get(contrato.proposta_id);
-          if (leadId) {
-            canal = leadOrigemMap.get(leadId) || "Não informado";
-          }
-        }
+        // Ignorar contratos que não podem ser rastreados até um lead
+        if (!contrato.proposta_id) return;
+        
+        const leadId = propostaLeadMap.get(contrato.proposta_id);
+        if (!leadId) return;
+        
+        const canal = leadOrigemMap.get(leadId) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
         const date = new Date(contrato.created_at);
@@ -426,9 +430,12 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         dataMap.get(key)!.leads++;
       });
 
-      // Processar propostas
+      // Processar propostas - APENAS as que têm lead_id
       propostas.forEach((proposta: any) => {
-        const canal = proposta.lead_id ? leadOrigemMap.get(proposta.lead_id) || "Não informado" : "Não informado";
+        // Ignorar propostas sem lead_id para análise de canal
+        if (!proposta.lead_id) return;
+        
+        const canal = leadOrigemMap.get(proposta.lead_id) || "Não informado";
         const bairro = (proposta.clientes as any)?.bairro || "Não informado";
         
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
@@ -457,14 +464,15 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
+      // Processar contratos - APENAS os rastreáveis até um lead
       contratos.forEach((contrato: any) => {
-        let canal = "Não informado";
-        if (contrato.proposta_id) {
-          const leadId = propostaLeadMap.get(contrato.proposta_id);
-          if (leadId) {
-            canal = leadOrigemMap.get(leadId) || "Não informado";
-          }
-        }
+        // Ignorar contratos que não podem ser rastreados até um lead
+        if (!contrato.proposta_id) return;
+        
+        const leadId = propostaLeadMap.get(contrato.proposta_id);
+        if (!leadId) return;
+        
+        const canal = leadOrigemMap.get(leadId) || "Não informado";
         const bairro = (contrato.clientes as any)?.bairro || "Não informado";
         
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
