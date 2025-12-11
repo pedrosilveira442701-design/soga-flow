@@ -3,20 +3,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FunnelStageData } from "@/hooks/useAnalytics";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { TrendingDown, Clock } from "lucide-react";
+import { FALLBACK_PALETTE } from "@/lib/channelColors";
 
 interface FunnelChartProps {
   data?: FunnelStageData[];
   isLoading?: boolean;
 }
 
-const COLORS = {
-  Novo: "#3b82f6",
-  Contato: "#8b5cf6",
-  Negociação: "#ec4899",
-  "Proposta Enviada": "#f59e0b",
-  Fechado: "#10b981",
-  Perdido: "#ef4444",
+// Cores HSL fixas para estágios do funil
+const STAGE_COLORS: Record<string, { hue: number; sat: number; light: number }> = {
+  "Novo": { hue: 217, sat: 91, light: 60 },
+  "Contato": { hue: 262, sat: 83, light: 58 },
+  "Negociação": { hue: 330, sat: 81, light: 60 },
+  "Proposta Enviada": { hue: 38, sat: 92, light: 50 },
+  "Fechado": { hue: 142, sat: 71, light: 45 },
+  "Perdido": { hue: 0, sat: 84, light: 60 },
 };
+
+function getStageColor(estagio: string, index: number = 0): { hue: number; sat: number; light: number } {
+  if (STAGE_COLORS[estagio]) {
+    return STAGE_COLORS[estagio];
+  }
+  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
 
 export function FunnelChart({ data, isLoading }: FunnelChartProps) {
   if (isLoading) {
@@ -54,21 +63,25 @@ export function FunnelChart({ data, isLoading }: FunnelChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-background border rounded-lg p-3 shadow-lg">
-          <p className="font-semibold mb-2">{data.estagio}</p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Leads:</span>{" "}
-            <span className="font-medium">{data.count}</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-foreground">Taxa:</span>{" "}
-            <span className="font-medium">{data.taxa_conversao}%</span>
-          </p>
-          <p className="text-sm flex items-center gap-1">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Tempo médio:</span>{" "}
-            <span className="font-medium">{data.tempo_medio_dias} dias</span>
-          </p>
+        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+          <p className="font-semibold text-base mb-3">{data.estagio}</p>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Leads:</span>
+              <span className="font-medium">{data.count}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Taxa:</span>
+              <span className="font-medium">{data.taxa_conversao}%</span>
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-muted-foreground flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                Tempo médio:
+              </span>
+              <span className="font-medium">{data.tempo_medio_dias} dias</span>
+            </div>
+          </div>
         </div>
       );
     }
@@ -91,35 +104,55 @@ export function FunnelChart({ data, isLoading }: FunnelChartProps) {
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <defs>
+              {data.map((entry, index) => {
+                const { hue, sat, light } = getStageColor(entry.estagio, index);
+                return (
+                  <linearGradient key={`gradient-funnel-${index}`} id={`gradient-funnel-${index}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={`hsl(${hue}, ${sat}%, ${light}%)`} stopOpacity={1} />
+                    <stop offset="100%" stopColor={`hsl(${hue}, ${sat}%, ${light + 10}%)`} stopOpacity={0.7} />
+                  </linearGradient>
+                );
+              })}
+              <linearGradient id="gradient-time" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="hsl(38, 92%, 60%)" stopOpacity={0.5} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
             <XAxis 
               dataKey="estagio" 
-              className="text-xs"
               tick={{ fontSize: 12 }}
+              stroke="hsl(var(--muted-foreground))"
+              tickLine={false}
             />
             <YAxis 
               yAxisId="left"
-              label={{ value: "Número de Leads", angle: -90, position: "insideLeft" }}
-              className="text-xs"
+              label={{ value: "Número de Leads", angle: -90, position: "insideLeft", fontSize: 11 }}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
             />
             <YAxis 
               yAxisId="right" 
               orientation="right"
-              label={{ value: "Dias", angle: 90, position: "insideRight" }}
-              className="text-xs"
+              label={{ value: "Dias", angle: 90, position: "insideRight", fontSize: 11 }}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.2 }} />
             <Legend />
             <Bar 
               yAxisId="left"
               dataKey="count" 
               name="Leads"
-              radius={[8, 8, 0, 0]}
+              radius={[6, 6, 0, 0]}
             >
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={COLORS[entry.estagio as keyof typeof COLORS] || "#94a3b8"} 
+                  fill={`url(#gradient-funnel-${index})`}
                 />
               ))}
             </Bar>
@@ -127,16 +160,15 @@ export function FunnelChart({ data, isLoading }: FunnelChartProps) {
               yAxisId="right"
               dataKey="tempo_medio_dias" 
               name="Tempo Médio (dias)"
-              fill="#f59e0b"
-              radius={[8, 8, 0, 0]}
-              opacity={0.6}
+              fill="url(#gradient-time)"
+              radius={[6, 6, 0, 0]}
             />
           </BarChart>
         </ResponsiveContainer>
 
         {/* Insights de Gargalos */}
         <div className="mt-4 pt-4 border-t">
-          <p className="text-sm font-semibold mb-2">🔍 Insights de Gargalos:</p>
+          <p className="text-sm font-semibold mb-2">Insights de Gargalos:</p>
           <div className="space-y-1">
             {data
               .filter((stage) => stage.tempo_medio_dias > avgTime)
