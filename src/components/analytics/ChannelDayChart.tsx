@@ -8,19 +8,59 @@ interface ChannelDayChartProps {
   isLoading: boolean;
 }
 
+// Paleta de cores bem distintas e espaçadas no espectro
 const CHANNEL_COLORS: Record<string, string> = {
-  "Google": "#4285F4",
-  "Instagram": "#E4405F",
-  "Facebook": "#1877F2",
-  "WhatsApp": "#25D366",
-  "Indicação": "#FF9800",
-  "Site": "#9C27B0",
-  "Telefone": "#607D8B",
-  "Não informado": "#9E9E9E",
+  // Azuis
+  "Google": "#3B82F6",        // Azul vibrante
+  "Facebook": "#1D4ED8",      // Azul escuro
+  "Orgânico": "#0EA5E9",      // Azul céu
+  
+  // Rosa/Magenta (bem separado)
+  "Instagram": "#EC4899",     // Rosa vibrante
+  
+  // Âmbar/Dourado (bem diferente do rosa)
+  "Indicação": "#F59E0B",     // Âmbar
+  
+  // Verdes
+  "WhatsApp": "#22C55E",      // Verde vivo
+  
+  // Roxos/Violetas
+  "Site": "#8B5CF6",          // Violeta
+  "Síndico Profissional": "#6366F1", // Índigo
+  
+  // Neutros
+  "Telefone": "#64748B",      // Cinza azulado
+  "Não informado": "#94A3B8", // Cinza claro
 };
 
-function getChannelColor(canal: string): string {
-  return CHANNEL_COLORS[canal] || `hsl(${Math.random() * 360}, 70%, 50%)`;
+// Cores de fallback bem distintas para canais não mapeados
+const FALLBACK_COLORS = [
+  "#F97316",  // Laranja
+  "#14B8A6",  // Teal
+  "#A855F7",  // Roxo
+  "#EF4444",  // Vermelho
+  "#84CC16",  // Lima
+  "#0891B2",  // Ciano
+  "#DC2626",  // Vermelho escuro
+  "#7C3AED",  // Violeta escuro
+  "#059669",  // Verde escuro
+  "#D946EF",  // Fúcsia
+];
+
+function getChannelColor(canal: string, index: number = 0): string {
+  // Match exato
+  if (CHANNEL_COLORS[canal]) {
+    return CHANNEL_COLORS[canal];
+  }
+  
+  // Verificar prefixos comuns
+  if (canal.startsWith("Indicação")) return "#F59E0B";  // Âmbar
+  if (canal.startsWith("Outro")) return "#14B8A6";       // Teal
+  if (canal.includes("Síndico")) return "#6366F1";       // Índigo
+  if (canal.includes("MKT") || canal.includes("Marketing")) return "#A855F7"; // Roxo
+  
+  // Fallback determinístico baseado no índice
+  return FALLBACK_COLORS[index % FALLBACK_COLORS.length];
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -101,13 +141,13 @@ export function ChannelDayChart({ data, isLoading }: ChannelDayChartProps) {
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              {canaisArray.map((canal) => (
+              {canaisArray.map((canal, index) => (
                 <Bar
                   key={canal}
                   dataKey={canal}
                   stackId="a"
-                  fill={getChannelColor(canal)}
-                  radius={canaisArray.indexOf(canal) === canaisArray.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                  fill={getChannelColor(canal, index)}
+                  radius={index === canaisArray.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
             </BarChart>
