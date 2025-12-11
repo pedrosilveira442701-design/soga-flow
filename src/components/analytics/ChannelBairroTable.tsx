@@ -155,52 +155,48 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
   // Calcular percentual que os top 15 representam do total
   const top15Percentage = grandTotalAll > 0 ? ((top15Total / grandTotalAll) * 100).toFixed(1) : "0";
 
-  // Calcular max para escala de cores por canal
-  const maxByCanal = new Map<string, number>();
-  canais.forEach((canal) => {
-    let max = 0;
-    data.forEach((d) => {
-      if (d.canal === canal) {
-        const value = viewMode === "leads" ? d.leads
-          : viewMode === "propostas" ? d.propostas
-          : viewMode === "fechados" ? d.fechados
-          : d.valor_fechados;
-        if (value > max) max = value;
-      }
-    });
-    maxByCanal.set(canal, max);
-  });
+
+  // Calcular max global para escala de cores única
+  const globalMax = Math.max(
+    ...data.map((d) =>
+      viewMode === "leads" ? d.leads
+        : viewMode === "propostas" ? d.propostas
+        : viewMode === "fechados" ? d.fechados
+        : d.valor_fechados
+    )
+  );
 
   const getCellStyle = (value: number, canal: string) => {
-    const maxValue = maxByCanal.get(canal) || 0;
-    if (maxValue === 0 || value === 0) return {};
+    if (globalMax === 0 || value === 0) return {};
     
-    const { hue, sat, light } = getChannelColor(canal);
-    const intensity = value / maxValue;
+    const { hue, sat } = getChannelColor(canal);
+    const intensity = value / globalMax;
     
-    // Calcular lightness baseado na intensidade (mais intenso = mais saturado)
-    const baseLightness = 92 - (intensity * 35); // 92% a 57%
+    // Borda esquerda colorida pelo canal + fundo com intensidade sutil
+    const bgAlpha = 0.08 + (intensity * 0.25); // 8% a 33%
     
     return {
-      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${baseLightness}%) 0%, hsl(${hue}, ${sat}%, ${baseLightness + 5}%) 100%)`,
-      color: intensity > 0.6 ? `hsl(${hue}, ${sat}%, 15%)` : undefined,
+      borderLeft: `3px solid hsl(${hue}, ${sat}%, 50%)`,
+      background: `hsla(${hue}, ${sat}%, 50%, ${bgAlpha})`,
+      fontWeight: intensity > 0.5 ? 600 : 400,
     };
   };
 
-  const getHeaderStyle = (canal: string) => {
+  const getHeaderBadgeStyle = (canal: string) => {
     const { hue, sat, light } = getChannelColor(canal);
     return {
-      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light + 10}%) 100%)`,
+      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light - 8}%) 100%)`,
       color: 'white',
-      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+      textShadow: '0 1px 1px rgba(0,0,0,0.15)',
+      border: 'none',
     };
   };
 
   const getFooterCellStyle = (canal: string) => {
     const { hue, sat } = getChannelColor(canal);
     return {
-      background: `hsl(${hue}, ${sat}%, 92%)`,
-      color: `hsl(${hue}, ${sat}%, 25%)`,
+      borderLeft: `3px solid hsl(${hue}, ${sat}%, 45%)`,
+      background: `hsla(${hue}, ${sat}%, 50%, 0.12)`,
       fontWeight: 600,
     };
   };
@@ -239,10 +235,14 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
                 {canais.map((canal) => (
                   <TableHead 
                     key={canal} 
-                    className="text-center min-w-[80px] rounded-t"
-                    style={getHeaderStyle(canal)}
+                    className="text-center min-w-[90px] p-2"
                   >
-                    {canal}
+                    <Badge 
+                      className="text-xs px-2 py-1"
+                      style={getHeaderBadgeStyle(canal)}
+                    >
+                      {canal}
+                    </Badge>
                   </TableHead>
                 ))}
                 <TableHead className="text-right font-bold">Total</TableHead>
