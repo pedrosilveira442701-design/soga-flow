@@ -111,7 +111,24 @@ function getDateRange(filters: ChannelFilters): { start: Date; end: Date } {
 export function useChannelAnalytics(filters: ChannelFilters) {
   const { user } = useAuth();
 
-  // Busca dados brutos de leads com cliente (para bairro)
+  // Buscar TODOS os leads para mapeamento de origem (sem filtro de data)
+  const { data: allLeadsForOriginMap } = useQuery({
+    queryKey: ["channel-analytics", "all-leads-origin", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data: leads, error } = await supabase
+        .from("leads")
+        .select("id, origem")
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      return leads || [];
+    },
+    enabled: !!user,
+  });
+
+  // Busca dados brutos de leads com cliente (para bairro) - FILTRADO POR PERÍODO
   const { data: rawData, isLoading: loadingRaw } = useQuery({
     queryKey: ["channel-analytics", "raw", filters, user?.id],
     queryFn: async () => {
@@ -124,7 +141,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       console.log("[ChannelAnalytics] Período:", filters.period, "De:", startISO, "Até:", endISO);
 
-      // Buscar leads com cliente
+      // Buscar leads do período com cliente
       const { data: leads, error: leadsError } = await supabase
         .from("leads")
         .select(`
@@ -142,7 +159,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       if (leadsError) throw leadsError;
 
-      // Buscar propostas
+      // Buscar propostas do período
       const { data: propostas, error: propostasError } = await supabase
         .from("propostas")
         .select(`
@@ -197,15 +214,15 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
   // Métricas por Canal
   const { data: channelMetrics, isLoading: loadingChannelMetrics } = useQuery({
-    queryKey: ["channel-analytics", "metrics", rawData, filters.canais],
+    queryKey: ["channel-analytics", "metrics", rawData, allLeadsForOriginMap, filters.canais],
     queryFn: async () => {
-      if (!rawData) return [];
+      if (!rawData || !allLeadsForOriginMap) return [];
 
       const { leads, propostas, contratos } = rawData;
       
-      // Mapear lead_id para origem
+      // Mapear lead_id para origem usando TODOS os leads (não filtrados por período)
       const leadOrigemMap = new Map<string, string>();
-      leads.forEach((lead: any) => {
+      allLeadsForOriginMap.forEach((lead: any) => {
         leadOrigemMap.set(lead.id, lead.origem || "Não informado");
       });
 
@@ -309,20 +326,20 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return Array.from(channelData.values()).sort((a, b) => b.valor_fechados - a.valor_fechados);
     },
-    enabled: !!rawData,
+    enabled: !!rawData && !!allLeadsForOriginMap,
   });
 
   // Heatmap Dia x Hora
   const { data: heatmapData, isLoading: loadingHeatmap } = useQuery({
-    queryKey: ["channel-analytics", "heatmap", rawData, filters.canais],
+    queryKey: ["channel-analytics", "heatmap", rawData, allLeadsForOriginMap, filters.canais],
     queryFn: async () => {
-      if (!rawData) return [];
+      if (!rawData || !allLeadsForOriginMap) return [];
 
       const { leads, contratos } = rawData;
       
-      // Criar mapa para lead_id -> origem
+      // Criar mapa para lead_id -> origem usando TODOS os leads
       const leadOrigemMap = new Map<string, string>();
-      leads.forEach((lead: any) => {
+      allLeadsForOriginMap.forEach((lead: any) => {
         leadOrigemMap.set(lead.id, lead.origem || "Não informado");
       });
 
@@ -372,7 +389,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return heatmap;
     },
-    enabled: !!rawData,
+    enabled: !!rawData && !!allLeadsForOriginMap,
   });
 
   // Canal x Dia da Semana
@@ -414,17 +431,20 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
   // Canal x Bairro
   const { data: bairroChannelData, isLoading: loadingBairroChannel } = useQuery({
-    queryKey: ["channel-analytics", "bairro-channel", rawData, filters.canais, filters.bairros],
+    queryKey: ["channel-analytics", "bairro-channel", rawData, allLeadsForOriginMap, filters.canais, filters.bairros],
     queryFn: async () => {
-      if (!rawData) return [];
+      if (!rawData || !allLeadsForOriginMap) return [];
 
       const { leads, propostas, contratos } = rawData;
       
-      // Mapear lead_id para origem
+      // Mapear lead_id para origem usando TODOS os leads
       const leadOrigemMap = new Map<string, string>();
       const leadBairroMap = new Map<string, string>();
-      leads.forEach((lead: any) => {
+      allLeadsForOriginMap.forEach((lead: any) => {
         leadOrigemMap.set(lead.id, lead.origem || "Não informado");
+      });
+      // Para bairro, usamos os leads do período (que têm dados de cliente)
+      leads.forEach((lead: any) => {
         leadBairroMap.set(lead.id, (lead.clientes as any)?.bairro || "Não informado");
       });
 
@@ -521,7 +541,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       return Array.from(dataMap.values()).sort((a, b) => b.valor_fechados - a.valor_fechados);
     },
-    enabled: !!rawData,
+    enabled: !!rawData && !!allLeadsForOriginMap,
   });
 
   // KPIs Gerais - usa rawData para totais REAIS do período
