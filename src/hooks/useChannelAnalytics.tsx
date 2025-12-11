@@ -112,6 +112,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
   const { user } = useAuth();
 
   // Buscar TODOS os leads para mapeamento de origem (sem filtro de data)
+  // Inclui cliente_id para permitir rastreamento via cliente
   const { data: allLeadsForOriginMap } = useQuery({
     queryKey: ["channel-analytics", "all-leads-origin", user?.id],
     queryFn: async () => {
@@ -119,8 +120,9 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       const { data: leads, error } = await supabase
         .from("leads")
-        .select("id, origem")
-        .eq("user_id", user.id);
+        .select("id, origem, cliente_id, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }); // Mais recente primeiro
 
       if (error) throw error;
       return leads || [];
@@ -243,6 +245,15 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         leadOrigemMap.set(lead.id, lead.origem || "Não informado");
       });
 
+      // Mapear cliente_id para origem (usar o lead mais recente do cliente)
+      // Os leads já vêm ordenados por created_at DESC, então o primeiro encontrado é o mais recente
+      const clienteOrigemMap = new Map<string, string>();
+      allLeadsForOriginMap.forEach((lead: any) => {
+        if (lead.cliente_id && !clienteOrigemMap.has(lead.cliente_id)) {
+          clienteOrigemMap.set(lead.cliente_id, lead.origem || "Não informado");
+        }
+      });
+
       // Agrupar por canal
       const channelData = new Map<string, ChannelMetrics>();
 
@@ -301,15 +312,13 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
       });
 
-      // Processar contratos (fechados) - APENAS os que podem ser rastreados até um lead
+      // Processar contratos (fechados) - rastrear via CLIENTE_ID
       contratos.forEach((contrato: any) => {
-        // Ignorar contratos que não podem ser rastreados até um lead
-        if (!contrato.proposta_id) return;
+        // Rastrear origem via cliente_id (todo contrato tem cliente)
+        const canal = contrato.cliente_id 
+          ? clienteOrigemMap.get(contrato.cliente_id) || "Não informado"
+          : "Não informado";
         
-        const leadId = propostaLeadMap.get(contrato.proposta_id);
-        if (!leadId) return; // Proposta sem lead_id, ignorar
-        
-        const canal = leadOrigemMap.get(leadId) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
         if (!channelData.has(canal)) {
@@ -354,10 +363,12 @@ export function useChannelAnalytics(filters: ChannelFilters) {
 
       const { leads, contratos } = rawData;
       
-      // Criar mapa para lead_id -> origem usando TODOS os leads
-      const leadOrigemMap = new Map<string, string>();
+      // Criar mapa para cliente_id -> origem usando TODOS os leads (mais recente primeiro)
+      const clienteOrigemMap = new Map<string, string>();
       allLeadsForOriginMap.forEach((lead: any) => {
-        leadOrigemMap.set(lead.id, lead.origem || "Não informado");
+        if (lead.cliente_id && !clienteOrigemMap.has(lead.cliente_id)) {
+          clienteOrigemMap.set(lead.cliente_id, lead.origem || "Não informado");
+        }
       });
 
       // Inicializar matriz 7x24
@@ -381,20 +392,13 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         heatmap[idx].valor += parseFloat(String(lead.valor_potencial || 0));
       });
 
-      // Preencher fechados - usando TODAS as propostas para mapeamento
-      const propostaLeadMap = new Map<string, string>();
-      allPropostasForMap.forEach((p: any) => {
-        if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
-      });
-
+      // Preencher fechados - rastrear via cliente_id
       contratos.forEach((contrato: any) => {
-        // Ignorar contratos que não podem ser rastreados até um lead
-        if (!contrato.proposta_id) return;
+        // Rastrear origem via cliente_id
+        const canal = contrato.cliente_id 
+          ? clienteOrigemMap.get(contrato.cliente_id) || "Não informado"
+          : "Não informado";
         
-        const leadId = propostaLeadMap.get(contrato.proposta_id);
-        if (!leadId) return;
-        
-        const canal = leadOrigemMap.get(leadId) || "Não informado";
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
 
         const date = new Date(contrato.data_inicio);
@@ -456,13 +460,16 @@ export function useChannelAnalytics(filters: ChannelFilters) {
       
       // Mapear lead_id para origem usando TODOS os leads
       const leadOrigemMap = new Map<string, string>();
-      const leadBairroMap = new Map<string, string>();
       allLeadsForOriginMap.forEach((lead: any) => {
         leadOrigemMap.set(lead.id, lead.origem || "Não informado");
       });
-      // Para bairro, usamos os leads do período (que têm dados de cliente)
-      leads.forEach((lead: any) => {
-        leadBairroMap.set(lead.id, (lead.clientes as any)?.bairro || "Não informado");
+
+      // Mapear cliente_id para origem (usar o lead mais recente do cliente)
+      const clienteOrigemMap = new Map<string, string>();
+      allLeadsForOriginMap.forEach((lead: any) => {
+        if (lead.cliente_id && !clienteOrigemMap.has(lead.cliente_id)) {
+          clienteOrigemMap.set(lead.cliente_id, lead.origem || "Não informado");
+        }
       });
 
       // Agrupar por bairro x canal
@@ -519,21 +526,12 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         data.valor_propostas += parseFloat(String(proposta.valor_total || 0));
       });
 
-      // Usar TODAS as propostas para mapeamento proposta_id -> lead_id
-      const propostaLeadMap = new Map<string, string>();
-      allPropostasForMap.forEach((p: any) => {
-        if (p.lead_id) propostaLeadMap.set(p.id, p.lead_id);
-      });
-
-      // Processar contratos - APENAS os rastreáveis até um lead
+      // Processar contratos - rastrear via cliente_id
       contratos.forEach((contrato: any) => {
-        // Ignorar contratos que não podem ser rastreados até um lead
-        if (!contrato.proposta_id) return;
-        
-        const leadId = propostaLeadMap.get(contrato.proposta_id);
-        if (!leadId) return;
-        
-        const canal = leadOrigemMap.get(leadId) || "Não informado";
+        // Rastrear origem via cliente_id
+        const canal = contrato.cliente_id 
+          ? clienteOrigemMap.get(contrato.cliente_id) || "Não informado"
+          : "Não informado";
         const bairro = (contrato.clientes as any)?.bairro || "Não informado";
         
         if (filters.canais?.length && !filters.canais.includes(canal)) return;
