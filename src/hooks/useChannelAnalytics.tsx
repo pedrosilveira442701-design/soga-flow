@@ -500,11 +500,11 @@ export function useChannelAnalytics(filters: ChannelFilters) {
     enabled: !!rawData,
   });
 
-  // KPIs Gerais
+  // KPIs Gerais - usa rawData para totais REAIS do período
   const { data: overviewKPIs, isLoading: loadingOverview } = useQuery({
-    queryKey: ["channel-analytics", "overview", channelMetrics],
+    queryKey: ["channel-analytics", "overview", rawData, channelMetrics],
     queryFn: async (): Promise<OverviewKPIs> => {
-      if (!channelMetrics || channelMetrics.length === 0) {
+      if (!rawData) {
         return {
           total_leads: 0,
           total_propostas: 0,
@@ -518,29 +518,33 @@ export function useChannelAnalytics(filters: ChannelFilters) {
         };
       }
 
-      const totals = channelMetrics.reduce(
-        (acc, ch) => ({
-          total_leads: acc.total_leads + ch.leads,
-          total_propostas: acc.total_propostas + ch.propostas,
-          total_fechados: acc.total_fechados + ch.fechados,
-          valor_propostas: acc.valor_propostas + ch.valor_propostas,
-          valor_fechados: acc.valor_fechados + ch.valor_fechados,
-        }),
-        { total_leads: 0, total_propostas: 0, total_fechados: 0, valor_propostas: 0, valor_fechados: 0 }
-      );
+      const { leads, propostas, contratos } = rawData;
 
-      // Canal top por valor fechado
-      const canalTop = channelMetrics[0];
+      // TOTAIS REAIS do período (sem filtro de lead_id)
+      const total_leads = leads.length;
+      const total_propostas = propostas.length;
+      const total_fechados = contratos.length;
+      const valor_propostas = propostas.reduce((sum: number, p: any) => 
+        sum + parseFloat(String(p.valor_total || 0)), 0);
+      const valor_fechados = contratos.reduce((sum: number, c: any) => 
+        sum + parseFloat(String(c.valor_negociado || 0)), 0);
+
+      // Canal top por valor fechado (usa channelMetrics que é filtrado por canal)
+      const canalTop = channelMetrics?.[0];
 
       return {
-        ...totals,
+        total_leads,
+        total_propostas,
+        total_fechados,
+        valor_propostas,
+        valor_fechados,
         canal_top: canalTop?.canal || "-",
         canal_top_leads: canalTop?.leads || 0,
         canal_top_fechados: canalTop?.fechados || 0,
         canal_top_valor: canalTop?.valor_fechados || 0,
       };
     },
-    enabled: !!channelMetrics,
+    enabled: !!rawData,
   });
 
   // Funil por Canal
