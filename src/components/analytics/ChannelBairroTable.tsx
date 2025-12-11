@@ -212,15 +212,23 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
     };
   };
 
-  const getHeaderBadgeStyle = (canal: string) => {
+  // Estilo minimalista para tag de cabeçalho do canal
+  const getHeaderTagStyle = (canal: string): React.CSSProperties => {
     const idx = canalIndexMap.get(canal) ?? 0;
     const { hue, sat, light } = getChannelColor(canal, idx);
     return {
-      background: `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light}%) 0%, hsl(${hue}, ${sat}%, ${light - 10}%) 100%)`,
-      color: 'white',
-      textShadow: '0 1px 2px rgba(0,0,0,0.2)',
-      border: 'none',
-      boxShadow: `0 2px 4px hsla(${hue}, ${sat}%, ${light}%, 0.3)`,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '28px',
+      padding: '0 10px',
+      borderRadius: '4px',
+      background: `hsla(${hue}, ${sat}%, ${light}%, 0.15)`,
+      color: `hsl(${hue}, ${sat}%, ${Math.max(light - 10, 30)}%)`,
+      fontSize: '13px',
+      fontWeight: 600,
+      whiteSpace: 'nowrap',
+      transition: 'background 0.15s ease',
     };
   };
 
@@ -268,14 +276,14 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
                 {canais.map((canal) => (
                   <TableHead 
                     key={canal} 
-                    className="text-center min-w-[90px] p-2"
+                    className="text-center min-w-[100px] p-2"
                   >
-                    <Badge 
-                      className="text-xs px-2 py-1"
-                      style={getHeaderBadgeStyle(canal)}
+                    <span 
+                      style={getHeaderTagStyle(canal)}
+                      className="hover:opacity-85"
                     >
                       {canal}
-                    </Badge>
+                    </span>
                   </TableHead>
                 ))}
                 <TableHead className="text-right font-bold">Total</TableHead>
