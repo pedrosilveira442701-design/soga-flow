@@ -15,6 +15,37 @@ type ViewMode = "leads" | "fechados" | "valor";
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const HORAS = Array.from({ length: 24 }, (_, i) => i);
 
+// Cores HSL consistentes com o design system
+const MODE_COLORS = {
+  leads: {
+    base: "199 89% 48%", // Azul petróleo
+    levels: [
+      { opacity: 0.25, label: "Baixo" },
+      { opacity: 0.5, label: "Médio" },
+      { opacity: 0.75, label: "Alto" },
+      { opacity: 1, label: "Muito Alto" },
+    ],
+  },
+  fechados: {
+    base: "142 76% 36%", // Verde
+    levels: [
+      { opacity: 0.25, label: "Baixo" },
+      { opacity: 0.5, label: "Médio" },
+      { opacity: 0.75, label: "Alto" },
+      { opacity: 1, label: "Muito Alto" },
+    ],
+  },
+  valor: {
+    base: "45 93% 47%", // Amarelo/Dourado
+    levels: [
+      { opacity: 0.25, label: "Baixo" },
+      { opacity: 0.5, label: "Médio" },
+      { opacity: 0.75, label: "Alto" },
+      { opacity: 1, label: "Muito Alto" },
+    ],
+  },
+};
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -23,30 +54,26 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
-function getIntensityColor(value: number, max: number, mode: ViewMode): string {
-  if (max === 0 || value === 0) return "bg-muted";
+function getIntensityStyle(value: number, max: number, mode: ViewMode): React.CSSProperties {
+  if (max === 0 || value === 0) {
+    return { backgroundColor: "hsl(var(--muted))" };
+  }
   
   const intensity = value / max;
+  const baseColor = MODE_COLORS[mode].base;
   
-  if (mode === "fechados") {
-    if (intensity > 0.75) return "bg-green-500";
-    if (intensity > 0.5) return "bg-green-400";
-    if (intensity > 0.25) return "bg-green-300";
-    return "bg-green-200";
-  }
+  // Calcular opacidade baseada na intensidade
+  let opacity: number;
+  if (intensity > 0.75) opacity = 1;
+  else if (intensity > 0.5) opacity = 0.75;
+  else if (intensity > 0.25) opacity = 0.5;
+  else opacity = 0.3;
   
-  if (mode === "valor") {
-    if (intensity > 0.75) return "bg-amber-500";
-    if (intensity > 0.5) return "bg-amber-400";
-    if (intensity > 0.25) return "bg-amber-300";
-    return "bg-amber-200";
-  }
-  
-  // leads
-  if (intensity > 0.75) return "bg-blue-500";
-  if (intensity > 0.5) return "bg-blue-400";
-  if (intensity > 0.25) return "bg-blue-300";
-  return "bg-blue-200";
+  // Aplicar degradê sutil
+  return {
+    background: `linear-gradient(135deg, hsla(${baseColor}, ${opacity}) 0%, hsla(${baseColor}, ${opacity * 0.85}) 100%)`,
+    boxShadow: intensity > 0.5 ? `0 2px 4px hsla(${baseColor}, 0.2)` : undefined,
+  };
 }
 
 export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
@@ -141,15 +168,25 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
                       <Tooltip key={hora}>
                         <TooltipTrigger asChild>
                           <div
-                            className={`h-8 rounded cursor-pointer transition-colors ${getIntensityColor(value, maxValue, viewMode)}`}
+                            className="h-8 rounded cursor-pointer transition-all duration-200 hover:scale-105 hover:ring-2 hover:ring-primary/30"
+                            style={getIntensityStyle(value, maxValue, viewMode)}
                           />
                         </TooltipTrigger>
                         <TooltipContent>
-                          <div className="text-sm">
-                            <p className="font-medium">{dia}, {hora}h-{hora + 1}h</p>
-                            <p>{cellData?.leads || 0} leads</p>
-                            <p>{cellData?.fechados || 0} fechados</p>
-                            <p>{formatCurrency(cellData?.valor || 0)}</p>
+                          <div className="text-sm space-y-1">
+                            <p className="font-semibold border-b border-border pb-1">{dia}, {hora}h-{hora + 1}h</p>
+                            <p className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">Leads:</span>
+                              <span className="font-medium">{cellData?.leads || 0}</span>
+                            </p>
+                            <p className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">Fechados:</span>
+                              <span className="font-medium">{cellData?.fechados || 0}</span>
+                            </p>
+                            <p className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">Valor:</span>
+                              <span className="font-medium">{formatCurrency(cellData?.valor || 0)}</span>
+                            </p>
                           </div>
                         </TooltipContent>
                       </Tooltip>
@@ -158,14 +195,20 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
                 </div>
               ))}
 
-              {/* Legenda */}
+              {/* Legenda com degradês */}
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                 <span>Menos</span>
                 <div className="flex gap-1">
-                  <div className={`w-6 h-4 rounded ${viewMode === "leads" ? "bg-blue-200" : viewMode === "fechados" ? "bg-green-200" : "bg-amber-200"}`} />
-                  <div className={`w-6 h-4 rounded ${viewMode === "leads" ? "bg-blue-300" : viewMode === "fechados" ? "bg-green-300" : "bg-amber-300"}`} />
-                  <div className={`w-6 h-4 rounded ${viewMode === "leads" ? "bg-blue-400" : viewMode === "fechados" ? "bg-green-400" : "bg-amber-400"}`} />
-                  <div className={`w-6 h-4 rounded ${viewMode === "leads" ? "bg-blue-500" : viewMode === "fechados" ? "bg-green-500" : "bg-amber-500"}`} />
+                  {MODE_COLORS[viewMode].levels.map((level, idx) => (
+                    <div
+                      key={idx}
+                      className="w-6 h-4 rounded"
+                      style={{
+                        background: `linear-gradient(135deg, hsla(${MODE_COLORS[viewMode].base}, ${level.opacity}) 0%, hsla(${MODE_COLORS[viewMode].base}, ${level.opacity * 0.85}) 100%)`,
+                      }}
+                      title={level.label}
+                    />
+                  ))}
                 </div>
                 <span>Mais</span>
               </div>
