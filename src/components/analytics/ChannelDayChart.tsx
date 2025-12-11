@@ -8,59 +8,46 @@ interface ChannelDayChartProps {
   isLoading: boolean;
 }
 
-// Paleta de cores bem distintas e espaçadas no espectro
+// Cores fixas por canal - consistente com ChannelPerformanceTable
 const CHANNEL_COLORS: Record<string, string> = {
-  // Azuis
-  "Google": "#3B82F6",        // Azul vibrante
-  "Facebook": "#1D4ED8",      // Azul escuro
-  "Orgânico": "#0EA5E9",      // Azul céu
-  
-  // Rosa/Magenta (bem separado)
-  "Instagram": "#EC4899",     // Rosa vibrante
-  
-  // Âmbar/Dourado (bem diferente do rosa)
-  "Indicação": "#F59E0B",     // Âmbar
-  
-  // Verdes
-  "WhatsApp": "#22C55E",      // Verde vivo
-  
-  // Roxos/Violetas
-  "Site": "#8B5CF6",          // Violeta
-  "Síndico Profissional": "#6366F1", // Índigo
-  
-  // Neutros
-  "Telefone": "#64748B",      // Cinza azulado
-  "Não informado": "#94A3B8", // Cinza claro
+  "Orgânico": "0 84% 60%",           // HSL vermelho coral
+  "Síndico Profissional": "142 76% 36%", // HSL verde
+  "Instagram": "330 81% 60%",        // HSL rosa
+  "Google": "217 91% 60%",           // HSL azul
+  "Indicação": "45 93% 47%",         // HSL amarelo/âmbar
+  "Não informado": "215 16% 47%",    // HSL cinza
+  "WhatsApp": "142 69% 58%",         // HSL verde claro
+  "Facebook": "221 83% 53%",         // HSL azul escuro
+  "Site": "263 70% 50%",             // HSL roxo
+  "Telefone": "215 25% 27%",         // HSL cinza escuro
+  "Outros": "174 42% 41%",           // HSL teal
 };
 
-// Cores de fallback bem distintas para canais não mapeados
+// Cores de fallback para canais não mapeados
 const FALLBACK_COLORS = [
-  "#F97316",  // Laranja
-  "#14B8A6",  // Teal
-  "#A855F7",  // Roxo
-  "#EF4444",  // Vermelho
-  "#84CC16",  // Lima
-  "#0891B2",  // Ciano
-  "#DC2626",  // Vermelho escuro
-  "#7C3AED",  // Violeta escuro
-  "#059669",  // Verde escuro
-  "#D946EF",  // Fúcsia
+  "24 95% 53%",   // Laranja
+  "174 42% 41%",  // Teal
+  "270 60% 70%",  // Roxo claro
+  "0 72% 51%",    // Vermelho
+  "84 81% 44%",   // Lima
 ];
 
-function getChannelColor(canal: string, index: number = 0): string {
-  // Match exato
+function getChannelColorHSL(canal: string, index: number = 0): string {
   if (CHANNEL_COLORS[canal]) {
     return CHANNEL_COLORS[canal];
   }
   
   // Verificar prefixos comuns
-  if (canal.startsWith("Indicação")) return "#F59E0B";  // Âmbar
-  if (canal.startsWith("Outro")) return "#14B8A6";       // Teal
-  if (canal.includes("Síndico")) return "#6366F1";       // Índigo
-  if (canal.includes("MKT") || canal.includes("Marketing")) return "#A855F7"; // Roxo
+  if (canal.startsWith("Indicação")) return CHANNEL_COLORS["Indicação"];
+  if (canal.startsWith("Outro")) return CHANNEL_COLORS["Outros"];
+  if (canal.includes("Síndico")) return CHANNEL_COLORS["Síndico Profissional"];
+  if (canal.includes("MKT") || canal.includes("Marketing")) return "270 60% 70%";
   
-  // Fallback determinístico baseado no índice
   return FALLBACK_COLORS[index % FALLBACK_COLORS.length];
+}
+
+function getGradientId(canal: string): string {
+  return `gradient-day-${canal.replace(/\s+/g, '-').toLowerCase()}`;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -127,26 +114,41 @@ export function ChannelDayChart({ data, isLoading }: ChannelDayChartProps) {
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+              <defs>
+                {canaisArray.map((canal, index) => {
+                  const hsl = getChannelColorHSL(canal, index);
+                  return (
+                    <linearGradient key={canal} id={getGradientId(canal)} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={`hsl(${hsl})`} stopOpacity={1} />
+                      <stop offset="100%" stopColor={`hsl(${hsl})`} stopOpacity={0.6} />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
               <XAxis 
                 dataKey="dia" 
-                tick={{ fontSize: 12 }} 
+                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} 
                 stroke="hsl(var(--muted-foreground))"
                 tickLine={false}
+                axisLine={false}
               />
               <YAxis 
-                tick={{ fontSize: 12 }} 
+                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} 
                 stroke="hsl(var(--muted-foreground))"
                 tickLine={false}
+                axisLine={false}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend />
+              <Legend 
+                formatter={(value) => <span style={{ color: "hsl(var(--foreground))" }}>{value}</span>}
+              />
               {canaisArray.map((canal, index) => (
                 <Bar
                   key={canal}
                   dataKey={canal}
                   stackId="a"
-                  fill={getChannelColor(canal, index)}
+                  fill={`url(#${getGradientId(canal)})`}
                   radius={index === canaisArray.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
                 />
               ))}
