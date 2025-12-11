@@ -15,33 +15,37 @@ type ViewMode = "leads" | "fechados" | "valor";
 const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 const HORAS = Array.from({ length: 24 }, (_, i) => i);
 
-// Cores HSL consistentes com o design system
+// Cores HSL consistentes com o design system - usando lightness para intensidade
 const MODE_COLORS = {
   leads: {
-    base: "199 89% 48%", // Azul petróleo
+    hue: 199,
+    sat: 89,
+    // Níveis: do mais claro ao mais escuro (lightness)
     levels: [
-      { opacity: 0.25, label: "Baixo" },
-      { opacity: 0.5, label: "Médio" },
-      { opacity: 0.75, label: "Alto" },
-      { opacity: 1, label: "Muito Alto" },
+      { lightness: 85, label: "Baixo" },
+      { lightness: 65, label: "Médio" },
+      { lightness: 50, label: "Alto" },
+      { lightness: 40, label: "Muito Alto" },
     ],
   },
   fechados: {
-    base: "142 76% 36%", // Verde
+    hue: 142,
+    sat: 76,
     levels: [
-      { opacity: 0.25, label: "Baixo" },
-      { opacity: 0.5, label: "Médio" },
-      { opacity: 0.75, label: "Alto" },
-      { opacity: 1, label: "Muito Alto" },
+      { lightness: 80, label: "Baixo" },
+      { lightness: 60, label: "Médio" },
+      { lightness: 45, label: "Alto" },
+      { lightness: 32, label: "Muito Alto" },
     ],
   },
   valor: {
-    base: "45 93% 47%", // Amarelo/Dourado
+    hue: 38,
+    sat: 92,
     levels: [
-      { opacity: 0.25, label: "Baixo" },
-      { opacity: 0.5, label: "Médio" },
-      { opacity: 0.75, label: "Alto" },
-      { opacity: 1, label: "Muito Alto" },
+      { lightness: 85, label: "Baixo" },
+      { lightness: 65, label: "Médio" },
+      { lightness: 50, label: "Alto" },
+      { lightness: 40, label: "Muito Alto" },
     ],
   },
 };
@@ -60,19 +64,22 @@ function getIntensityStyle(value: number, max: number, mode: ViewMode): React.CS
   }
   
   const intensity = value / max;
-  const baseColor = MODE_COLORS[mode].base;
+  const { hue, sat } = MODE_COLORS[mode];
   
-  // Calcular opacidade baseada na intensidade
-  let opacity: number;
-  if (intensity > 0.75) opacity = 1;
-  else if (intensity > 0.5) opacity = 0.75;
-  else if (intensity > 0.25) opacity = 0.5;
-  else opacity = 0.3;
+  // Calcular lightness baseado na intensidade (mais intenso = mais escuro/saturado)
+  let lightness: number;
+  if (intensity > 0.75) lightness = MODE_COLORS[mode].levels[3].lightness;
+  else if (intensity > 0.5) lightness = MODE_COLORS[mode].levels[2].lightness;
+  else if (intensity > 0.25) lightness = MODE_COLORS[mode].levels[1].lightness;
+  else lightness = MODE_COLORS[mode].levels[0].lightness;
   
-  // Aplicar degradê sutil
+  // Cor sólida com degradê sutil
+  const baseColor = `hsl(${hue}, ${sat}%, ${lightness}%)`;
+  const lighterColor = `hsl(${hue}, ${sat}%, ${Math.min(lightness + 8, 95)}%)`;
+  
   return {
-    background: `linear-gradient(135deg, hsla(${baseColor}, ${opacity}) 0%, hsla(${baseColor}, ${opacity * 0.85}) 100%)`,
-    boxShadow: intensity > 0.5 ? `0 2px 4px hsla(${baseColor}, 0.2)` : undefined,
+    background: `linear-gradient(135deg, ${baseColor} 0%, ${lighterColor} 100%)`,
+    boxShadow: intensity > 0.5 ? `0 2px 6px hsl(${hue}, ${sat}%, ${lightness}%, 0.35)` : undefined,
   };
 }
 
@@ -199,16 +206,21 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
               <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                 <span>Menos</span>
                 <div className="flex gap-1">
-                  {MODE_COLORS[viewMode].levels.map((level, idx) => (
-                    <div
-                      key={idx}
-                      className="w-6 h-4 rounded"
-                      style={{
-                        background: `linear-gradient(135deg, hsla(${MODE_COLORS[viewMode].base}, ${level.opacity}) 0%, hsla(${MODE_COLORS[viewMode].base}, ${level.opacity * 0.85}) 100%)`,
-                      }}
-                      title={level.label}
-                    />
-                  ))}
+                  {MODE_COLORS[viewMode].levels.map((level, idx) => {
+                    const { hue, sat } = MODE_COLORS[viewMode];
+                    const baseColor = `hsl(${hue}, ${sat}%, ${level.lightness}%)`;
+                    const lighterColor = `hsl(${hue}, ${sat}%, ${Math.min(level.lightness + 8, 95)}%)`;
+                    return (
+                      <div
+                        key={idx}
+                        className="w-6 h-4 rounded"
+                        style={{
+                          background: `linear-gradient(135deg, ${baseColor} 0%, ${lighterColor} 100%)`,
+                        }}
+                        title={level.label}
+                      />
+                    );
+                  })}
                 </div>
                 <span>Mais</span>
               </div>
