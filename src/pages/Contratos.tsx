@@ -481,10 +481,13 @@ export default function Contratos() {
                 return (
                   <TableRow key={contrato.id} className="cursor-pointer hover:bg-muted/50">
                     <TableCell>
-                      <div>
-                        <p className="font-medium">{contrato.cliente?.nome}</p>
+                      <button
+                        onClick={() => handleView(contrato)}
+                        className="text-left hover:underline cursor-pointer"
+                      >
+                        <p className="font-medium text-primary">{contrato.cliente?.nome}</p>
                         <p className="text-sm text-muted-foreground">{contrato.cpf_cnpj}</p>
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <p className="font-semibold">{formatCurrency(total)}</p>
