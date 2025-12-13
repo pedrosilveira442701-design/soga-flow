@@ -636,8 +636,11 @@ export default function Propostas() {
                 return (
                   <TableRow key={proposta.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{proposta.clientes?.nome}</div>
+                      <button
+                        onClick={() => handleView(proposta)}
+                        className="text-left hover:underline cursor-pointer"
+                      >
+                        <div className="font-medium text-primary">{proposta.clientes?.nome}</div>
                         {(proposta.clientes?.cidade || proposta.clientes?.bairro) && (
                           <div className="text-xs text-muted-foreground">
                             {[proposta.clientes.cidade, proposta.clientes.bairro]
@@ -645,7 +648,7 @@ export default function Propostas() {
                               .join(" / ")}
                           </div>
                         )}
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell>
                       {proposta.servicos && proposta.servicos.length > 0 ? (
