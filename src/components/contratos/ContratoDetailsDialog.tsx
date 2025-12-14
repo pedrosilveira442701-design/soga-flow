@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Calendar, DollarSign, User, Edit, XCircle, CheckCircle } from "lucide-react";
+import { FileText, Calendar, DollarSign, User, Edit, XCircle, CheckCircle, MapPin } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
@@ -99,13 +99,34 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
               {(contrato.cliente?.logradouro || contrato.cliente?.bairro || contrato.cliente?.cidade) && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Endereço</p>
-                  <p className="font-medium">
-                    {[
-                      contrato.cliente?.logradouro,
-                      contrato.cliente?.numero,
-                      contrato.cliente?.complemento,
-                    ].filter(Boolean).join(", ")}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      {[
+                        contrato.cliente?.logradouro,
+                        contrato.cliente?.numero,
+                        contrato.cliente?.complemento,
+                      ].filter(Boolean).join(", ")}
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        [
+                          contrato.cliente?.logradouro,
+                          contrato.cliente?.numero,
+                          contrato.cliente?.bairro,
+                          contrato.cliente?.cidade,
+                          contrato.cliente?.uf,
+                          contrato.cliente?.cep,
+                        ].filter(Boolean).join(", ")
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
+                      title="Abrir no Google Maps"
+                    >
+                      <MapPin className="h-5 w-5" />
+                      <span>Maps</span>
+                    </a>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {[
                       contrato.cliente?.bairro,
