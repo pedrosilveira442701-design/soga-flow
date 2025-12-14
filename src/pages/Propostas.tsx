@@ -630,7 +630,15 @@ export default function Propostas() {
                 const numServicos = servicos.length;
                 const descontoPorServico = numServicos > 0 ? desconto / numServicos : 0;
 
-                return servicos.map((servico: any, idx: number) => {
+                // Calcular totais consolidados
+                const totalM2 = servicos.reduce((acc: number, s: any) => acc + (s.m2 || 0), 0);
+                const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
+                const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
+                const totalValor = totalBruto - desconto;
+                const totalLiquido = totalValor - totalCusto;
+                const totalMargem = totalValor > 0 ? (totalLiquido / totalValor) * 100 : 0;
+
+                const serviceRows = servicos.map((servico: any, idx: number) => {
                   const servicoBruto = (servico.m2 || 0) * (servico.valor_m2 || 0);
                   const servicoCusto = (servico.m2 || 0) * (servico.custo_m2 || 0);
                   const servicoTotal = servicoBruto - descontoPorServico;
@@ -638,10 +646,13 @@ export default function Propostas() {
                   const servicoMargem = servicoTotal > 0 ? (servicoLiquido / servicoTotal) * 100 : 0;
                   const tipoServico = servico.tipo === "Outro" && servico.tipo_outro ? servico.tipo_outro : servico.tipo;
 
+                  // Para múltiplos serviços, adicionar +1 ao rowSpan para a linha de totais
+                  const effectiveRowSpan = numServicos > 1 ? numServicos + 1 : numServicos;
+
                   return (
                     <TableRow key={`${proposta.id}-${idx}`} className={idx > 0 ? "border-t-0 bg-muted/30" : ""}>
                       {idx === 0 ? (
-                        <TableCell rowSpan={numServicos}>
+                        <TableCell rowSpan={effectiveRowSpan}>
                           <button
                             onClick={() => handleView(proposta)}
                             className="text-left hover:underline cursor-pointer"
@@ -673,15 +684,15 @@ export default function Propostas() {
                         {formatCurrency(servicoLiquido)}
                       </TableCell>
                       {idx === 0 ? (
-                        <TableCell rowSpan={numServicos}>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
+                        <TableCell rowSpan={effectiveRowSpan}>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
                       ) : null}
                       {idx === 0 ? (
-                        <TableCell rowSpan={numServicos}>
+                        <TableCell rowSpan={effectiveRowSpan}>
                           {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
                         </TableCell>
                       ) : null}
                       {idx === 0 ? (
-                        <TableCell rowSpan={numServicos} className="text-right">
+                        <TableCell rowSpan={effectiveRowSpan} className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="default"
@@ -707,6 +718,29 @@ export default function Propostas() {
                     </TableRow>
                   );
                 });
+
+                // Linha de totais consolidados para múltiplos serviços
+                const totalRow = numServicos > 1 ? (
+                  <TableRow key={`${proposta.id}-total`} className="bg-accent/50 border-t-0 font-semibold">
+                    <TableCell className="text-right">
+                      <Badge variant="secondary" className="font-semibold">TOTAL</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{totalM2.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-bold">
+                      {formatCurrency(totalValor)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <span className={`font-bold ${getMargemColor(totalMargem)}`}>
+                        {totalMargem.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-primary">
+                      {formatCurrency(totalLiquido)}
+                    </TableCell>
+                  </TableRow>
+                ) : null;
+
+                return [...serviceRows, totalRow];
               })
             )}
           </TableBody>
