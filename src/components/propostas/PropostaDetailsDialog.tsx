@@ -215,8 +215,24 @@ export default function PropostaDetailsDialog({
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-muted-foreground mb-1">Cliente</div>
                   <div className="font-semibold truncate">{proposta.clientes?.nome}</div>
-                  {proposta.clientes?.cidade && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{proposta.clientes.cidade}</div>
+                  {(proposta.clientes?.logradouro || proposta.clientes?.bairro || proposta.clientes?.cidade) && (
+                    <>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {[
+                          proposta.clientes?.logradouro,
+                          proposta.clientes?.numero,
+                          proposta.clientes?.complemento,
+                        ].filter(Boolean).join(", ")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {[
+                          proposta.clientes?.bairro,
+                          proposta.clientes?.cidade,
+                          proposta.clientes?.uf,
+                          proposta.clientes?.cep,
+                        ].filter(Boolean).join(" - ")}
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
