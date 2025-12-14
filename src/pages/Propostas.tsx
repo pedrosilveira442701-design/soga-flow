@@ -626,83 +626,87 @@ export default function Propostas() {
                   ? proposta.servicos
                   : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
                 
-                const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
-                const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
                 const desconto = proposta.desconto || 0;
-                const valorTotal = totalBruto - desconto;
-                const liquido = valorTotal - totalCusto;
-                const margem = valorTotal > 0 ? (liquido / valorTotal) * 100 : 0;
+                const numServicos = servicos.length;
+                const descontoPorServico = numServicos > 0 ? desconto / numServicos : 0;
 
-                return (
-                  <TableRow key={proposta.id}>
-                    <TableCell>
-                      <button
-                        onClick={() => handleView(proposta)}
-                        className="text-left hover:underline cursor-pointer"
-                      >
-                        <div className="font-medium text-primary">{proposta.clientes?.nome}</div>
-                        {(proposta.clientes?.cidade || proposta.clientes?.bairro) && (
-                          <div className="text-xs text-muted-foreground">
-                            {[proposta.clientes.cidade, proposta.clientes.bairro]
-                              .filter(Boolean)
-                              .join(" / ")}
+                return servicos.map((servico: any, idx: number) => {
+                  const servicoBruto = (servico.m2 || 0) * (servico.valor_m2 || 0);
+                  const servicoCusto = (servico.m2 || 0) * (servico.custo_m2 || 0);
+                  const servicoTotal = servicoBruto - descontoPorServico;
+                  const servicoLiquido = servicoTotal - servicoCusto;
+                  const servicoMargem = servicoTotal > 0 ? (servicoLiquido / servicoTotal) * 100 : 0;
+                  const tipoServico = servico.tipo === "Outro" && servico.tipo_outro ? servico.tipo_outro : servico.tipo;
+
+                  return (
+                    <TableRow key={`${proposta.id}-${idx}`} className={idx > 0 ? "border-t-0 bg-muted/30" : ""}>
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>
+                          <button
+                            onClick={() => handleView(proposta)}
+                            className="text-left hover:underline cursor-pointer"
+                          >
+                            <div className="font-medium text-primary">{proposta.clientes?.nome}</div>
+                            {(proposta.clientes?.cidade || proposta.clientes?.bairro) && (
+                              <div className="text-xs text-muted-foreground">
+                                {[proposta.clientes.cidade, proposta.clientes.bairro]
+                                  .filter(Boolean)
+                                  .join(" / ")}
+                              </div>
+                            )}
+                          </button>
+                        </TableCell>
+                      ) : null}
+                      <TableCell>
+                        <Badge variant="outline">{tipoServico}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{(servico.m2 || 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(servicoTotal)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`font-bold ${getMargemColor(servicoMargem)}`}>
+                          {servicoMargem.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-primary">
+                        {formatCurrency(servicoLiquido)}
+                      </TableCell>
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
+                      ) : null}
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>
+                          {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
+                      ) : null}
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos} className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="default"
+                              size="icon"
+                              onClick={() => handleView(proposta)}
+                              title="Ver detalhes"
+                              className="h-10 w-10"
+                            >
+                              <Eye className="h-5 w-5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDelete(proposta.id)}
+                              title="Excluir proposta"
+                              className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
                           </div>
-                        )}
-                      </button>
-                    </TableCell>
-                    <TableCell>
-                      {proposta.servicos && proposta.servicos.length > 0 ? (
-                        <div className="space-y-1">
-                          {proposta.servicos.map((s, idx) => (
-                            <Badge key={idx} variant="outline" className="mr-1">
-                              {s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <Badge variant="outline">{proposta.tipo_piso}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{proposta.m2.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(valorTotal)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className={`font-bold ${getMargemColor(margem)}`}>
-                        {margem.toFixed(1)}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-primary">
-                      {formatCurrency(liquido)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
-                    <TableCell>
-                      {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="default"
-                          size="icon"
-                          onClick={() => handleView(proposta)}
-                          title="Ver detalhes"
-                          className="h-10 w-10"
-                        >
-                          <Eye className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDelete(proposta.id)}
-                          title="Excluir proposta"
-                          className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  );
+                });
               })
             )}
           </TableBody>
