@@ -96,6 +96,26 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
                 <p className="font-medium">{contrato.cpf_cnpj}</p>
               </div>
 
+              {(contrato.cliente?.logradouro || contrato.cliente?.bairro || contrato.cliente?.cidade) && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Endereço</p>
+                  <p className="font-medium">
+                    {[
+                      contrato.cliente?.logradouro,
+                      contrato.cliente?.numero,
+                      contrato.cliente?.complemento,
+                    ].filter(Boolean).join(", ")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {[
+                      contrato.cliente?.bairro,
+                      contrato.cliente?.cidade,
+                      contrato.cliente?.uf,
+                    ].filter(Boolean).join(" - ")}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Forma de Pagamento</p>
                 <p className="font-medium">{contrato.forma_pagamento}</p>
