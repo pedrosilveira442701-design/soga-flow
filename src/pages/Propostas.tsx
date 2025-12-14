@@ -667,13 +667,13 @@ export default function Propostas() {
                           {hasMultipleServicos && (
                             <button
                               onClick={() => toggleExpanded(proposta.id)}
-                              className="p-1 hover:bg-muted rounded transition-colors"
+                              className="p-1.5 hover:bg-primary/10 rounded-md transition-colors border border-border/50"
                               title={isExpanded ? "Colapsar" : "Expandir"}
                             >
                               {isExpanded ? (
-                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                <ChevronDown className="h-5 w-5 text-primary" />
                               ) : (
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
                               )}
                             </button>
                           )}
