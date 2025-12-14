@@ -33,6 +33,11 @@ export interface Proposta {
     cidade?: string;
     bairro?: string;
     cpf_cnpj?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    uf?: string;
+    cep?: string;
   };
 }
 
@@ -73,7 +78,12 @@ export const usePropostas = () => {
             telefone,
             cidade,
             bairro,
-            cpf_cnpj
+            cpf_cnpj,
+            logradouro,
+            numero,
+            complemento,
+            uf,
+            cep
           )
         `)
         .order("created_at", { ascending: false });
