@@ -128,7 +128,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
       </div>
 
       {/* Botões WhatsApp / Maps */}
-      <div className="px-4 pb-3 flex gap-3">
+      <div className="px-4 pb-3 flex gap-3" onPointerDown={(e) => e.stopPropagation()}>
         <Button
           type="button"
           variant="outline"
