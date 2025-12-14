@@ -39,6 +39,7 @@ import {
   FileCheck,
   ExternalLink,
   CreditCard,
+  MapPin,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -217,13 +218,33 @@ export default function PropostaDetailsDialog({
                   <div className="font-semibold truncate">{proposta.clientes?.nome}</div>
                   {(proposta.clientes?.logradouro || proposta.clientes?.bairro || proposta.clientes?.cidade) && (
                     <>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {[
-                          proposta.clientes?.logradouro,
-                          proposta.clientes?.numero,
-                          proposta.clientes?.complemento,
-                        ].filter(Boolean).join(", ")}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-muted-foreground">
+                          {[
+                            proposta.clientes?.logradouro,
+                            proposta.clientes?.numero,
+                            proposta.clientes?.complemento,
+                          ].filter(Boolean).join(", ")}
+                        </p>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            [
+                              proposta.clientes?.logradouro,
+                              proposta.clientes?.numero,
+                              proposta.clientes?.bairro,
+                              proposta.clientes?.cidade,
+                              proposta.clientes?.uf,
+                              proposta.clientes?.cep,
+                            ].filter(Boolean).join(", ")
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:text-primary/80 transition-colors"
+                          title="Abrir no Google Maps"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </a>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {[
                           proposta.clientes?.bairro,
