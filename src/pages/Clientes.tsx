@@ -399,8 +399,16 @@ export default function Clientes() {
                         className="hover:bg-muted/50 cursor-pointer"
                         onClick={() => handleViewDetails(cliente)}
                       >
-                        <TableCell className="font-medium">
-                          {cliente.nome}
+                        <TableCell>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(cliente);
+                            }}
+                            className="font-medium text-primary hover:underline text-left"
+                          >
+                            {cliente.nome}
+                          </button>
                         </TableCell>
                         <TableCell>
                           {cliente.contato ? (
