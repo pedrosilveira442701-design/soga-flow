@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,8 +58,6 @@ import {
   ArrowUp,
   ArrowDown,
   Clock,
-  ChevronDown,
-  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -78,19 +76,6 @@ export default function Propostas() {
   const [tipoFilter, setTipoFilter] = useState<string>("todos");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [expandedPropostas, setExpandedPropostas] = useState<Set<string>>(new Set());
-
-  const toggleExpanded = (id: string) => {
-    setExpandedPropostas(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   const handleCreate = async (data: any) => {
     await createProposta.mutateAsync(data);
@@ -644,39 +629,19 @@ export default function Propostas() {
                 const desconto = proposta.desconto || 0;
                 const numServicos = servicos.length;
                 const descontoPorServico = numServicos > 0 ? desconto / numServicos : 0;
-                const isExpanded = expandedPropostas.has(proposta.id);
-                const hasMultipleServicos = numServicos > 1;
 
-                // Calcular totais da proposta para exibição quando colapsado
-                const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
-                const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
-                const totalArea = servicos.reduce((acc: number, s: any) => acc + (s.m2 || 0), 0);
-                const valorTotal = totalBruto - desconto;
-                const liquido = valorTotal - totalCusto;
-                const margem = valorTotal > 0 ? (liquido / valorTotal) * 100 : 0;
+                return servicos.map((servico: any, idx: number) => {
+                  const servicoBruto = (servico.m2 || 0) * (servico.valor_m2 || 0);
+                  const servicoCusto = (servico.m2 || 0) * (servico.custo_m2 || 0);
+                  const servicoTotal = servicoBruto - descontoPorServico;
+                  const servicoLiquido = servicoTotal - servicoCusto;
+                  const servicoMargem = servicoTotal > 0 ? (servicoLiquido / servicoTotal) * 100 : 0;
+                  const tipoServico = servico.tipo === "Outro" && servico.tipo_outro ? servico.tipo_outro : servico.tipo;
 
-                // Mostrar serviços individuais ou totais conforme estado de expansão
-                const servicosToShow = hasMultipleServicos && !isExpanded ? [] : servicos;
-
-                return (
-                  <React.Fragment key={proposta.id}>
-                    {/* Linha principal (sempre visível) */}
-                    <TableRow>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {hasMultipleServicos && (
-                            <button
-                              onClick={() => toggleExpanded(proposta.id)}
-                              className="p-1.5 hover:bg-primary/10 rounded-md transition-colors border border-border/50"
-                              title={isExpanded ? "Colapsar" : "Expandir"}
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="h-5 w-5 text-primary" />
-                              ) : (
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                              )}
-                            </button>
-                          )}
+                  return (
+                    <TableRow key={`${proposta.id}-${idx}`} className={idx > 0 ? "border-t-0 bg-muted/30" : ""}>
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>
                           <button
                             onClick={() => handleView(proposta)}
                             className="text-left hover:underline cursor-pointer"
@@ -690,128 +655,58 @@ export default function Propostas() {
                               </div>
                             )}
                           </button>
-                        </div>
-                      </TableCell>
+                        </TableCell>
+                      ) : null}
                       <TableCell>
-                        {hasMultipleServicos && !isExpanded ? (
-                          <div className="flex flex-wrap gap-1">
-                            {servicos.map((s: any, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {s.tipo === "Outro" && s.tipo_outro ? s.tipo_outro : s.tipo}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <Badge variant="outline">
-                            {servicos[0].tipo === "Outro" && servicos[0].tipo_outro 
-                              ? servicos[0].tipo_outro 
-                              : servicos[0].tipo}
-                          </Badge>
-                        )}
+                        <Badge variant="outline">{tipoServico}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {hasMultipleServicos && !isExpanded 
-                          ? totalArea.toFixed(2)
-                          : (servicos[0].m2 || 0).toFixed(2)
-                        }
-                      </TableCell>
+                      <TableCell className="text-right">{(servico.m2 || 0).toFixed(2)}</TableCell>
                       <TableCell className="text-right font-medium">
-                        {hasMultipleServicos && !isExpanded 
-                          ? formatCurrency(valorTotal)
-                          : formatCurrency((servicos[0].m2 || 0) * (servicos[0].valor_m2 || 0) - descontoPorServico)
-                        }
+                        {formatCurrency(servicoTotal)}
                       </TableCell>
                       <TableCell className="text-right">
-                        {(() => {
-                          const m = hasMultipleServicos && !isExpanded 
-                            ? margem
-                            : (() => {
-                                const sB = (servicos[0].m2 || 0) * (servicos[0].valor_m2 || 0);
-                                const sC = (servicos[0].m2 || 0) * (servicos[0].custo_m2 || 0);
-                                const sT = sB - descontoPorServico;
-                                return sT > 0 ? ((sT - sC) / sT) * 100 : 0;
-                              })();
-                          return (
-                            <span className={`font-bold ${getMargemColor(m)}`}>
-                              {m.toFixed(1)}%
-                            </span>
-                          );
-                        })()}
+                        <span className={`font-bold ${getMargemColor(servicoMargem)}`}>
+                          {servicoMargem.toFixed(1)}%
+                        </span>
                       </TableCell>
                       <TableCell className="text-right font-medium text-primary">
-                        {hasMultipleServicos && !isExpanded 
-                          ? formatCurrency(liquido)
-                          : formatCurrency(
-                              (servicos[0].m2 || 0) * (servicos[0].valor_m2 || 0) - descontoPorServico - 
-                              (servicos[0].m2 || 0) * (servicos[0].custo_m2 || 0)
-                            )
-                        }
+                        {formatCurrency(servicoLiquido)}
                       </TableCell>
-                      <TableCell>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
-                      <TableCell>
-                        {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="default"
-                            size="icon"
-                            onClick={() => handleView(proposta)}
-                            title="Ver detalhes"
-                            className="h-10 w-10"
-                          >
-                            <Eye className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDelete(proposta.id)}
-                            title="Excluir proposta"
-                            className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
+                      ) : null}
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos}>
+                          {format(new Date(proposta.data), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
+                      ) : null}
+                      {idx === 0 ? (
+                        <TableCell rowSpan={numServicos} className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="default"
+                              size="icon"
+                              onClick={() => handleView(proposta)}
+                              title="Ver detalhes"
+                              className="h-10 w-10"
+                            >
+                              <Eye className="h-5 w-5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDelete(proposta.id)}
+                              title="Excluir proposta"
+                              className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      ) : null}
                     </TableRow>
-
-                    {/* Linhas expandidas de serviços (apenas quando expandido e tem múltiplos serviços) */}
-                    {hasMultipleServicos && isExpanded && servicos.map((servico: any, idx: number) => {
-                      const servicoBruto = (servico.m2 || 0) * (servico.valor_m2 || 0);
-                      const servicoCusto = (servico.m2 || 0) * (servico.custo_m2 || 0);
-                      const servicoTotal = servicoBruto - descontoPorServico;
-                      const servicoLiquido = servicoTotal - servicoCusto;
-                      const servicoMargem = servicoTotal > 0 ? (servicoLiquido / servicoTotal) * 100 : 0;
-                      const tipoServico = servico.tipo === "Outro" && servico.tipo_outro ? servico.tipo_outro : servico.tipo;
-
-                      return (
-                        <TableRow key={`${proposta.id}-${idx}`} className="bg-muted/30 border-t-0">
-                          <TableCell className="pl-12">
-                            <span className="text-xs text-muted-foreground">├ Serviço {idx + 1}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs">{tipoServico}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right text-sm">{(servico.m2 || 0).toFixed(2)}</TableCell>
-                          <TableCell className="text-right font-medium text-sm">
-                            {formatCurrency(servicoTotal)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className={`font-bold text-sm ${getMargemColor(servicoMargem)}`}>
-                              {servicoMargem.toFixed(1)}%
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right font-medium text-primary text-sm">
-                            {formatCurrency(servicoLiquido)}
-                          </TableCell>
-                          <TableCell></TableCell>
-                          <TableCell></TableCell>
-                          <TableCell></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </React.Fragment>
-                );
+                  );
+                });
               })
             )}
           </TableBody>
