@@ -111,6 +111,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
                       contrato.cliente?.bairro,
                       contrato.cliente?.cidade,
                       contrato.cliente?.uf,
+                      contrato.cliente?.cep,
                     ].filter(Boolean).join(" - ")}
                   </p>
                 </div>

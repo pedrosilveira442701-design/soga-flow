@@ -33,6 +33,7 @@ export interface Contrato {
     numero?: string;
     complemento?: string;
     uf?: string;
+    cep?: string;
   };
 
   proposta?: {
@@ -132,7 +133,7 @@ export const useContratos = () => {
           `
           *,
           margem_pct,
-          cliente:clientes!cliente_id(nome, telefone, cidade, bairro, logradouro, numero, complemento, uf),
+          cliente:clientes!cliente_id(nome, telefone, cidade, bairro, logradouro, numero, complemento, uf, cep),
           proposta:propostas!proposta_id(tipo_piso, m2, custo_m2, servicos, margem_pct)
         `,
         )
