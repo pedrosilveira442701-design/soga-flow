@@ -239,10 +239,11 @@ export default function PropostaDetailsDialog({
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-primary hover:text-primary/80 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
                           title="Abrir no Google Maps"
                         >
                           <MapPin className="h-4 w-4" />
+                          <span>Maps</span>
                         </a>
                       </div>
                       <p className="text-xs text-muted-foreground">
