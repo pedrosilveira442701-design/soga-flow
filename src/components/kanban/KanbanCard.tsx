@@ -191,11 +191,13 @@ export function KanbanCard({
                 currentStage={currentStage}
                 onMoveToStage={onMoveToStage}
                 onMarkAsLost={onMarkAsLost}
-                stages={stages}
-              />
+              stages={stages}
+            />
             )}
             <span className="text-caption text-muted-foreground">
-              {formatDistanceToNow(lastInteraction, { addSuffix: true, locale: ptBR })}
+              {lastInteraction && !isNaN(lastInteraction.getTime())
+                ? formatDistanceToNow(lastInteraction, { addSuffix: true, locale: ptBR })
+                : "—"}
             </span>
           </div>
         </div>
