@@ -2,6 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Visita } from "@/hooks/useVisitas";
 import { VisitaCard } from "./VisitaCard";
+import { GripVertical } from "lucide-react";
 
 export interface VisitasKanbanCardProps {
   visita: Visita;
@@ -24,11 +25,18 @@ export function VisitasKanbanCard({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.6 : 1,
-    cursor: isDragging ? ("grabbing" as const) : ("grab" as const),
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} className="relative group">
+      {/* Drag handle - only this area triggers drag */}
+      <div
+        {...listeners}
+        className="absolute left-0 top-0 bottom-0 w-6 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+      
       <VisitaCard
         visita={visita}
         onEdit={onEdit}
