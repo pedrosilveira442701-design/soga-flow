@@ -42,8 +42,20 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
 
   const dataFormatada = visita.data ? new Date(visita.data).toLocaleDateString("pt-BR") : null;
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Não abre detalhes se clicar em botões ou links
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      return;
+    }
+    onViewDetails(visita);
+  };
+
   return (
-    <Card className="w-full rounded-2xl border border-slate-200 shadow-sm bg-white">
+    <Card 
+      className="w-full rounded-2xl border border-slate-200 shadow-sm bg-white cursor-pointer hover:shadow-md transition-shadow"
+      onClick={handleCardClick}
+    >
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-3 pb-2">
         {/* ===== ORDEM DO CONTEÚDO ===== */}
