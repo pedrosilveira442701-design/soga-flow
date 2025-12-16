@@ -208,7 +208,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-5 w-5" />
           <span>
             {format(new Date(meta.periodo_inicio), "dd/MM/yy")} → {format(new Date(meta.periodo_fim), "dd/MM/yy")}
           </span>

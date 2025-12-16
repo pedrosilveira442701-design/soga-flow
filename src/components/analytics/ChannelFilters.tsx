@@ -94,7 +94,7 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
                   size="sm"
                   className={cn("w-[140px] justify-start", !filters.startDate && "text-muted-foreground")}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-5 w-5" />
                   {filters.startDate ? format(filters.startDate, "dd/MM/yyyy", { locale: ptBR }) : "Início"}
                 </Button>
               </PopoverTrigger>
@@ -117,7 +117,7 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
                   size="sm"
                   className={cn("w-[140px] justify-start", !filters.endDate && "text-muted-foreground")}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-5 w-5" />
                   {filters.endDate ? format(filters.endDate, "dd/MM/yyyy", { locale: ptBR }) : "Fim"}
                 </Button>
               </PopoverTrigger>

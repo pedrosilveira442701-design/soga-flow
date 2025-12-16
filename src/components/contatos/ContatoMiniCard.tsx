@@ -50,7 +50,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               {contato.origem}
             </Badge>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-5 w-5" />
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>

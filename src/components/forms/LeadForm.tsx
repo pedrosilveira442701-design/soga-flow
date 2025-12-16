@@ -465,7 +465,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                           )}
                         >
                           {field.value instanceof Date ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -534,7 +534,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                           )}
                         >
                           {field.value instanceof Date ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>

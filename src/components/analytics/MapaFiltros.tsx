@@ -191,7 +191,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
                   !filters.periodo_inicio && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-5 w-5" />
                 {filters.periodo_inicio ? (
                   format(filters.periodo_inicio, "dd/MM/yyyy")
                 ) : (
@@ -223,7 +223,7 @@ export function MapaFiltros({ filters, onChange }: MapaFiltrosProps) {
                   !filters.periodo_fim && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <CalendarIcon className="mr-2 h-5 w-5" />
                 {filters.periodo_fim ? (
                   format(filters.periodo_fim, "dd/MM/yyyy")
                 ) : (
