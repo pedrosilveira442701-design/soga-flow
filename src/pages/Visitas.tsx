@@ -136,7 +136,7 @@ export default function Visitas() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Calendar className="icon-xl" />
+            <Calendar className="h-5 w-5" />
             Visitas
           </h1>
           <p className="text-muted-foreground mt-1">Agende e gerencie visitas aos clientes</p>
