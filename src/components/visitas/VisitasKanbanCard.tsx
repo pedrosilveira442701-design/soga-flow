@@ -34,9 +34,9 @@ export function VisitasKanbanCard({
         {...listeners}
         className="absolute left-0 top-0 bottom-0 w-6 flex items-center justify-center cursor-grab active:cursor-grabbing z-10 opacity-0 group-hover:opacity-100 transition-opacity"
       >
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
-      
+
       <VisitaCard
         visita={visita}
         onEdit={onEdit}
