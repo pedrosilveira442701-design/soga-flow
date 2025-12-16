@@ -1,35 +1,30 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Visita } from '@/hooks/useVisitas';
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Phone,
-  User,
-  ExternalLink,
-  Edit,
-  Check,
-  MessageSquare,
-} from 'lucide-react';
-import { format, parseISO, isPast, isToday, differenceInDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Visita } from "@/hooks/useVisitas";
+import { Calendar, Clock, MapPin, Phone, User, ExternalLink, Edit, Check, MessageSquare } from "lucide-react";
+import { format, parseISO, isPast, isToday, differenceInDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const TIPOS_VISITA = [
-  { value: 'medicao', label: 'Medição', icon: '📏', color: 'bg-blue-500/10 text-blue-700 border-blue-500/20' },
-  { value: 'instalacao', label: 'Instalação', icon: '🔨', color: 'bg-green-500/10 text-green-700 border-green-500/20' },
-  { value: 'followup', label: 'Follow-up', icon: '📞', color: 'bg-purple-500/10 text-purple-700 border-purple-500/20' },
-  { value: 'orcamento', label: 'Orçamento', icon: '💰', color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20' },
-  { value: 'manutencao', label: 'Manutenção', icon: '🛠️', color: 'bg-orange-500/10 text-orange-700 border-orange-500/20' },
-  { value: 'reuniao', label: 'Reunião', icon: '🤝', color: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/20' },
-  { value: 'outro', label: 'Outro', icon: '📋', color: 'bg-gray-500/10 text-gray-700 border-gray-500/20' },
+  { value: "medicao", label: "Medição", icon: "📏", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
+  { value: "instalacao", label: "Instalação", icon: "🔨", color: "bg-green-500/10 text-green-700 border-green-500/20" },
+  { value: "followup", label: "Follow-up", icon: "📞", color: "bg-purple-500/10 text-purple-700 border-purple-500/20" },
+  {
+    value: "orcamento",
+    label: "Orçamento",
+    icon: "💰",
+    color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  },
+  {
+    value: "manutencao",
+    label: "Manutenção",
+    icon: "🛠️",
+    color: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  },
+  { value: "reuniao", label: "Reunião", icon: "🤝", color: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20" },
+  { value: "outro", label: "Outro", icon: "📋", color: "bg-gray-500/10 text-gray-700 border-gray-500/20" },
 ];
 
 interface VisitaDetailsDialogProps {
@@ -57,9 +52,9 @@ export function VisitaDetailsDialog({
   const getContagem = () => {
     if (!dataVisita) return null;
     const dias = differenceInDays(dataVisita, new Date());
-    if (dias > 0) return `Faltam ${dias} dia${dias > 1 ? 's' : ''}`;
-    if (dias < 0) return `Há ${Math.abs(dias)} dia${Math.abs(dias) > 1 ? 's' : ''}`;
-    return 'Hoje';
+    if (dias > 0) return `Faltam ${dias} dia${dias > 1 ? "s" : ""}`;
+    if (dias < 0) return `Há ${Math.abs(dias)} dia${Math.abs(dias) > 1 ? "s" : ""}`;
+    return "Hoje";
   };
 
   const getStatusBadge = () => {
@@ -72,30 +67,22 @@ export function VisitaDetailsDialog({
       );
     }
     if (isAtrasada) {
-      return (
-        <Badge className="bg-red-500/10 text-red-700 border-red-500/20">
-          Atrasada
-        </Badge>
-      );
+      return <Badge className="bg-red-500/10 text-red-700 border-red-500/20">Atrasada</Badge>;
     }
-    return (
-      <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
-        Pendente
-      </Badge>
-    );
+    return <Badge className="bg-yellow-500/10 text-yellow-700 border-yellow-500/20">Pendente</Badge>;
   };
 
   const handleWhatsApp = () => {
     if (visita.telefone) {
-      const numero = visita.telefone.replace(/\D/g, '');
-      window.open(`https://wa.me/55${numero}`, '_blank');
+      const numero = visita.telefone.replace(/\D/g, "");
+      window.open(`https://wa.me/55${numero}`, "_blank");
     }
   };
 
   const handleMaps = () => {
     if (visita.endereco) {
       const query = encodeURIComponent(visita.endereco);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
     }
   };
 
@@ -113,17 +100,17 @@ export function VisitaDetailsDialog({
             <div className="space-y-2 flex-1">
               <DialogTitle className="text-2xl">{visita.assunto}</DialogTitle>
               <div className="flex items-center gap-2 flex-wrap">
-                {tipo && <Badge className={tipo.color}>{tipo.icon} {tipo.label}</Badge>}
-                {getStatusBadge()}
-                {isHoje && (
-                  <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20">
-                    HOJE
+                {tipo && (
+                  <Badge className={tipo.color}>
+                    {tipo.icon} {tipo.label}
                   </Badge>
                 )}
+                {getStatusBadge()}
+                {isHoje && <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20">HOJE</Badge>}
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => onEdit(visita)}>
-              <Edit className="h-4 w-4 mr-2" />
+              <Edit className="h-4.5 w-4.5 mr-2" />
               Editar
             </Button>
           </div>
@@ -136,7 +123,7 @@ export function VisitaDetailsDialog({
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold mb-3">Detalhes da Visita</h3>
-              
+
               {visita.clientes && (
                 <div className="space-y-1 mb-4">
                   <p className="text-sm text-muted-foreground">Cliente</p>
@@ -185,13 +172,8 @@ export function VisitaDetailsDialog({
                       <p className="font-medium">{visita.endereco}</p>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleMaps}
-                    className="ml-8"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={handleMaps} className="ml-8">
+                    <ExternalLink className="h-4.5 w-4.5 mr-2" />
                     Abrir no Google Maps
                   </Button>
                 </div>
@@ -208,11 +190,11 @@ export function VisitaDetailsDialog({
                   </div>
                   <div className="flex gap-2 ml-8">
                     <Button variant="outline" size="sm" onClick={handleLigar}>
-                      <Phone className="h-4 w-4 mr-2" />
+                      <Phone className="h-4.5 w-4.5 mr-2" />
                       Ligar
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleWhatsApp}>
-                      <MessageSquare className="h-4 w-4 mr-2" />
+                      <MessageSquare className="h-4.5 w-4.5 mr-2" />
                       WhatsApp
                     </Button>
                   </div>
@@ -227,9 +209,7 @@ export function VisitaDetailsDialog({
             <Separator />
             <div>
               <h3 className="font-semibold mb-2">Observações</h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {visita.observacao}
-              </p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{visita.observacao}</p>
             </div>
           </>
         )}
@@ -238,14 +218,14 @@ export function VisitaDetailsDialog({
 
         <div className="space-y-2 text-sm text-muted-foreground">
           <p>
-            Criada em:{' '}
+            Criada em:{" "}
             {format(parseISO(visita.created_at), "dd/MM/yyyy 'às' HH:mm", {
               locale: ptBR,
             })}
           </p>
           {visita.updated_at !== visita.created_at && (
             <p>
-              Atualizada em:{' '}
+              Atualizada em:{" "}
               {format(parseISO(visita.updated_at), "dd/MM/yyyy 'às' HH:mm", {
                 locale: ptBR,
               })}
@@ -263,10 +243,7 @@ export function VisitaDetailsDialog({
             </Button>
           )}
           {visita.realizada && (
-            <Button
-              variant="outline"
-              onClick={() => onToggleRealizada(visita.id, false)}
-            >
+            <Button variant="outline" onClick={() => onToggleRealizada(visita.id, false)}>
               Marcar como Pendente
             </Button>
           )}
