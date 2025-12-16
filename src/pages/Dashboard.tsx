@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { FileText, UserPlus, DollarSign, HandCoins, XCircle, Clock, CheckCircle2, Wallet, TrendingUp } from "lucide-react";
+import { FileText, UserPlus, DollarSign, HandCoins, XCircle, Clock, CheckCircle2, Wallet, TrendingUp, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KPICard } from "@/components/kpi/KPICard";
 import { TimelineChart } from "@/components/charts/TimelineChart";
@@ -75,7 +75,10 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-h1">Dashboard</h1>
+            <h1 className="text-h1 flex items-center gap-2">
+              <LayoutDashboard className="h-5 w-5" />
+              Dashboard
+            </h1>
             <p className="text-body text-muted-foreground mt-2">
               Visão geral do seu negócio
             </p>

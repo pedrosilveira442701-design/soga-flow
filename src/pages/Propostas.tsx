@@ -346,8 +346,8 @@ export default function Propostas() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <FileText className="icon-xl" />
+          <h1 className="text-h1 flex items-center gap-2">
+            <FileText className="h-5 w-5" />
             Propostas
           </h1>
           <p className="text-muted-foreground">

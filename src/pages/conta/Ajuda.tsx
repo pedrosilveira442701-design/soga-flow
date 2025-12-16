@@ -47,7 +47,10 @@ export default function Ajuda() {
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold">Ajuda & Atalhos</h1>
+        <h1 className="text-h1 flex items-center gap-2">
+          <HelpCircle className="h-5 w-5" />
+          Ajuda & Atalhos
+        </h1>
         <p className="text-muted-foreground mt-2">
           Encontre respostas e aprenda a usar o sistema
         </p>

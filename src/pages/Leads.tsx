@@ -443,8 +443,8 @@ export default function Leads() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <TrendingUp className="icon-xl" />
+          <h1 className="text-h1 flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
             Leads
           </h1>
           <p className="text-body text-muted-foreground">Gerencie o funil de vendas com drag & drop</p>
