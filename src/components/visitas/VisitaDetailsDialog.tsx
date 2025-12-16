@@ -173,7 +173,7 @@ export function VisitaDetailsDialog({
                     </div>
                   </div>
                   <Button variant="outline" size="sm" onClick={handleMaps} className="ml-8">
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <ExternalLink className="h-4.2 w-4.2 mr-2" />
                     Abrir no Google Maps
                   </Button>
                 </div>
