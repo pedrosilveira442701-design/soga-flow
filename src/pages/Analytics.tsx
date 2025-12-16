@@ -68,7 +68,7 @@ export default function Analytics() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <BarChart3 Calendar className="h-7 w-7" />
+          <BarChart3 className="h-7 w-7" />
           Analytics
         </h1>
         <p className="text-muted-foreground mt-1">Análise detalhada de funil, pipeline e performance</p>

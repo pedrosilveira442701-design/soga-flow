@@ -165,7 +165,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                         !startDate && "text-muted-foreground",
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-5 w-5" />
                       {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecione"}
                     </Button>
                   </PopoverTrigger>
@@ -190,7 +190,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                       variant="outline"
                       className={cn("w-full justify-start text-left font-normal", !endDate && "text-muted-foreground")}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-2 h-5 w-5" />
                       {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Selecione"}
                     </Button>
                   </PopoverTrigger>

@@ -166,13 +166,13 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
               <Progress value={Math.min(meta.tempoDecorrido, 100)} className="h-3 mb-2" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-5 w-5" />
                   {format(new Date(meta.periodo_inicio), "dd/MM/yy")}
                 </div>
                 <div>Hoje</div>
                 <div className="flex items-center gap-1">
                   {format(new Date(meta.periodo_fim), "dd/MM/yy")}
-                  <Calendar className="h-4 w-4" />
+                  <Calendar className="h-5 w-5" />
                 </div>
               </div>
             </div>
