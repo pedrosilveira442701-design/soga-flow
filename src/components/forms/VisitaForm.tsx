@@ -204,7 +204,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
             </Button>
             {!useManualName && (
               <Button type="button" variant="outline" size="sm" onClick={() => setClienteDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-4.5 w-4.5 mr-1" />
                 Novo Cliente
               </Button>
             )}
@@ -298,7 +298,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
+            <Calendar className="h-4.5 w-4.5" />
             Data
           </Label>
           <Input type="date" disabled={semDataDefinida} {...register("data")} />
@@ -326,7 +326,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
 
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
+            <Clock className="h-4.5 w-4.5" />
             Hora
           </Label>
           <Input type="time" disabled={semDataDefinida} {...register("hora")} />
@@ -337,7 +337,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+            <MapPin className="h-4.5 w-4.5" />
             Endereço
           </Label>
           {selectedCliente?.endereco && (
@@ -401,7 +401,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       {/* Telefone */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Phone className="h-4 w-4" />
+          <Phone className="h-4.5 w-4.5" />
           Telefone
         </Label>
         <Input {...register("telefone")} placeholder="(00) 00000-0000" />
@@ -410,7 +410,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       {/* Responsável */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <User className="h-4 w-4" />
+          <User className="h-4.5 w-4.5" />
           Responsável
         </Label>
         <Input {...register("responsavel")} placeholder="Nome do responsável" />
