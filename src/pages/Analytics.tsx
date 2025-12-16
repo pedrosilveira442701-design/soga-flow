@@ -58,21 +58,20 @@ export default function Analytics() {
   // Calcular KPIs principais
   const totalLeads = funnelData?.reduce((sum, stage) => sum + stage.count, 0) || 0;
   const totalPonderado = pipelineData?.reduce((sum, stage) => sum + stage.valor_ponderado, 0) || 0;
-  const avgMargem = scatterData && scatterData.length > 0
-    ? scatterData.reduce((sum, p) => sum + p.margem_pct, 0) / scatterData.length
-    : 0;
+  const avgMargem =
+    scatterData && scatterData.length > 0
+      ? scatterData.reduce((sum, p) => sum + p.margem_pct, 0) / scatterData.length
+      : 0;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <BarChart3 className="icon-xl" />
+          <BarChart3 Calendar className="h-7 w-7" />
           Analytics
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Análise detalhada de funil, pipeline e performance
-        </p>
+        <p className="text-muted-foreground mt-1">Análise detalhada de funil, pipeline e performance</p>
       </div>
 
       {/* Filtros Globais */}
@@ -139,11 +138,9 @@ export default function Analytics() {
         <div className="space-y-4">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Tempo de Maturação Comercial</h2>
-            <p className="text-muted-foreground">
-              Análise do ciclo completo: cliente, proposta e contrato
-            </p>
+            <p className="text-muted-foreground">Análise do ciclo completo: cliente, proposta e contrato</p>
           </div>
-          
+
           <MaturacaoCardKpis data={maturacaoKpis} isLoading={loadingMaturacao} />
           <MaturacaoBoxplot data={maturacaoBoxplot} isLoading={loadingMaturacao} />
           <MaturacaoScatter data={maturacaoData} isLoading={loadingMaturacao} />
