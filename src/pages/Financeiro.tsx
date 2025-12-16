@@ -141,8 +141,8 @@ export default function Financeiro() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <DollarSign className="icon-xl" />
+        <h1 className="text-h1 flex items-center gap-2">
+          <DollarSign className="h-5 w-5" />
           Financeiro
         </h1>
         <p className="text-muted-foreground">

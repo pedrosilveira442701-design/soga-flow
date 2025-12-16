@@ -69,7 +69,10 @@ export default function Perfil() {
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-3xl font-bold">Meu Perfil</h1>
+        <h1 className="text-h1 flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Meu Perfil
+        </h1>
         <p className="text-muted-foreground mt-2">
           Gerencie suas informações pessoais
         </p>

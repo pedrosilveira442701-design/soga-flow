@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import NotificationSettings from "@/pages/NotificationSettings";
@@ -20,7 +21,10 @@ export default function Preferencias() {
   return (
     <div className="container mx-auto p-6 space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-3xl font-bold">Preferências</h1>
+        <h1 className="text-h1 flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          Preferências
+        </h1>
         <p className="text-muted-foreground mt-2">
           Configure o aplicativo conforme suas necessidades
         </p>

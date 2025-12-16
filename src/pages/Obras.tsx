@@ -61,8 +61,8 @@ export default function Obras() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Building2 className="icon-xl" />
+          <h1 className="text-h1 flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
             Obras
           </h1>
           <p className="text-muted-foreground mt-2">

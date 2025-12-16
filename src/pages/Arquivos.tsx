@@ -72,8 +72,8 @@ export default function Arquivos() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <FileText className="icon-xl" />
+          <h1 className="text-h1 flex items-center gap-2">
+            <FileText className="h-5 w-5" />
             Arquivos
           </h1>
           <p className="text-muted-foreground">
