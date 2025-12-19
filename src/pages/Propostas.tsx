@@ -184,7 +184,10 @@ export default function Propostas() {
     const valorRepouso = propostas
       .filter((p) => p.status === "repouso")
       .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
-    const valorReal = valorTotal - valorPerdidas - valorRepouso;
+    // Calcula diretamente a soma das ativas (não perdidas e não em repouso)
+    const valorReal = propostas
+      .filter((p) => p.status !== "perdida" && p.status !== "repouso")
+      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
     
     // Taxa de fechamento sobre volume real
     const fechadas = propostas.filter((p) => p.status === "fechada").length;
