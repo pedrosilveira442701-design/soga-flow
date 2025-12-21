@@ -84,12 +84,20 @@ const FALLBACK_REPORTS: Record<string, { sql: string; chart: string; x: string; 
 function validateSQL(sql: string): { valid: boolean; error?: string } {
   const normalizedSQL = sql.toUpperCase().trim();
 
-  // Bloquear DDL/DML
+  // Bloquear DDL/DML - NOT including END (used in CASE WHEN...END) or SET/BEGIN in valid SQL contexts
   const blockedKeywords = [
     "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE",
-    "GRANT", "REVOKE", "EXECUTE", "EXEC", "CALL", "SET", "COMMIT", "ROLLBACK",
-    "SAVEPOINT", "BEGIN", "END", "DECLARE", "FETCH", "OPEN", "CLOSE", "DEALLOCATE"
+    "GRANT", "REVOKE", "EXECUTE", "EXEC", "CALL", "COMMIT", "ROLLBACK",
+    "SAVEPOINT", "DECLARE", "FETCH", "OPEN", "CLOSE", "DEALLOCATE"
   ];
+
+  // Block dangerous BEGIN/SET patterns specifically
+  if (/\bBEGIN\s+(TRANSACTION|WORK|ATOMIC)\b/i.test(sql)) {
+    return { valid: false, error: "Operação 'BEGIN TRANSACTION' não permitida" };
+  }
+  if (/\bSET\s+(ROLE|SESSION|LOCAL|TIME\s+ZONE|TRANSACTION)\b/i.test(sql)) {
+    return { valid: false, error: "Operação 'SET' não permitida" };
+  }
 
   for (const keyword of blockedKeywords) {
     const regex = new RegExp(`\\b${keyword}\\b`, "i");
