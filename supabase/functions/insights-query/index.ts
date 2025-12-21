@@ -456,7 +456,8 @@ ${isSnapshot ? `REGRAS PARA SNAPSHOT:
 - Para "propostas fechadas": use status = 'fechada'
 - Para "financeiro pendente": use status = 'pendente'
 - Para "financeiro atrasado": use status = 'atrasado'
-- O objetivo é mostrar o ESTADO ATUAL, não histórico` : 
+- O objetivo é mostrar o ESTADO ATUAL, não histórico
+- IMPORTANTE: Se pedir "valor total", use SUM(valor_total). Se pedir "quantas/quantos", use COUNT(*).` : 
 `REGRAS PARA TIME-SERIES:
 - Use filtro de periodo_dia SE o usuário especificou datas
 ${finalStartDate && finalEndDate ? `- Período a usar: periodo_dia >= '${finalStartDate}' AND periodo_dia <= '${finalEndDate}'` : '- Sem período específico'}
@@ -627,12 +628,14 @@ Gere o SQL correto.`;
       
       let query = supabaseUser.from(mainView).select("*");
       
-      // Para SNAPSHOT, aplicar filtro de status se detectado
-      if (isSnapshot && statusUsed) {
-        const statusValue = statusUsed.match(/status\s*=\s*'([^']+)'/i)?.[1];
-        if (statusValue) {
-          query = query.eq("status", statusValue);
-        }
+      // Extrair filtro de status do SQL original
+      const sqlStatusMatch = sqlQuery.match(/status\s*=\s*'([^']+)'/i);
+      const statusFromSql = sqlStatusMatch ? sqlStatusMatch[1] : null;
+      
+      // Aplicar filtro de status se detectado
+      if (statusFromSql) {
+        query = query.eq("status", statusFromSql);
+        console.log(`Fallback aplicando status = '${statusFromSql}'`);
       }
       
       // Aplicar filtros de período APENAS se NÃO é snapshot
