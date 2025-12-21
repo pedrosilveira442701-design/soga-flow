@@ -80,7 +80,7 @@ const quickReports: QuickReportCard[] = [
     config: {
       scope: "global",
       filters: { status: ["atrasado"] },
-      columns: ["cliente", "numero_parcela", "valor", "periodo_dia", "dias_atraso"],
+      columns: ["cliente", "numero_parcela", "valor_bruto", "valor", "margem_pct", "periodo_dia", "dias_atraso"],
       orderBy: { field: "dias_atraso", direction: "desc" },
     },
     variant: "warning",
@@ -88,13 +88,13 @@ const quickReports: QuickReportCard[] = [
   {
     id: "financeiro-pendentes",
     title: "A Receber",
-    description: "Parcelas pendentes de pagamento",
+    description: "Parcelas pendentes com valor bruto e líquido",
     icon: DollarSign,
     dataset: "financeiro",
     config: {
       scope: "global",
       filters: { status: ["pendente"] },
-      columns: ["cliente", "numero_parcela", "valor", "periodo_dia", "forma"],
+      columns: ["cliente", "numero_parcela", "valor_bruto", "valor", "margem_pct", "periodo_dia", "forma"],
       orderBy: { field: "periodo_dia", direction: "asc" },
     },
   },
@@ -111,7 +111,7 @@ const quickReports: QuickReportCard[] = [
         end: format(endOfMonth(new Date()), "yyyy-MM-dd"),
       },
       filters: { status: ["pago"] },
-      columns: ["cliente", "numero_parcela", "valor", "data_pagamento", "forma"],
+      columns: ["cliente", "numero_parcela", "valor_bruto", "valor", "margem_pct", "data_pagamento", "forma"],
     },
     variant: "success",
   },
@@ -165,7 +165,7 @@ export function QuickReports({ onRunReport }: QuickReportsProps) {
           </div>
           <div>
             <CardTitle className="text-lg">Relatórios Rápidos</CardTitle>
-            <CardDescription>Clique para gerar relatórios pré-configurados</CardDescription>
+            <CardDescription>Clique para gerar e carregar no construtor</CardDescription>
           </div>
         </div>
       </CardHeader>

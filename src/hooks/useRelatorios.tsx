@@ -99,7 +99,9 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
   financeiro: [
     { key: "cliente", label: "Cliente", type: "text" },
     { key: "numero_parcela", label: "Parcela", type: "number" },
-    { key: "valor", label: "Valor", type: "currency" },
+    { key: "valor_bruto", label: "Valor Bruto", type: "currency" },
+    { key: "valor", label: "Valor Líquido", type: "currency" },
+    { key: "margem_pct", label: "Margem %", type: "percent" },
     { key: "status", label: "Status", type: "text" },
     { key: "forma", label: "Forma", type: "text" },
     { key: "cidade", label: "Cidade", type: "text" },
@@ -261,7 +263,7 @@ export function useRelatorios() {
 
       // Calculate totals for numeric columns
       const totals: Record<string, number> = { count: filteredData.length };
-      const numericCols = ["valor_total", "valor_liquido", "valor", "m2", "desconto"];
+      const numericCols = ["valor_total", "valor_liquido", "valor", "valor_bruto", "m2", "desconto"];
       numericCols.forEach(col => {
         const sum = filteredData.reduce((acc, row) => acc + (Number(row[col]) || 0), 0);
         if (sum > 0) totals[col] = sum;
