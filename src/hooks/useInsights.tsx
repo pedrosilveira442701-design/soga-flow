@@ -24,12 +24,16 @@ export interface InsightResult {
   yAxis: string[];
   confidence: number;
   explanation: string;
+  textResponse: string;
   usedFallback: boolean;
   rowCount: number;
   executionTimeMs: number;
   cached: boolean;
   cacheHash: string;
   nextSteps: string[];
+  wantsChart: boolean;
+  periodUsed: string | null;
+  usedQuestionDates: boolean;
 }
 
 export interface SavedReport {
@@ -58,8 +62,8 @@ export interface ReportSchedule {
 }
 
 const FALLBACK_REPORTS = [
-  { key: "vendas_mes_cliente", label: "Vendas do mês por cliente" },
-  { key: "margem_ultimos_6_meses", label: "Margem % nos últimos 6 meses" },
+  { key: "vendas_mes_cliente", label: "Vendas por cliente" },
+  { key: "margem_ultimos_6_meses", label: "Margem % (6 meses)" },
   { key: "melhor_canal", label: "Melhor canal de vendas" },
   { key: "funil_por_estagio", label: "Funil por estágio" },
   { key: "servicos_mais_vendidos", label: "Serviços mais vendidos" },
@@ -146,6 +150,29 @@ export function useInsights() {
 
       if (data.error) {
         setError(data.error);
+        // Se tiver textResponse mesmo com erro, usar como fallback
+        if (data.textResponse) {
+          setLastResult({
+            data: [],
+            kpis: {},
+            sql: "",
+            chartType: "table",
+            xAxis: "",
+            yAxis: [],
+            confidence: 0,
+            explanation: data.suggestion || "",
+            textResponse: data.textResponse,
+            usedFallback: true,
+            rowCount: 0,
+            executionTimeMs: 0,
+            cached: false,
+            cacheHash: "",
+            nextSteps: [],
+            wantsChart: false,
+            periodUsed: null,
+            usedQuestionDates: false,
+          });
+        }
         toast.error(data.error);
         return null;
       }
@@ -176,8 +203,25 @@ export function useInsights() {
     setError(null);
 
     try {
+      // Converter filtros de período para datas
+      const processedFilters: Record<string, string | undefined> = { ...filtros };
+      const now = new Date();
+
+      if (filtros.period === "today") {
+        processedFilters.startDate = now.toISOString().split("T")[0];
+        processedFilters.endDate = now.toISOString().split("T")[0];
+      } else if (filtros.period === "this_month") {
+        processedFilters.startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+        processedFilters.endDate = now.toISOString().split("T")[0];
+      } else if (filtros.period === "last_90") {
+        const past = new Date(now);
+        past.setDate(past.getDate() - 90);
+        processedFilters.startDate = past.toISOString().split("T")[0];
+        processedFilters.endDate = now.toISOString().split("T")[0];
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke("insights-query", {
-        body: { fallbackKey, filtros },
+        body: { fallbackKey, filtros: processedFilters },
       });
 
       if (fnError) {
@@ -271,7 +315,6 @@ export function useInsights() {
     }) => {
       if (!user) throw new Error("Não autenticado");
 
-      // Calcular próximo envio
       const now = new Date();
       let proximo_envio = new Date();
       const [hours, minutes] = params.hora.split(":").map(Number);
