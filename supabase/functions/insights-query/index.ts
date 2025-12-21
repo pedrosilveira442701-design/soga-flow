@@ -368,38 +368,31 @@ REGRAS OBRIGATÓRIAS DE SQL:
 3. SEMPRE adicione LIMIT (máximo 100)
 4. Para valores monetários, use: valor_total (bruto), valor_liquido (líquido)
 5. Margem: margem_pct (já em percentual)
-6. Para filtrar por período, use: periodo_dia >= 'YYYY-MM-DD' AND periodo_dia <= 'YYYY-MM-DD'
-7. Para agrupar por mês: GROUP BY periodo_mes
-8. Para totais, use: SUM(), COUNT(), AVG()
-9. NÃO use CASE WHEN complexos desnecessariamente
-10. NÃO use aspas duplas em alias
+6. Para filtrar por período, use APENAS: periodo_dia >= 'YYYY-MM-DD' AND periodo_dia <= 'YYYY-MM-DD'
+7. NÃO use filtro created_at - use SOMENTE periodo_dia para datas
+8. Para agrupar por mês: GROUP BY periodo_mes
+9. Para totais, use: SUM(), COUNT(), AVG()
+10. NÃO use CASE WHEN complexos desnecessariamente
+11. NÃO use aspas duplas em alias
+12. Para "total de propostas", use: SELECT SUM(valor_total) as valor_total, SUM(valor_liquido) as valor_liquido, COUNT(*) as qtd FROM vw_propostas
 
-REGRAS DE RESPOSTA EM TEXTO:
-1. Sempre responda em PORTUGUÊS
-2. Comece com o NÚMERO PRINCIPAL (R$ X ou N unidades)
-3. Inclua período analisado
-4. Seja direto e objetivo (1-3 frases)
-5. Se não houver dados, diga "Não encontrei registros para esse período"
+${wantsChart ? 'O usuário QUER um gráfico - inclua GROUP BY para série temporal ou categórica.' : 'O usuário NÃO pediu gráfico - retorne apenas agregação/totais com SUM, COUNT.'}
 
-${wantsChart ? 'O usuário QUER um gráfico - inclua groupBy para série temporal ou categórica.' : 'O usuário NÃO pediu gráfico - retorne apenas agregação/totais.'}
+PERÍODO A USAR: ${finalStartDate && finalEndDate ? `De ${finalStartDate} até ${finalEndDate}. Use: periodo_dia >= '${finalStartDate}' AND periodo_dia <= '${finalEndDate}'` : 'Sem filtro de período específico'}
 
-PERÍODO A USAR:
-${finalStartDate && finalEndDate ? `De ${finalStartDate} até ${finalEndDate}` : 'Sem filtro de período específico'}
-
-Responda APENAS com JSON válido:
+Responda APENAS com JSON válido (sem markdown):
 {
   "sql": "SELECT ...",
   "chart_type": "${wantsChart ? 'bar|line|pie' : 'table'}",
   "x_axis": "coluna_x",
   "y_axis": ["coluna1"],
-  "text_response": "Resposta em texto com o número principal e contexto",
   "confidence": 0.9
 }`;
 
       const userPrompt = `Pergunta: "${pergunta}"
 ${dateCorrections.length > 0 ? `Correções de data aplicadas: ${dateCorrections.join(', ')}` : ''}
 
-Gere SQL e uma resposta em texto clara com os dados.`;
+Gere o SQL. NÃO use created_at, use periodo_dia para filtros de data.`;
 
       try {
         console.log("Chamando Lovable AI para gerar SQL...");
@@ -426,6 +419,7 @@ Gere SQL e uma resposta em texto clara com os dados.`;
 
         const aiData = await aiResponse.json();
         const content = aiData.choices?.[0]?.message?.content || "";
+        console.log("Resposta da IA:", content);
 
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
@@ -438,7 +432,7 @@ Gere SQL e uma resposta em texto clara com os dados.`;
         xAxis = parsed.x_axis || "";
         yAxis = parsed.y_axis || [];
         confidence = parsed.confidence || 0.7;
-        textResponse = parsed.text_response || "";
+        // textResponse será gerado APÓS execução do SQL com valores reais
 
       } catch (aiError) {
         console.error("Erro na IA, usando fallback:", aiError);
