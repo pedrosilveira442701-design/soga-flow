@@ -40,8 +40,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
   const { user } = useAuth();
 
   // Calcular datas baseado no filtro
-  const now = new Date();
-  const { startDate, endDate, prevStartDate, prevEndDate } = useMemo(() => {
+  const { startDate, endDate, prevStartDate, prevEndDate, startDateStr, endDateStr, prevStartDateStr, prevEndDateStr } = useMemo(() => {
+    const now = new Date();
     let start: Date, end: Date, prevStart: Date, prevEnd: Date;
 
     switch (filters.period) {
@@ -82,21 +82,26 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
       endDate: end,
       prevStartDate: prevStart,
       prevEndDate: prevEnd,
+      startDateStr: format(start, "yyyy-MM-dd"),
+      endDateStr: format(end, "yyyy-MM-dd"),
+      prevStartDateStr: format(prevStart, "yyyy-MM-dd"),
+      prevEndDateStr: format(prevEnd, "yyyy-MM-dd"),
     };
-  }, [filters.period, filters.customDateRange, now]);
+  }, [filters.period, filters.customDateRange?.from?.getTime(), filters.customDateRange?.to?.getTime()]);
 
+  const now = useMemo(() => new Date(), []);
   const sixMonthsAgo = subMonths(now, 5);
 
   // 1. Buscar todas as propostas no período selecionado
   const { data: propostas = [] } = useQuery({
-    queryKey: ["propostas-dashboard", user?.id, filters.period, startDate, endDate],
+    queryKey: ["propostas-dashboard", user?.id, startDateStr, endDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("data", format(startDate, "yyyy-MM-dd"))
-        .lte("data", format(endDate, "yyyy-MM-dd"));
+        .gte("data", startDateStr)
+        .lte("data", endDateStr);
 
       if (error) throw error;
       return data || [];
@@ -106,14 +111,14 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 2. Buscar todos os contratos no período selecionado
   const { data: contratos = [] } = useQuery({
-    queryKey: ["contratos-dashboard", user?.id, filters.period, startDate, endDate],
+    queryKey: ["contratos-dashboard", user?.id, startDateStr, endDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contratos")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("data_inicio", format(startDate, "yyyy-MM-dd"))
-        .lte("data_inicio", format(endDate, "yyyy-MM-dd"));
+        .gte("data_inicio", startDateStr)
+        .lte("data_inicio", endDateStr);
 
       if (error) throw error;
       return data || [];
@@ -123,7 +128,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 3. Buscar todos os contratos ativos com suas parcelas e margem (filtrado por período)
   const { data: contratosComParcelas = [] } = useQuery({
-    queryKey: ["contratos-parcelas", user?.id, filters.period, startDate, endDate],
+    queryKey: ["contratos-parcelas", user?.id, startDateStr, endDateStr],
     queryFn: async () => {
       const { data: contratosData, error: contratosError } = await supabase
         .from("contratos")
@@ -141,8 +146,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
             .select("*")
             .eq("contrato_id", contrato.id)
             .in("status", ["pendente", "atrasado"])
-            .gte("vencimento", format(startDate, "yyyy-MM-dd"))
-            .lte("vencimento", format(endDate, "yyyy-MM-dd"));
+            .gte("vencimento", startDateStr)
+            .lte("vencimento", endDateStr);
 
           return {
             ...contrato,
@@ -190,14 +195,14 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 6. Buscar propostas do período anterior
   const { data: propostasAnterior = [] } = useQuery({
-    queryKey: ["propostas-anterior", user?.id, filters.period, prevStartDate, prevEndDate],
+    queryKey: ["propostas-anterior", user?.id, prevStartDateStr, prevEndDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("data", format(prevStartDate, "yyyy-MM-dd"))
-        .lte("data", format(prevEndDate, "yyyy-MM-dd"));
+        .gte("data", prevStartDateStr)
+        .lte("data", prevEndDateStr);
 
       if (error) throw error;
       return data || [];
@@ -207,14 +212,14 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 7. Buscar contratos do período anterior
   const { data: contratosAnterior = [] } = useQuery({
-    queryKey: ["contratos-anterior", user?.id, filters.period, prevStartDate, prevEndDate],
+    queryKey: ["contratos-anterior", user?.id, prevStartDateStr, prevEndDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contratos")
         .select("*")
         .eq("user_id", user!.id)
-        .gte("data_inicio", format(prevStartDate, "yyyy-MM-dd"))
-        .lte("data_inicio", format(prevEndDate, "yyyy-MM-dd"));
+        .gte("data_inicio", prevStartDateStr)
+        .lte("data_inicio", prevEndDateStr);
 
       if (error) throw error;
       return data || [];
@@ -224,7 +229,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 8. Buscar parcelas pagas do período atual (para KPI "Recebido")
   const { data: parcelasPagasAtual = [] } = useQuery({
-    queryKey: ["parcelas-pagas-atual", user?.id, startDate, endDate],
+    queryKey: ["parcelas-pagas-atual", user?.id, startDateStr, endDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("financeiro_parcelas")
@@ -235,8 +240,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         `)
         .eq("user_id", user!.id)
         .eq("status", "pago")
-        .gte("data_pagamento", format(startDate, "yyyy-MM-dd"))
-        .lte("data_pagamento", format(endDate, "yyyy-MM-dd"));
+        .gte("data_pagamento", startDateStr)
+        .lte("data_pagamento", endDateStr);
 
       if (error) throw error;
       return data || [];
@@ -246,7 +251,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
   // 9. Buscar parcelas pagas do período anterior
   const { data: parcelasPagasAnterior = [] } = useQuery({
-    queryKey: ["parcelas-pagas-anterior", user?.id, prevStartDate, prevEndDate],
+    queryKey: ["parcelas-pagas-anterior", user?.id, prevStartDateStr, prevEndDateStr],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("financeiro_parcelas")
@@ -257,8 +262,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         `)
         .eq("user_id", user!.id)
         .eq("status", "pago")
-        .gte("data_pagamento", format(prevStartDate, "yyyy-MM-dd"))
-        .lte("data_pagamento", format(prevEndDate, "yyyy-MM-dd"));
+        .gte("data_pagamento", prevStartDateStr)
+        .lte("data_pagamento", prevEndDateStr);
 
       if (error) throw error;
       return data || [];
