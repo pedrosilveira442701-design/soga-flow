@@ -508,19 +508,30 @@ Gere o SQL. NÃO use created_at, use periodo_dia para filtros de data.`;
     
     if (queryError) {
       console.error("Erro RPC:", queryError);
-      // Fallback para query direta
+      // Fallback para query direta COM FILTROS DE DATA
       const viewMatch = sqlQuery.match(/FROM\s+(\w+)/i);
       const mainView = viewMatch ? viewMatch[1] : "vw_vendas";
       
-      const { data: directResult, error: directError } = await supabaseUser
+      let query = supabaseUser
         .from(mainView)
-        .select("*")
-        .limit(100);
+        .select("*");
+      
+      // Aplicar filtros de período no fallback
+      if (finalStartDate) {
+        query = query.gte("periodo_dia", finalStartDate);
+      }
+      if (finalEndDate) {
+        query = query.lte("periodo_dia", finalEndDate);
+      }
+      
+      const { data: directResult, error: directError } = await query.limit(100);
         
       if (directError) {
+        console.error("Erro fallback:", directError);
         throw directError;
       }
       rows = directResult || [];
+      console.log(`Fallback retornou ${rows.length} registros`);
     } else {
       rows = queryResult || [];
     }
