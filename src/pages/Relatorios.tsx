@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ReportBuilder } from "@/components/relatorios/ReportBuilder";
 import { ReportPreview } from "@/components/relatorios/ReportPreview";
@@ -26,6 +26,12 @@ export default function Relatorios() {
     statuses: [] as string[],
   });
 
+  // State to hold config from Quick Reports to sync with Builder
+  const [activeQuickReportConfig, setActiveQuickReportConfig] = useState<ReportConfig | null>(null);
+  
+  // Ref to Builder for imperative access
+  const builderRef = useRef<{ applyConfig: (config: ReportConfig) => void } | null>(null);
+
   const handleDatasetChange = useCallback(async (dataset: DatasetType) => {
     const options = await fetchFilterOptions(dataset);
     setFilterOptions(options);
@@ -44,8 +50,18 @@ export default function Relatorios() {
   }, [exportReport]);
 
   const handleQuickReport = useCallback((config: ReportConfig) => {
+    // Set the config so Builder can sync
+    setActiveQuickReportConfig(config);
+    // Fetch filter options for the dataset
+    handleDatasetChange(config.dataset);
+    // Fetch preview immediately
     fetchPreview(config);
-  }, [fetchPreview]);
+  }, [fetchPreview, handleDatasetChange]);
+
+  // Clear quick report config when user interacts with builder
+  const handleBuilderInteraction = useCallback(() => {
+    setActiveQuickReportConfig(null);
+  }, []);
 
   return (
     <DashboardLayout>
@@ -78,6 +94,8 @@ export default function Relatorios() {
             isExporting={isExporting}
             filterOptions={filterOptions}
             onDatasetChange={handleDatasetChange}
+            initialConfig={activeQuickReportConfig}
+            onUserInteraction={handleBuilderInteraction}
           />
 
           {/* Preview */}

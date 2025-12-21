@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { DatasetType, ReportConfig, ReportFilters, DATASET_COLUMNS, DATASET_LABELS } from "@/hooks/useRelatorios";
 
@@ -29,6 +29,8 @@ interface ReportBuilderProps {
     statuses: string[];
   };
   onDatasetChange: (dataset: DatasetType) => void;
+  initialConfig?: ReportConfig | null;
+  onUserInteraction?: () => void;
 }
 
 export function ReportBuilder({
@@ -38,6 +40,8 @@ export function ReportBuilder({
   isExporting,
   filterOptions,
   onDatasetChange,
+  initialConfig,
+  onUserInteraction,
 }: ReportBuilderProps) {
   const [dataset, setDataset] = useState<DatasetType>("propostas");
   const [scope, setScope] = useState<"global" | "periodo">("global");
@@ -51,15 +55,57 @@ export function ReportBuilder({
 
   const columns = DATASET_COLUMNS[dataset] || [];
 
+  // Sync with initialConfig from Quick Reports
   useEffect(() => {
-    onDatasetChange(dataset);
+    if (initialConfig) {
+      setDataset(initialConfig.dataset);
+      setScope(initialConfig.scope);
+      setFilters(initialConfig.filters || {});
+      
+      if (initialConfig.dateRange) {
+        setDateRange({
+          start: initialConfig.dateRange.start ? parse(initialConfig.dateRange.start, "yyyy-MM-dd", new Date()) : undefined,
+          end: initialConfig.dateRange.end ? parse(initialConfig.dateRange.end, "yyyy-MM-dd", new Date()) : undefined,
+        });
+      } else {
+        setDateRange({});
+      }
+      
+      if (initialConfig.columns && initialConfig.columns.length > 0) {
+        setSelectedColumns(initialConfig.columns);
+        setUseAllColumns(false);
+      } else {
+        setUseAllColumns(true);
+      }
+      
+      if (initialConfig.orderBy) {
+        setOrderBy(initialConfig.orderBy);
+      } else {
+        setOrderBy({ field: "periodo_dia", direction: "desc" });
+      }
+      
+      // Show filters if any are active
+      if (initialConfig.filters && Object.keys(initialConfig.filters).some(k => {
+        const val = initialConfig.filters[k as keyof ReportFilters];
+        return val && (Array.isArray(val) ? val.length > 0 : true);
+      })) {
+        setFiltersOpen(true);
+      }
+    }
+  }, [initialConfig]);
+
+  // When dataset changes manually (not from initialConfig), reset state
+  const handleDatasetChange = (newDataset: DatasetType) => {
+    onUserInteraction?.();
+    setDataset(newDataset);
+    onDatasetChange(newDataset);
     setSelectedColumns([]);
     setUseAllColumns(true);
     setFilters({});
-    // Update default orderBy based on dataset
-    const defaultDateField = columns.find(c => c.key === "periodo_dia") ? "periodo_dia" : "created_at";
+    const newColumns = DATASET_COLUMNS[newDataset] || [];
+    const defaultDateField = newColumns.find(c => c.key === "periodo_dia") ? "periodo_dia" : "created_at";
     setOrderBy({ field: defaultDateField, direction: "desc" });
-  }, [dataset, onDatasetChange]);
+  };
 
   const buildConfig = (): ReportConfig => ({
     dataset,
@@ -75,11 +121,23 @@ export function ReportBuilder({
     orderBy,
   });
 
-  const handlePreview = () => onPreview(buildConfig());
-  const handleExportExcel = () => onExport(buildConfig(), "excel");
-  const handleExportPDF = () => onExport(buildConfig(), "pdf");
+  const handlePreview = () => {
+    onUserInteraction?.();
+    onPreview(buildConfig());
+  };
+  
+  const handleExportExcel = () => {
+    onUserInteraction?.();
+    onExport(buildConfig(), "excel");
+  };
+  
+  const handleExportPDF = () => {
+    onUserInteraction?.();
+    onExport(buildConfig(), "pdf");
+  };
 
   const handleColumnToggle = (key: string) => {
+    onUserInteraction?.();
     setSelectedColumns(prev =>
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     );
@@ -91,6 +149,7 @@ export function ReportBuilder({
     value: string,
     currentValues: string[] = []
   ) => {
+    onUserInteraction?.();
     const newValues = currentValues.includes(value)
       ? currentValues.filter(v => v !== value)
       : [...currentValues, value];
@@ -98,11 +157,13 @@ export function ReportBuilder({
   };
 
   const clearFilters = () => {
+    onUserInteraction?.();
     setFilters({});
     setFiltersOpen(false);
   };
 
   const removeFilter = (key: keyof ReportFilters, value?: string) => {
+    onUserInteraction?.();
     if (value && Array.isArray(filters[key])) {
       const newValues = (filters[key] as string[]).filter(v => v !== value);
       setFilters(prev => ({ ...prev, [key]: newValues.length ? newValues : undefined }));
@@ -178,7 +239,7 @@ export function ReportBuilder({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Dataset</Label>
-              <Select value={dataset} onValueChange={(v) => setDataset(v as DatasetType)}>
+              <Select value={dataset} onValueChange={(v) => handleDatasetChange(v as DatasetType)}>
                 <SelectTrigger className="h-10">
                   <SelectValue />
                 </SelectTrigger>
@@ -194,7 +255,10 @@ export function ReportBuilder({
               <Label className="text-xs text-muted-foreground">Escopo</Label>
               <RadioGroup 
                 value={scope} 
-                onValueChange={(v) => setScope(v as "global" | "periodo")} 
+                onValueChange={(v) => {
+                  onUserInteraction?.();
+                  setScope(v as "global" | "periodo");
+                }} 
                 className="flex gap-4 h-10 items-center"
               >
                 <div className="flex items-center space-x-2">
@@ -223,7 +287,10 @@ export function ReportBuilder({
                   <CalendarComponent
                     mode="single"
                     selected={dateRange.start}
-                    onSelect={(date) => setDateRange(prev => ({ ...prev, start: date }))}
+                    onSelect={(date) => {
+                      onUserInteraction?.();
+                      setDateRange(prev => ({ ...prev, start: date }));
+                    }}
                     locale={ptBR}
                   />
                 </PopoverContent>
@@ -239,7 +306,10 @@ export function ReportBuilder({
                   <CalendarComponent
                     mode="single"
                     selected={dateRange.end}
-                    onSelect={(date) => setDateRange(prev => ({ ...prev, end: date }))}
+                    onSelect={(date) => {
+                      onUserInteraction?.();
+                      setDateRange(prev => ({ ...prev, end: date }));
+                    }}
                     locale={ptBR}
                   />
                 </PopoverContent>
@@ -384,7 +454,10 @@ export function ReportBuilder({
                   <Input
                     placeholder="Buscar cliente..."
                     value={filters.cliente || ""}
-                    onChange={(e) => setFilters(prev => ({ ...prev, cliente: e.target.value || undefined }))}
+                    onChange={(e) => {
+                      onUserInteraction?.();
+                      setFilters(prev => ({ ...prev, cliente: e.target.value || undefined }));
+                    }}
                     className="h-9"
                   />
                 </div>
@@ -395,7 +468,10 @@ export function ReportBuilder({
                   <Input
                     placeholder="Buscar responsável..."
                     value={filters.responsavel || ""}
-                    onChange={(e) => setFilters(prev => ({ ...prev, responsavel: e.target.value || undefined }))}
+                    onChange={(e) => {
+                      onUserInteraction?.();
+                      setFilters(prev => ({ ...prev, responsavel: e.target.value || undefined }));
+                    }}
                     className="h-9"
                   />
                 </div>
@@ -434,6 +510,7 @@ export function ReportBuilder({
                       id="all-columns"
                       checked={useAllColumns}
                       onCheckedChange={(checked) => {
+                        onUserInteraction?.();
                         setUseAllColumns(!!checked);
                         if (checked) setSelectedColumns(columns.map(c => c.key));
                       }}
@@ -461,7 +538,13 @@ export function ReportBuilder({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Ordenar por</Label>
-                <Select value={orderBy.field} onValueChange={(v) => setOrderBy(prev => ({ ...prev, field: v }))}>
+                <Select 
+                  value={orderBy.field} 
+                  onValueChange={(v) => {
+                    onUserInteraction?.();
+                    setOrderBy(prev => ({ ...prev, field: v }));
+                  }}
+                >
                   <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
@@ -474,7 +557,13 @@ export function ReportBuilder({
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Direção</Label>
-                <Select value={orderBy.direction} onValueChange={(v) => setOrderBy(prev => ({ ...prev, direction: v as "asc" | "desc" }))}>
+                <Select 
+                  value={orderBy.direction} 
+                  onValueChange={(v) => {
+                    onUserInteraction?.();
+                    setOrderBy(prev => ({ ...prev, direction: v as "asc" | "desc" }));
+                  }}
+                >
                   <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>

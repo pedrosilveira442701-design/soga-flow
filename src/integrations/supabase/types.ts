@@ -1472,6 +1472,7 @@ export type Database = {
           dias_atraso: number | null
           forma: string | null
           id: string | null
+          margem_pct: number | null
           numero_parcela: number | null
           periodo_ano: number | null
           periodo_dia: string | null
@@ -1479,6 +1480,7 @@ export type Database = {
           status: Database["public"]["Enums"]["payment_status"] | null
           user_id: string | null
           valor: number | null
+          valor_bruto: number | null
         }
         Relationships: []
       }

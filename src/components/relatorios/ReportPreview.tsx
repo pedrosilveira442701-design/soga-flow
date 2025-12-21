@@ -16,7 +16,7 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
     if (value === null || value === undefined) return "-";
     
     // Currency fields
-    if (["valor_total", "valor_liquido", "valor", "desconto", "valor_potencial", "valor_total_contratos"].includes(key)) {
+    if (["valor_total", "valor_liquido", "valor", "valor_bruto", "desconto", "valor_potencial", "valor_total_contratos"].includes(key)) {
       return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
     }
     
@@ -61,6 +61,7 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
       m2: "M²",
       valor_total: "Valor Total",
       valor_liquido: "Valor Líquido",
+      valor_bruto: "Valor Bruto",
       margem_pct: "Margem %",
       desconto: "Desconto",
       dias_aberta: "Dias Aberta",
@@ -69,7 +70,7 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
       periodo_dia: "Data",
       created_at: "Criado em",
       numero_parcela: "Parcela",
-      valor: "Valor",
+      valor: "Valor Líquido",
       forma: "Forma",
       data_pagamento: "Pago em",
       dias_atraso: "Dias Atraso",
@@ -158,6 +159,11 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
               <TrendingUp className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">Totais:</span>
             </div>
+            {totals.valor_bruto !== undefined && (
+              <Badge variant="outline" className="text-xs font-mono">
+                Valor Bruto: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor_bruto)}
+              </Badge>
+            )}
             {totals.valor_total !== undefined && (
               <Badge variant="outline" className="text-xs font-mono">
                 Valor Total: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor_total)}
