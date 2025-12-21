@@ -93,7 +93,7 @@ export default function Insights() {
     );
   };
 
-  const hasTableData = lastResult?.data && lastResult.data.length > 0;
+  const hasTableData = lastResult?.data && lastResult.data.length > 1;
   const hasChartData = lastResult?.wantsChart && lastResult.data && lastResult.data.length > 1;
 
   return (
@@ -135,48 +135,6 @@ export default function Insights() {
               </Card>
             ) : lastResult ? (
               <>
-                {/* KPIs compactos */}
-                {Object.keys(lastResult.kpis).length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {lastResult.kpis.valor_total !== undefined && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">Total</p>
-                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.valor_total))}</p>
-                      </Card>
-                    )}
-                    {lastResult.kpis.valor_liquido !== undefined && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">Líquido</p>
-                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.valor_liquido))}</p>
-                      </Card>
-                    )}
-                    {lastResult.kpis.margem_media !== undefined && Number(lastResult.kpis.margem_media) > 0 && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">Margem Média</p>
-                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.margem_media), 1)}%</p>
-                      </Card>
-                    )}
-                    {lastResult.kpis.ticket_medio !== undefined && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">Ticket Médio</p>
-                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.ticket_medio))}</p>
-                      </Card>
-                    )}
-                    {lastResult.kpis.m2_total !== undefined && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">m² Total</p>
-                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.m2_total))}</p>
-                      </Card>
-                    )}
-                    {lastResult.kpis.quantidade !== undefined && (
-                      <Card className="p-3">
-                        <p className="text-xs text-muted-foreground">Quantidade</p>
-                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.quantidade))}</p>
-                      </Card>
-                    )}
-                  </div>
-                )}
-
                 {/* Resultado Principal */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -188,6 +146,7 @@ export default function Insights() {
                         </Badge>
                         {lastResult.cached && <Badge variant="outline" className="text-xs">Cache</Badge>}
                         {lastResult.usedFallback && <Badge variant="outline" className="text-xs">Relatório Padrão</Badge>}
+                        {(lastResult as any).isSnapshot && <Badge variant="secondary" className="text-xs">Snapshot</Badge>}
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setShowSQL(!showSQL)}>
@@ -219,7 +178,7 @@ export default function Insights() {
                       </pre>
                     )}
 
-                    {/* Tabs para Tabela e Gráfico */}
+                    {/* Tabs para Tabela e Gráfico - só mostrar se houver dados */}
                     {(hasTableData || hasChartData) && (
                       <Tabs value={activeTab} onValueChange={setActiveTab}>
                         <TabsList className="grid w-full grid-cols-3">
