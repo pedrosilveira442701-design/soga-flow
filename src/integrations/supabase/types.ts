@@ -95,6 +95,13 @@ export type Database = {
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "anotacoes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "vw_clientes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       anotacoes_saved_views: {
@@ -336,6 +343,13 @@ export type Database = {
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contatos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "vw_leads"
+            referencedColumns: ["id"]
+          },
         ]
       }
       contratos: {
@@ -405,10 +419,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "contratos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "vw_clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "contratos_proposta_id_fkey"
             columns: ["proposta_id"]
             isOneToOne: false
             referencedRelation: "propostas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_proposta_id_fkey"
+            columns: ["proposta_id"]
+            isOneToOne: false
+            referencedRelation: "vw_propostas"
             referencedColumns: ["id"]
           },
         ]
@@ -542,7 +570,181 @@ export type Database = {
             referencedRelation: "contratos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "financeiro_parcelas_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "vw_vendas"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      insights_agendamentos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          destinatarios: string[]
+          dia_mes: number | null
+          dia_semana: number | null
+          frequencia: string
+          hora: string
+          id: string
+          proximo_envio: string | null
+          relatorio_id: string | null
+          ultimo_envio: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          destinatarios?: string[]
+          dia_mes?: number | null
+          dia_semana?: number | null
+          frequencia: string
+          hora?: string
+          id?: string
+          proximo_envio?: string | null
+          relatorio_id?: string | null
+          ultimo_envio?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          destinatarios?: string[]
+          dia_mes?: number | null
+          dia_semana?: number | null
+          frequencia?: string
+          hora?: string
+          id?: string
+          proximo_envio?: string | null
+          relatorio_id?: string | null
+          ultimo_envio?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_agendamentos_relatorio_id_fkey"
+            columns: ["relatorio_id"]
+            isOneToOne: false
+            referencedRelation: "insights_relatorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights_audit_logs: {
+        Row: {
+          confianca: number | null
+          created_at: string | null
+          erro: string | null
+          filtros: Json | null
+          id: string
+          linhas_retornadas: number | null
+          pergunta: string
+          sql_executado: string
+          sucesso: boolean | null
+          tempo_execucao_ms: number | null
+          user_id: string
+        }
+        Insert: {
+          confianca?: number | null
+          created_at?: string | null
+          erro?: string | null
+          filtros?: Json | null
+          id?: string
+          linhas_retornadas?: number | null
+          pergunta: string
+          sql_executado: string
+          sucesso?: boolean | null
+          tempo_execucao_ms?: number | null
+          user_id: string
+        }
+        Update: {
+          confianca?: number | null
+          created_at?: string | null
+          erro?: string | null
+          filtros?: Json | null
+          id?: string
+          linhas_retornadas?: number | null
+          pergunta?: string
+          sql_executado?: string
+          sucesso?: boolean | null
+          tempo_execucao_ms?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insights_cache: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          hash: string
+          id: string
+          pergunta: string
+          resultado: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          hash: string
+          id?: string
+          pergunta: string
+          resultado: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          hash?: string
+          id?: string
+          pergunta?: string
+          resultado?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
+      insights_relatorios: {
+        Row: {
+          chart_type: string | null
+          created_at: string | null
+          descricao: string | null
+          filtros: Json | null
+          id: string
+          nome: string
+          pergunta: string
+          sql_query: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chart_type?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          filtros?: Json | null
+          id?: string
+          nome: string
+          pergunta: string
+          sql_query: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chart_type?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          filtros?: Json | null
+          id?: string
+          nome?: string
+          pergunta?: string
+          sql_query?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       lead_interacoes: {
         Row: {
@@ -647,6 +849,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "vw_clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -933,6 +1142,13 @@ export type Database = {
             referencedRelation: "contratos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "obras_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: true
+            referencedRelation: "vw_vendas"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -1044,6 +1260,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "propostas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "vw_clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "propostas_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
@@ -1051,10 +1274,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "propostas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "vw_leads"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "propostas_visita_id_fkey"
             columns: ["visita_id"]
             isOneToOne: false
             referencedRelation: "visitas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_visita_id_fkey"
+            columns: ["visita_id"]
+            isOneToOne: false
+            referencedRelation: "vw_visitas"
             referencedColumns: ["id"]
           },
         ]
@@ -1162,17 +1399,198 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "visitas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "vw_clientes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "visitas_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "visitas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "vw_leads"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      vw_clientes: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          id: string | null
+          status: string | null
+          total_contratos: number | null
+          total_propostas: number | null
+          user_id: string | null
+          valor_total_contratos: number | null
+        }
+        Insert: {
+          bairro?: string | null
+          cidade?: string | null
+          cliente?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          total_contratos?: never
+          total_propostas?: never
+          user_id?: string | null
+          valor_total_contratos?: never
+        }
+        Update: {
+          bairro?: string | null
+          cidade?: string | null
+          cliente?: string | null
+          created_at?: string | null
+          id?: string | null
+          status?: string | null
+          total_contratos?: never
+          total_propostas?: never
+          user_id?: string | null
+          valor_total_contratos?: never
+        }
+        Relationships: []
+      }
+      vw_financeiro: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          data_pagamento: string | null
+          dias_atraso: number | null
+          forma: string | null
+          id: string | null
+          numero_parcela: number | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          status: Database["public"]["Enums"]["payment_status"] | null
+          user_id: string | null
+          valor: number | null
+        }
+        Relationships: []
+      }
+      vw_leads: {
+        Row: {
+          bairro: string | null
+          canal: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          dias_no_funil: number | null
+          estagio: Database["public"]["Enums"]["lead_stage"] | null
+          first_response_minutes: number | null
+          id: string | null
+          m2: number | null
+          motivo_perda: string | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          responsavel: string | null
+          servico: string | null
+          user_id: string | null
+          valor_potencial: number | null
+        }
+        Relationships: []
+      }
+      vw_obras: {
+        Row: {
+          bairro: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          id: string | null
+          m2: number | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          progresso_pct: number | null
+          responsavel_obra: string | null
+          servico: string | null
+          status: Database["public"]["Enums"]["obra_status"] | null
+          user_id: string | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
+      vw_propostas: {
+        Row: {
+          bairro: string | null
+          canal: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          desconto: number | null
+          dias_aberta: number | null
+          forma_pagamento: string | null
+          id: string | null
+          m2: number | null
+          margem_pct: number | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          servico: string | null
+          status: string | null
+          user_id: string | null
+          valor_liquido: number | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
+      vw_vendas: {
+        Row: {
+          bairro: string | null
+          canal: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          forma_pagamento: string | null
+          id: string | null
+          m2: number | null
+          margem_pct: number | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          servico: string | null
+          status: Database["public"]["Enums"]["contract_status"] | null
+          user_id: string | null
+          valor_liquido: number | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
+      vw_visitas: {
+        Row: {
+          bairro: string | null
+          canal: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          id: string | null
+          m2: number | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          realizada: boolean | null
+          responsavel: string | null
+          servico: string | null
+          status: Database["public"]["Enums"]["visita_status"] | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_anotacao_activity: {
