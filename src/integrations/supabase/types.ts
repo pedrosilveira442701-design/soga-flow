@@ -1482,6 +1482,41 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_insights_pool: {
+        Row: {
+          bairro: string | null
+          canal: string | null
+          cidade: string | null
+          cliente: string | null
+          created_at: string | null
+          dias_aberta: number | null
+          dias_no_funil: number | null
+          estagio: string | null
+          first_response_minutes: number | null
+          forma_pagamento: string | null
+          id_origem: string | null
+          m2: number | null
+          margem_pct: number | null
+          motivo_perda: string | null
+          numero_parcela: number | null
+          pago_em: string | null
+          periodo_ano: number | null
+          periodo_dia: string | null
+          periodo_mes: string | null
+          progresso_pct: number | null
+          realizada: boolean | null
+          responsavel: string | null
+          servico: string | null
+          status: string | null
+          tipo: string | null
+          user_id: string | null
+          valor: number | null
+          valor_liquido: number | null
+          valor_total: number | null
+          vencimento: string | null
+        }
+        Relationships: []
+      }
       vw_leads: {
         Row: {
           bairro: string | null

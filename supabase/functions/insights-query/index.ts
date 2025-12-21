@@ -6,257 +6,133 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Views permitidas para consulta
-const ALLOWED_VIEWS = [
-  "vw_vendas",
-  "vw_propostas",
-  "vw_leads",
-  "vw_visitas",
-  "vw_obras",
-  "vw_financeiro",
-  "vw_clientes",
-];
-
-// Schema das views para contexto da IA
-const VIEW_SCHEMAS = {
-  vw_vendas: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, canal, servico, m2, valor_total, valor_liquido, margem_pct, status (ativo|concluido|cancelado), forma_pagamento",
-  vw_propostas: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, canal, servico, m2, valor_total, valor_liquido, margem_pct, status (aberta|fechada|perdida|repouso), forma_pagamento, desconto, dias_aberta",
-  vw_leads: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, canal, servico, m2, valor_potencial, estagio, motivo_perda, responsavel, dias_no_funil, first_response_minutes",
-  vw_visitas: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, canal, servico, m2, status (agendar|marcada|atrasada|concluida), realizada, responsavel",
-  vw_obras: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, servico, m2, valor_total, status (mobilizacao|execucao|acabamento|concluida|pausada), progresso_pct, responsavel_obra",
-  vw_financeiro: "id, user_id, created_at, periodo_dia, periodo_mes, periodo_ano, cliente, cidade, bairro, valor, status (pendente|pago|atrasado), numero_parcela, forma, data_pagamento, dias_atraso",
-  vw_clientes: "id, user_id, created_at, cliente, cidade, bairro, status, total_contratos, valor_total_contratos, total_propostas",
-};
-
-// Definição de status para cada entidade (alinhado com as telas)
+// ============================================================================
+// DEFINIÇÕES DE NEGÓCIO - Status canônicos (alinhados com as telas)
+// ============================================================================
 const STATUS_DEFINITIONS = {
-  propostas_abertas: "status = 'aberta'",
-  propostas_fechadas: "status = 'fechada'",
-  propostas_perdidas: "status = 'perdida'",
-  propostas_repouso: "status = 'repouso'",
-  vendas_ativas: "status = 'ativo'",
-  vendas_concluidas: "status = 'concluido'",
-  financeiro_pendente: "status = 'pendente'",
-  financeiro_atrasado: "status = 'atrasado'",
-  financeiro_pago: "status = 'pago'",
+  // Propostas
+  proposta_aberta: ["aberta"],
+  proposta_fechada: ["fechada"],
+  proposta_perdida: ["perdida"],
+  proposta_repouso: ["repouso"],
+  // Vendas/Contratos
+  venda_ativa: ["ativo"],
+  venda_concluida: ["concluido"],
+  venda_cancelada: ["cancelado"],
+  // Financeiro
+  financeiro_pendente: ["pendente"],
+  financeiro_pago: ["pago"],
+  financeiro_atrasado: ["atrasado"],
+  financeiro_aberto: ["pendente", "atrasado"], // A receber
+  // Leads
+  lead_aberto: ["contato", "visita_agendada", "visita_realizada", "proposta_pendente", "proposta", "em_analise"],
+  lead_ganho: ["contrato", "execucao", "finalizado"],
+  lead_perdido: ["perdido"],
+  lead_repouso: ["repouso"],
+  // Obras
+  obra_andamento: ["mobilizacao", "execucao", "acabamento"],
+  obra_concluida: ["concluida"],
+  obra_pausada: ["pausada"],
+  // Visitas
+  visita_pendente: ["agendar", "marcada"],
+  visita_atrasada: ["atrasada"],
+  visita_concluida: ["concluida"],
 };
 
-// Palavras-chave que indicam pergunta SNAPSHOT (estado atual, sem filtro de data)
-const SNAPSHOT_KEYWORDS = [
-  "em aberto", "abertas", "aberta", "pendentes", "pendente",
-  "a receber", "atrasadas", "atrasado", "em atraso",
-  "em andamento", "ativos", "ativo", "ativa",
-  "paradas", "parado", "sem resposta",
-  "no funil", "quantas", "quantos", "quanto",
-  "total de", "todas as", "todos os",
-  "estão", "está", "tem", "há",
-];
-
-// Relatórios prontos (fallback)
-const FALLBACK_REPORTS: Record<string, { sql: string; chart: string; x: string; y: string[]; description: string }> = {
-  vendas_mes_cliente: {
-    sql: `SELECT cliente, SUM(valor_total) as valor_total, SUM(valor_liquido) as valor_liquido, AVG(margem_pct) as margem_pct, SUM(m2) as m2, COUNT(*) as qtd FROM vw_vendas GROUP BY cliente ORDER BY valor_total DESC LIMIT 10`,
-    chart: "bar",
-    x: "cliente",
-    y: ["valor_total", "valor_liquido"],
-    description: "Top 10 clientes por valor total de vendas",
-  },
-  margem_ultimos_6_meses: {
-    sql: `SELECT periodo_mes, AVG(margem_pct) as margem_pct, SUM(valor_total) as valor_total, COUNT(*) as qtd FROM vw_vendas WHERE periodo_dia >= CURRENT_DATE - INTERVAL '6 months' GROUP BY periodo_mes ORDER BY periodo_mes`,
-    chart: "line",
-    x: "periodo_mes",
-    y: ["margem_pct"],
-    description: "Evolução da margem média nos últimos 6 meses",
-  },
-  melhor_canal: {
-    sql: `SELECT canal, COUNT(*) as total, SUM(valor_total) as receita FROM vw_vendas WHERE canal IS NOT NULL GROUP BY canal ORDER BY receita DESC LIMIT 10`,
-    chart: "bar",
-    x: "canal",
-    y: ["receita", "total"],
-    description: "Canais de vendas ordenados por receita",
-  },
-  funil_por_estagio: {
-    sql: `SELECT estagio, COUNT(*) as total, SUM(valor_potencial) as valor_potencial FROM vw_leads GROUP BY estagio ORDER BY CASE estagio WHEN 'contato' THEN 1 WHEN 'visita_agendada' THEN 2 WHEN 'visita_realizada' THEN 3 WHEN 'proposta_pendente' THEN 4 WHEN 'proposta' THEN 5 WHEN 'contrato' THEN 6 WHEN 'execucao' THEN 7 WHEN 'finalizado' THEN 8 ELSE 9 END`,
-    chart: "bar",
-    x: "estagio",
-    y: ["total"],
-    description: "Distribuição de leads por estágio do funil",
-  },
-  servicos_mais_vendidos: {
-    sql: `SELECT servico, SUM(m2) as m2_total, SUM(valor_total) as receita, COUNT(*) as total FROM vw_vendas WHERE servico IS NOT NULL GROUP BY servico ORDER BY receita DESC LIMIT 10`,
-    chart: "bar",
-    x: "servico",
-    y: ["receita", "m2_total"],
-    description: "Serviços mais vendidos por receita",
-  },
-  geografia_vendas: {
-    sql: `SELECT COALESCE(bairro, cidade, 'Não informado') as regiao, COUNT(*) as total, SUM(valor_total) as receita, AVG(valor_total) as ticket_medio FROM vw_vendas GROUP BY COALESCE(bairro, cidade, 'Não informado') ORDER BY receita DESC LIMIT 15`,
-    chart: "bar",
-    x: "regiao",
-    y: ["receita", "ticket_medio"],
-    description: "Vendas por região geográfica",
-  },
-  aging_propostas: {
-    sql: `SELECT CASE WHEN dias_aberta <= 7 THEN '0-7 dias' WHEN dias_aberta <= 15 THEN '8-15 dias' WHEN dias_aberta <= 30 THEN '16-30 dias' WHEN dias_aberta <= 60 THEN '31-60 dias' ELSE '60+ dias' END as faixa, COUNT(*) as total, SUM(valor_total) as valor FROM vw_propostas WHERE status = 'aberta' GROUP BY faixa ORDER BY MIN(dias_aberta)`,
-    chart: "bar",
-    x: "faixa",
-    y: ["total", "valor"],
-    description: "Aging de propostas abertas por tempo",
-  },
-  previsao_recebiveis: {
-    sql: `SELECT CASE WHEN periodo_dia <= CURRENT_DATE + INTERVAL '30 days' THEN '0-30 dias' WHEN periodo_dia <= CURRENT_DATE + INTERVAL '60 days' THEN '31-60 dias' WHEN periodo_dia <= CURRENT_DATE + INTERVAL '90 days' THEN '61-90 dias' ELSE '90+ dias' END as faixa, SUM(valor) as valor, COUNT(*) as parcelas FROM vw_financeiro WHERE status = 'pendente' GROUP BY faixa`,
-    chart: "bar",
-    x: "faixa",
-    y: ["valor", "parcelas"],
-    description: "Previsão de recebíveis por período",
-  },
+// Mapeamento de entidade para view
+const ENTITY_TO_VIEW: Record<string, string> = {
+  propostas: "vw_propostas",
+  vendas: "vw_vendas",
+  contratos: "vw_vendas",
+  financeiro: "vw_financeiro",
+  parcelas: "vw_financeiro",
+  leads: "vw_leads",
+  obras: "vw_obras",
+  visitas: "vw_visitas",
+  clientes: "vw_clientes",
+  pool: "vw_insights_pool",
 };
 
-// Função para validar e sanitizar SQL
-function validateSQL(sql: string): { valid: boolean; error?: string } {
-  const normalizedSQL = sql.toUpperCase().trim();
+// Mapeamento de métrica para SQL
+const METRIC_TO_SQL: Record<string, { select: string; field: string }> = {
+  count: { select: "COUNT(*)", field: "quantidade" },
+  sum_valor_total: { select: "SUM(valor_total)", field: "valor_total" },
+  sum_valor_liquido: { select: "SUM(valor_liquido)", field: "valor_liquido" },
+  sum_valor: { select: "SUM(valor)", field: "valor" },
+  sum_m2: { select: "SUM(m2)", field: "m2_total" },
+  avg_margem: { select: "AVG(margem_pct)", field: "margem_media" },
+  avg_dias_aberta: { select: "AVG(dias_aberta)", field: "dias_aberta_media" },
+};
 
-  const blockedKeywords = [
-    "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE",
-    "GRANT", "REVOKE", "EXECUTE", "EXEC", "CALL", "COMMIT", "ROLLBACK",
-    "SAVEPOINT", "DECLARE", "FETCH", "OPEN", "CLOSE", "DEALLOCATE"
-  ];
-
-  if (/\bBEGIN\s+(TRANSACTION|WORK|ATOMIC)\b/i.test(sql)) {
-    return { valid: false, error: "Operação 'BEGIN TRANSACTION' não permitida" };
-  }
-  if (/\bSET\s+(ROLE|SESSION|LOCAL|TIME\s+ZONE|TRANSACTION)\b/i.test(sql)) {
-    return { valid: false, error: "Operação 'SET' não permitida" };
-  }
-
-  for (const keyword of blockedKeywords) {
-    const regex = new RegExp(`\\b${keyword}\\b`, "i");
-    if (regex.test(normalizedSQL)) {
-      return { valid: false, error: `Operação '${keyword}' não permitida` };
-    }
-  }
-
-  if (sql.includes(";") && sql.indexOf(";") < sql.length - 1) {
-    return { valid: false, error: "Múltiplas instruções não são permitidas" };
-  }
-
-  if (sql.includes("--") || sql.includes("/*")) {
-    return { valid: false, error: "Comentários não são permitidos" };
-  }
-
-  const fromMatches = sql.match(/FROM\s+(\w+)/gi) || [];
-  const joinMatches = sql.match(/JOIN\s+(\w+)/gi) || [];
-  const allTables = [...fromMatches, ...joinMatches].map(m =>
-    m.replace(/FROM\s+/i, "").replace(/JOIN\s+/i, "").toLowerCase()
-  );
-
-  for (const table of allTables) {
-    if (!ALLOWED_VIEWS.includes(table)) {
-      return { valid: false, error: `View '${table}' não permitida. Use apenas: ${ALLOWED_VIEWS.join(", ")}` };
-    }
-  }
-
-  if (!normalizedSQL.startsWith("SELECT")) {
-    return { valid: false, error: "Apenas consultas SELECT são permitidas" };
-  }
-
-  return { valid: true };
+// Interface para o JSON estruturado retornado pela IA
+interface InsightIntent {
+  intent: "snapshot" | "aggregate" | "breakdown" | "time_series";
+  entity: string;
+  metric: string;
+  filters: {
+    status?: string;
+    cliente?: string;
+    canal?: string;
+    servico?: string;
+    tipo?: string;
+  };
+  dateRange: {
+    start: string | null;
+    end: string | null;
+  };
+  groupBy: string | null;
+  wantsChart: boolean;
+  textTemplate: string;
 }
 
-// Função para garantir LIMIT
-function ensureLimit(sql: string, maxLimit: number = 500): string {
-  const hasLimit = /LIMIT\s+\d+/i.test(sql);
-  if (!hasLimit) {
-    return sql.replace(/;?\s*$/, ` LIMIT ${maxLimit}`);
-  }
-  return sql.replace(/LIMIT\s+(\d+)/i, (match, num) => {
-    const limit = Math.min(parseInt(num), maxLimit);
-    return `LIMIT ${limit}`;
-  });
+// ============================================================================
+// FUNÇÕES AUXILIARES
+// ============================================================================
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
-// Função para normalizar datas inválidas (ex: 31/06 -> 30/06)
-function normalizeDateString(dateStr: string): { date: string; corrected: boolean; original: string } {
+function formatNumber(value: number, decimals: number = 0): string {
+  return new Intl.NumberFormat("pt-BR", { 
+    minimumFractionDigits: decimals, 
+    maximumFractionDigits: decimals 
+  }).format(value);
+}
+
+// Normalizar datas inválidas (ex: 31/06 -> 30/06)
+function normalizeDate(day: number, month: number, year: number): Date {
+  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) {
+    daysInMonth[1] = 29;
+  }
+  const maxDay = daysInMonth[month - 1] || 31;
+  return new Date(year, month - 1, Math.min(day, maxDay));
+}
+
+function parseDateString(dateStr: string): { date: string; corrected: boolean; original: string } {
   const original = dateStr;
   
   let match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (match) {
     const [, day, month, year] = match;
     const correctedDate = normalizeDate(parseInt(day), parseInt(month), parseInt(year));
-    return { date: correctedDate.toISOString().split('T')[0], corrected: correctedDate.getDate() !== parseInt(day), original };
+    const formatted = correctedDate.toISOString().split('T')[0];
+    return { date: formatted, corrected: correctedDate.getDate() !== parseInt(day), original };
   }
   
   match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (match) {
     const [, year, month, day] = match;
     const correctedDate = normalizeDate(parseInt(day), parseInt(month), parseInt(year));
-    return { date: correctedDate.toISOString().split('T')[0], corrected: correctedDate.getDate() !== parseInt(day), original };
+    const formatted = correctedDate.toISOString().split('T')[0];
+    return { date: formatted, corrected: correctedDate.getDate() !== parseInt(day), original };
   }
   
   return { date: dateStr, corrected: false, original };
 }
 
-function normalizeDate(day: number, month: number, year: number): Date {
-  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  
-  if ((year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)) {
-    daysInMonth[1] = 29;
-  }
-  
-  const maxDay = daysInMonth[month - 1] || 31;
-  const correctedDay = Math.min(day, maxDay);
-  
-  return new Date(year, month - 1, correctedDay);
-}
-
-// Detectar se é pergunta SNAPSHOT (estado atual, sem filtro de data)
-function isSnapshotQuestion(pergunta: string): boolean {
-  const lowerPergunta = pergunta.toLowerCase();
-  
-  // Se menciona período explícito, NÃO é snapshot
-  const periodKeywords = [
-    "em dezembro", "em janeiro", "em fevereiro", "em março", "em abril", "em maio",
-    "em junho", "em julho", "em agosto", "em setembro", "em outubro", "em novembro",
-    "este mês", "mês passado", "últimos", "ultimos", "de 2024", "de 2025",
-    "entre", "de/", "até", "a partir de", "no período", "no periodo",
-    "/2024", "/2025", "-2024", "-2025"
-  ];
-  
-  for (const kw of periodKeywords) {
-    if (lowerPergunta.includes(kw)) {
-      return false; // Tem período explícito, não é snapshot
-    }
-  }
-  
-  // Verificar se tem datas no formato DD/MM/YYYY ou YYYY-MM-DD
-  if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(pergunta) || /\d{4}-\d{2}-\d{2}/.test(pergunta)) {
-    return false; // Tem data explícita
-  }
-  
-  // Verificar palavras-chave de snapshot
-  for (const kw of SNAPSHOT_KEYWORDS) {
-    if (lowerPergunta.includes(kw)) {
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-// Detectar se a pergunta pede gráfico/evolução
-function shouldGenerateChart(pergunta: string): boolean {
-  const chartKeywords = [
-    "gráfico", "grafico", "evolução", "evolucao", "linha do tempo",
-    "por mês", "por mes", "por dia", "mensal", "diário", "diario",
-    "semana a semana", "mês a mês", "mes a mes", "tendência", "tendencia",
-    "timeline", "chart", "nos últimos", "nos ultimos", "histórico", "historico"
-  ];
-  
-  const lowerPergunta = pergunta.toLowerCase();
-  return chartKeywords.some(kw => lowerPergunta.includes(kw));
-}
-
-// Extrair datas da pergunta do usuário
+// Extrair datas da pergunta
 function extractDatesFromQuestion(pergunta: string): { startDate?: string; endDate?: string; corrections: string[] } {
   const corrections: string[] = [];
   let startDate: string | undefined;
@@ -272,15 +148,11 @@ function extractDatesFromQuestion(pergunta: string): { startDate?: string; endDa
   for (const pattern of datePatterns) {
     const match = pergunta.match(pattern);
     if (match) {
-      const start = normalizeDateString(match[1]);
-      const end = normalizeDateString(match[2]);
+      const start = parseDateString(match[1]);
+      const end = parseDateString(match[2]);
       
-      if (start.corrected) {
-        corrections.push(`Ajustei ${start.original} para ${start.date}`);
-      }
-      if (end.corrected) {
-        corrections.push(`Ajustei ${end.original} para ${end.date}`);
-      }
+      if (start.corrected) corrections.push(`Ajustei ${start.original} para ${start.date}`);
+      if (end.corrected) corrections.push(`Ajustei ${end.original} para ${end.date}`);
       
       startDate = start.date;
       endDate = end.date;
@@ -291,30 +163,262 @@ function extractDatesFromQuestion(pergunta: string): { startDate?: string; endDa
   return { startDate, endDate, corrections };
 }
 
-// Gerar hash do cache
-function generateCacheHash(pergunta: string, filtros: Record<string, unknown>): string {
-  const content = JSON.stringify({ pergunta: pergunta.toLowerCase().trim(), filtros });
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+// Validar SQL básico
+function validateSQL(sql: string): { valid: boolean; error?: string } {
+  const normalizedSQL = sql.toUpperCase().trim();
+  
+  const blockedKeywords = [
+    "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE",
+    "GRANT", "REVOKE", "EXECUTE", "EXEC", "CALL", "COMMIT", "ROLLBACK"
+  ];
+
+  for (const keyword of blockedKeywords) {
+    if (new RegExp(`\\b${keyword}\\b`, "i").test(normalizedSQL)) {
+      return { valid: false, error: `Operação '${keyword}' não permitida` };
+    }
   }
-  return Math.abs(hash).toString(36);
+
+  if (!normalizedSQL.startsWith("SELECT")) {
+    return { valid: false, error: "Apenas consultas SELECT são permitidas" };
+  }
+
+  return { valid: true };
 }
 
-// Formatar valor monetário
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+// ============================================================================
+// SQL BUILDER DETERMINÍSTICO
+// ============================================================================
+
+function buildSQL(intent: InsightIntent, userId: string): string {
+  const view = ENTITY_TO_VIEW[intent.entity] || "vw_propostas";
+  const metricInfo = METRIC_TO_SQL[intent.metric] || METRIC_TO_SQL.count;
+  
+  let selectClause = "";
+  let groupByClause = "";
+  let orderByClause = "";
+  
+  // Construir SELECT baseado no intent
+  if (intent.intent === "snapshot" || intent.intent === "aggregate") {
+    // Agregação simples
+    selectClause = `${metricInfo.select} AS ${metricInfo.field}`;
+  } else if (intent.intent === "breakdown" && intent.groupBy) {
+    // Breakdown por categoria
+    selectClause = `${intent.groupBy}, ${metricInfo.select} AS ${metricInfo.field}`;
+    groupByClause = `GROUP BY ${intent.groupBy}`;
+    orderByClause = `ORDER BY ${metricInfo.field} DESC`;
+  } else if (intent.intent === "time_series" && intent.groupBy) {
+    // Série temporal
+    selectClause = `${intent.groupBy}, ${metricInfo.select} AS ${metricInfo.field}`;
+    groupByClause = `GROUP BY ${intent.groupBy}`;
+    orderByClause = `ORDER BY ${intent.groupBy}`;
+  } else {
+    selectClause = "*";
+  }
+  
+  // Construir WHERE
+  const whereConditions: string[] = [];
+  
+  // Filtro de status
+  if (intent.filters.status) {
+    const statusKey = `${intent.entity.replace(/s$/, '')}_${intent.filters.status}`;
+    const statusList = STATUS_DEFINITIONS[statusKey as keyof typeof STATUS_DEFINITIONS];
+    
+    if (statusList && statusList.length > 0) {
+      if (statusList.length === 1) {
+        whereConditions.push(`status = '${statusList[0]}'`);
+      } else {
+        whereConditions.push(`status IN (${statusList.map(s => `'${s}'`).join(", ")})`);
+      }
+    } else {
+      // Fallback: usar o valor diretamente
+      whereConditions.push(`status = '${intent.filters.status}'`);
+    }
+  }
+  
+  // Filtro de tipo (para pool)
+  if (intent.filters.tipo) {
+    whereConditions.push(`tipo = '${intent.filters.tipo}'`);
+  }
+  
+  // Filtro de cliente
+  if (intent.filters.cliente) {
+    whereConditions.push(`cliente ILIKE '%${intent.filters.cliente}%'`);
+  }
+  
+  // Filtro de canal
+  if (intent.filters.canal) {
+    whereConditions.push(`canal ILIKE '%${intent.filters.canal}%'`);
+  }
+  
+  // Filtro de serviço
+  if (intent.filters.servico) {
+    whereConditions.push(`servico ILIKE '%${intent.filters.servico}%'`);
+  }
+  
+  // Filtro de período (APENAS se não é snapshot OU se usuário especificou datas)
+  if (intent.dateRange.start && intent.dateRange.end) {
+    whereConditions.push(`periodo_dia >= '${intent.dateRange.start}'`);
+    whereConditions.push(`periodo_dia <= '${intent.dateRange.end}'`);
+  }
+  
+  // Montar SQL final
+  let sql = `SELECT ${selectClause} FROM ${view}`;
+  
+  if (whereConditions.length > 0) {
+    sql += ` WHERE ${whereConditions.join(" AND ")}`;
+  }
+  
+  if (groupByClause) sql += ` ${groupByClause}`;
+  if (orderByClause) sql += ` ${orderByClause}`;
+  
+  sql += " LIMIT 100";
+  
+  return sql;
 }
 
-// Formatar número
-function formatNumber(value: number, decimals: number = 0): string {
-  return new Intl.NumberFormat("pt-BR", { 
-    minimumFractionDigits: decimals, 
-    maximumFractionDigits: decimals 
-  }).format(value);
+// ============================================================================
+// GERAR TEXTO DE RESPOSTA PÓS-QUERY
+// ============================================================================
+
+function generateTextResponse(
+  rows: Record<string, unknown>[],
+  intent: InsightIntent,
+  metricField: string
+): string {
+  const criterios: string[] = [];
+  
+  // Critério: entidade
+  criterios.push(`Entidade: ${intent.entity}`);
+  
+  // Critério: status
+  if (intent.filters.status) {
+    criterios.push(`Status: ${intent.filters.status}`);
+  }
+  
+  // Critério: período
+  if (intent.dateRange.start && intent.dateRange.end) {
+    criterios.push(`Período: ${intent.dateRange.start} a ${intent.dateRange.end}`);
+  } else {
+    criterios.push(`Período: sem filtro de data`);
+  }
+  
+  const criteriosStr = `\n\nCritérios: ${criterios.join(" | ")}`;
+  
+  if (rows.length === 0) {
+    return `Não encontrei registros para esses critérios.${criteriosStr}`;
+  }
+  
+  const firstRow = rows[0];
+  
+  // Para agregações simples (1 linha)
+  if (rows.length === 1 && metricField in firstRow) {
+    const value = Number(firstRow[metricField]) || 0;
+    
+    if (metricField === "quantidade" || intent.metric === "count") {
+      const singular = intent.entity.replace(/s$/, '');
+      const label = value === 1 ? singular : intent.entity;
+      return `Há ${formatNumber(value)} ${label}.${criteriosStr}`;
+    }
+    
+    if (metricField.includes("valor") || metricField === "valor_total" || metricField === "valor_liquido") {
+      return `Total: ${formatCurrency(value)}.${criteriosStr}`;
+    }
+    
+    if (metricField === "m2_total") {
+      return `Total: ${formatNumber(value)} m².${criteriosStr}`;
+    }
+    
+    if (metricField === "margem_media") {
+      return `Margem média: ${formatNumber(value, 1)}%.${criteriosStr}`;
+    }
+    
+    return `Resultado: ${formatNumber(value, 2)}.${criteriosStr}`;
+  }
+  
+  // Para breakdowns/time series (múltiplas linhas)
+  if (rows.length > 1) {
+    // Calcular total se houver campo numérico
+    let total = 0;
+    const numericFields = ["valor_total", "valor_liquido", "valor", "quantidade", "m2_total"];
+    const foundField = numericFields.find(f => f in firstRow);
+    
+    if (foundField) {
+      total = rows.reduce((sum, r) => sum + (Number(r[foundField]) || 0), 0);
+      
+      if (foundField.includes("valor")) {
+        return `${rows.length} registros encontrados. Total: ${formatCurrency(total)}.${criteriosStr}`;
+      }
+      return `${rows.length} registros encontrados. Total: ${formatNumber(total)}.${criteriosStr}`;
+    }
+    
+    return `${rows.length} registros encontrados.${criteriosStr}`;
+  }
+  
+  return `Resultado encontrado.${criteriosStr}`;
 }
+
+// ============================================================================
+// RELATÓRIOS FALLBACK
+// ============================================================================
+
+const FALLBACK_REPORTS: Record<string, { intent: InsightIntent; description: string }> = {
+  vendas_mes_cliente: {
+    intent: {
+      intent: "breakdown",
+      entity: "vendas",
+      metric: "sum_valor_total",
+      filters: {},
+      dateRange: { start: null, end: null },
+      groupBy: "cliente",
+      wantsChart: true,
+      textTemplate: "Top clientes por valor de vendas",
+    },
+    description: "Top 10 clientes por valor total de vendas",
+  },
+  funil_por_estagio: {
+    intent: {
+      intent: "breakdown",
+      entity: "leads",
+      metric: "count",
+      filters: {},
+      dateRange: { start: null, end: null },
+      groupBy: "status",
+      wantsChart: true,
+      textTemplate: "Distribuição de leads por estágio",
+    },
+    description: "Distribuição de leads por estágio do funil",
+  },
+  propostas_abertas: {
+    intent: {
+      intent: "snapshot",
+      entity: "propostas",
+      metric: "count",
+      filters: { status: "aberta" },
+      dateRange: { start: null, end: null },
+      groupBy: null,
+      wantsChart: false,
+      textTemplate: "Contagem de propostas em aberto",
+    },
+    description: "Quantas propostas estão em aberto",
+  },
+  recebiveis_pendentes: {
+    intent: {
+      intent: "snapshot",
+      entity: "financeiro",
+      metric: "sum_valor",
+      filters: { status: "aberta" },
+      dateRange: { start: null, end: null },
+      groupBy: null,
+      wantsChart: false,
+      textTemplate: "Total a receber",
+    },
+    description: "Valor total a receber (pendente + atrasado)",
+  },
+};
+
+// ============================================================================
+// MAIN HANDLER
+// ============================================================================
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -324,6 +428,7 @@ serve(async (req) => {
   const startTime = Date.now();
   
   try {
+    // Autenticação
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
@@ -348,7 +453,7 @@ serve(async (req) => {
       });
     }
 
-    const { pergunta, filtros = {}, fallbackKey } = await req.json();
+    const { pergunta, fallbackKey } = await req.json();
 
     if (!pergunta && !fallbackKey) {
       return new Response(JSON.stringify({ error: "Pergunta é obrigatória" }), {
@@ -357,142 +462,75 @@ serve(async (req) => {
       });
     }
 
-    // Detectar tipo da pergunta: SNAPSHOT vs TIME-SERIES
-    const isSnapshot = pergunta ? isSnapshotQuestion(pergunta) : false;
-    console.log(`Tipo pergunta: ${isSnapshot ? 'SNAPSHOT' : 'TIME-SERIES'}`);
-
-    // Extrair datas da pergunta (PRIORIDADE sobre filtros globais)
-    const extractedDates = pergunta ? extractDatesFromQuestion(pergunta) : { corrections: [] };
-    const dateCorrections = extractedDates.corrections;
-    
-    // Para SNAPSHOT: NÃO aplicar filtros de período (a menos que usuário especificou)
-    // Para TIME-SERIES: usar datas da pergunta OU filtros globais
-    let finalStartDate: string | undefined;
-    let finalEndDate: string | undefined;
-    let usedQuestionDates = false;
-    let periodDescription = "";
-    
-    if (extractedDates.startDate && extractedDates.endDate) {
-      // Usuário especificou datas na pergunta - SEMPRE respeitar
-      finalStartDate = extractedDates.startDate;
-      finalEndDate = extractedDates.endDate;
-      usedQuestionDates = true;
-      periodDescription = `${finalStartDate} a ${finalEndDate}`;
-    } else if (isSnapshot) {
-      // Pergunta SNAPSHOT sem datas: NÃO aplicar filtro de período
-      finalStartDate = undefined;
-      finalEndDate = undefined;
-      periodDescription = "todos os registros (sem filtro de data)";
-    } else {
-      // TIME-SERIES sem datas explícitas: usar filtros do dashboard
-      finalStartDate = filtros.startDate;
-      finalEndDate = filtros.endDate;
-      if (finalStartDate && finalEndDate) {
-        periodDescription = `${finalStartDate} a ${finalEndDate}`;
-      } else {
-        periodDescription = "todos os registros";
-      }
-    }
-
-    console.log(`Período final: ${periodDescription}`);
-
-    // Verificar cache
-    const cacheHash = generateCacheHash(pergunta || fallbackKey, { startDate: finalStartDate, endDate: finalEndDate, isSnapshot });
-    const { data: cachedResult } = await supabaseUser
-      .from("insights_cache")
-      .select("resultado")
-      .eq("hash", cacheHash)
-      .gt("expires_at", new Date().toISOString())
-      .maybeSingle();
-
-    if (cachedResult) {
-      return new Response(JSON.stringify({
-        ...cachedResult.resultado,
-        cached: true,
-        cacheHash,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let sqlQuery: string;
-    let chartType = "table";
-    let xAxis = "";
-    let yAxis: string[] = [];
+    let intent: InsightIntent;
+    let usedFallback = false;
     let confidence = 0.9;
     let explanation = "";
-    let usedFallback = false;
-    let wantsChart = false;
-    let textResponse = "";
-    let statusUsed = "";
-    let viewUsed = "";
+    let dateCorrections: string[] = [];
 
-    // Se usar fallback diretamente
+    // ========================================================================
+    // PASSO 1: Obter intent estruturado da IA (ou usar fallback)
+    // ========================================================================
+    
     if (fallbackKey && FALLBACK_REPORTS[fallbackKey]) {
-      const fb = FALLBACK_REPORTS[fallbackKey];
-      sqlQuery = fb.sql;
-      chartType = fb.chart;
-      xAxis = fb.x;
-      yAxis = fb.y;
-      explanation = fb.description;
+      intent = { ...FALLBACK_REPORTS[fallbackKey].intent };
+      explanation = FALLBACK_REPORTS[fallbackKey].description;
       usedFallback = true;
-      wantsChart = true;
-      viewUsed = sqlQuery.match(/FROM\s+(\w+)/i)?.[1] || "vw_vendas";
+      console.log(`Usando fallback: ${fallbackKey}`);
     } else if (lovableApiKey && pergunta) {
-      wantsChart = shouldGenerateChart(pergunta);
+      // Extrair datas da pergunta ANTES de chamar a IA
+      const extractedDates = extractDatesFromQuestion(pergunta);
+      dateCorrections = extractedDates.corrections;
       
-      // System prompt adaptado para SNAPSHOT vs TIME-SERIES
-      const systemPrompt = `Você é um assistente de análise de dados de uma empresa de pisos.
-Sua tarefa é gerar SQL para responder a pergunta do usuário.
+      const systemPrompt = `Você é um roteador de consultas analíticas. Analise a pergunta e retorne APENAS um JSON estruturado.
 
-VIEWS DISPONÍVEIS (use APENAS estas):
-${Object.entries(VIEW_SCHEMAS).map(([view, cols]) => `• ${view}: ${cols}`).join("\n")}
+REGRAS CRÍTICAS:
+1. Para perguntas de ESTADO ATUAL (em aberto, pendentes, atrasadas, etc.): intent = "snapshot", NÃO inclua datas
+2. Para perguntas com PERÍODO (em dezembro, últimos 30 dias, de X a Y): intent = "aggregate" ou "time_series", inclua as datas
+3. Para "quantas/quantos": metric = "count"
+4. Para "valor total" ou "quanto": metric = "sum_valor_total" (propostas/vendas) ou "sum_valor" (financeiro)
+5. Para "evolução" ou "gráfico por mês": intent = "time_series", groupBy = "periodo_mes", wantsChart = true
 
-TIPO DA PERGUNTA: ${isSnapshot ? 'SNAPSHOT (estado atual)' : 'TIME-SERIES (série temporal)'}
+ENTIDADES DISPONÍVEIS:
+- propostas: status pode ser "aberta", "fechada", "perdida", "repouso"
+- vendas/contratos: status pode ser "ativo", "concluido", "cancelado"
+- financeiro/parcelas: status pode ser "pendente", "pago", "atrasado", "aberta" (para a receber)
+- leads: status = estágio do funil
+- obras: status pode ser "andamento", "concluida", "pausada"
+- visitas: status pode ser "pendente", "atrasada", "concluida"
 
-${isSnapshot ? `REGRAS PARA SNAPSHOT:
-- NÃO adicione filtro de periodo_dia
-- Para "propostas em aberto": use status = 'aberta' (EXATAMENTE assim)
-- Para "propostas fechadas": use status = 'fechada'
-- Para "financeiro pendente": use status = 'pendente'
-- Para "financeiro atrasado": use status = 'atrasado'
-- O objetivo é mostrar o ESTADO ATUAL, não histórico
-- IMPORTANTE: Se pedir "valor total", use SUM(valor_total). Se pedir "quantas/quantos", use COUNT(*).` : 
-`REGRAS PARA TIME-SERIES:
-- Use filtro de periodo_dia SE o usuário especificou datas
-${finalStartDate && finalEndDate ? `- Período a usar: periodo_dia >= '${finalStartDate}' AND periodo_dia <= '${finalEndDate}'` : '- Sem período específico'}
-- Para gráficos de evolução, use GROUP BY periodo_mes ou periodo_dia`}
-
-REGRAS OBRIGATÓRIAS:
-1. Use SOMENTE as views listadas acima
-2. Gere APENAS SELECT (sem INSERT, UPDATE, DELETE, etc)
-3. SEMPRE adicione LIMIT (máximo 100)
-4. Para valores monetários: valor_total (bruto), valor_liquido (líquido)
-5. NÃO use created_at para filtros de data - use SOMENTE periodo_dia
-6. Para totais use: SUM(), COUNT(*), AVG()
-7. NÃO use aspas duplas em alias
-8. IMPORTANTE: Para "em aberto" sempre use status = 'aberta' (não 'em aberto')
-
-${wantsChart ? 'O usuário QUER um gráfico - inclua GROUP BY para série temporal.' : 'O usuário NÃO pediu gráfico - retorne apenas agregação/totais.'}
-
-Responda APENAS com JSON válido (sem markdown):
+RETORNE APENAS JSON (sem markdown):
 {
-  "sql": "SELECT ...",
-  "chart_type": "${wantsChart ? 'bar|line|pie' : 'table'}",
-  "x_axis": "coluna_x",
-  "y_axis": ["coluna1"],
-  "confidence": 0.9,
-  "status_filter": "filtro de status usado ou null",
-  "view_used": "nome_da_view"
-}`;
+  "intent": "snapshot|aggregate|breakdown|time_series",
+  "entity": "propostas|vendas|financeiro|leads|obras|visitas",
+  "metric": "count|sum_valor_total|sum_valor_liquido|sum_valor|sum_m2|avg_margem",
+  "filters": {
+    "status": "valor_do_status_ou_null",
+    "cliente": "nome_cliente_ou_null",
+    "canal": "canal_ou_null",
+    "servico": "servico_ou_null"
+  },
+  "dateRange": {
+    "start": "YYYY-MM-DD_ou_null",
+    "end": "YYYY-MM-DD_ou_null"
+  },
+  "groupBy": "periodo_mes|periodo_dia|cliente|canal|servico|null",
+  "wantsChart": true_ou_false,
+  "textTemplate": "descrição_curta_do_que_será_respondido"
+}
+
+EXEMPLOS:
+- "Quantas propostas estão em aberto?" → intent="snapshot", entity="propostas", metric="count", filters.status="aberta", dateRange={start:null,end:null}
+- "Qual o valor total das propostas em aberto?" → intent="snapshot", entity="propostas", metric="sum_valor_total", filters.status="aberta"
+- "Vendas de dezembro/2025" → intent="aggregate", entity="vendas", metric="sum_valor_total", dateRange={start:"2025-12-01",end:"2025-12-31"}
+- "Evolução de vendas por mês em 2025" → intent="time_series", entity="vendas", metric="sum_valor_total", groupBy="periodo_mes", wantsChart=true`;
 
       const userPrompt = `Pergunta: "${pergunta}"
 ${dateCorrections.length > 0 ? `Correções de data aplicadas: ${dateCorrections.join(', ')}` : ''}
-
-Gere o SQL correto.`;
+${extractedDates.startDate ? `Datas detectadas: ${extractedDates.startDate} a ${extractedDates.endDate}` : 'Nenhuma data explícita detectada'}`;
 
       try {
-        console.log("Chamando Lovable AI para gerar SQL...");
+        console.log("Chamando Lovable AI para extrair intent...");
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -509,8 +547,6 @@ Gere o SQL correto.`;
         });
 
         if (!aiResponse.ok) {
-          const errorText = await aiResponse.text();
-          console.error("AI API error:", aiResponse.status, errorText);
           throw new Error(`AI API error: ${aiResponse.status}`);
         }
 
@@ -523,95 +559,62 @@ Gere o SQL correto.`;
           throw new Error("Resposta da IA inválida");
         }
 
-        const parsed = JSON.parse(jsonMatch[0]);
-        sqlQuery = parsed.sql;
-        chartType = wantsChart ? (parsed.chart_type || "bar") : "table";
-        xAxis = parsed.x_axis || "";
-        yAxis = parsed.y_axis || [];
-        confidence = parsed.confidence || 0.7;
-        statusUsed = parsed.status_filter || "";
-        viewUsed = parsed.view_used || sqlQuery.match(/FROM\s+(\w+)/i)?.[1] || "";
+        intent = JSON.parse(jsonMatch[0]);
+        
+        // Se IA retornou datas mas a pergunta é claramente snapshot, remover datas
+        if (intent.intent === "snapshot") {
+          intent.dateRange = { start: null, end: null };
+        }
+        
+        // Se usuário especificou datas na pergunta, usar essas
+        if (extractedDates.startDate && extractedDates.endDate) {
+          intent.dateRange = {
+            start: extractedDates.startDate,
+            end: extractedDates.endDate,
+          };
+        }
+        
+        console.log("Intent extraído:", JSON.stringify(intent));
 
       } catch (aiError) {
         console.error("Erro na IA, usando fallback:", aiError);
-        const fb = FALLBACK_REPORTS.vendas_mes_cliente;
-        sqlQuery = fb.sql;
-        chartType = "bar";
-        xAxis = fb.x;
-        yAxis = fb.y;
+        intent = { ...FALLBACK_REPORTS.propostas_abertas.intent };
         confidence = 0.4;
-        explanation = "Não foi possível processar a pergunta. Mostrando vendas por cliente.";
+        explanation = "Não foi possível processar a pergunta. Mostrando propostas em aberto.";
         usedFallback = true;
-        wantsChart = true;
-        viewUsed = "vw_vendas";
       }
     } else {
-      const fb = FALLBACK_REPORTS.vendas_mes_cliente;
-      sqlQuery = fb.sql;
-      chartType = "bar";
-      xAxis = fb.x;
-      yAxis = fb.y;
+      intent = { ...FALLBACK_REPORTS.propostas_abertas.intent };
       confidence = 0.4;
-      explanation = "IA não configurada. Mostrando relatório padrão de vendas.";
+      explanation = "IA não configurada. Mostrando relatório padrão.";
       usedFallback = true;
-      wantsChart = true;
-      viewUsed = "vw_vendas";
     }
+
+    // ========================================================================
+    // PASSO 2: Gerar SQL determinístico a partir do intent
+    // ========================================================================
+    
+    const sqlQuery = buildSQL(intent, user.id);
+    console.log("SQL gerado:", sqlQuery);
 
     // Validar SQL
     const validation = validateSQL(sqlQuery);
     if (!validation.valid) {
-      console.error("SQL inválido:", sqlQuery, validation.error);
-      const fb = FALLBACK_REPORTS.vendas_mes_cliente;
-      sqlQuery = fb.sql;
-      chartType = "bar";
-      xAxis = fb.x;
-      yAxis = fb.y;
-      confidence = 0.3;
-      explanation = `Erro na consulta: ${validation.error}. Mostrando relatório padrão.`;
-      usedFallback = true;
-      wantsChart = true;
-      viewUsed = "vw_vendas";
+      console.error("SQL inválido:", validation.error);
+      return new Response(JSON.stringify({
+        error: validation.error,
+        textResponse: "Erro na geração da consulta. Tente reformular sua pergunta.",
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Garantir LIMIT
-    sqlQuery = ensureLimit(sqlQuery);
-
-    // Aplicar filtros de período APENAS se:
-    // 1. NÃO é snapshot
-    // 2. Temos datas
-    // 3. Query não tem filtro de periodo_dia ainda
-    if (!isSnapshot && finalStartDate && finalEndDate && !sqlQuery.toLowerCase().includes("periodo_dia")) {
-      const whereClause = `periodo_dia >= '${finalStartDate}' AND periodo_dia <= '${finalEndDate}'`;
-      
-      if (sqlQuery.toUpperCase().includes("WHERE")) {
-        sqlQuery = sqlQuery.replace(/WHERE/i, `WHERE ${whereClause} AND`);
-      } else if (sqlQuery.toUpperCase().includes("GROUP BY")) {
-        sqlQuery = sqlQuery.replace(/GROUP BY/i, `WHERE ${whereClause} GROUP BY`);
-      } else if (sqlQuery.toUpperCase().includes("ORDER BY")) {
-        sqlQuery = sqlQuery.replace(/ORDER BY/i, `WHERE ${whereClause} ORDER BY`);
-      } else if (sqlQuery.toUpperCase().includes("LIMIT")) {
-        sqlQuery = sqlQuery.replace(/LIMIT/i, `WHERE ${whereClause} LIMIT`);
-      }
-    }
-
-    // Extrair view usada
-    if (!viewUsed) {
-      viewUsed = sqlQuery.match(/FROM\s+(\w+)/i)?.[1] || "desconhecida";
-    }
+    // ========================================================================
+    // PASSO 3: Executar SQL via RPC
+    // ========================================================================
     
-    // Extrair status usado do SQL
-    if (!statusUsed) {
-      const statusMatch = sqlQuery.match(/status\s*=\s*'([^']+)'/i);
-      if (statusMatch) {
-        statusUsed = `status = '${statusMatch[1]}'`;
-      }
-    }
-
-    // Executar query
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
-    console.log("Executando SQL:", sqlQuery);
     
     const { data: queryResult, error: queryError } = await supabaseAdmin.rpc("exec_readonly_sql", {
       query_text: sqlQuery,
@@ -622,38 +625,37 @@ Gere o SQL correto.`;
     
     if (queryError) {
       console.error("Erro RPC:", queryError);
-      // Fallback para query direta
-      const viewMatch = sqlQuery.match(/FROM\s+(\w+)/i);
-      const mainView = viewMatch ? viewMatch[1] : "vw_vendas";
       
-      let query = supabaseUser.from(mainView).select("*");
+      // Fallback: query direta
+      const view = ENTITY_TO_VIEW[intent.entity] || "vw_propostas";
+      let query = supabaseUser.from(view).select("*");
       
-      // Extrair filtro de status do SQL original
-      const sqlStatusMatch = sqlQuery.match(/status\s*=\s*'([^']+)'/i);
-      const statusFromSql = sqlStatusMatch ? sqlStatusMatch[1] : null;
-      
-      // Aplicar filtro de status se detectado
-      if (statusFromSql) {
-        query = query.eq("status", statusFromSql);
-        console.log(`Fallback aplicando status = '${statusFromSql}'`);
+      // Aplicar filtro de status
+      if (intent.filters.status) {
+        const statusKey = `${intent.entity.replace(/s$/, '')}_${intent.filters.status}`;
+        const statusList = STATUS_DEFINITIONS[statusKey as keyof typeof STATUS_DEFINITIONS];
+        
+        if (statusList && statusList.length === 1) {
+          query = query.eq("status", statusList[0]);
+        } else if (statusList && statusList.length > 1) {
+          query = query.in("status", statusList);
+        } else {
+          query = query.eq("status", intent.filters.status);
+        }
       }
       
-      // Aplicar filtros de período APENAS se NÃO é snapshot
-      if (!isSnapshot) {
-        if (finalStartDate) {
-          query = query.gte("periodo_dia", finalStartDate);
-        }
-        if (finalEndDate) {
-          query = query.lte("periodo_dia", finalEndDate);
-        }
+      // Aplicar período apenas se não for snapshot
+      if (intent.intent !== "snapshot" && intent.dateRange.start && intent.dateRange.end) {
+        query = query.gte("periodo_dia", intent.dateRange.start).lte("periodo_dia", intent.dateRange.end);
       }
       
       const { data: directResult, error: directError } = await query.limit(100);
-        
+      
       if (directError) {
         console.error("Erro fallback:", directError);
         throw directError;
       }
+      
       rows = directResult || [];
       console.log(`Fallback retornou ${rows.length} registros`);
     } else {
@@ -662,80 +664,63 @@ Gere o SQL correto.`;
 
     const executionTime = Date.now() - startTime;
 
-    // Calcular KPIs do resultado
-    const kpis: Record<string, number | string> = {};
-    if (rows.length > 0) {
-      const firstRow = rows[0];
-      
-      if ("valor_total" in firstRow || "receita" in firstRow || "valor" in firstRow) {
-        const key = "valor_total" in firstRow ? "valor_total" : ("receita" in firstRow ? "receita" : "valor");
-        kpis.valor_total = rows.reduce((sum, r) => sum + (Number(r[key]) || 0), 0);
-      }
-      if ("valor_liquido" in firstRow) {
-        kpis.valor_liquido = rows.reduce((sum, r) => sum + (Number(r.valor_liquido) || 0), 0);
-      }
-      if ("m2" in firstRow || "m2_total" in firstRow) {
-        const key = "m2" in firstRow ? "m2" : "m2_total";
-        kpis.m2_total = rows.reduce((sum, r) => sum + (Number(r[key]) || 0), 0);
-      }
-      if ("margem_pct" in firstRow) {
-        const validMargins = rows.filter(r => Number(r.margem_pct) > 0);
-        kpis.margem_media = validMargins.length > 0
-          ? validMargins.reduce((sum, r) => sum + Number(r.margem_pct), 0) / validMargins.length
-          : 0;
-      }
-      if ("qtd" in firstRow || "total" in firstRow) {
-        const key = "qtd" in firstRow ? "qtd" : "total";
-        kpis.quantidade = rows.reduce((sum, r) => sum + (Number(r[key]) || 0), 0);
-      }
-      
-      kpis.total_registros = rows.length;
-      
-      if (kpis.valor_total && rows.length > 0) {
-        kpis.ticket_medio = Number(kpis.valor_total) / rows.length;
-      }
-    }
-
-    // Gerar resposta em texto COM CRITÉRIOS USADOS
-    const criteriosUsados: string[] = [];
-    if (statusUsed) criteriosUsados.push(`Filtro: ${statusUsed}`);
-    if (viewUsed) criteriosUsados.push(`View: ${viewUsed}`);
-    criteriosUsados.push(`Período: ${periodDescription}`);
+    // ========================================================================
+    // PASSO 4: Gerar resposta textual PÓS-QUERY
+    // ========================================================================
     
-    const criteriosStr = `\n\nCritérios usados: ${criteriosUsados.join(" | ")}`;
+    const metricInfo = METRIC_TO_SQL[intent.metric] || METRIC_TO_SQL.count;
+    let textResponse = generateTextResponse(rows, intent, metricInfo.field);
     
-    if (rows.length === 0) {
-      textResponse = `Não encontrei registros para esses critérios.${criteriosStr}`;
-    } else if (kpis.valor_total !== undefined) {
-      const valorFormatado = formatCurrency(Number(kpis.valor_total));
-      const liquidoStr = kpis.valor_liquido !== undefined ? ` (líquido: ${formatCurrency(Number(kpis.valor_liquido))})` : '';
-      const qtdStr = kpis.quantidade !== undefined ? ` em ${formatNumber(Number(kpis.quantidade))} registros` : ` em ${rows.length} registros`;
-      textResponse = `Total: ${valorFormatado}${liquidoStr}${qtdStr}.${criteriosStr}`;
-      
-      if (kpis.margem_media !== undefined && Number(kpis.margem_media) > 0) {
-        textResponse = textResponse.replace(criteriosStr, ` Margem média: ${formatNumber(Number(kpis.margem_media), 1)}%.${criteriosStr}`);
-      }
-    } else if (kpis.quantidade !== undefined) {
-      textResponse = `Total: ${formatNumber(Number(kpis.quantidade))} registros.${criteriosStr}`;
-    } else {
-      textResponse = `Encontrados ${rows.length} registros.${criteriosStr}`;
-    }
-    
+    // Adicionar correções de data se houver
     if (dateCorrections.length > 0) {
       textResponse = dateCorrections.join('. ') + '. ' + textResponse;
     }
 
-    if (dateCorrections.length > 0 && !explanation) {
-      explanation = dateCorrections.join('. ');
+    // Calcular KPIs
+    const kpis: Record<string, number> = {};
+    if (rows.length > 0) {
+      const firstRow = rows[0];
+      
+      if (metricInfo.field in firstRow) {
+        kpis[metricInfo.field] = Number(firstRow[metricInfo.field]) || 0;
+      }
+      
+      // Para múltiplas linhas, calcular totais
+      if (rows.length > 1) {
+        ["valor_total", "valor_liquido", "valor", "m2_total", "quantidade"].forEach(field => {
+          if (field in firstRow) {
+            kpis[field] = rows.reduce((sum, r) => sum + (Number(r[field]) || 0), 0);
+          }
+        });
+      }
+      
+      kpis.total_registros = rows.length;
     }
 
-    const shouldShowChart = wantsChart && rows.length > 1 && xAxis && yAxis.length > 0;
+    // Determinar se deve mostrar gráfico
+    const shouldShowChart = intent.wantsChart && rows.length > 1 && intent.groupBy;
+    
+    // Determinar tipo de gráfico e eixos
+    let chartType = "table";
+    let xAxis = "";
+    let yAxis: string[] = [];
+    
+    if (shouldShowChart && intent.groupBy) {
+      chartType = intent.intent === "time_series" ? "line" : "bar";
+      xAxis = intent.groupBy;
+      yAxis = [metricInfo.field];
+    }
+
+    // Período usado
+    const periodDescription = intent.dateRange.start && intent.dateRange.end
+      ? `${intent.dateRange.start} a ${intent.dateRange.end}`
+      : "sem filtro de data";
 
     const resultado = {
       data: rows,
       kpis,
       sql: sqlQuery,
-      chartType: shouldShowChart ? chartType : "table",
+      chartType,
       xAxis,
       yAxis,
       confidence,
@@ -746,38 +731,47 @@ Gere o SQL correto.`;
       executionTimeMs: executionTime,
       wantsChart: shouldShowChart,
       periodUsed: periodDescription,
-      usedQuestionDates,
-      isSnapshot,
-      statusUsed,
-      viewUsed,
+      isSnapshot: intent.intent === "snapshot",
+      statusUsed: intent.filters.status ? `status = '${intent.filters.status}'` : null,
+      viewUsed: ENTITY_TO_VIEW[intent.entity] || "vw_propostas",
+      intent, // Incluir intent para debug
     };
 
     // Salvar no cache
-    await supabaseUser.from("insights_cache").upsert({
-      user_id: user.id,
-      hash: cacheHash,
-      pergunta: pergunta || fallbackKey,
-      resultado,
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-    }, { onConflict: "hash" });
+    const cacheHash = Math.random().toString(36).substring(2);
+    try {
+      await supabaseUser.from("insights_cache").upsert({
+        user_id: user.id,
+        hash: cacheHash,
+        pergunta: pergunta || fallbackKey,
+        resultado,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      }, { onConflict: "hash" });
+    } catch (e) {
+      console.log("Cache save error:", e);
+    }
 
     // Log de auditoria
-    await supabaseUser.from("insights_audit_logs").insert({
-      user_id: user.id,
-      pergunta: pergunta || fallbackKey,
-      sql_executado: sqlQuery,
-      filtros: { startDate: finalStartDate, endDate: finalEndDate, isSnapshot },
-      tempo_execucao_ms: executionTime,
-      linhas_retornadas: rows.length,
-      confianca: confidence,
-      sucesso: true,
-    });
+    try {
+      await supabaseUser.from("insights_audit_logs").insert({
+        user_id: user.id,
+        pergunta: pergunta || fallbackKey,
+        sql_executado: sqlQuery,
+        filtros: { intent, dateCorrections },
+        tempo_execucao_ms: executionTime,
+        linhas_retornadas: rows.length,
+        confianca: confidence,
+        sucesso: true,
+      });
+    } catch (e) {
+      console.log("Audit log error:", e);
+    }
 
     return new Response(JSON.stringify({
       ...resultado,
       cached: false,
       cacheHash,
-      nextSteps: generateNextSteps(pergunta, chartType, wantsChart),
+      nextSteps: generateNextSteps(pergunta, intent),
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -787,8 +781,7 @@ Gere o SQL correto.`;
     
     return new Response(JSON.stringify({
       error: error instanceof Error ? error.message : "Erro desconhecido",
-      suggestion: "Tente reformular sua pergunta ou use um dos relatórios sugeridos.",
-      textResponse: "Ocorreu um erro ao processar sua pergunta. Tente novamente ou selecione um relatório pronto.",
+      textResponse: "Ocorreu um erro ao processar sua pergunta. Tente novamente.",
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -796,30 +789,33 @@ Gere o SQL correto.`;
   }
 });
 
-function generateNextSteps(pergunta: string, chartType: string, wantsChart: boolean): string[] {
+function generateNextSteps(pergunta: string | null, intent: InsightIntent): string[] {
   const steps: string[] = [];
   
   if (!pergunta) return steps;
   
   const lowerPergunta = pergunta.toLowerCase();
   
-  if (lowerPergunta.includes("cliente")) {
-    steps.push("Mostre a evolução mensal deste cliente");
-    steps.push("Compare com outros clientes");
+  if (intent.entity === "propostas") {
+    if (intent.filters.status === "aberta") {
+      steps.push("Qual o valor total das propostas em aberto?");
+      steps.push("Quais propostas estão há mais de 30 dias abertas?");
+    } else {
+      steps.push("Quantas propostas estão em aberto?");
+    }
   }
-  if (lowerPergunta.includes("vendas") || lowerPergunta.includes("receita")) {
-    steps.push("Qual o total por canal de vendas?");
-    steps.push("Qual a margem de lucro média?");
+  
+  if (intent.entity === "vendas") {
+    steps.push("Qual a evolução de vendas por mês?");
+    steps.push("Quais os melhores canais de vendas?");
   }
-  if (lowerPergunta.includes("margem")) {
-    steps.push("Quais serviços têm melhor margem?");
-    steps.push("Mostre gráfico de margem por mês");
+  
+  if (intent.entity === "financeiro") {
+    steps.push("Quanto tenho a receber?");
+    steps.push("Quais parcelas estão atrasadas?");
   }
-  if (lowerPergunta.includes("proposta")) {
-    steps.push("Quantas propostas estão em aberto?");
-    steps.push("Qual o valor total das propostas abertas?");
-  }
-  if (!wantsChart) {
+  
+  if (!intent.wantsChart && intent.intent !== "snapshot") {
     steps.push("Mostre em gráfico");
   }
   
