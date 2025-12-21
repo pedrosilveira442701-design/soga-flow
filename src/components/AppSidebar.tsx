@@ -13,6 +13,7 @@ import {
   Building2,
   StickyNote,
   Bell,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,6 +45,7 @@ import logoImage from "@/assets/logo.png";
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "IA Insights", url: "/insights", icon: Sparkles },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Leads", url: "/leads", icon: Target },
   { title: "Propostas", url: "/propostas", icon: FileText },
