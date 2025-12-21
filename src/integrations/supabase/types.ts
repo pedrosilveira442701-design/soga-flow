@@ -1601,6 +1601,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      exec_readonly_sql: {
+        Args: { p_user_id: string; query_text: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
