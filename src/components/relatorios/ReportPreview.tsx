@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TableIcon, TrendingUp } from "lucide-react";
+import { TableIcon, TrendingUp, BarChart3, Download } from "lucide-react";
 
 interface ReportPreviewProps {
   data: any[] | null;
@@ -31,7 +31,7 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
     }
     
     // Date fields
-    if (key.includes("created_at") || key.includes("periodo_dia") || key.includes("data_pagamento")) {
+    if (key.includes("created_at") || key.includes("periodo_dia") || key.includes("data_pagamento") || key.includes("vencimento")) {
       try {
         const date = new Date(value);
         if (!isNaN(date.getTime())) {
@@ -50,16 +50,59 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
     return String(value);
   };
 
+  const formatColumnName = (col: string): string => {
+    const labelMap: Record<string, string> = {
+      cliente: "Cliente",
+      status: "Status",
+      servico: "Serviço",
+      canal: "Canal",
+      cidade: "Cidade",
+      bairro: "Bairro",
+      m2: "M²",
+      valor_total: "Valor Total",
+      valor_liquido: "Valor Líquido",
+      margem_pct: "Margem %",
+      desconto: "Desconto",
+      dias_aberta: "Dias Aberta",
+      forma_pagamento: "Forma Pgto",
+      periodo_mes: "Mês",
+      periodo_dia: "Data",
+      created_at: "Criado em",
+      numero_parcela: "Parcela",
+      valor: "Valor",
+      forma: "Forma",
+      data_pagamento: "Pago em",
+      dias_atraso: "Dias Atraso",
+      estagio: "Estágio",
+      valor_potencial: "Valor Pot.",
+      dias_no_funil: "Dias Funil",
+      first_response_minutes: "Min. Resp.",
+      responsavel: "Responsável",
+      motivo_perda: "Motivo Perda",
+      realizada: "Realizada",
+      progresso_pct: "Progresso",
+      responsavel_obra: "Resp. Obra",
+      total_propostas: "Propostas",
+      total_contratos: "Contratos",
+      valor_total_contratos: "Valor Contratos",
+    };
+    return labelMap[col] || col.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
+      <Card className="border-border/50">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-5 rounded" />
+            <Skeleton className="h-6 w-48" />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
+            <Skeleton className="h-10 w-full" />
             {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
+              <Skeleton key={i} className="h-12 w-full" />
             ))}
           </div>
         </CardContent>
@@ -69,10 +112,19 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
 
   if (!data || data.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <TableIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground">Clique em "Visualizar Prévia" para carregar os dados</p>
+      <Card className="border-border/50 border-dashed">
+        <CardContent className="py-16 text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="p-4 rounded-full bg-muted/50">
+              <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-medium text-foreground">Nenhum dado para visualizar</h3>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Configure os parâmetros acima e clique em "Visualizar Prévia" para carregar os dados do relatório
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -81,39 +133,48 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
   const columns = Object.keys(data[0]);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <TableIcon className="h-5 w-5" />
-          Prévia do Relatório
-        </CardTitle>
-        <Badge variant="secondary">{totals?.count || data.length} registros</Badge>
+    <Card className="border-border/50">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <TableIcon className="h-5 w-5 text-primary" />
+            Prévia do Relatório
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              {columns.length} colunas
+            </Badge>
+            <Badge variant="secondary" className="text-xs font-medium">
+              {totals?.count || data.length} registros
+            </Badge>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Totals Summary */}
         {totals && Object.keys(totals).length > 1 && (
-          <div className="flex flex-wrap gap-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Resumo:</span>
+          <div className="flex flex-wrap gap-3 p-4 bg-muted/30 rounded-lg border border-border/50">
+            <div className="flex items-center gap-2 mr-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Totais:</span>
             </div>
             {totals.valor_total !== undefined && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs font-mono">
                 Valor Total: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor_total)}
               </Badge>
             )}
             {totals.valor_liquido !== undefined && (
-              <Badge variant="outline" className="text-sm">
-                Valor Líquido: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor_liquido)}
+              <Badge variant="outline" className="text-xs font-mono">
+                Líquido: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor_liquido)}
               </Badge>
             )}
             {totals.valor !== undefined && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs font-mono">
                 Valor: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totals.valor)}
               </Badge>
             )}
             {totals.m2 !== undefined && (
-              <Badge variant="outline" className="text-sm">
+              <Badge variant="outline" className="text-xs font-mono">
                 M² Total: {new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(totals.m2)}
               </Badge>
             )}
@@ -121,36 +182,52 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
         )}
 
         {/* Data Table */}
-        <ScrollArea className="h-[400px] rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {columns.slice(0, 10).map((col) => (
-                  <TableHead key={col} className="text-xs font-medium whitespace-nowrap">
-                    {col.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.slice(0, 100).map((row, i) => (
-                <TableRow key={i}>
-                  {columns.slice(0, 10).map((col) => (
-                    <TableCell key={col} className="text-sm whitespace-nowrap">
-                      {formatValue(row[col], col)}
-                    </TableCell>
+        <div className="rounded-lg border border-border/50 overflow-hidden">
+          <ScrollArea className="h-[450px]">
+            <Table>
+              <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
+                <TableRow className="hover:bg-transparent">
+                  {columns.slice(0, 12).map((col) => (
+                    <TableHead 
+                      key={col} 
+                      className="text-xs font-semibold whitespace-nowrap py-3 px-4 text-foreground"
+                    >
+                      {formatColumnName(col)}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+              </TableHeader>
+              <TableBody>
+                {data.slice(0, 100).map((row, i) => (
+                  <TableRow key={i} className="hover:bg-muted/30">
+                    {columns.slice(0, 12).map((col) => (
+                      <TableCell key={col} className="text-sm whitespace-nowrap py-3 px-4">
+                        {formatValue(row[col], col)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
 
-        {data.length > 100 && (
-          <p className="text-xs text-muted-foreground text-center">
-            Mostrando 100 de {data.length} registros. Exporte para ver todos.
-          </p>
-        )}
+        {/* Footer info */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+          <span>
+            {columns.length > 12 && `Mostrando 12 de ${columns.length} colunas • `}
+            {data.length > 100 
+              ? `Mostrando 100 de ${data.length} registros`
+              : `${data.length} registro(s)`
+            }
+          </span>
+          {data.length > 100 && (
+            <span className="flex items-center gap-1">
+              <Download className="h-3 w-3" />
+              Exporte para ver todos os dados
+            </span>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
