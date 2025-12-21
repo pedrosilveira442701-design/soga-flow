@@ -218,9 +218,13 @@ function buildSQL(intent: InsightIntent, userId: string): string {
   // Construir WHERE
   const whereConditions: string[] = [];
   
+  // Garantir que filters e dateRange existam
+  const filters = intent.filters || {};
+  const dateRange = intent.dateRange || { start: null, end: null };
+  
   // Filtro de status
-  if (intent.filters.status) {
-    const statusKey = `${intent.entity.replace(/s$/, '')}_${intent.filters.status}`;
+  if (filters.status) {
+    const statusKey = `${intent.entity.replace(/s$/, '')}_${filters.status}`;
     const statusList = STATUS_DEFINITIONS[statusKey as keyof typeof STATUS_DEFINITIONS];
     
     if (statusList && statusList.length > 0) {
@@ -231,34 +235,34 @@ function buildSQL(intent: InsightIntent, userId: string): string {
       }
     } else {
       // Fallback: usar o valor diretamente
-      whereConditions.push(`status = '${intent.filters.status}'`);
+      whereConditions.push(`status = '${filters.status}'`);
     }
   }
   
   // Filtro de tipo (para pool)
-  if (intent.filters.tipo) {
-    whereConditions.push(`tipo = '${intent.filters.tipo}'`);
+  if (filters.tipo) {
+    whereConditions.push(`tipo = '${filters.tipo}'`);
   }
   
   // Filtro de cliente
-  if (intent.filters.cliente) {
-    whereConditions.push(`cliente ILIKE '%${intent.filters.cliente}%'`);
+  if (filters.cliente) {
+    whereConditions.push(`cliente ILIKE '%${filters.cliente}%'`);
   }
   
   // Filtro de canal
-  if (intent.filters.canal) {
-    whereConditions.push(`canal ILIKE '%${intent.filters.canal}%'`);
+  if (filters.canal) {
+    whereConditions.push(`canal ILIKE '%${filters.canal}%'`);
   }
   
   // Filtro de serviço
-  if (intent.filters.servico) {
-    whereConditions.push(`servico ILIKE '%${intent.filters.servico}%'`);
+  if (filters.servico) {
+    whereConditions.push(`servico ILIKE '%${filters.servico}%'`);
   }
   
   // Filtro de período (APENAS se não é snapshot OU se usuário especificou datas)
-  if (intent.dateRange.start && intent.dateRange.end) {
-    whereConditions.push(`periodo_dia >= '${intent.dateRange.start}'`);
-    whereConditions.push(`periodo_dia <= '${intent.dateRange.end}'`);
+  if (dateRange.start && dateRange.end) {
+    whereConditions.push(`periodo_dia >= '${dateRange.start}'`);
+    whereConditions.push(`periodo_dia <= '${dateRange.end}'`);
   }
   
   // Montar SQL final
@@ -291,12 +295,12 @@ function generateTextResponse(
   criterios.push(`Entidade: ${intent.entity}`);
   
   // Critério: status
-  if (intent.filters.status) {
+  if (intent.filters?.status) {
     criterios.push(`Status: ${intent.filters.status}`);
   }
   
   // Critério: período
-  if (intent.dateRange.start && intent.dateRange.end) {
+  if (intent.dateRange?.start && intent.dateRange?.end) {
     criterios.push(`Período: ${intent.dateRange.start} a ${intent.dateRange.end}`);
   } else {
     criterios.push(`Período: sem filtro de data`);
@@ -559,7 +563,28 @@ ${extractedDates.startDate ? `Datas detectadas: ${extractedDates.startDate} a ${
           throw new Error("Resposta da IA inválida");
         }
 
-        intent = JSON.parse(jsonMatch[0]);
+        const parsedIntent = JSON.parse(jsonMatch[0]);
+        
+        // Garantir que filters e dateRange existam com defaults
+        intent = {
+          intent: parsedIntent.intent || "snapshot",
+          entity: parsedIntent.entity || "propostas",
+          metric: parsedIntent.metric || "count",
+          filters: {
+            status: parsedIntent.filters?.status || null,
+            cliente: parsedIntent.filters?.cliente || null,
+            canal: parsedIntent.filters?.canal || null,
+            servico: parsedIntent.filters?.servico || null,
+            tipo: parsedIntent.filters?.tipo || null,
+          },
+          dateRange: {
+            start: parsedIntent.dateRange?.start || null,
+            end: parsedIntent.dateRange?.end || null,
+          },
+          groupBy: parsedIntent.groupBy || null,
+          wantsChart: parsedIntent.wantsChart || false,
+          textTemplate: parsedIntent.textTemplate || "",
+        };
         
         // Se IA retornou datas mas a pergunta é claramente snapshot, remover datas
         if (intent.intent === "snapshot") {
