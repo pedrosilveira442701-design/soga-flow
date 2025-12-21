@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.insights-query]
 verify_jwt = true
+
+[functions.export-report]
+verify_jwt = true
