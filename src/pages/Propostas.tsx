@@ -156,75 +156,79 @@ export default function Propostas() {
   }, [filteredPropostas, sortColumn, sortDirection]);
 
   // KPIs - Recalculados localmente para garantir precisão
+  // Obs: KPIs seguem a lista já filtrada (mesma base do que está na tabela)
   const kpis = useMemo(() => {
-    const total = propostas.length;
-    
-    // Contar propostas por status
-    const perdidas = propostas.filter((p) => p.status === "perdida").length;
-    const repouso = propostas.filter((p) => p.status === "repouso").length;
-    const ativas = total - perdidas - repouso;
-    
-    // Valores financeiros
-    const calcularValorLiquido = (p: any) => {
-      const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
-        ? p.servicos
-        : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
-      
-      const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
-      const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
-      const desconto = p.desconto || 0;
+    const base = filteredPropostas;
+
+    // Liquido calculado igual na tabela (a partir dos serviços + desconto)
+    const getLiquido = (p: any) => {
+
+      const servicos =
+        p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
+          ? p.servicos
+          : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
+
+      const totalBruto = servicos.reduce(
+        (acc: number, s: any) => acc + Number(s?.m2 || 0) * Number(s?.valor_m2 || 0),
+        0
+      );
+      const totalCusto = servicos.reduce(
+        (acc: number, s: any) => acc + Number(s?.m2 || 0) * Number(s?.custo_m2 || 0),
+        0
+      );
+      const desconto = Number(p?.desconto || 0);
       const totalComDesconto = totalBruto - desconto;
-      return totalComDesconto - totalCusto;
+      return Number((totalComDesconto - totalCusto).toFixed(2));
     };
-    
-    const valorTotal = propostas.reduce((sum, p) => sum + calcularValorLiquido(p), 0);
-    const valorPerdidas = propostas
-      .filter((p) => p.status === "perdida")
-      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
-    const valorRepouso = propostas
-      .filter((p) => p.status === "repouso")
-      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
-    // Calcula diretamente a soma das ativas (não perdidas e não em repouso)
-    const valorReal = propostas
-      .filter((p) => p.status !== "perdida" && p.status !== "repouso")
-      .reduce((sum, p) => sum + calcularValorLiquido(p), 0);
-    
-    // Taxa de fechamento sobre volume real
-    const fechadas = propostas.filter((p) => p.status === "fechada").length;
+
+    // Soma em centavos para evitar drift de float
+    const sumLiquido = (arr: any[]) =>
+      arr.reduce((acc, p) => acc + Math.round(getLiquido(p) * 100), 0) / 100;
+
+    const total = base.length;
+
+    // Contar propostas por status (na base filtrada)
+    const perdidas = base.filter((p) => p.status === "perdida").length;
+    const repouso = base.filter((p) => p.status === "repouso").length;
+    const fechadas = base.filter((p) => p.status === "fechada").length;
+
+    // Valores financeiros (na base filtrada)
+    const valorTotal = sumLiquido(base);
+    const valorPerdidas = sumLiquido(base.filter((p) => p.status === "perdida"));
+    const valorRepouso = sumLiquido(base.filter((p) => p.status === "repouso"));
+
+    // Volume Real = SOMENTE propostas fechadas (realizado) na base filtrada
+    const valorReal = sumLiquido(base.filter((p) => p.status === "fechada"));
+
+    // Taxa de fechamento sobre propostas ativas (abertas + fechadas) na base filtrada
+    const ativas = base.filter((p) => p.status !== "perdida" && p.status !== "repouso").length;
     const taxaFechamento = ativas > 0 ? (fechadas / ativas) * 100 : 0;
-    
-    // Margem Média de todas as propostas
+
+    // Margem Média (na base filtrada)
     const margemMedia =
-      propostas.length > 0
-        ? propostas.reduce((sum, p) => {
-            const servicos = p.servicos && Array.isArray(p.servicos) && p.servicos.length > 0
-              ? p.servicos
-              : [{ tipo: p.tipo_piso, m2: p.m2, valor_m2: p.valor_m2, custo_m2: p.custo_m2 }];
-            
-            const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
-            const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
-            const desconto = p.desconto || 0;
-            const totalComDesconto = totalBruto - desconto;
-            const liquido = totalComDesconto - totalCusto;
-            const margem = totalComDesconto > 0 ? (liquido / totalComDesconto) * 100 : 0;
-            
+      total > 0
+        ? base.reduce((sum, p) => {
+            const totalBruto = Number(p?.valor_total);
+            const liquido = getLiquido(p);
+            const margem = Number.isFinite(totalBruto) && totalBruto > 0 ? (liquido / totalBruto) * 100 : 0;
             return sum + margem;
-          }, 0) / propostas.length
+          }, 0) / total
         : 0;
 
-    return { 
-      total, 
-      perdidas, 
-      repouso, 
-      ativas, 
+    return {
+      total,
+      perdidas,
+      repouso,
+      ativas,
+      fechadas,
       valorTotal,
       valorPerdidas,
       valorRepouso,
       valorReal,
-      taxaFechamento, 
-      margemMedia 
+      taxaFechamento,
+      margemMedia,
     };
-  }, [propostas]);
+  }, [filteredPropostas]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -406,11 +410,11 @@ export default function Propostas() {
 
         <Card className="bg-primary/5 border-primary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Volume Real (Ativas)</CardTitle>
+            <CardTitle className="text-sm font-medium">Volume Real (Fechadas)</CardTitle>
             <TrendingUp className="icon-md text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{kpis.ativas}</div>
+            <div className="text-2xl font-bold text-primary">{kpis.fechadas}</div>
             <p className="text-xs text-muted-foreground mt-1">
               {formatCurrency(kpis.valorReal)}
             </p>
