@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { InsightsChat } from "@/components/insights/InsightsChat";
-import { InsightsFilters } from "@/components/insights/InsightsFilters";
-import { useInsights, InsightFilters } from "@/hooks/useInsights";
+import { useInsights } from "@/hooks/useInsights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,19 +15,19 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const CHART_COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#06b6d4"];
 
 export default function Insights() {
-  const [filters, setFilters] = useState<InsightFilters>({ period: "this_month" });
   const [showSQL, setShowSQL] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("text");
   const { isQuerying, lastResult, executeQuery, executeFallbackReport, fallbackReports, clearCache } = useInsights();
 
   const handleSendMessage = async (message: string) => {
-    setActiveTab("text"); // Sempre volta para texto ao fazer nova pergunta
-    await executeQuery(message, filters);
+    setActiveTab("text");
+    // Sem filtros globais - a pergunta determina tudo
+    await executeQuery(message, { period: "custom" });
   };
 
   const handleSelectSuggestion = async (key: string) => {
     setActiveTab("text");
-    await executeFallbackReport(key, filters);
+    await executeFallbackReport(key, { period: "custom" });
   };
 
   const formatCurrency = (value: number) =>
@@ -111,8 +110,6 @@ export default function Insights() {
           </Button>
         </div>
 
-        <InsightsFilters filters={filters} onFiltersChange={setFilters} />
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Chat */}
           <Card className="lg:col-span-1 h-[600px]">
@@ -191,11 +188,6 @@ export default function Insights() {
                         </Badge>
                         {lastResult.cached && <Badge variant="outline" className="text-xs">Cache</Badge>}
                         {lastResult.usedFallback && <Badge variant="outline" className="text-xs">Relatório Padrão</Badge>}
-                        {lastResult.periodUsed && (
-                          <Badge variant="outline" className="text-xs">
-                            {lastResult.periodUsed}
-                          </Badge>
-                        )}
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setShowSQL(!showSQL)}>
@@ -208,7 +200,7 @@ export default function Insights() {
                       <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                         <div className="flex items-start gap-2">
                           <MessageSquare className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                          <p className="text-foreground leading-relaxed">{lastResult.textResponse}</p>
+                          <p className="text-foreground leading-relaxed whitespace-pre-line">{lastResult.textResponse}</p>
                         </div>
                       </div>
                     )}
@@ -305,7 +297,7 @@ export default function Insights() {
                 <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">Faça uma pergunta ou selecione um relatório para começar</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Ex: "Qual o total de vendas este mês?" ou "Mostre a evolução da margem"
+                  Ex: "Quantas propostas estão em aberto?" ou "Qual o total de vendas em dezembro/2025?"
                 </p>
               </Card>
             )}
