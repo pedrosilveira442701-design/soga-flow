@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Download, Code, RefreshCw, Save, Clock, Trash2, Eye, AlertCircle } from "lucide-react";
+import { Code, RefreshCw, AlertCircle, MessageSquare, TableIcon, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const CHART_COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#06b6d4"];
@@ -19,24 +18,32 @@ const CHART_COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444", "#0
 export default function Insights() {
   const [filters, setFilters] = useState<InsightFilters>({ period: "this_month" });
   const [showSQL, setShowSQL] = useState(false);
-  const { isQuerying, lastResult, executeQuery, executeFallbackReport, fallbackReports, savedReports, clearCache } = useInsights();
+  const [activeTab, setActiveTab] = useState<string>("text");
+  const { isQuerying, lastResult, executeQuery, executeFallbackReport, fallbackReports, clearCache } = useInsights();
 
   const handleSendMessage = async (message: string) => {
+    setActiveTab("text"); // Sempre volta para texto ao fazer nova pergunta
     await executeQuery(message, filters);
   };
 
   const handleSelectSuggestion = async (key: string) => {
+    setActiveTab("text");
     await executeFallbackReport(key, filters);
   };
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
+  const formatNumber = (value: number, decimals: number = 0) =>
+    new Intl.NumberFormat("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value);
+
   const renderChart = () => {
-    if (!lastResult?.data?.length) return null;
+    if (!lastResult?.data?.length || !lastResult.wantsChart) return null;
 
     const data = lastResult.data.slice(0, 20);
     const { chartType, xAxis, yAxis } = lastResult;
+
+    if (!xAxis || !yAxis?.length) return null;
 
     if (chartType === "line") {
       return (
@@ -87,6 +94,9 @@ export default function Insights() {
     );
   };
 
+  const hasTableData = lastResult?.data && lastResult.data.length > 0;
+  const hasChartData = lastResult?.wantsChart && lastResult.data && lastResult.data.length > 1;
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -112,6 +122,7 @@ export default function Insights() {
               isLoading={isQuerying}
               suggestions={fallbackReports}
               nextSteps={lastResult?.nextSteps}
+              lastResponse={lastResult?.textResponse}
             />
           </Card>
 
@@ -121,128 +132,170 @@ export default function Insights() {
               <Card className="p-6">
                 <div className="space-y-4">
                   <Skeleton className="h-8 w-1/3" />
-                  <div className="grid grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <Skeleton key={i} className="h-24" />
-                    ))}
-                  </div>
-                  <Skeleton className="h-[300px]" />
+                  <Skeleton className="h-24" />
+                  <Skeleton className="h-[200px]" />
                 </div>
               </Card>
             ) : lastResult ? (
               <>
-                {/* KPIs */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {lastResult.kpis.valor_total !== undefined && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-2xl font-bold">{formatCurrency(Number(lastResult.kpis.valor_total))}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {lastResult.kpis.margem_media !== undefined && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Margem Média</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-2xl font-bold">{Number(lastResult.kpis.margem_media).toFixed(1)}%</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {lastResult.kpis.ticket_medio !== undefined && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Ticket Médio</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-2xl font-bold">{formatCurrency(Number(lastResult.kpis.ticket_medio))}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {lastResult.kpis.m2_total !== undefined && (
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">m² Total</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-2xl font-bold">{Number(lastResult.kpis.m2_total).toFixed(0)}</p>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
+                {/* KPIs compactos */}
+                {Object.keys(lastResult.kpis).length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {lastResult.kpis.valor_total !== undefined && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.valor_total))}</p>
+                      </Card>
+                    )}
+                    {lastResult.kpis.valor_liquido !== undefined && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Líquido</p>
+                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.valor_liquido))}</p>
+                      </Card>
+                    )}
+                    {lastResult.kpis.margem_media !== undefined && Number(lastResult.kpis.margem_media) > 0 && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Margem Média</p>
+                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.margem_media), 1)}%</p>
+                      </Card>
+                    )}
+                    {lastResult.kpis.ticket_medio !== undefined && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Ticket Médio</p>
+                        <p className="text-lg font-bold">{formatCurrency(Number(lastResult.kpis.ticket_medio))}</p>
+                      </Card>
+                    )}
+                    {lastResult.kpis.m2_total !== undefined && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">m² Total</p>
+                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.m2_total))}</p>
+                      </Card>
+                    )}
+                    {lastResult.kpis.quantidade !== undefined && (
+                      <Card className="p-3">
+                        <p className="text-xs text-muted-foreground">Quantidade</p>
+                        <p className="text-lg font-bold">{formatNumber(Number(lastResult.kpis.quantidade))}</p>
+                      </Card>
+                    )}
+                  </div>
+                )}
 
-                {/* Chart & Table */}
+                {/* Resultado Principal */}
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <div className="space-y-1">
-                      <CardTitle>Resultado</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={lastResult.confidence >= 0.7 ? "default" : "secondary"}>
-                          Confiança: {(lastResult.confidence * 100).toFixed(0)}%
+                      <CardTitle className="text-base">Resultado</CardTitle>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={lastResult.confidence >= 0.7 ? "default" : "secondary"} className="text-xs">
+                          {(lastResult.confidence * 100).toFixed(0)}% confiança
                         </Badge>
-                        {lastResult.cached && <Badge variant="outline">Cache</Badge>}
-                        {lastResult.usedFallback && <Badge variant="outline">Relatório Padrão</Badge>}
+                        {lastResult.cached && <Badge variant="outline" className="text-xs">Cache</Badge>}
+                        {lastResult.usedFallback && <Badge variant="outline" className="text-xs">Relatório Padrão</Badge>}
+                        {lastResult.periodUsed && (
+                          <Badge variant="outline" className="text-xs">
+                            {lastResult.periodUsed}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setShowSQL(!showSQL)}>
-                        <Code className="h-4 w-4 mr-1" />
-                        SQL
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setShowSQL(!showSQL)}>
+                      <Code className="h-4 w-4" />
+                    </Button>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {/* Resposta em texto - SEMPRE VISÍVEL */}
+                    {lastResult.textResponse && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                          <p className="text-foreground leading-relaxed">{lastResult.textResponse}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Explicação/correções se houver */}
                     {lastResult.explanation && (
                       <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
                         {lastResult.explanation}
                       </p>
                     )}
+
+                    {/* SQL (oculto por padrão) */}
                     {showSQL && (
                       <pre className="text-xs bg-muted p-3 rounded-lg overflow-x-auto">
                         {lastResult.sql}
                       </pre>
                     )}
-                    <Tabs defaultValue="chart">
-                      <TabsList>
-                        <TabsTrigger value="chart">Gráfico</TabsTrigger>
-                        <TabsTrigger value="table">Tabela ({lastResult.rowCount})</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="chart" className="pt-4">
-                        {renderChart()}
-                      </TabsContent>
-                      <TabsContent value="table">
-                        <ScrollArea className="h-[300px]">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                {lastResult.data[0] && Object.keys(lastResult.data[0]).slice(0, 6).map((key) => (
-                                  <TableHead key={key}>{key}</TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {lastResult.data.slice(0, 50).map((row, i) => (
-                                <TableRow key={i}>
-                                  {Object.values(row).slice(0, 6).map((val, j) => (
-                                    <TableCell key={j}>
-                                      {typeof val === "number" 
-                                        ? val > 1000 ? formatCurrency(val) : val.toFixed(2)
-                                        : String(val ?? "-")}
-                                    </TableCell>
+
+                    {/* Tabs para Tabela e Gráfico */}
+                    {(hasTableData || hasChartData) && (
+                      <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="text" className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            Texto
+                          </TabsTrigger>
+                          {hasTableData && (
+                            <TabsTrigger value="table" className="flex items-center gap-1">
+                              <TableIcon className="h-3 w-3" />
+                              Tabela ({lastResult.rowCount})
+                            </TabsTrigger>
+                          )}
+                          {hasChartData && (
+                            <TabsTrigger value="chart" className="flex items-center gap-1">
+                              <BarChart3 className="h-3 w-3" />
+                              Gráfico
+                            </TabsTrigger>
+                          )}
+                        </TabsList>
+                        
+                        <TabsContent value="text" className="pt-4">
+                          <div className="text-center text-muted-foreground py-8">
+                            <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">A resposta em texto está acima.</p>
+                            {hasTableData && <p className="text-xs mt-1">Clique em "Tabela" para ver os detalhes.</p>}
+                          </div>
+                        </TabsContent>
+                        
+                        {hasTableData && (
+                          <TabsContent value="table">
+                            <ScrollArea className="h-[300px]">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    {lastResult.data[0] && Object.keys(lastResult.data[0]).slice(0, 6).map((key) => (
+                                      <TableHead key={key} className="text-xs">{key}</TableHead>
+                                    ))}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {lastResult.data.slice(0, 50).map((row, i) => (
+                                    <TableRow key={i}>
+                                      {Object.values(row).slice(0, 6).map((val, j) => (
+                                        <TableCell key={j} className="text-sm">
+                                          {typeof val === "number" 
+                                            ? val > 1000 ? formatCurrency(val) : formatNumber(val, 2)
+                                            : String(val ?? "-")}
+                                        </TableCell>
+                                      ))}
+                                    </TableRow>
                                   ))}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </ScrollArea>
-                      </TabsContent>
-                    </Tabs>
+                                </TableBody>
+                              </Table>
+                            </ScrollArea>
+                          </TabsContent>
+                        )}
+                        
+                        {hasChartData && (
+                          <TabsContent value="chart" className="pt-4">
+                            {renderChart()}
+                          </TabsContent>
+                        )}
+                      </Tabs>
+                    )}
+
                     <p className="text-xs text-muted-foreground">
-                      Executado em {lastResult.executionTimeMs}ms
+                      Executado em {lastResult.executionTimeMs}ms • {lastResult.rowCount} registros
                     </p>
                   </CardContent>
                 </Card>
@@ -251,6 +304,9 @@ export default function Insights() {
               <Card className="p-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">Faça uma pergunta ou selecione um relatório para começar</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Ex: "Qual o total de vendas este mês?" ou "Mostre a evolução da margem"
+                </p>
               </Card>
             )}
           </div>
