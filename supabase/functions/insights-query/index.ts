@@ -100,6 +100,52 @@ function formatNumber(value: number, decimals: number = 0): string {
   }).format(value);
 }
 
+// Resolver termos relativos de data para datas reais
+function resolveRelativeDate(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0-indexed
+  
+  const lowered = String(dateStr).toLowerCase().trim();
+  
+  // Termos relativos comuns que a IA pode retornar
+  if (lowered.includes("start_of_current_month") || lowered.includes("início do mês") || lowered === "inicio_mes_atual") {
+    return new Date(year, month, 1).toISOString().split('T')[0];
+  }
+  if (lowered.includes("end_of_current_month") || lowered.includes("fim do mês") || lowered === "fim_mes_atual") {
+    return new Date(year, month + 1, 0).toISOString().split('T')[0];
+  }
+  if (lowered.includes("start_of_year") || lowered === "inicio_ano") {
+    return new Date(year, 0, 1).toISOString().split('T')[0];
+  }
+  if (lowered.includes("end_of_year") || lowered === "fim_ano") {
+    return new Date(year, 11, 31).toISOString().split('T')[0];
+  }
+  if (lowered === "today" || lowered === "hoje") {
+    return today.toISOString().split('T')[0];
+  }
+  if (lowered === "yesterday" || lowered === "ontem") {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toISOString().split('T')[0];
+  }
+  
+  // Se já é uma data válida no formato YYYY-MM-DD, retornar como está
+  if (/^\d{4}-\d{2}-\d{2}$/.test(lowered)) {
+    return lowered;
+  }
+  
+  // Se não é um termo reconhecido nem uma data válida, retornar null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(lowered)) {
+    console.log(`Data inválida ou termo não reconhecido: ${dateStr}, ignorando`);
+    return null;
+  }
+  
+  return dateStr;
+}
+
 // Normalizar datas inválidas (ex: 31/06 -> 30/06)
 function normalizeDate(day: number, month: number, year: number): Date {
   const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -109,6 +155,7 @@ function normalizeDate(day: number, month: number, year: number): Date {
   const maxDay = daysInMonth[month - 1] || 31;
   return new Date(year, month - 1, Math.min(day, maxDay));
 }
+
 
 function parseDateString(dateStr: string): { date: string; corrected: boolean; original: string } {
   const original = dateStr;
@@ -578,8 +625,8 @@ ${extractedDates.startDate ? `Datas detectadas: ${extractedDates.startDate} a ${
             tipo: parsedIntent.filters?.tipo || null,
           },
           dateRange: {
-            start: parsedIntent.dateRange?.start || null,
-            end: parsedIntent.dateRange?.end || null,
+            start: resolveRelativeDate(parsedIntent.dateRange?.start),
+            end: resolveRelativeDate(parsedIntent.dateRange?.end),
           },
           groupBy: parsedIntent.groupBy || null,
           wantsChart: parsedIntent.wantsChart || false,
