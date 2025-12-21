@@ -242,37 +242,38 @@ serve(async (req) => {
       explanation = `Relatório padrão: ${fallbackKey.replace(/_/g, " ")}`;
       usedFallback = true;
     } else if (lovableApiKey) {
-      // Gerar SQL via IA
-      const systemPrompt = `Você é um assistente de análise de dados especializado em gerar consultas SQL seguras.
-Você tem acesso às seguintes views analíticas:
+      // Gerar SQL via IA usando GPT-5
+      const systemPrompt = `Você é um assistente especializado em análise de dados de uma empresa de pisos (porcelanato líquido, epóxi, etc).
 
-${Object.entries(VIEW_SCHEMAS).map(([view, cols]) => `- ${view}: ${cols}`).join("\n")}
+VIEWS DISPONÍVEIS (use APENAS estas):
+${Object.entries(VIEW_SCHEMAS).map(([view, cols]) => `• ${view}: ${cols}`).join("\n")}
 
-REGRAS CRÍTICAS:
-1. Use APENAS as views listadas acima (vw_vendas, vw_propostas, vw_leads, vw_visitas, vw_obras, vw_financeiro, vw_clientes)
-2. Gere APENAS SELECT statements
-3. SEMPRE inclua LIMIT (máximo 5000)
-4. NUNCA use subqueries com tabelas brutas
-5. Para filtrar por período, use as colunas periodo_dia, periodo_mes ou periodo_ano
-6. Para margem %, use margem_pct que já está calculada
-7. Valores monetários estão em valor_total e valor_liquido
+REGRAS OBRIGATÓRIAS:
+1. Use SOMENTE as views listadas acima
+2. Gere APENAS SELECT (sem INSERT, UPDATE, DELETE, CREATE, etc)
+3. SEMPRE adicione LIMIT no final (máximo 100 para gráficos, 500 para tabelas)
+4. NÃO use CASE WHEN com END para categorização - use funções simples ou subconsultas
+5. Para agrupar por período, use periodo_mes ou periodo_ano diretamente
+6. Para comparar datas, use: periodo_dia >= 'YYYY-MM-DD'
+7. Valores monetários: valor_total (bruto), valor_liquido (líquido)
+8. Margem: margem_pct (já em percentual)
+9. NÃO use aspas duplas em alias, use aspas simples ou sem aspas
 
-Responda APENAS com um JSON válido no formato:
-{
-  "sql": "SELECT ...",
-  "chart_type": "bar|line|pie|table",
-  "x_axis": "nome_coluna_eixo_x",
-  "y_axis": ["coluna1", "coluna2"],
-  "confidence": 0.0 a 1.0,
-  "explanation": "Explicação em 2-3 frases do que a consulta faz"
-}`;
+EXEMPLOS DE QUERIES CORRETAS:
+- Vendas por cliente: SELECT cliente, SUM(valor_total) as total FROM vw_vendas GROUP BY cliente ORDER BY total DESC LIMIT 10
+- Tendência mensal: SELECT periodo_mes, SUM(valor_total) as receita FROM vw_vendas GROUP BY periodo_mes ORDER BY periodo_mes LIMIT 12
+- Por canal: SELECT canal, COUNT(*) as qtd, SUM(valor_total) as total FROM vw_leads WHERE canal IS NOT NULL GROUP BY canal LIMIT 10
 
-      const userPrompt = `Pergunta do usuário: "${pergunta}"
-Filtros aplicados: ${JSON.stringify(filtros)}
+Responda APENAS com JSON válido:
+{"sql": "SELECT ...", "chart_type": "bar|line|pie|table", "x_axis": "coluna_x", "y_axis": ["coluna1"], "confidence": 0.9, "explanation": "Explicação breve"}`;
 
-Gere uma consulta SQL segura para responder esta pergunta.`;
+      const userPrompt = `Pergunta: "${pergunta}"
+${filtros.startDate ? `Período: ${filtros.startDate} até ${filtros.endDate || 'hoje'}` : ''}
+
+Gere uma query SQL simples e segura.`;
 
       try {
+        console.log("Chamando GPT-5 para gerar SQL...");
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -280,7 +281,7 @@ Gere uma consulta SQL segura para responder esta pergunta.`;
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "openai/gpt-5-mini",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userPrompt },
