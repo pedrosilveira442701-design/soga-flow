@@ -64,7 +64,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "dias_aberta", label: "Dias Aberta", type: "number" },
     { key: "forma_pagamento", label: "Forma Pagamento", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Proposta", type: "date" },
   ],
   contratos: [
     { key: "cliente", label: "Cliente", type: "text" },
@@ -79,7 +79,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "margem_pct", label: "Margem %", type: "percent" },
     { key: "forma_pagamento", label: "Forma Pagamento", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Início", type: "date" },
   ],
   vendas: [
     { key: "cliente", label: "Cliente", type: "text" },
@@ -94,7 +94,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "margem_pct", label: "Margem %", type: "percent" },
     { key: "forma_pagamento", label: "Forma Pagamento", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Início", type: "date" },
   ],
   financeiro: [
     { key: "cliente", label: "Cliente", type: "text" },
@@ -123,7 +123,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "responsavel", label: "Responsável", type: "text" },
     { key: "motivo_perda", label: "Motivo Perda", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Entrada", type: "date" },
   ],
   visitas: [
     { key: "cliente", label: "Cliente", type: "text" },
@@ -136,7 +136,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "realizada", label: "Realizada", type: "boolean" },
     { key: "responsavel", label: "Responsável", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Visita", type: "date" },
   ],
   obras: [
     { key: "cliente", label: "Cliente", type: "text" },
@@ -149,7 +149,7 @@ export const DATASET_COLUMNS: Record<DatasetType, { key: string; label: string; 
     { key: "progresso_pct", label: "Progresso %", type: "percent" },
     { key: "responsavel_obra", label: "Responsável", type: "text" },
     { key: "periodo_mes", label: "Mês", type: "text" },
-    { key: "created_at", label: "Data", type: "date" },
+    { key: "periodo_dia", label: "Data Início", type: "date" },
   ],
 };
 
@@ -233,7 +233,7 @@ export function useRelatorios() {
       if (config.orderBy) {
         query = query.order(config.orderBy.field, { ascending: config.orderBy.direction === "asc" });
       } else {
-        query = query.order("created_at", { ascending: false });
+        query = query.order("periodo_dia", { ascending: false, nullsFirst: false });
       }
 
       // Limit for preview

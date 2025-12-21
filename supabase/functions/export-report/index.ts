@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     if (config.orderBy) {
       query = query.order(config.orderBy.field, { ascending: config.orderBy.direction === "asc" });
     } else {
-      query = query.order("created_at", { ascending: false });
+      query = query.order("periodo_dia", { ascending: false, nullsFirst: false });
     }
 
     // Limit to prevent huge exports
