@@ -5,6 +5,7 @@ import { ReportPreview } from "@/components/relatorios/ReportPreview";
 import { QuickReports } from "@/components/relatorios/QuickReports";
 import { useRelatorios, DatasetType, ReportConfig } from "@/hooks/useRelatorios";
 import { FileBarChart } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function Relatorios() {
   const {
@@ -48,37 +49,44 @@ export default function Relatorios() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <FileBarChart className="h-6 w-6" />
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileBarChart className="h-6 w-6 text-primary" />
+            </div>
             Centro de Relatórios
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Exporte dados do sistema em Excel ou PDF com filtros personalizados
           </p>
         </div>
 
+        <Separator />
+
         {/* Quick Reports */}
         <QuickReports onRunReport={handleQuickReport} />
 
-        {/* Report Builder */}
-        <ReportBuilder
-          onPreview={handlePreview}
-          onExport={handleExport}
-          isLoading={previewLoading}
-          isExporting={isExporting}
-          filterOptions={filterOptions}
-          onDatasetChange={handleDatasetChange}
-        />
+        {/* Main content: Builder and Preview side by side on large screens */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Report Builder */}
+          <ReportBuilder
+            onPreview={handlePreview}
+            onExport={handleExport}
+            isLoading={previewLoading}
+            isExporting={isExporting}
+            filterOptions={filterOptions}
+            onDatasetChange={handleDatasetChange}
+          />
 
-        {/* Preview */}
-        <ReportPreview
-          data={previewData}
-          totals={previewTotals}
-          isLoading={previewLoading}
-        />
+          {/* Preview */}
+          <ReportPreview
+            data={previewData}
+            totals={previewTotals}
+            isLoading={previewLoading}
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -304,17 +304,18 @@ export function useRelatorios() {
           description: `Relatório ${format.toUpperCase()} gerado com sucesso.`,
         });
       } else if (data?.csv) {
-        // For CSV fallback
+        // For CSV/Excel fallback
         const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `relatorio_${config.dataset}_${new Date().toISOString().split("T")[0]}.csv`;
+        const extension = format === "excel" ? "csv" : format;
+        link.download = `relatorio_${config.dataset}_${new Date().toISOString().split("T")[0]}.${extension}`;
         link.click();
         URL.revokeObjectURL(url);
         toast({
           title: "Exportação concluída",
-          description: "Relatório CSV gerado com sucesso.",
+          description: `Relatório ${format === "excel" ? "Excel" : "PDF"} gerado com sucesso.`,
         });
       }
 
