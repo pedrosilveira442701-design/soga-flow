@@ -1575,6 +1575,8 @@ export type Database = {
           cidade: string | null
           cliente: string | null
           created_at: string | null
+          data_fechamento: string | null
+          data_perda: string | null
           desconto: number | null
           dias_aberta: number | null
           forma_pagamento: string | null
