@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.send-management-report]
 verify_jwt = false
 
+[functions.send-anotacao-reminders]
+verify_jwt = false
+
 [functions.insights-query]
 verify_jwt = true
 
