@@ -1185,6 +1185,7 @@ export type Database = {
           custo_m2: number
           data: string
           data_fechamento: string | null
+          data_perda: string | null
           desconto: number | null
           forma_pagamento: string | null
           id: string
@@ -1210,6 +1211,7 @@ export type Database = {
           custo_m2: number
           data?: string
           data_fechamento?: string | null
+          data_perda?: string | null
           desconto?: number | null
           forma_pagamento?: string | null
           id?: string
@@ -1235,6 +1237,7 @@ export type Database = {
           custo_m2?: number
           data?: string
           data_fechamento?: string | null
+          data_perda?: string | null
           desconto?: number | null
           forma_pagamento?: string | null
           id?: string
