@@ -296,9 +296,9 @@ const handler = async (req: Request): Promise<Response> => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: "Só Garagens <no-reply@sogaragens.com.br>",
+            from: "So Garagens Hub <onboarding@resend.dev>",
             to: [userEmail],
-            subject: `📊 Relatório Diário - Só Garagens Hub`,
+            subject: `Relatorio Diario - So Garagens Hub`,
             html: emailHtml,
           }),
         });
