@@ -31,6 +31,61 @@ export interface FluxoCaixa {
   previsto: number;
   atrasado: number;
   margemRecebida: number;
+  tendenciaEMA: number;
+}
+
+// Função para calcular Média Móvel Exponencial (EMA)
+// EMA dá mais peso a valores recentes, padrão em análises financeiras
+function calcularEMA(valores: number[], periodo: number = 3): number[] {
+  if (valores.length === 0) return [];
+  
+  const k = 2 / (periodo + 1); // Fator de suavização
+  const ema: number[] = [];
+  
+  // Primeiro valor = valor inicial (não há histórico)
+  ema.push(valores[0]);
+  
+  // Calcular EMA para cada ponto subsequente
+  // Fórmula: EMA = preço_atual × k + EMA_anterior × (1-k)
+  for (let i = 1; i < valores.length; i++) {
+    const valor = valores[i] * k + ema[i - 1] * (1 - k);
+    ema.push(valor);
+  }
+  
+  return ema;
+}
+
+// Função para calcular taxa de crescimento e projeção
+export function calcularInsightsTendencia(dados: FluxoCaixa[]) {
+  const valoresRecebido = dados.map(d => d.recebido);
+  const valoresEMA = dados.map(d => d.tendenciaEMA);
+  
+  // Taxa de crescimento média mensal (últimos 3 meses vs 3 meses anteriores)
+  const ultimos3 = valoresRecebido.slice(-3);
+  const anteriores3 = valoresRecebido.slice(-6, -3);
+  
+  const mediaUltimos = ultimos3.reduce((a, b) => a + b, 0) / ultimos3.length || 0;
+  const mediaAnteriores = anteriores3.reduce((a, b) => a + b, 0) / anteriores3.length || 0;
+  
+  const taxaCrescimento = mediaAnteriores > 0 
+    ? ((mediaUltimos - mediaAnteriores) / mediaAnteriores) * 100 
+    : 0;
+  
+  // Projeção para próximo mês baseada na EMA
+  const ultimaEMA = valoresEMA[valoresEMA.length - 1] || 0;
+  const penultimaEMA = valoresEMA[valoresEMA.length - 2] || 0;
+  const tendenciaMensal = ultimaEMA - penultimaEMA;
+  const projecaoProximoMes = ultimaEMA + tendenciaMensal;
+  
+  // Direção da tendência
+  const direcao = taxaCrescimento > 2 ? 'crescente' : taxaCrescimento < -2 ? 'decrescente' : 'estavel';
+  
+  return {
+    taxaCrescimento,
+    projecaoProximoMes,
+    direcao,
+    ultimaEMA,
+  };
 }
 
 export interface FinanceiroFilters {
@@ -202,6 +257,7 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
           previsto: 0,
           atrasado: 0,
           margemRecebida: 0,
+          tendenciaEMA: 0,
         });
       }
 
@@ -233,7 +289,16 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
         }
       });
 
-      return Array.from(meses.values());
+      // Converter para array e calcular EMA
+      const fluxoArray = Array.from(meses.values());
+      const valoresRecebido = fluxoArray.map(f => f.recebido);
+      const emaValues = calcularEMA(valoresRecebido, 3);
+      
+      // Adicionar valores EMA aos dados
+      return fluxoArray.map((f, index) => ({
+        ...f,
+        tendenciaEMA: emaValues[index] || 0,
+      }));
     },
     enabled: !!user,
   });
