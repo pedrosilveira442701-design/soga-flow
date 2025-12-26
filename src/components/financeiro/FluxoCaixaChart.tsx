@@ -19,6 +19,7 @@ interface FluxoCaixaChartProps {
     recebido: number;
     previsto: number;
     atrasado: number;
+    margemRecebida: number;
   }>;
   isLoading?: boolean;
 }
@@ -26,6 +27,7 @@ interface FluxoCaixaChartProps {
 // Cores HSL para as categorias financeiras
 const FLUXO_COLORS = {
   recebido: { hue: 142, sat: 71, light: 45 },  // Verde
+  margemRecebida: { hue: 160, sat: 84, light: 39 },  // Verde escuro/teal
   previsto: { hue: 217, sat: 91, light: 60 },  // Azul
   atrasado: { hue: 0, sat: 84, light: 60 },    // Vermelho
 };
@@ -102,6 +104,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
 
   // Calcular totais para insights
   const totalRecebido = data.reduce((sum, d) => sum + d.recebido, 0);
+  const totalMargemRecebida = data.reduce((sum, d) => sum + d.margemRecebida, 0);
   const totalPrevisto = data.reduce((sum, d) => sum + d.previsto, 0);
   const totalAtrasado = data.reduce((sum, d) => sum + d.atrasado, 0);
 
@@ -125,6 +128,10 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
               <linearGradient id="gradient-recebido" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={`hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)`} stopOpacity={1} />
                 <stop offset="100%" stopColor={`hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light + 15}%)`} stopOpacity={0.7} />
+              </linearGradient>
+              <linearGradient id="gradient-margemRecebida" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={`hsl(${FLUXO_COLORS.margemRecebida.hue}, ${FLUXO_COLORS.margemRecebida.sat}%, ${FLUXO_COLORS.margemRecebida.light}%)`} stopOpacity={1} />
+                <stop offset="100%" stopColor={`hsl(${FLUXO_COLORS.margemRecebida.hue}, ${FLUXO_COLORS.margemRecebida.sat}%, ${FLUXO_COLORS.margemRecebida.light + 15}%)`} stopOpacity={0.7} />
               </linearGradient>
               <linearGradient id="gradient-previsto" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={`hsl(${FLUXO_COLORS.previsto.hue}, ${FLUXO_COLORS.previsto.sat}%, ${FLUXO_COLORS.previsto.light}%)`} stopOpacity={1} />
@@ -160,6 +167,12 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
               radius={[4, 4, 0, 0]}
             />
             <Bar
+              dataKey="margemRecebida"
+              name="Margem Líquida"
+              fill="url(#gradient-margemRecebida)"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
               dataKey="previsto"
               name="Previsto"
               fill="url(#gradient-previsto)"
@@ -174,12 +187,17 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
           </BarChart>
         </ResponsiveContainer>
 
-        {/* Summary Cards */}
-        <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-4">
+        <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Recebido</p>
             <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)` }}>
               {formatCurrency(totalRecebido)}
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-1">Margem Líquida</p>
+            <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.margemRecebida.hue}, ${FLUXO_COLORS.margemRecebida.sat}%, ${FLUXO_COLORS.margemRecebida.light}%)` }}>
+              {formatCurrency(totalMargemRecebida)}
             </p>
           </div>
           <div className="text-center">
