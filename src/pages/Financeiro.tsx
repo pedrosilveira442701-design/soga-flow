@@ -355,7 +355,8 @@ export default function Financeiro() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Contrato</TableHead>
                     <TableHead>Parcela</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Valor Bruto</TableHead>
+                    <TableHead>Custo</TableHead>
                     <TableHead>Margem Líquida</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
@@ -393,6 +394,12 @@ export default function Financeiro() {
                         <TableCell>{parcela.numero_parcela}</TableCell>
                         <TableCell className="font-semibold">
                           {formatCurrency(Number(parcela.valor_liquido_parcela))}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {formatCurrency(
+                            Number(parcela.valor_liquido_parcela) *
+                              (1 - Number(parcela.contrato?.margem_pct || 0) / 100)
+                          )}
                         </TableCell>
                         <TableCell className="font-semibold text-green-600">
                           {formatCurrency(
