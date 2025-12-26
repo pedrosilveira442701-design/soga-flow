@@ -352,16 +352,16 @@ export default function Financeiro() {
                         onCheckedChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead>Cliente</TableHead>
-                    <TableHead>Contrato</TableHead>
-                    <TableHead>Parcela</TableHead>
-                    <TableHead>Valor Bruto</TableHead>
-                    <TableHead>Custo</TableHead>
-                    <TableHead>Margem Líquida</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Data Pgto</TableHead>
-                    <TableHead>Forma</TableHead>
+                    <TableHead className="whitespace-nowrap">Cliente</TableHead>
+                    <TableHead className="whitespace-nowrap">Contrato</TableHead>
+                    <TableHead className="whitespace-nowrap">Parcela</TableHead>
+                    <TableHead className="whitespace-nowrap text-right">Valor Bruto</TableHead>
+                    <TableHead className="whitespace-nowrap text-right">Custo</TableHead>
+                    <TableHead className="whitespace-nowrap text-right">Margem Líquida</TableHead>
+                    <TableHead className="whitespace-nowrap">Vencimento</TableHead>
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead className="whitespace-nowrap">Data Pgto</TableHead>
+                    <TableHead className="whitespace-nowrap">Forma</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -392,16 +392,16 @@ export default function Financeiro() {
                           {parcela.contrato?.cliente?.cpf_cnpj || "—"}
                         </TableCell>
                         <TableCell>{parcela.numero_parcela}</TableCell>
-                        <TableCell className="font-semibold">
+                        <TableCell className="font-semibold text-right whitespace-nowrap">
                           {formatCurrency(Number(parcela.valor_liquido_parcela))}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-right whitespace-nowrap text-destructive/80">
                           {formatCurrency(
                             Number(parcela.valor_liquido_parcela) *
                               (1 - Number(parcela.contrato?.margem_pct || 0) / 100)
                           )}
                         </TableCell>
-                        <TableCell className="font-semibold text-green-600">
+                        <TableCell className="font-semibold text-right whitespace-nowrap text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(
                             Number(parcela.valor_liquido_parcela) *
                               (Number(parcela.contrato?.margem_pct || 0) / 100)
