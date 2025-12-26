@@ -19,7 +19,7 @@ interface FluxoCaixaChartProps {
     recebido: number;
     previsto: number;
     atrasado: number;
-    margemRecebida: number;
+    margemRecebida?: number;
   }>;
   isLoading?: boolean;
 }
@@ -102,11 +102,17 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
     );
   }
 
+  // Normalizar dados para garantir que margemRecebida existe
+  const normalizedData = data.map(d => ({
+    ...d,
+    margemRecebida: d.margemRecebida ?? 0,
+  }));
+
   // Calcular totais para insights
-  const totalRecebido = data.reduce((sum, d) => sum + d.recebido, 0);
-  const totalMargemRecebida = data.reduce((sum, d) => sum + d.margemRecebida, 0);
-  const totalPrevisto = data.reduce((sum, d) => sum + d.previsto, 0);
-  const totalAtrasado = data.reduce((sum, d) => sum + d.atrasado, 0);
+  const totalRecebido = normalizedData.reduce((sum, d) => sum + d.recebido, 0);
+  const totalMargemRecebida = normalizedData.reduce((sum, d) => sum + d.margemRecebida, 0);
+  const totalPrevisto = normalizedData.reduce((sum, d) => sum + d.previsto, 0);
+  const totalAtrasado = normalizedData.reduce((sum, d) => sum + d.atrasado, 0);
 
   return (
     <Card>
@@ -123,7 +129,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={data}>
+          <BarChart data={normalizedData}>
             <defs>
               <linearGradient id="gradient-recebido" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={`hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)`} stopOpacity={1} />
