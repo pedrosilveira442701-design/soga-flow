@@ -356,7 +356,7 @@ export default function Financeiro() {
                     <TableHead>Contrato</TableHead>
                     <TableHead>Parcela</TableHead>
                     <TableHead>Valor</TableHead>
-                    <TableHead>Lucro Realizado</TableHead>
+                    <TableHead>Margem Líquida</TableHead>
                     <TableHead>Vencimento</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data Pgto</TableHead>
@@ -433,7 +433,7 @@ export default function Financeiro() {
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs text-muted-foreground mb-1">Total Recebido</span>
                       <span className="text-lg font-bold text-blue-600">
@@ -441,6 +441,21 @@ export default function Financeiro() {
                           parcelas
                             .filter((p) => p.status === "pago")
                             .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0)
+                        )}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground mb-1">Margem Líquida Realizada</span>
+                      <span className="text-lg font-bold text-green-600">
+                        {formatCurrency(
+                          parcelas
+                            .filter((p) => p.status === "pago")
+                            .reduce((sum, p) => {
+                              const valor = Number(p.valor_liquido_parcela);
+                              const margemPct = Number(p.contrato?.margem_pct || 0);
+                              return sum + (valor * (margemPct / 100));
+                            }, 0)
                         )}
                       </span>
                     </div>
@@ -457,8 +472,8 @@ export default function Financeiro() {
                     </div>
                     
                     <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground mb-1">Lucro Realizado a Receber</span>
-                      <span className="text-lg font-bold text-green-600">
+                      <span className="text-xs text-muted-foreground mb-1">Margem Líquida a Receber</span>
+                      <span className="text-lg font-bold text-emerald-600">
                         {formatCurrency(
                           parcelas
                             .filter((p) => p.status === "pendente" || p.status === "atrasado")
