@@ -1,17 +1,21 @@
+import { useState } from "react";
 import {
-  BarChart,
+  ComposedChart,
   Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
+import { calcularInsightsTendencia } from "@/hooks/useFinanceiro";
 
 interface FluxoCaixaChartProps {
   data: Array<{
@@ -20,6 +24,7 @@ interface FluxoCaixaChartProps {
     previsto: number;
     atrasado: number;
     margemRecebida?: number;
+    tendenciaEMA?: number;
   }>;
   isLoading?: boolean;
 }
@@ -30,9 +35,11 @@ const FLUXO_COLORS = {
   margemRecebida: { hue: 160, sat: 84, light: 39 },  // Verde escuro/teal
   previsto: { hue: 217, sat: 91, light: 60 },  // Azul
   atrasado: { hue: 0, sat: 84, light: 60 },    // Vermelho
+  tendencia: { hue: 271, sat: 76, light: 53 }, // Roxo vibrante
 };
 
 export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
+  const [mostrarTendencia, setMostrarTendencia] = useState(true);
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -102,10 +109,11 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
     );
   }
 
-  // Normalizar dados para garantir que margemRecebida existe
+  // Normalizar dados para garantir que margemRecebida e tendenciaEMA existem
   const normalizedData = data.map(d => ({
     ...d,
     margemRecebida: d.margemRecebida ?? 0,
+    tendenciaEMA: d.tendenciaEMA ?? 0,
   }));
 
   // Calcular totais para insights
@@ -114,22 +122,49 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
   const totalPrevisto = normalizedData.reduce((sum, d) => sum + d.previsto, 0);
   const totalAtrasado = normalizedData.reduce((sum, d) => sum + d.atrasado, 0);
 
+  // Calcular insights da tendência
+  const insights = calcularInsightsTendencia(normalizedData as any);
+  
+  const TrendIcon = insights.direcao === 'crescente' 
+    ? TrendingUp 
+    : insights.direcao === 'decrescente' 
+      ? TrendingDown 
+      : Minus;
+
+  const trendColor = insights.direcao === 'crescente' 
+    ? 'text-green-500' 
+    : insights.direcao === 'decrescente' 
+      ? 'text-red-500' 
+      : 'text-muted-foreground';
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between flex-wrap gap-2">
           <span className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+            <Activity className="h-5 w-5" />
             Fluxo de Caixa (12 meses)
           </span>
-          <span className="text-sm font-normal text-muted-foreground">
-            Total: {formatCurrency(totalRecebido + totalPrevisto)}
-          </span>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="tendencia-toggle"
+                checked={mostrarTendencia}
+                onCheckedChange={setMostrarTendencia}
+              />
+              <Label htmlFor="tendencia-toggle" className="text-sm font-normal cursor-pointer">
+                Tendência EMA
+              </Label>
+            </div>
+            <span className="text-sm font-normal text-muted-foreground">
+              Total: {formatCurrency(totalRecebido + totalPrevisto)}
+            </span>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={normalizedData}>
+          <ComposedChart data={normalizedData}>
             <defs>
               <linearGradient id="gradient-recebido" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={`hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)`} stopOpacity={1} />
@@ -190,9 +225,32 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
               fill="url(#gradient-atrasado)"
               radius={[4, 4, 0, 0]}
             />
-          </BarChart>
+            {mostrarTendencia && (
+              <Line
+                type="monotone"
+                dataKey="tendenciaEMA"
+                name="Tendência (EMA)"
+                stroke={`hsl(${FLUXO_COLORS.tendencia.hue}, ${FLUXO_COLORS.tendencia.sat}%, ${FLUXO_COLORS.tendencia.light}%)`}
+                strokeWidth={3}
+                strokeDasharray="8 4"
+                dot={{ 
+                  fill: `hsl(${FLUXO_COLORS.tendencia.hue}, ${FLUXO_COLORS.tendencia.sat}%, ${FLUXO_COLORS.tendencia.light}%)`, 
+                  r: 4,
+                  strokeWidth: 2,
+                  stroke: 'hsl(var(--background))'
+                }}
+                activeDot={{ 
+                  r: 6, 
+                  fill: `hsl(${FLUXO_COLORS.tendencia.hue}, ${FLUXO_COLORS.tendencia.sat}%, ${FLUXO_COLORS.tendencia.light}%)`,
+                  stroke: 'hsl(var(--background))',
+                  strokeWidth: 2
+                }}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
 
+        {/* Cards de totais */}
         <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Recebido</p>
@@ -219,6 +277,38 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
             </p>
           </div>
         </div>
+
+        {/* Card de Insights da Tendência */}
+        {mostrarTendencia && (
+          <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendIcon className={`h-5 w-5 ${trendColor}`} />
+              <span className="font-semibold">Análise de Tendência (EMA)</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground mb-1">Direção</p>
+                <p className={`font-semibold capitalize ${trendColor}`}>
+                  {insights.direcao === 'crescente' ? '↗ Crescente' : 
+                   insights.direcao === 'decrescente' ? '↘ Decrescente' : 
+                   '→ Estável'}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">Variação (3 meses)</p>
+                <p className={`font-semibold ${insights.taxaCrescimento >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {insights.taxaCrescimento >= 0 ? '+' : ''}{insights.taxaCrescimento.toFixed(1)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">Projeção Próximo Mês</p>
+                <p className="font-semibold" style={{ color: `hsl(${FLUXO_COLORS.tendencia.hue}, ${FLUXO_COLORS.tendencia.sat}%, ${FLUXO_COLORS.tendencia.light}%)` }}>
+                  {formatCurrency(Math.max(0, insights.projecaoProximoMes))}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
