@@ -40,6 +40,18 @@ const TIPO_COLORS: Record<string, string> = {
   // Piso Autonivelante - Vermelho
   "Piso Autonivelante": "#ef4444",
   
+  // Piso Uretano - Cyan
+  "Piso Uretano": "#06b6d4",
+  
+  // Uretano Vertical - Teal
+  "Uretano Vertical": "#14b8a6",
+  
+  // Rodapé Abaulado - Fuchsia
+  "Rodapé Abaulado": "#d946ef",
+  
+  // Concretagem - Cinza escuro
+  "Concretagem": "#78716c",
+  
   // Outros - Cinza
   "Não especificado": "#94a3b8",
 };

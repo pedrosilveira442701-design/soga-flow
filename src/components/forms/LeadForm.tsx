@@ -28,6 +28,7 @@ const TIPOS_PRODUTO = [
   "Pintura de Parede",
   "Piso Autonivelante",
   "Piso Uretano",
+  "Uretano Vertical",
   "Rodapé Abaulado",
   "Concretagem",
   "Outro",

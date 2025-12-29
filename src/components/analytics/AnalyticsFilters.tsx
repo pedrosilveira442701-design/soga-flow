@@ -226,6 +226,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                     <SelectItem value="Pintura de Parede">Pintura de Parede</SelectItem>
                     <SelectItem value="Piso Autonivelante">Piso Autonivelante</SelectItem>
                     <SelectItem value="Piso Uretano">Piso Uretano</SelectItem>
+                    <SelectItem value="Uretano Vertical">Uretano Vertical</SelectItem>
                     <SelectItem value="Rodapé Abaulado">Rodapé Abaulado</SelectItem>
                     <SelectItem value="Concretagem">Concretagem</SelectItem>
                   </SelectContent>
