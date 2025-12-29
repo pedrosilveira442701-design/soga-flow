@@ -20,6 +20,7 @@ const TIPO_COLORS: Record<string, { hue: number; sat: number; light: number }> =
   "Pintura de Parede": { hue: 28, sat: 90, light: 52 },
   "Piso Autonivelante": { hue: 330, sat: 81, light: 60 },
   "Piso Uretano": { hue: 199, sat: 85, light: 48 },
+  "Uretano Vertical": { hue: 185, sat: 80, light: 42 },
   "Rodapé Abaulado": { hue: 293, sat: 69, light: 49 },
   "Concretagem": { hue: 30, sat: 20, light: 45 },
   "Porcelanato": { hue: 217, sat: 91, light: 55 },
