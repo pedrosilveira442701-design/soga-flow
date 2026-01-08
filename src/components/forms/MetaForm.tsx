@@ -47,7 +47,8 @@ interface MetaFormProps {
 }
 
 const TIPOS_META = [
-  { value: "Vendas (R$)", label: "Vendas (R$)", icon: DollarSign, description: "Meta de faturamento" },
+  { value: "Vendas (R$)", label: "Vendas (R$)", icon: DollarSign, description: "Meta de faturamento (contratos)" },
+  { value: "Propostas (R$)", label: "Propostas (R$)", icon: DollarSign, description: "Valor total de propostas" },
   { value: "Propostas (#)", label: "Propostas (#)", icon: Hash, description: "Quantidade de propostas" },
   { value: "Conversão (%)", label: "Conversão (%)", icon: Percent, description: "Taxa de conversão" },
   { value: "Contratos (#)", label: "Contratos (#)", icon: Hash, description: "Quantidade de contratos" },
