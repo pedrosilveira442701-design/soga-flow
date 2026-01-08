@@ -48,7 +48,93 @@ export interface MetaComInsights extends Meta {
 export const useMetas = (filters?: MetaFilters) => {
   const queryClient = useQueryClient();
 
-  // Query principal de metas
+  // Função para calcular progresso real (movida para fora da query para reutilização)
+  const calcularProgressoReal = async (meta: Meta): Promise<number> => {
+    const { user_id, tipo, periodo_inicio, periodo_fim } = meta;
+    
+    try {
+      switch (tipo.toLowerCase()) {
+        case 'vendas':
+        case 'vendas (r$)': {
+          const { data: contratos } = await supabase
+            .from('contratos')
+            .select('valor_negociado')
+            .eq('user_id', user_id)
+            .gte('data_inicio', periodo_inicio)
+            .lte('data_inicio', periodo_fim)
+            .in('status', ['ativo', 'concluido']);
+          
+          const total = contratos?.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0) || 0;
+          return Math.min((total / meta.valor_alvo) * 100, 999);
+        }
+
+        case 'propostas':
+        case 'propostas (#)': {
+          const { count } = await supabase
+            .from('propostas')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id)
+            .gte('created_at', periodo_inicio)
+            .lte('created_at', periodo_fim);
+          
+          return Math.min(((count || 0) / meta.valor_alvo) * 100, 999);
+        }
+
+        case 'conversão':
+        case 'conversão (%)': {
+          const { count: totalPropostas } = await supabase
+            .from('propostas')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id)
+            .gte('created_at', periodo_inicio)
+            .lte('created_at', periodo_fim);
+
+          const { count: totalContratos } = await supabase
+            .from('contratos')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id)
+            .gte('data_inicio', periodo_inicio)
+            .lte('data_inicio', periodo_fim);
+          
+          if (!totalPropostas) return 0;
+          const taxaConversao = ((totalContratos || 0) / totalPropostas) * 100;
+          return Math.min((taxaConversao / meta.valor_alvo) * 100, 999);
+        }
+
+        case 'contratos':
+        case 'contratos (#)': {
+          const { count } = await supabase
+            .from('contratos')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id)
+            .gte('data_inicio', periodo_inicio)
+            .lte('data_inicio', periodo_fim);
+          
+          return Math.min(((count || 0) / meta.valor_alvo) * 100, 999);
+        }
+
+        case 'novos clientes':
+        case 'novos clientes (#)': {
+          const { count } = await supabase
+            .from('clientes')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user_id)
+            .gte('created_at', periodo_inicio)
+            .lte('created_at', periodo_fim);
+          
+          return Math.min(((count || 0) / meta.valor_alvo) * 100, 999);
+        }
+
+        default:
+          return meta.progresso;
+      }
+    } catch (error) {
+      console.error('Erro ao calcular progresso:', error);
+      return meta.progresso;
+    }
+  };
+
+  // Query principal de metas com cálculo automático de progresso
   const { data: metas = [], isLoading } = useQuery({
     queryKey: ['metas', filters],
     queryFn: async () => {
@@ -102,95 +188,33 @@ export const useMetas = (filters?: MetaFilters) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data as Meta[];
+      
+      // Calcular progresso real automaticamente para metas ativas
+      const metasComProgresso = await Promise.all(
+        (data as Meta[]).map(async (meta) => {
+          if (meta.status === 'ativa') {
+            const progressoReal = await calcularProgressoReal(meta);
+            // Atualizar no banco se houver diferença significativa (>0.1%)
+            if (Math.abs(progressoReal - meta.progresso) > 0.1) {
+              await supabase
+                .from('metas')
+                .update({ 
+                  progresso: progressoReal,
+                  status: progressoReal >= 100 ? 'concluida' : 'ativa'
+                })
+                .eq('id', meta.id);
+              return { ...meta, progresso: progressoReal, status: progressoReal >= 100 ? 'concluida' : meta.status };
+            }
+          }
+          return meta;
+        })
+      );
+      
+      return metasComProgresso;
     },
+    staleTime: 30000, // Cache por 30 segundos para evitar recálculos excessivos
   });
 
-  // Calcular progresso real baseado em dados do sistema
-  const calcularProgressoReal = async (meta: Meta): Promise<number> => {
-    const { user_id, tipo, periodo_inicio, periodo_fim } = meta;
-    
-    try {
-      switch (tipo.toLowerCase()) {
-        case 'vendas':
-        case 'vendas (r$)': {
-          const { data: contratos } = await supabase
-            .from('contratos')
-            .select('valor_negociado')
-            .eq('user_id', user_id)
-            .gte('data_inicio', periodo_inicio)
-            .lte('data_inicio', periodo_fim)
-            .in('status', ['ativo', 'concluido']);
-          
-          const total = contratos?.reduce((sum, c) => sum + Number(c.valor_negociado || 0), 0) || 0;
-          return (total / meta.valor_alvo) * 100;
-        }
-
-        case 'propostas':
-        case 'propostas (#)': {
-          const { count } = await supabase
-            .from('propostas')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
-          
-          return ((count || 0) / meta.valor_alvo) * 100;
-        }
-
-        case 'conversão':
-        case 'conversão (%)': {
-          const { count: totalPropostas } = await supabase
-            .from('propostas')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
-
-          const { count: totalContratos } = await supabase
-            .from('contratos')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id)
-            .gte('data_inicio', periodo_inicio)
-            .lte('data_inicio', periodo_fim);
-          
-          if (!totalPropostas) return 0;
-          const taxaConversao = ((totalContratos || 0) / totalPropostas) * 100;
-          return (taxaConversao / meta.valor_alvo) * 100;
-        }
-
-        case 'contratos':
-        case 'contratos (#)': {
-          const { count } = await supabase
-            .from('contratos')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id)
-            .gte('data_inicio', periodo_inicio)
-            .lte('data_inicio', periodo_fim);
-          
-          return ((count || 0) / meta.valor_alvo) * 100;
-        }
-
-        case 'novos clientes':
-        case 'novos clientes (#)': {
-          const { count } = await supabase
-            .from('clientes')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user_id)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
-          
-          return ((count || 0) / meta.valor_alvo) * 100;
-        }
-
-        default:
-          return meta.progresso;
-      }
-    } catch (error) {
-      console.error('Erro ao calcular progresso:', error);
-      return meta.progresso;
-    }
-  };
 
   // Enriquecer metas com insights
   const metasComInsights: MetaComInsights[] = metas.map((meta) => {
