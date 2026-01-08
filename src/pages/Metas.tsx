@@ -1,18 +1,34 @@
 import { useState } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMetas, MetaFilters } from "@/hooks/useMetas";
+import { useMetas, MetaFilters, MetaComInsights } from "@/hooks/useMetas";
 import { MetaForm } from "@/components/forms/MetaForm";
 import { MetaCard } from "@/components/metas/MetaCard";
 import { MetaDetailsDialog } from "@/components/metas/MetaDetailsDialog";
 import { EmptyState } from "@/components/states/EmptyState";
 import { KPICard } from "@/components/kpi/KPICard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Target, Plus, Search, RefreshCw, TrendingUp, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
+import { Target, Plus, Search, RefreshCw, TrendingUp, CheckCircle2, AlertTriangle, Activity, GripVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SortableMetaCard } from "@/components/metas/SortableMetaCard";
 
 export default function Metas() {
   const [filters, setFilters] = useState<MetaFilters>({});
@@ -30,7 +46,19 @@ export default function Metas() {
     deleteMeta,
     recalcularProgresso,
     recalcularTodas,
+    reorderMetas,
   } = useMetas(filters);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Filtro de busca textual
   const metasFiltradas = metasComInsights.filter((meta) => {
@@ -39,7 +67,8 @@ export default function Metas() {
     return (
       meta.tipo.toLowerCase().includes(search) ||
       meta.responsavel?.toLowerCase().includes(search) ||
-      meta.status.toLowerCase().includes(search)
+      meta.status.toLowerCase().includes(search) ||
+      meta.nome?.toLowerCase().includes(search)
     );
   });
 
@@ -63,17 +92,28 @@ export default function Metas() {
   const handleQuickFilter = (key: string) => {
     switch (key) {
       case "noAlvo":
-        // Filtrar metas com progresso >= 100%
         setFilters({ ...filters, search: undefined });
         break;
       case "emAlerta":
-        // Mostrar todas para que os alertas sejam visíveis nos cards
         setFilters({ ...filters, status: "ativa" });
         break;
       case "atrasadas":
-        // Filtrar metas ativas
         setFilters({ ...filters, status: "ativa" });
         break;
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = metasFiltradas.findIndex((meta) => meta.id === active.id);
+      const newIndex = metasFiltradas.findIndex((meta) => meta.id === over.id);
+
+      const newOrder = arrayMove(metasFiltradas, oldIndex, newIndex);
+      const orderedIds = newOrder.map((meta) => meta.id);
+      
+      reorderMetas.mutate(orderedIds);
     }
   };
 
@@ -238,10 +278,14 @@ export default function Metas() {
                 {filter.label} ({filter.count})
               </Badge>
             ))}
+            <Badge variant="secondary" className="gap-1">
+              <GripVertical className="h-3 w-3" />
+              Arraste para reordenar
+            </Badge>
           </div>
         </div>
 
-        {/* Grid de Metas */}
+        {/* Grid de Metas com Drag & Drop */}
         {metasFiltradas.length === 0 ? (
           <EmptyState
             icon={Target}
@@ -253,21 +297,32 @@ export default function Metas() {
             }}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {metasFiltradas.map((meta) => (
-              <MetaCard
-                key={meta.id}
-                meta={meta}
-                onEdit={() => {
-                  setEditingMeta(meta);
-                  setShowCreateDialog(true);
-                }}
-                onDelete={() => deleteMeta.mutate(meta.id)}
-                onViewDetails={() => setSelectedMeta(meta)}
-                onRecalcular={() => recalcularProgresso.mutate(meta.id)}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={metasFiltradas.map((m) => m.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {metasFiltradas.map((meta) => (
+                  <SortableMetaCard
+                    key={meta.id}
+                    meta={meta}
+                    onEdit={() => {
+                      setEditingMeta(meta);
+                      setShowCreateDialog(true);
+                    }}
+                    onDelete={() => deleteMeta.mutate(meta.id)}
+                    onViewDetails={() => setSelectedMeta(meta)}
+                    onRecalcular={() => recalcularProgresso.mutate(meta.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
 
