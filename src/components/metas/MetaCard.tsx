@@ -133,7 +133,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
 
       {/* Título */}
       <h3 className="text-lg font-semibold mb-2">
-        {meta.tipo} - {format(new Date(meta.periodo_inicio), "MMM/yy", { locale: ptBR })}
+        {meta.nome || `${meta.tipo} - ${format(new Date(meta.periodo_inicio), "MMM/yy", { locale: ptBR })}`}
       </h3>
 
       {/* Responsável */}

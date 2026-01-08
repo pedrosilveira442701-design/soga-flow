@@ -24,6 +24,7 @@ import { Meta } from "@/hooks/useMetas";
 import { DollarSign, Hash, Percent, Calendar } from "lucide-react";
 
 const formSchema = z.object({
+  nome: z.string().optional(),
   tipo: z.string().min(1, "Selecione um tipo de meta"),
   valor_alvo: z.coerce.number().positive("O valor deve ser maior que zero"),
   periodo_inicio: z.string().min(1, "Selecione a data de início"),
@@ -59,6 +60,7 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      nome: meta?.nome || "",
       tipo: meta?.tipo || "",
       valor_alvo: meta?.valor_alvo || 0,
       periodo_inicio: meta?.periodo_inicio || "",
@@ -111,6 +113,23 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="nome"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome da Meta (Opcional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Meta de vendas Q1 2026" {...field} />
+              </FormControl>
+              <FormDescription>
+                Se não informado, será usado o tipo + período
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="tipo"

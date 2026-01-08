@@ -864,6 +864,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          nome: string | null
           observacoes: string | null
           periodo_fim: string
           periodo_inicio: string
@@ -878,6 +879,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          nome?: string | null
           observacoes?: string | null
           periodo_fim: string
           periodo_inicio: string
@@ -892,6 +894,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          nome?: string | null
           observacoes?: string | null
           periodo_fim?: string
           periodo_inicio?: string

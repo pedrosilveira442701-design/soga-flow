@@ -5,6 +5,7 @@ import { toast } from "@/hooks/use-toast";
 export interface Meta {
   id: string;
   user_id: string;
+  nome: string | null;
   tipo: string;
   valor_alvo: number;
   periodo_inicio: string;
