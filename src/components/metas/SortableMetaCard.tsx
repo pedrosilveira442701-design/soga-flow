@@ -12,21 +12,8 @@ interface SortableMetaCardProps {
   onRecalcular: () => void;
 }
 
-export function SortableMetaCard({
-  meta,
-  onEdit,
-  onDelete,
-  onViewDetails,
-  onRecalcular,
-}: SortableMetaCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: meta.id });
+export function SortableMetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }: SortableMetaCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: meta.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -43,9 +30,9 @@ export function SortableMetaCard({
         {...listeners}
         className="absolute top-3 left-3 z-10 cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted/80 transition-colors"
       >
-        <GripVertical className="h-4 w-4 text-muted-foreground" />
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
-      
+
       <div className="pl-6">
         <MetaCard
           meta={meta}
