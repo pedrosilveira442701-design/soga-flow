@@ -68,6 +68,19 @@ export const useMetas = (filters?: MetaFilters) => {
           return Math.min((total / meta.valor_alvo) * 100, 999);
         }
 
+        case 'propostas (r$)': {
+          // Soma o valor total de todas as propostas no período
+          const { data: propostas } = await supabase
+            .from('propostas')
+            .select('valor_total')
+            .eq('user_id', user_id)
+            .gte('created_at', periodo_inicio)
+            .lte('created_at', periodo_fim);
+          
+          const total = propostas?.reduce((sum, p) => sum + Number(p.valor_total || 0), 0) || 0;
+          return Math.min((total / meta.valor_alvo) * 100, 999);
+        }
+
         case 'propostas':
         case 'propostas (#)': {
           const { count } = await supabase
