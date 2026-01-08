@@ -13,6 +13,7 @@ export interface Meta {
   progresso: number;
   responsavel: string | null;
   status: string;
+  order_index: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -155,7 +156,8 @@ export const useMetas = (filters?: MetaFilters) => {
       let query = supabase
         .from('metas')
         .select('*')
-        .order('periodo_fim', { ascending: false });
+        .order('order_index', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false });
 
       // Aplicar filtros
       if (filters?.status) {
@@ -422,6 +424,35 @@ export const useMetas = (filters?: MetaFilters) => {
     },
   });
 
+  // Mutation: Reordenar metas
+  const reorderMetas = useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      const updates = orderedIds.map((id, index) => ({
+        id,
+        order_index: index,
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('metas')
+          .update({ order_index: update.order_index })
+          .eq('id', update.id);
+        
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['metas'] });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Erro ao reordenar metas",
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+  });
+
   return {
     metas,
     metasComInsights,
@@ -432,5 +463,6 @@ export const useMetas = (filters?: MetaFilters) => {
     deleteMeta,
     recalcularProgresso,
     recalcularTodas,
+    reorderMetas,
   };
 };

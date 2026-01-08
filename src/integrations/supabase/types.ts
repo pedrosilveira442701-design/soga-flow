@@ -866,6 +866,7 @@ export type Database = {
           id: string
           nome: string | null
           observacoes: string | null
+          order_index: number | null
           periodo_fim: string
           periodo_inicio: string
           progresso: number | null
@@ -881,6 +882,7 @@ export type Database = {
           id?: string
           nome?: string | null
           observacoes?: string | null
+          order_index?: number | null
           periodo_fim: string
           periodo_inicio: string
           progresso?: number | null
@@ -896,6 +898,7 @@ export type Database = {
           id?: string
           nome?: string | null
           observacoes?: string | null
+          order_index?: number | null
           periodo_fim?: string
           periodo_inicio?: string
           progresso?: number | null
