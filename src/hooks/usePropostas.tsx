@@ -243,11 +243,12 @@ export const usePropostas = () => {
   // Update propostas by lead_id
   const updatePropostasByLeadId = useMutation({
     mutationFn: async ({ leadId, status }: { leadId: string; status: string }) => {
+      // Atualiza propostas que ainda não foram finalizadas (não fechada, perdida ou repouso)
       const { data, error } = await supabase
         .from("propostas")
         .update({ status })
         .eq("lead_id", leadId)
-        .eq("status", "aberta")
+        .not("status", "in", "(fechada,perdida,repouso)")
         .select();
 
       if (error) throw error;
