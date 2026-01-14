@@ -14,7 +14,6 @@ import { useClientes } from "@/hooks/useClientes";
 import { LeadForm } from "@/components/forms/LeadForm";
 import { VisitaDetailsDialog } from "./VisitaDetailsDialog";
 import { calcularDistancia } from "@/lib/distance";
-import { useLoadScript } from "@react-google-maps/api";
 
 const TIPOS_VISITA_LABELS: Record<string, string> = {
   medicao: "Medição",
@@ -35,13 +34,11 @@ interface VisitasListViewProps {
 }
 
 // Hook para calcular distâncias
-function useDistancias(visitas: Visita[], isLoaded: boolean) {
+function useDistancias(visitas: Visita[]) {
   const [distancias, setDistancias] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!isLoaded) return;
-
     visitas.forEach(async (visita) => {
       const endereco = getEnderecoCompleto(visita);
       if (!endereco || distancias[visita.id]) return;
@@ -57,7 +54,7 @@ function useDistancias(visitas: Visita[], isLoaded: boolean) {
         setLoading((prev) => ({ ...prev, [visita.id]: false }));
       }
     });
-  }, [visitas, isLoaded]);
+  }, [visitas]);
 
   return { distancias, loading };
 }
@@ -82,14 +79,8 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   const { createLead } = useLeads();
   const { createCliente } = useClientes();
 
-  // Carregar Google Maps API
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
-    libraries: ["places"],
-  });
-
   // Hook para calcular distâncias
-  const { distancias, loading: distanciasLoading } = useDistancias(visitas, isLoaded);
+  const { distancias, loading: distanciasLoading } = useDistancias(visitas);
 
   const formatPhoneForWhatsApp = (phone: string | null): string => {
     if (!phone) return "";
