@@ -331,6 +331,8 @@ export default function Leads() {
   const handleUpdateLead = async (values: any) => {
     if (!selectedLead) return;
 
+    const previousStage = selectedLead.estagio;
+
     // Processar produtos
     const produtosProcessados = values.produtos.map((p: any) => ({
       tipo: p.tipo === "Outro" ? `Outro: ${p.tipo_outro}` : p.tipo,
@@ -340,7 +342,11 @@ export default function Leads() {
 
     // Processar origem
     let origemFinal = values.origem || null;
-    if (values.origem && (values.origem === "Indicação" || values.origem === "Outro") && values.origem_descricao) {
+    if (
+      values.origem &&
+      (values.origem === "Indicação" || values.origem === "Outro") &&
+      values.origem_descricao
+    ) {
       origemFinal = `${values.origem}: ${values.origem_descricao}`;
     }
 
@@ -358,6 +364,21 @@ export default function Leads() {
         ultima_interacao: values.ultima_interacao ? values.ultima_interacao.toISOString() : undefined,
       },
     });
+
+    // Se o estágio foi alterado via formulário, também sincronizar status das propostas
+    if (values.estagio && values.estagio !== previousStage) {
+      const stageToPropostaStatus: Record<string, string> = {
+        finalizado: "fechada",
+        repouso: "repouso",
+        perdido: "perdida",
+      };
+
+      const propostaStatus = stageToPropostaStatus[values.estagio];
+      if (propostaStatus) {
+        updatePropostasByLeadId.mutate({ leadId: selectedLead.id, status: propostaStatus });
+      }
+    }
+
     setEditDialogOpen(false);
     setDetailsOpen(false);
   };
