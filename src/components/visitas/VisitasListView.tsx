@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, MapPin, Edit, Trash2, UserPlus, ExternalLink, Loader2, Navigation, Check, Clock } from "lucide-react";
+import { Phone, MapPin, Edit, Trash2, UserRoundPlus, ExternalLink, Loader2, Navigation, Check, Clock } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Visita } from "@/hooks/useVisitas";
-import { useLeads } from "@/hooks/useLeads";
-import { useClientes } from "@/hooks/useClientes";
-import { LeadForm } from "@/components/forms/LeadForm";
+import { useClientes, type Cliente } from "@/hooks/useClientes";
+import { ClienteForm } from "@/components/forms/ClienteForm";
 import { VisitaDetailsDialog } from "./VisitaDetailsDialog";
 import { calcularDistancia } from "@/lib/distance";
 
@@ -71,12 +69,11 @@ function getEnderecoCompleto(visita: Visita): string | null {
 }
 
 export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }: VisitasListViewProps) {
-  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
-  const [visitaParaLead, setVisitaParaLead] = useState<Visita | null>(null);
+  const [clienteDialogOpen, setClienteDialogOpen] = useState(false);
+  const [visitaParaCliente, setVisitaParaCliente] = useState<Visita | null>(null);
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
-  const { createLead } = useLeads();
   const { createCliente } = useClientes();
 
   // Hook para calcular distâncias
@@ -110,55 +107,33 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
     setDetailsDialogOpen(true);
   };
 
-  const handleGerarLead = (visita: Visita) => {
-    setVisitaParaLead(visita);
-    setLeadDialogOpen(true);
+  const handleAdicionarCliente = (visita: Visita) => {
+    setVisitaParaCliente(visita);
+    setClienteDialogOpen(true);
   };
 
-  const handleLeadSubmit = async (data: any) => {
-    const clienteNome = getClienteNome(visitaParaLead!);
-    const telefone = getTelefone(visitaParaLead!);
-    const endereco = getEnderecoCompleto(visitaParaLead!);
-    
-    let clienteId = visitaParaLead?.cliente_id;
-    
-    if (!clienteId && clienteNome !== "—") {
-      try {
-        const newCliente = await createCliente.mutateAsync({
-          nome: clienteNome,
-          telefone: telefone || undefined,
-          endereco: endereco || undefined,
-          bairro: visitaParaLead?.clientes?.bairro || undefined,
-          cidade: visitaParaLead?.clientes?.cidade || undefined,
-        });
-        clienteId = newCliente.id;
-      } catch (error) {
-        console.error("Erro ao criar cliente:", error);
-      }
-    }
-
-    createLead.mutate(
-      {
-        ...data,
-        cliente_id: clienteId || data.cliente_id,
+  const handleClienteSubmit = async (data: any) => {
+    createCliente.mutate(data, {
+      onSuccess: () => {
+        setClienteDialogOpen(false);
+        setVisitaParaCliente(null);
       },
-      {
-        onSuccess: () => {
-          setLeadDialogOpen(false);
-          setVisitaParaLead(null);
-        },
-      }
-    );
+    });
   };
 
-  const getLeadDefaultValues = () => {
-    if (!visitaParaLead) return undefined;
+  const getClienteDefaultValues = (): Partial<Cliente> | undefined => {
+    if (!visitaParaCliente) return undefined;
+    
+    const clienteNome = getClienteNome(visitaParaCliente);
+    const telefone = getTelefone(visitaParaCliente);
+    const endereco = getEnderecoCompleto(visitaParaCliente);
     
     return {
-      cliente_id: visitaParaLead.cliente_id || undefined,
-      origem: "Visita" as const,
-      observacoes: `Originado da visita: ${visitaParaLead.assunto}${visitaParaLead.observacao ? `\n${visitaParaLead.observacao}` : ""}`,
-      estagio: "contato" as const,
+      nome: clienteNome !== "—" ? clienteNome : "",
+      telefone: telefone || "",
+      endereco: endereco || "",
+      bairro: visitaParaCliente.clientes?.bairro || "",
+      cidade: visitaParaCliente.clientes?.cidade || "",
     };
   };
 
@@ -315,12 +290,15 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleGerarLead(visita)}
+                                onClick={() => handleAdicionarCliente(visita)}
+                                disabled={!!visita.cliente_id}
                               >
-                                <UserPlus className="h-5 w-5" />
+                                <UserRoundPlus className="h-5 w-5" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Gerar Lead</TooltipContent>
+                            <TooltipContent>
+                              {visita.cliente_id ? "Cliente já cadastrado" : "Adicionar Cliente"}
+                            </TooltipContent>
                           </Tooltip>
 
                           <Tooltip>
@@ -371,16 +349,16 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
         onToggleRealizada={onToggleRealizada}
       />
 
-      {/* Dialog para Gerar Lead */}
-      <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
+      {/* Dialog para Adicionar Cliente */}
+      <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Gerar Lead a partir da Visita</DialogTitle>
+            <DialogTitle>Adicionar Cliente a partir da Visita</DialogTitle>
           </DialogHeader>
-          <LeadForm
-            onSubmit={handleLeadSubmit}
-            isLoading={createLead.isPending}
-            initialData={getLeadDefaultValues()}
+          <ClienteForm
+            onSubmit={handleClienteSubmit}
+            isLoading={createCliente.isPending}
+            initialData={getClienteDefaultValues() as any}
             mode="create"
           />
         </DialogContent>
