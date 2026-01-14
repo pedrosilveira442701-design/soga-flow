@@ -15,6 +15,7 @@ import { MaturacaoCardKpis } from "@/components/analytics/MaturacaoCardKpis";
 import { MaturacaoBoxplot } from "@/components/analytics/MaturacaoBoxplot";
 import { MaturacaoScatter } from "@/components/analytics/MaturacaoScatter";
 import { ChannelAnalyticsSection } from "@/components/analytics/ChannelAnalyticsSection";
+import { InconsistenciasReport } from "@/components/analytics/InconsistenciasReport";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { useMaturacaoComercial } from "@/hooks/useMaturacaoComercial";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,6 +121,9 @@ export default function Analytics() {
 
       {/* Gráficos */}
       <div className="space-y-6">
+        {/* Relatório de Inconsistências */}
+        <InconsistenciasReport />
+
         {/* Taxas de Conversão */}
         <ConversionRatesCard data={conversionRatesData} isLoading={loadingConversionRates} />
 
