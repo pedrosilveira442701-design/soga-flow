@@ -243,12 +243,26 @@ export const usePropostas = () => {
   // Update propostas by lead_id
   const updatePropostasByLeadId = useMutation({
     mutationFn: async ({ leadId, status }: { leadId: string; status: string }) => {
-      // Atualiza propostas que ainda não foram finalizadas (não fechada, perdida ou repouso)
+      // Define quais status não devem ser atualizados baseado no novo status
+      // - Se vai para "perdida": atualiza tudo exceto "fechada" (incluindo "repouso")
+      // - Se vai para "repouso": atualiza tudo exceto "fechada" ou "perdida"
+      // - Se vai para "fechada": atualiza tudo exceto já "fechada"
+      let excludeStatuses: string;
+      if (status === "perdida") {
+        excludeStatuses = "(fechada)";
+      } else if (status === "repouso") {
+        excludeStatuses = "(fechada,perdida)";
+      } else if (status === "fechada") {
+        excludeStatuses = "(fechada)";
+      } else {
+        excludeStatuses = "(fechada,perdida,repouso)";
+      }
+
       const { data, error } = await supabase
         .from("propostas")
         .update({ status })
         .eq("lead_id", leadId)
-        .not("status", "in", "(fechada,perdida,repouso)")
+        .not("status", "in", excludeStatuses)
         .select();
 
       if (error) throw error;
