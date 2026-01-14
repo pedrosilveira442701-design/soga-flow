@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, MapPin, Edit, Trash2, UserPlus, ExternalLink, Loader2, Navigation } from "lucide-react";
+import { Phone, MapPin, Edit, Trash2, UserPlus, ExternalLink, Loader2, Navigation, Check, Clock } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -284,12 +284,26 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
 
                     {/* Checkbox Realizada */}
                     <TableCell className="text-center">
-                      <Checkbox
-                        checked={visita.realizada}
-                        onCheckedChange={(checked) => 
-                          onToggleRealizada(visita.id, checked as boolean)
-                        }
-                      />
+                      <div className="flex items-center justify-center">
+                        {visita.realizada ? (
+                          <Badge 
+                            className="bg-green-500/15 text-green-700 border-green-500/30 cursor-pointer hover:bg-green-500/25 transition-colors"
+                            onClick={() => onToggleRealizada(visita.id, false)}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Sim
+                          </Badge>
+                        ) : (
+                          <Badge 
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-muted transition-colors"
+                            onClick={() => onToggleRealizada(visita.id, true)}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            Pendente
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
 
                     {/* Ações */}
@@ -303,7 +317,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                                 size="icon"
                                 onClick={() => handleGerarLead(visita)}
                               >
-                                <UserPlus className="h-4 w-4" />
+                                <UserPlus className="h-5 w-5" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Gerar Lead</TooltipContent>
@@ -316,7 +330,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                                 size="icon"
                                 onClick={() => onEdit(visita)}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-5 w-5" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Editar</TooltipContent>
@@ -329,7 +343,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                                 size="icon"
                                 onClick={() => onDelete(visita.id)}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-5 w-5 text-destructive" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>Excluir</TooltipContent>
