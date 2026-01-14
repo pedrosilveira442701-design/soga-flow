@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, MapPin, Edit, Trash2, UserRoundPlus, ExternalLink, Loader2, Navigation, Check, Clock } from "lucide-react";
+import { Phone, MapPin, Edit, Trash2, UserRoundPlus, ExternalLink, Loader2, Navigation, Check, Clock, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,9 +31,13 @@ interface VisitasListViewProps {
   onDelete: (id: string) => void;
 }
 
+type SortField = "nome" | "bairro" | "distancia" | "data" | "tipo" | "realizada" | null;
+type SortDirection = "asc" | "desc";
+
 // Hook para calcular distâncias
 function useDistancias(visitas: Visita[]) {
   const [distancias, setDistancias] = useState<Record<string, string>>({});
+  const [distanciasNum, setDistanciasNum] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -46,15 +50,17 @@ function useDistancias(visitas: Visita[]) {
       try {
         const result = await calcularDistancia(endereco);
         setDistancias((prev) => ({ ...prev, [visita.id]: result.distanceText }));
+        setDistanciasNum((prev) => ({ ...prev, [visita.id]: result.distanceKm }));
       } catch {
         setDistancias((prev) => ({ ...prev, [visita.id]: "—" }));
+        setDistanciasNum((prev) => ({ ...prev, [visita.id]: 9999 }));
       } finally {
         setLoading((prev) => ({ ...prev, [visita.id]: false }));
       }
     });
   }, [visitas]);
 
-  return { distancias, loading };
+  return { distancias, distanciasNum, loading };
 }
 
 // Helper function fora do componente
@@ -73,11 +79,75 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   const [visitaParaCliente, setVisitaParaCliente] = useState<Visita | null>(null);
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   
   const { createCliente } = useClientes();
 
   // Hook para calcular distâncias
-  const { distancias, loading: distanciasLoading } = useDistancias(visitas);
+  const { distancias, distanciasNum, loading: distanciasLoading } = useDistancias(visitas);
+
+  // Handler para ordenação
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Ícone de ordenação
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+    }
+    return sortDirection === "asc" 
+      ? <ArrowUp className="h-4 w-4 ml-1" />
+      : <ArrowDown className="h-4 w-4 ml-1" />;
+  };
+
+  // Ordenar visitas
+  const sortedVisitas = useMemo(() => {
+    if (!sortField) return visitas;
+
+    return [...visitas].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "nome":
+          const nomeA = a.clientes?.nome || a.cliente_manual_name || "";
+          const nomeB = b.clientes?.nome || b.cliente_manual_name || "";
+          comparison = nomeA.localeCompare(nomeB, "pt-BR");
+          break;
+        case "bairro":
+          const bairroA = a.clientes?.bairro || "";
+          const bairroB = b.clientes?.bairro || "";
+          comparison = bairroA.localeCompare(bairroB, "pt-BR");
+          break;
+        case "distancia":
+          const distA = distanciasNum[a.id] ?? 9999;
+          const distB = distanciasNum[b.id] ?? 9999;
+          comparison = distA - distB;
+          break;
+        case "data":
+          const dataA = a.data ? new Date(a.data).getTime() : 0;
+          const dataB = b.data ? new Date(b.data).getTime() : 0;
+          comparison = dataA - dataB;
+          break;
+        case "tipo":
+          const tipoA = TIPOS_VISITA_LABELS[a.marcacao_tipo] || a.marcacao_tipo;
+          const tipoB = TIPOS_VISITA_LABELS[b.marcacao_tipo] || b.marcacao_tipo;
+          comparison = tipoA.localeCompare(tipoB, "pt-BR");
+          break;
+        case "realizada":
+          comparison = (a.realizada ? 1 : 0) - (b.realizada ? 1 : 0);
+          break;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [visitas, sortField, sortDirection, distanciasNum]);
 
   const formatPhoneForWhatsApp = (phone: string | null): string => {
     if (!phone) return "";
@@ -143,15 +213,63 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("nome")}
+              >
+                <div className="flex items-center">
+                  Nome
+                  {getSortIcon("nome")}
+                </div>
+              </TableHead>
               <TableHead>Telefone</TableHead>
-              <TableHead>Bairro</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("bairro")}
+              >
+                <div className="flex items-center">
+                  Bairro
+                  {getSortIcon("bairro")}
+                </div>
+              </TableHead>
               <TableHead>Endereço</TableHead>
-              <TableHead>Distância</TableHead>
-              <TableHead>Data Sugerida</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("distancia")}
+              >
+                <div className="flex items-center">
+                  Distância
+                  {getSortIcon("distancia")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("data")}
+              >
+                <div className="flex items-center">
+                  Data Sugerida
+                  {getSortIcon("data")}
+                </div>
+              </TableHead>
               <TableHead>Horário</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="text-center">Realizada</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 select-none"
+                onClick={() => handleSort("tipo")}
+              >
+                <div className="flex items-center">
+                  Tipo
+                  {getSortIcon("tipo")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-muted/50 text-center select-none"
+                onClick={() => handleSort("realizada")}
+              >
+                <div className="flex items-center justify-center">
+                  Realizada
+                  {getSortIcon("realizada")}
+                </div>
+              </TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -163,7 +281,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                 </TableCell>
               </TableRow>
             ) : (
-              visitas.map((visita) => {
+              sortedVisitas.map((visita) => {
                 const telefone = getTelefone(visita);
                 const endereco = getEnderecoCompleto(visita);
                 const bairro = getBairro(visita);
