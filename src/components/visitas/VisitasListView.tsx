@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Phone, MapPin, Edit, Trash2, UserPlus, ExternalLink } from "lucide-react";
+import { Phone, MapPin, Edit, Trash2, UserPlus, ExternalLink, Loader2, Navigation } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +12,9 @@ import type { Visita } from "@/hooks/useVisitas";
 import { useLeads } from "@/hooks/useLeads";
 import { useClientes } from "@/hooks/useClientes";
 import { LeadForm } from "@/components/forms/LeadForm";
+import { VisitaDetailsDialog } from "./VisitaDetailsDialog";
+import { calcularDistancia } from "@/lib/distance";
+import { useLoadScript } from "@react-google-maps/api";
 
 const TIPOS_VISITA_LABELS: Record<string, string> = {
   medicao: "Medição",
@@ -31,12 +34,62 @@ interface VisitasListViewProps {
   onDelete: (id: string) => void;
 }
 
+// Hook para calcular distâncias
+function useDistancias(visitas: Visita[], isLoaded: boolean) {
+  const [distancias, setDistancias] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    visitas.forEach(async (visita) => {
+      const endereco = getEnderecoCompleto(visita);
+      if (!endereco || distancias[visita.id]) return;
+
+      setLoading((prev) => ({ ...prev, [visita.id]: true }));
+
+      try {
+        const result = await calcularDistancia(endereco);
+        setDistancias((prev) => ({ ...prev, [visita.id]: result.distanceText }));
+      } catch {
+        setDistancias((prev) => ({ ...prev, [visita.id]: "—" }));
+      } finally {
+        setLoading((prev) => ({ ...prev, [visita.id]: false }));
+      }
+    });
+  }, [visitas, isLoaded]);
+
+  return { distancias, loading };
+}
+
+// Helper function fora do componente
+function getEnderecoCompleto(visita: Visita): string | null {
+  if (visita.endereco) return visita.endereco;
+  const cliente = visita.clientes;
+  if (cliente?.endereco) {
+    const parts = [cliente.endereco, cliente.bairro, cliente.cidade].filter(Boolean);
+    return parts.join(", ");
+  }
+  return null;
+}
+
 export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }: VisitasListViewProps) {
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [visitaParaLead, setVisitaParaLead] = useState<Visita | null>(null);
+  const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
   const { createLead } = useLeads();
   const { createCliente } = useClientes();
+
+  // Carregar Google Maps API
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+    libraries: ["places"],
+  });
+
+  // Hook para calcular distâncias
+  const { distancias, loading: distanciasLoading } = useDistancias(visitas, isLoaded);
 
   const formatPhoneForWhatsApp = (phone: string | null): string => {
     if (!phone) return "";
@@ -57,14 +110,13 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
     return visita.telefone || visita.clientes?.telefone || null;
   };
 
-  const getEndereco = (visita: Visita): string | null => {
-    if (visita.endereco) return visita.endereco;
-    const cliente = visita.clientes;
-    if (cliente?.endereco) {
-      const parts = [cliente.endereco, cliente.bairro, cliente.cidade].filter(Boolean);
-      return parts.join(", ");
-    }
-    return null;
+  const getBairro = (visita: Visita): string | null => {
+    return visita.clientes?.bairro || null;
+  };
+
+  const handleOpenDetails = (visita: Visita) => {
+    setSelectedVisita(visita);
+    setDetailsDialogOpen(true);
   };
 
   const handleGerarLead = (visita: Visita) => {
@@ -73,14 +125,12 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   };
 
   const handleLeadSubmit = async (data: any) => {
-    // First, create the cliente if needed
     const clienteNome = getClienteNome(visitaParaLead!);
     const telefone = getTelefone(visitaParaLead!);
-    const endereco = getEndereco(visitaParaLead!);
+    const endereco = getEnderecoCompleto(visitaParaLead!);
     
     let clienteId = visitaParaLead?.cliente_id;
     
-    // If there's no cliente_id but we have manual name, create a new cliente
     if (!clienteId && clienteNome !== "—") {
       try {
         const newCliente = await createCliente.mutateAsync({
@@ -96,7 +146,6 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
       }
     }
 
-    // Create the lead
     createLead.mutate(
       {
         ...data,
@@ -130,7 +179,9 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Telefone</TableHead>
+              <TableHead>Bairro</TableHead>
               <TableHead>Endereço</TableHead>
+              <TableHead>Distância</TableHead>
               <TableHead>Data Sugerida</TableHead>
               <TableHead>Horário</TableHead>
               <TableHead>Tipo</TableHead>
@@ -141,19 +192,23 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
           <TableBody>
             {visitas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                   Nenhuma visita encontrada
                 </TableCell>
               </TableRow>
             ) : (
               visitas.map((visita) => {
                 const telefone = getTelefone(visita);
-                const endereco = getEndereco(visita);
+                const endereco = getEnderecoCompleto(visita);
+                const bairro = getBairro(visita);
                 
                 return (
                   <TableRow key={visita.id}>
-                    {/* Nome */}
-                    <TableCell className="font-medium">
+                    {/* Nome - Clicável para ver detalhes */}
+                    <TableCell 
+                      className="font-medium cursor-pointer hover:text-primary hover:underline"
+                      onClick={() => handleOpenDetails(visita)}
+                    >
                       {getClienteNome(visita)}
                     </TableCell>
 
@@ -174,6 +229,11 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                       )}
                     </TableCell>
 
+                    {/* Bairro */}
+                    <TableCell>
+                      {bairro || <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+
                     {/* Endereço com link Google Maps */}
                     <TableCell>
                       {endereco ? (
@@ -189,6 +249,20 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                         </a>
                       ) : (
                         <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+
+                    {/* Distância da Sede */}
+                    <TableCell>
+                      {distanciasLoading[visita.id] ? (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <Navigation className="h-4 w-4 text-muted-foreground" />
+                          <span>{distancias[visita.id] || "—"}</span>
+                        </div>
                       )}
                     </TableCell>
 
@@ -279,6 +353,18 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
           </TableBody>
         </Table>
       </div>
+
+      {/* Dialog para Ver Detalhes da Visita */}
+      <VisitaDetailsDialog
+        visita={selectedVisita}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        onEdit={(visita) => {
+          setDetailsDialogOpen(false);
+          onEdit(visita);
+        }}
+        onToggleRealizada={onToggleRealizada}
+      />
 
       {/* Dialog para Gerar Lead */}
       <Dialog open={leadDialogOpen} onOpenChange={setLeadDialogOpen}>
