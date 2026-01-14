@@ -50,6 +50,10 @@ const MOTIVOS_PERDA = [
   { value: "sem_resposta", label: "Sem resposta do cliente" },
   { value: "qualidade", label: "Questões de qualidade" },
   { value: "pagamento", label: "Condições de pagamento" },
+  { value: "outras_prioridades", label: "Outras prioridades" },
+  { value: "sem_dinheiro", label: "Gostou, mas não tem dinheiro" },
+  { value: "postergar", label: "Postergar por mais tempo" },
+  { value: "sem_prazo", label: "Gostou, mas não tem prazo definido" },
   { value: "outro", label: "Outro motivo" },
 ];
 
