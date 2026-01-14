@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useVisitas, Visita, VisitaFilters, VisitaStatus } from "@/hooks/useVisitas";
+import { useVisitas, Visita, VisitaFilters } from "@/hooks/useVisitas";
 import { VisitaForm } from "@/components/forms/VisitaForm";
-import { VisitaDetailsDialog } from "@/components/visitas/VisitaDetailsDialog";
-import { VisitasKanbanBoard } from "@/components/visitas/VisitasKanbanBoard";
+import { VisitasListView } from "@/components/visitas/VisitasListView";
 import { KPICard } from "@/components/kpi/KPICard";
 import { EmptyState } from "@/components/states/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,8 +30,7 @@ export default function Visitas() {
     search: "",
   });
   const [sortBy, setSortBy] = useState<"date-newest" | "date-oldest">("date-newest");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedVisita, setSelectedVisita] = useState<Visita | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -93,11 +91,6 @@ export default function Visitas() {
     }
   };
 
-  const handleViewDetails = (visita: Visita) => {
-    setSelectedVisita(visita);
-    setDetailsDialogOpen(true);
-  };
-
   const handleToggleRealizada = (id: string, realizada: boolean) => {
     marcarComoRealizada.mutate({ id, realizada });
   };
@@ -110,22 +103,6 @@ export default function Visitas() {
 
   const handleQuickFilter = (periodo: VisitaFilters["periodo"]) => {
     setFilters((prev) => ({ ...prev, periodo }));
-  };
-
-  const handleStatusChange = (visitaId: string, newStatus: VisitaStatus) => {
-    const visita = visitas.find((v) => v.id === visitaId);
-    if (!visita) return;
-
-    // Update based on new status
-    const updates: Partial<Visita> = { status: newStatus };
-
-    if (newStatus === "concluida") {
-      updates.realizada = true;
-    } else {
-      updates.realizada = false;
-    }
-
-    updateVisita.mutate({ id: visitaId, ...updates });
   };
 
   const responsaveis = Array.from(new Set(visitas.map((v) => v.responsavel).filter(Boolean))) as string[];
@@ -311,13 +288,9 @@ export default function Visitas() {
         </div>
       </Card>
 
-      {/* Kanban Board */}
+      {/* Lista de Visitas */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-[600px]" />
-          ))}
-        </div>
+        <Skeleton className="h-[400px]" />
       ) : visitas.length === 0 ? (
         <EmptyState
           icon={Calendar}
@@ -329,13 +302,11 @@ export default function Visitas() {
           }}
         />
       ) : (
-        <VisitasKanbanBoard
+        <VisitasListView
           visitas={filteredAndSortedVisitas}
-          onStatusChange={handleStatusChange}
           onEdit={handleOpenDialog}
           onToggleRealizada={handleToggleRealizada}
           onDelete={handleDelete}
-          onViewDetails={handleViewDetails}
         />
       )}
 
@@ -352,18 +323,6 @@ export default function Visitas() {
           />
         </DialogContent>
       </Dialog>
-
-      {/* Dialog de Detalhes */}
-      <VisitaDetailsDialog
-        visita={selectedVisita}
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
-        onEdit={(visita) => {
-          setDetailsDialogOpen(false);
-          handleOpenDialog(visita);
-        }}
-        onToggleRealizada={handleToggleRealizada}
-      />
     </div>
   );
 }
