@@ -25,6 +25,7 @@ const visitaFormSchema = z
     data: z.string().nullable(),
     hora: z.string().nullable(),
     endereco: z.string().optional(),
+    bairro: z.string().optional(),
     telefone: z.string().optional(),
     responsavel: z.string().optional(),
     observacao: z.string().max(500, "Máximo 500 caracteres").optional(),
@@ -186,6 +187,8 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       ...data,
       // se não tiver nada montado, mantém o que já estava em data.endereco
       endereco: enderecoCompleto || data.endereco || "",
+      // salvar bairro separadamente para exibir na coluna
+      bairro: enderecoBairro || undefined,
       // se o usuário marcou "sem data definida", garante que vai como null
       data: semDataDefinida ? null : data.data,
       hora: semDataDefinida ? null : data.hora,

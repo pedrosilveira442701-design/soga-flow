@@ -15,6 +15,7 @@ export interface Visita {
   data: string | null;
   hora: string | null;
   endereco: string | null;
+  bairro: string | null;
   telefone: string | null;
   responsavel: string | null;
   observacao: string | null;

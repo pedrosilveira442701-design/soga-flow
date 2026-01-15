@@ -169,7 +169,8 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   };
 
   const getBairro = (visita: Visita): string | null => {
-    return visita.clientes?.bairro || null;
+    // Primeiro tenta pegar o bairro salvo diretamente na visita, depois do cliente
+    return visita.bairro || visita.clientes?.bairro || null;
   };
 
   const handleOpenDetails = (visita: Visita) => {
