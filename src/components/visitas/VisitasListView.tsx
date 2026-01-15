@@ -169,8 +169,26 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   };
 
   const getBairro = (visita: Visita): string | null => {
-    // Primeiro tenta pegar o bairro salvo diretamente na visita, depois do cliente
-    return visita.bairro || visita.clientes?.bairro || null;
+    // 1. Primeiro tenta pegar o bairro salvo diretamente na visita
+    if (visita.bairro) return visita.bairro;
+    
+    // 2. Depois do cliente
+    if (visita.clientes?.bairro) return visita.clientes.bairro;
+    
+    // 3. Tentar extrair do endereço (formato: "Rua X, 123 - Bairro - Cidade/UF")
+    if (visita.endereco) {
+      const parts = visita.endereco.split(' - ');
+      // O bairro geralmente é a segunda ou terceira parte após o endereço
+      if (parts.length >= 2) {
+        // Verificar se a segunda parte é bairro (não contém "/" que indica cidade/UF)
+        const possibleBairro = parts[1]?.trim();
+        if (possibleBairro && !possibleBairro.includes('/') && !possibleBairro.match(/^\d/)) {
+          return possibleBairro;
+        }
+      }
+    }
+    
+    return null;
   };
 
   const handleOpenDetails = (visita: Visita) => {
