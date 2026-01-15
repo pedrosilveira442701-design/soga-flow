@@ -1332,6 +1332,7 @@ export type Database = {
       visitas: {
         Row: {
           assunto: string
+          bairro: string | null
           checklist: Json | null
           cliente_id: string | null
           cliente_manual_name: string | null
@@ -1356,6 +1357,7 @@ export type Database = {
         }
         Insert: {
           assunto: string
+          bairro?: string | null
           checklist?: Json | null
           cliente_id?: string | null
           cliente_manual_name?: string | null
@@ -1380,6 +1382,7 @@ export type Database = {
         }
         Update: {
           assunto?: string
+          bairro?: string | null
           checklist?: Json | null
           cliente_id?: string | null
           cliente_manual_name?: string | null
