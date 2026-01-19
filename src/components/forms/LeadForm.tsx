@@ -124,15 +124,12 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
     },
   });
 
-  // Calcular valor_potencial como soma de (medida × valor) de cada produto
+  // Calcular valor_potencial como soma dos valores totais de cada produto
   const calcularValorTotal = () => {
     const produtosAtuais = form.getValues("produtos");
     const total = produtosAtuais.reduce((acc, p) => {
-      const medida = parseFloat(p.medida || "0") || 0;
       const valor = parseFloat(p.valor || "0") || 0;
-      // Se tiver medida, multiplica; senão, usa só o valor
-      const subtotal = medida > 0 ? medida * valor : valor;
-      return acc + subtotal;
+      return acc + valor;
     }, 0);
     form.setValue("valor_potencial", total.toString());
   };
