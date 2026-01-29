@@ -1186,6 +1186,8 @@ export type Database = {
       }
       propostas: {
         Row: {
+          changed_reason: string | null
+          changed_reason_detail: string | null
           cliente_id: string
           created_at: string
           custo_m2: number
@@ -1195,12 +1197,17 @@ export type Database = {
           desconto: number | null
           forma_pagamento: string | null
           id: string
+          is_current: boolean | null
           lead_id: string | null
           liquido: number | null
           m2: number
           margem_pct: number | null
           numero_parcelas: number | null
           observacao: string | null
+          previous_version_id: string | null
+          proposal_group_id: string | null
+          replaced_at: string | null
+          replaced_by_id: string | null
           servicos: Json | null
           status: string | null
           tipo_piso: string
@@ -1209,9 +1216,12 @@ export type Database = {
           valor_entrada: number | null
           valor_m2: number
           valor_total: number | null
+          version_number: number | null
           visita_id: string | null
         }
         Insert: {
+          changed_reason?: string | null
+          changed_reason_detail?: string | null
           cliente_id: string
           created_at?: string
           custo_m2: number
@@ -1221,12 +1231,17 @@ export type Database = {
           desconto?: number | null
           forma_pagamento?: string | null
           id?: string
+          is_current?: boolean | null
           lead_id?: string | null
           liquido?: number | null
           m2: number
           margem_pct?: number | null
           numero_parcelas?: number | null
           observacao?: string | null
+          previous_version_id?: string | null
+          proposal_group_id?: string | null
+          replaced_at?: string | null
+          replaced_by_id?: string | null
           servicos?: Json | null
           status?: string | null
           tipo_piso: string
@@ -1235,9 +1250,12 @@ export type Database = {
           valor_entrada?: number | null
           valor_m2: number
           valor_total?: number | null
+          version_number?: number | null
           visita_id?: string | null
         }
         Update: {
+          changed_reason?: string | null
+          changed_reason_detail?: string | null
           cliente_id?: string
           created_at?: string
           custo_m2?: number
@@ -1247,12 +1265,17 @@ export type Database = {
           desconto?: number | null
           forma_pagamento?: string | null
           id?: string
+          is_current?: boolean | null
           lead_id?: string | null
           liquido?: number | null
           m2?: number
           margem_pct?: number | null
           numero_parcelas?: number | null
           observacao?: string | null
+          previous_version_id?: string | null
+          proposal_group_id?: string | null
+          replaced_at?: string | null
+          replaced_by_id?: string | null
           servicos?: Json | null
           status?: string | null
           tipo_piso?: string
@@ -1261,6 +1284,7 @@ export type Database = {
           valor_entrada?: number | null
           valor_m2?: number
           valor_total?: number | null
+          version_number?: number | null
           visita_id?: string | null
         }
         Relationships: [
@@ -1531,6 +1555,7 @@ export type Database = {
           valor_liquido: number | null
           valor_total: number | null
           vencimento: string | null
+          version_number: number | null
         }
         Relationships: []
       }
@@ -1581,6 +1606,8 @@ export type Database = {
         Row: {
           bairro: string | null
           canal: string | null
+          changed_reason: string | null
+          changed_reason_detail: string | null
           cidade: string | null
           cliente: string | null
           created_at: string | null
@@ -1590,16 +1617,22 @@ export type Database = {
           dias_aberta: number | null
           forma_pagamento: string | null
           id: string | null
+          is_current: boolean | null
           m2: number | null
           margem_pct: number | null
           periodo_ano: number | null
           periodo_dia: string | null
           periodo_mes: string | null
+          previous_version_id: string | null
+          proposal_group_id: string | null
+          replaced_at: string | null
+          replaced_by_id: string | null
           servico: string | null
           status: string | null
           user_id: string | null
           valor_liquido: number | null
           valor_total: number | null
+          version_number: number | null
         }
         Relationships: []
       }
