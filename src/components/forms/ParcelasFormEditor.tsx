@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, RefreshCw, Trash2, AlertCircle, Scale, Plus } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn, formatDateToLocal } from "@/lib/utils";
 
 export type ParcelaOrigem = "auto" | "manual";
@@ -312,35 +313,63 @@ export function ParcelasFormEditor({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={gerarCronograma}
-            disabled={dataInvalida || saldo <= 0}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Gerar Cronograma
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  onClick={gerarCronograma}
+                  disabled={dataInvalida || saldo <= 0}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-5 w-5" />
+                  Gerar Cronograma
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Cria as parcelas automaticamente com base nas configurações acima</p>
+              </TooltipContent>
+            </Tooltip>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleDistribuirSaldo}
-            disabled={parcelas.length === 0}
-          >
-            <Scale className="mr-2 h-4 w-4" />
-            Distribuir Saldo
-          </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDistribuirSaldo}
+                  disabled={parcelas.length === 0}
+                  className="gap-2"
+                >
+                  <Scale className="h-5 w-5" />
+                  Distribuir Saldo
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Redistribui os valores entre as parcelas automáticas</p>
+              </TooltipContent>
+            </Tooltip>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAdicionarParcela}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Parcela
-          </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAdicionarParcela}
+                  className="gap-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  Adicionar Parcela
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Adiciona uma nova parcela manual ao cronograma</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Configure os parâmetros acima e clique em "Gerar Cronograma". Depois, ajuste valores ou datas individualmente se necessário.
+          </p>
         </div>
       </div>
 
@@ -377,10 +406,10 @@ export function ParcelasFormEditor({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Valor (R$)</TableHead>
-                <TableHead className="w-20">Origem</TableHead>
+                <TableHead className="w-14 text-center">#</TableHead>
+                <TableHead className="min-w-[140px]">Vencimento</TableHead>
+                <TableHead className="min-w-[200px]">Valor</TableHead>
+                <TableHead className="w-24 text-center">Origem</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
             </TableHeader>
@@ -392,19 +421,19 @@ export function ParcelasFormEditor({
                     datasRepetidas.includes(parcela.vencimento) && "bg-destructive/10"
                   )}
                 >
-                  <TableCell className="font-medium">{parcela.numero}</TableCell>
-                  <TableCell>
+                  <TableCell className="font-medium text-center">{parcela.numero}</TableCell>
+                  <TableCell className="py-3">
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           className={cn(
-                            "h-8 justify-start px-2 font-normal",
-                            datasRepetidas.includes(parcela.vencimento) && "text-destructive"
+                            "h-9 w-full justify-start px-3 font-normal",
+                            datasRepetidas.includes(parcela.vencimento) && "border-destructive text-destructive"
                           )}
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <CalendarIcon className="mr-2 h-5 w-5" />
                           {format(new Date(parcela.vencimento + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                         </Button>
                       </PopoverTrigger>
@@ -419,17 +448,23 @@ export function ParcelasFormEditor({
                       </PopoverContent>
                     </Popover>
                   </TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      className="h-8 w-32"
-                      value={parcela.valor}
-                      onChange={(e) => handleValorChange(parcela.numero, parseFloat(e.target.value) || 0)}
-                    />
+                  <TableCell className="py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">R$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        className="h-9 w-44"
+                        value={parcela.valor}
+                        onChange={(e) => handleValorChange(parcela.numero, parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatCurrency(parcela.valor)}
+                    </p>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <Badge variant={parcela.origem === "manual" ? "default" : "secondary"}>
                       {parcela.origem === "manual" ? "Manual" : "Auto"}
                     </Badge>
@@ -439,10 +474,10 @@ export function ParcelasFormEditor({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive"
                       onClick={() => handleRemoverParcela(parcela.numero)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-5 w-5" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -477,10 +512,24 @@ export function ParcelasFormEditor({
       )}
 
       {parcelas.length === 0 && saldo > 0 && (
-        <div className="text-center p-8 border rounded-lg bg-muted/30">
-          <p className="text-muted-foreground mb-4">
-            Configure os parâmetros acima e clique em "Gerar Cronograma" para criar as parcelas.
-          </p>
+        <div className="text-center p-10 border rounded-lg bg-muted/30 space-y-4">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-muted p-4">
+              <CalendarIcon className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="font-medium text-foreground">Nenhuma parcela configurada</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Para criar o cronograma de pagamentos:
+            </p>
+            <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1 max-w-xs mx-auto text-left">
+              <li>Defina a data da primeira parcela</li>
+              <li>Escolha a quantidade de parcelas</li>
+              <li>Selecione a periodicidade (mensal, quinzenal ou semanal)</li>
+              <li>Clique em "Gerar Cronograma"</li>
+            </ol>
+          </div>
         </div>
       )}
     </div>
