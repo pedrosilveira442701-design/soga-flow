@@ -598,6 +598,7 @@ export default function Propostas() {
                 Status
                 <SortIcon column="status" />
               </TableHead>
+              <TableHead>Versão</TableHead>
               <TableHead onClick={() => handleSort("data")} className="group">
                 Data
                 <SortIcon column="data" />
@@ -608,7 +609,7 @@ export default function Propostas() {
           <TableBody>
             {sortedPropostas.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-12">
+                <TableCell colSpan={10} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <FileText className="h-12 w-12 text-muted-foreground" />
                     <p className="text-lg font-medium">Nenhuma proposta encontrada</p>
@@ -692,6 +693,13 @@ export default function Propostas() {
                       </TableCell>
                       {idx === 0 ? (
                         <TableCell rowSpan={effectiveRowSpan}>{getStatusBadge(proposta.id, proposta.status)}</TableCell>
+                      ) : null}
+                      {idx === 0 ? (
+                        <TableCell rowSpan={effectiveRowSpan}>
+                          <Badge variant="outline" className="font-mono">
+                            V{proposta.version_number || 1}
+                          </Badge>
+                        </TableCell>
                       ) : null}
                       {idx === 0 ? (
                         <TableCell rowSpan={effectiveRowSpan}>

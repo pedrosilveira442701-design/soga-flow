@@ -100,6 +100,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
+        .eq("is_current", true)
         .gte("data", startDateStr)
         .lte("data", endDateStr);
 
@@ -169,6 +170,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
+        .eq("is_current", true)
         .eq("status", "fechada")
         .gte("data", format(sixMonthsAgo, "yyyy-MM-dd"));
 
@@ -201,6 +203,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         .from("propostas")
         .select("*")
         .eq("user_id", user!.id)
+        .eq("is_current", true)
         .gte("data", prevStartDateStr)
         .lte("data", prevEndDateStr);
 
