@@ -1,285 +1,246 @@
 
-# Plano: Versionamento de Propostas
+# Plano: Correção do Versionamento de Propostas em Todos os Módulos
 
 ## Resumo Executivo
 
-Implementar um sistema de versionamento de propostas que mantém histórico completo de todas as versões, permitindo rastrear mudanças de escopo/valores ao longo do ciclo de vendas sem perder dados históricos.
+O sistema de versionamento foi implementado na Fase 1-3, mas os módulos analíticos (Dashboard, Analytics, Metas, Relatorios) ainda não filtram pela versão corrente (`is_current = true`). Isso significa que KPIs podem estar duplicando valores ao somar V1 + V2 da mesma proposta.
 
 ---
 
-## Análise do Cenário Atual
+## Diagnóstico Atual
 
-### Dados Existentes
-- 78 propostas no sistema (77 clientes distintos)
-- Distribuicao: 9 abertas, 16 fechadas, 36 perdidas, 17 em repouso
-- Propostas fechadas podem ter contratos vinculados
-
-### Problema Central
-Quando se edita uma proposta existente, o sistema sobrescreve os dados antigos, perdendo:
-- Histórico de valores/condições anteriores
-- Rastreabilidade de mudanças de escopo
-- Métricas reais de "propostas geradas" vs "retrabalho"
+| Módulo | Status | Problema |
+|--------|--------|----------|
+| `usePropostas` | OK | Já filtra `is_current = true` |
+| `vw_propostas` (view) | PENDENTE | Não filtra `is_current` |
+| `useDashboard` | PENDENTE | Consulta direta sem filtro de versão |
+| `useAnalytics` | PENDENTE | Consulta direta sem filtro de versão |
+| `useMetas` | PENDENTE | Consulta direta sem filtro de versão |
+| `useRelatorios` | PENDENTE | Usa `vw_propostas` (view) sem filtro |
 
 ---
 
-## Arquitetura Proposta
+## Fase 1: Atualizar View `vw_propostas`
 
-### Abordagem: Proposta Group + Versões Imutáveis
+**Objetivo**: A view deve retornar apenas propostas correntes por padrão.
 
-```text
-proposal_group (oportunidade)
-    ├── proposta V1 (imutável após V2)
-    ├── proposta V2 (imutável após V3)
-    └── proposta V3 (versão ativa)
-```
-
-**Por que esta abordagem?**
-- Mantém compatibilidade com contratos existentes (proposta_id continua válido)
-- Permite navegação entre versões
-- KPIs claros: V1 = nova oportunidade, V2+ = retrabalho
-- Evita duplicação excessiva de dados na mesma linha
-
----
-
-## Alterações no Banco de Dados
-
-### Novos Campos na Tabela `propostas`
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `proposal_group_id` | uuid | ID do grupo/oportunidade |
-| `version_number` | integer | Número da versão (1, 2, 3...) |
-| `previous_version_id` | uuid | Link para versão anterior |
-| `changed_reason` | text | Motivo da mudança (dropdown) |
-| `changed_reason_detail` | text | Detalhes adicionais |
-| `is_current` | boolean | Se é a versão ativa |
-| `replaced_by_id` | uuid | ID da versão que substituiu |
-| `replaced_at` | timestamptz | Data da substituição |
-
-### Nova Enum `proposal_change_reason`
-
+**Alteração SQL**:
 ```sql
-CREATE TYPE proposal_change_reason AS ENUM (
-  'mudanca_escopo',      -- Cliente alterou produtos/serviços
-  'reajuste_preco',      -- Ajuste de valores
-  'correcao_erro',       -- Correção de erro de cálculo
-  'nova_condicao',       -- Novas condições comerciais
-  'desconto_adicional',  -- Desconto negociado
-  'atualizacao_dados',   -- Dados do cliente/obra
-  'outro'                -- Outro motivo
-);
+CREATE OR REPLACE VIEW public.vw_propostas
+WITH (security_invoker = on) AS
+SELECT 
+  p.id, p.user_id, p.cliente_id, p.status, p.tipo_piso,
+  p.m2, p.valor_m2, p.custo_m2, p.valor_total, p.liquido,
+  p.margem_pct, p.desconto, p.data, p.forma_pagamento,
+  p.observacao, p.created_at, p.updated_at,
+  -- Campos de versionamento
+  p.proposal_group_id, p.version_number, p.is_current,
+  p.previous_version_id, p.replaced_by_id, p.replaced_at,
+  p.changed_reason, p.changed_reason_detail,
+  -- Campos calculados
+  c.nome AS cliente,
+  c.cidade, c.bairro,
+  l.origem AS canal,
+  s.servico,
+  (CURRENT_DATE - p.data)::integer AS dias_aberta,
+  to_char(p.data, 'YYYY-MM') AS periodo_mes,
+  p.data AS periodo_dia,
+  EXTRACT(YEAR FROM p.data)::integer AS periodo_ano
+FROM propostas p
+LEFT JOIN clientes c ON c.id = p.cliente_id
+LEFT JOIN leads l ON l.id = p.lead_id
+LEFT JOIN LATERAL (
+  SELECT string_agg(DISTINCT srv->>'tipo', ', ') AS servico
+  FROM jsonb_array_elements(p.servicos) AS srv
+) s ON true
+WHERE p.is_current = true;  -- FILTRO ADICIONADO
 ```
 
-### Migração de Dados Existentes
+**Impacto**: 
+- `useRelatorios` automaticamente passará a mostrar apenas versões correntes
+- Dashboard de Relatórios corrigido
 
-```sql
--- Propostas existentes viram V1 com group_id = id
-UPDATE propostas SET
-  proposal_group_id = id,
-  version_number = 1,
-  is_current = true
-WHERE proposal_group_id IS NULL;
+---
+
+## Fase 2: Atualizar `useDashboard`
+
+**Arquivo**: `src/hooks/useDashboard.tsx`
+
+**Alterações necessárias**:
+
+1. **Query de propostas** (linha ~75): Adicionar filtro `is_current = true`
+```typescript
+const { data: propostas = [] } = useQuery({
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("propostas")
+      .select("*")
+      .eq("user_id", user!.id)
+      .eq("is_current", true)  // ADICIONAR
+      .gte("data", startDateStr)
+      .lte("data", endDateStr);
+    // ...
+  }
+});
+```
+
+2. **Query de propostas anteriores** (linha ~160): Mesmo filtro
+```typescript
+.eq("is_current", true)
+```
+
+3. **Query de timeline** (linha ~110): Mesmo filtro
+```typescript
+.eq("is_current", true)
 ```
 
 ---
 
-## Novos Status
+## Fase 3: Atualizar `useAnalytics`
 
-Proposta de enum de status atualizado:
+**Arquivo**: `src/hooks/useAnalytics.tsx`
 
-| Status | Descrição | Pode editar? |
-|--------|-----------|--------------|
-| `aberta` | Nova proposta | Sim (cria versão) |
-| `enviada` | Enviada ao cliente | Não (criar versão) |
-| `aceita` | Cliente aceitou | Não (criar versão) |
-| `recusada` | Cliente recusou | Não (apenas consulta) |
-| `cancelada` | Cancelada internamente | Não |
-| `substituida` | Substituída por nova versão | Não |
-| `repouso` | Em espera | Não (criar versão) |
-| `fechada` | Converteu em contrato | Não |
+**Queries que precisam do filtro `is_current = true`**:
 
----
+1. **Scatter Preço x Margem** (~linha 270)
+2. **Waterfall de Margem** (~linha 337)
+3. **Performance por Responsável** - propostas query (~linha 551)
+4. **Análise por Tipo de Piso** (se existir)
+5. **Dados Geográficos** (se usar propostas)
 
-## Fluxo de Usuário
-
-### Cenário 1: Criar Nova Proposta
-1. Usuário abre formulário de nova proposta
-2. Sistema cria registro com `version_number=1`, `is_current=true`
-3. `proposal_group_id` recebe o próprio `id`
-
-### Cenário 2: Editar Proposta (Criar Nova Versão)
-1. Usuário clica em "Editar" numa proposta existente
-2. Sistema detecta se há mudança material (serviços, valores, custos, desconto)
-3. Se houver mudança material:
-   - Modal aparece pedindo "Motivo da Mudança"
-   - Sistema cria NOVA proposta com:
-     - `version_number = anterior + 1`
-     - `proposal_group_id = anterior.proposal_group_id`
-     - `previous_version_id = anterior.id`
-     - `is_current = true`
-   - Proposta anterior recebe:
-     - `is_current = false`
-     - `status = 'substituida'`
-     - `replaced_by_id = nova.id`
-     - `replaced_at = now()`
-4. Se não houver mudança material (só observações, por exemplo):
-   - Permite edição simples sem versionar
-
-### Cenário 3: Visualizar Histórico
-1. No diálogo de detalhes, aparece seção "Histórico de Versões"
-2. Lista todas as versões do mesmo `proposal_group_id`
-3. Clicar em versão anterior abre em modo read-only
+Para cada query de propostas, adicionar:
+```typescript
+.eq("is_current", true)
+```
 
 ---
 
-## Alterações no Frontend
+## Fase 4: Atualizar `useMetas`
 
-### 1. PropostaDetailsDialog
-- Exibir badge "V#" no topo
-- Nova seção "Histórico de Versões" com lista clicável
-- Botão "Criar Nova Versão (V#+1)" quando status permite
+**Arquivo**: `src/hooks/useMetas.tsx`
 
-### 2. ProposalForm
-- Novo modo: `mode = 'create' | 'edit' | 'new_version'`
-- Campo obrigatório "Motivo da Mudança" quando `mode = 'new_version'`
-- Campo opcional "Detalhes da Mudança"
-- Pré-popular com dados da versão anterior
+**Função `calcularProgressoReal`** (linhas 54-150):
 
-### 3. Página Propostas
-- Coluna "Versão" na tabela (V1, V2...)
-- Filtro para mostrar apenas versões correntes
-- Badge visual diferenciando retrabalho de nova proposta
+Para metas do tipo `propostas (r$)` e `propostas (#)`:
+```typescript
+case 'propostas (r$)': {
+  const { data: propostas } = await supabase
+    .from('propostas')
+    .select('valor_total')
+    .eq('user_id', user_id)
+    .eq('is_current', true)  // ADICIONAR
+    .gte('created_at', periodo_inicio)
+    .lte('created_at', periodo_fim);
+  // ...
+}
 
-### 4. Listagem/KPIs
-- KPI "Novas Propostas": contar apenas V1
-- KPI "Retrabalho": contar V2+
-- Gráfico de motivos de mudança mais frequentes
+case 'propostas (#)': {
+  const { count } = await supabase
+    .from('propostas')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user_id)
+    .eq('is_current', true)  // ADICIONAR
+    .gte('created_at', periodo_inicio)
+    .lte('created_at', periodo_fim);
+  // ...
+}
+
+case 'conversão (%)': {
+  const { count: totalPropostas } = await supabase
+    .from('propostas')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user_id)
+    .eq('is_current', true)  // ADICIONAR
+    .gte('created_at', periodo_inicio)
+    .lte('created_at', periodo_fim);
+  // ...
+}
+```
 
 ---
 
-## Regras de Negócio Implementadas
+## Fase 5: KPIs da Página de Propostas
 
-1. **Imutabilidade**: Versão anterior fica somente-leitura após substituição
-2. **Guardail de edição**: Proposta com status `enviada`, `aceita`, `fechada` bloqueia edição direta
-3. **Herança de contrato**: Contrato vinculado permanece na versão original
-4. **Auditoria**: `created_at` + `created_by` (user_id) registram quem criou cada versão
-5. **Navegabilidade**: `previous_version_id` e `replaced_by_id` permitem ir e voltar no histórico
+**Arquivo**: `src/pages/Propostas.tsx`
 
----
+A página já usa `usePropostas()` que filtra `is_current = true`, então os KPIs já estão corretos.
 
-## Detalhes Técnicos
-
-### Hook `usePropostas` - Novas Funções
+**Melhoria sugerida**: Adicionar coluna "Versão" na tabela:
 
 ```typescript
-// Criar nova versão
-createNewVersion: (previousId: string, data: PropostaUpdate, reason: ChangeReason) => Promise<Proposta>
+// Na tabela, adicionar coluna:
+<TableHead>Versão</TableHead>
 
-// Buscar histórico de versões
-getVersionHistory: (groupId: string) => Promise<Proposta[]>
-
-// Verificar se pode editar
-canEdit: (proposta: Proposta) => boolean
-```
-
-### Migration SQL
-
-```sql
--- 1. Criar enum de motivos
-CREATE TYPE proposal_change_reason AS ENUM (...);
-
--- 2. Adicionar colunas
-ALTER TABLE propostas ADD COLUMN proposal_group_id uuid;
-ALTER TABLE propostas ADD COLUMN version_number integer DEFAULT 1;
-ALTER TABLE propostas ADD COLUMN previous_version_id uuid REFERENCES propostas(id);
-ALTER TABLE propostas ADD COLUMN replaced_by_id uuid REFERENCES propostas(id);
-ALTER TABLE propostas ADD COLUMN replaced_at timestamptz;
-ALTER TABLE propostas ADD COLUMN changed_reason text;
-ALTER TABLE propostas ADD COLUMN changed_reason_detail text;
-ALTER TABLE propostas ADD COLUMN is_current boolean DEFAULT true;
-
--- 3. Migrar dados existentes
-UPDATE propostas SET
-  proposal_group_id = id,
-  version_number = 1,
-  is_current = true
-WHERE proposal_group_id IS NULL;
-
--- 4. Índices
-CREATE INDEX idx_propostas_group_id ON propostas(proposal_group_id);
-CREATE INDEX idx_propostas_current ON propostas(is_current) WHERE is_current = true;
+// Na célula:
+<TableCell>
+  <Badge variant="outline">V{proposta.version_number || 1}</Badge>
+</TableCell>
 ```
 
 ---
 
-## Impacto em Outras Partes do Sistema
+## Fase 6: (Opcional) KPIs Separados para V1 vs V2+
 
-### Views Analíticas
-- `vw_propostas`: Adicionar `version_number`, `proposal_group_id`
-- Filtrar por `is_current = true` em análises padrão
+Adicionar no Dashboard métricas de eficiência comercial:
 
-### Relatórios
-- Novo relatório: "Propostas Geradas vs Retrabalho"
-- Novo relatório: "Motivos de Reemissão por Período"
+```text
+┌────────────────────┬────────────────────┐
+│ Propostas Novas    │ Retrabalho         │
+│ (V1 apenas)        │ (V2+)              │
+│ R$ XXX.XXX         │ R$ XXX.XXX         │
+│ 45 propostas       │ 8 revisões         │
+└────────────────────┴────────────────────┘
+```
 
-### Contratos
-- Manter compatibilidade: `proposta_id` continua referenciando a versão específica
-- Contrato mostra "Proposta V# (de X versões)"
+**Implementação**:
+```typescript
+// Em useDashboard
+const propostasV1 = propostas.filter(p => p.version_number === 1);
+const propostasRetrabalho = propostas.filter(p => (p.version_number || 1) > 1);
 
-### Leads
-- Sincronização de status continua funcionando via `lead_id`
-
----
-
-## Fases de Implementação
-
-### Fase 1: Banco de Dados
-1. Criar migration com novos campos
-2. Executar migração de dados existentes
-3. Atualizar types.ts
-
-### Fase 2: Hook e Lógica
-1. Atualizar `usePropostas` com novas funções
-2. Implementar lógica de criação de versão
-3. Implementar verificação de mudança material
-
-### Fase 3: UI - Visualização
-1. Badge de versão no PropostaDetailsDialog
-2. Seção de histórico de versões
-3. Modo read-only para versões antigas
-
-### Fase 4: UI - Criação de Versão
-1. Modal de motivo da mudança
-2. Botão "Criar Nova Versão"
-3. ProposalForm em modo versioning
-
-### Fase 5: Listagem e KPIs
-1. Coluna versão na tabela
-2. Filtros de versão
-3. KPIs separados (V1 vs V2+)
+const kpis = {
+  // ...existentes...
+  propostasNovas: {
+    value: formatCurrency(sumV1),
+    count: propostasV1.length,
+  },
+  retrabalho: {
+    value: formatCurrency(sumRetrabalho),
+    count: propostasRetrabalho.length,
+  },
+};
+```
 
 ---
 
-## Riscos e Mitigações
+## Resumo das Alterações
 
-| Risco | Mitigação |
-|-------|-----------|
-| Performance com muitas versões | Índice em `proposal_group_id` + `is_current` |
-| Usuário confuso sobre versões | UX clara com badge V#, tooltip explicativo |
-| Dados antigos inconsistentes | Migration robusta marcando todas como V1 |
-| Contrato órfão | Contrato mantém `proposta_id` original |
+| Arquivo/Recurso | Tipo | Alteração |
+|-----------------|------|-----------|
+| `vw_propostas` | SQL Migration | Adicionar `WHERE is_current = true` |
+| `src/hooks/useDashboard.tsx` | Código | Adicionar `.eq("is_current", true)` em 4 queries |
+| `src/hooks/useAnalytics.tsx` | Código | Adicionar `.eq("is_current", true)` em 3+ queries |
+| `src/hooks/useMetas.tsx` | Código | Adicionar `.eq("is_current", true)` em 3 queries |
+| `src/pages/Propostas.tsx` | Código | Adicionar coluna "Versão" na tabela |
+
+---
+
+## Ordem de Execução
+
+1. Migração SQL para `vw_propostas` (corrige Relatórios automaticamente)
+2. Atualizar `useDashboard.tsx`
+3. Atualizar `useAnalytics.tsx`
+4. Atualizar `useMetas.tsx`
+5. Adicionar coluna Versão em `Propostas.tsx`
+6. (Opcional) Adicionar KPIs V1 vs Retrabalho
 
 ---
 
 ## Resultado Esperado
 
-**Antes:**
-- Editar = sobrescrever dados
-- Histórico perdido
-- Métricas infladas por retrabalho
-
-**Depois:**
-- Editar escopo = criar nova versão
-- Histórico completo navegável
-- Métricas precisas: V1 = nova oportunidade, V2+ = retrabalho
-- Auditoria: quem, quando, por quê
+Depois das correções:
+- KPIs do Dashboard mostrarão apenas valores da versão corrente
+- Relatórios exportados terão apenas a última versão de cada proposta
+- Metas calcularão progresso corretamente
+- Analytics não terá duplicação de dados
+- Tabela de propostas mostrará a versão (V1, V2, etc.)
