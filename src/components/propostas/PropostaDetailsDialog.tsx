@@ -40,6 +40,8 @@ import {
   ExternalLink,
   CreditCard,
   MapPin,
+  GitBranch,
+  Paperclip,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -48,7 +50,9 @@ import { ContratoForm } from "@/components/forms/ContratoForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import ArquivosList from "@/components/arquivos/ArquivosList";
-import { Paperclip } from "lucide-react";
+import VersionHistory from "@/components/propostas/VersionHistory";
+import ChangeReasonDialog from "@/components/propostas/ChangeReasonDialog";
+import { canCreateNewVersion, isReadOnly, ProposalChangeReason } from "@/lib/proposalVersioning";
 
 interface PropostaDetailsDialogProps {
   proposta: Proposta | null;
@@ -64,8 +68,15 @@ export default function PropostaDetailsDialog({
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showContratoDialog, setShowContratoDialog] = useState(false);
-  const { updateStatus, deleteProposta, updateProposta } = usePropostas();
+  const [showChangeReasonDialog, setShowChangeReasonDialog] = useState(false);
+  const [viewingHistoricVersion, setViewingHistoricVersion] = useState<Proposta | null>(null);
+  const { updateStatus, deleteProposta, updateProposta, createNewVersion, fetchVersionHistory, canVersion } = usePropostas();
   const { createContrato } = useContratos();
+
+  // Proposta a ser exibida (atual ou versão histórica)
+  const displayProposta = viewingHistoricVersion || proposta;
+  const isViewingHistoric = !!viewingHistoricVersion;
+  const canCreateVersion = proposta && canVersion(proposta);
 
   // Verificar se a proposta já tem contrato
   const { data: contratoExistente, refetch: refetchContrato } = useQuery({
@@ -93,12 +104,15 @@ export default function PropostaDetailsDialog({
 
   if (!proposta) return null;
 
-  // Calcular totais a partir dos serviços
-  const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
-    ? proposta.servicos
-    : [{ tipo: proposta.tipo_piso, m2: proposta.m2, valor_m2: proposta.valor_m2, custo_m2: proposta.custo_m2 }];
+  // Usar displayProposta para cálculos quando visualizando histórico
+  const activeProposta = displayProposta;
 
-  const desconto = proposta.desconto || 0;
+  // Calcular totais a partir dos serviços
+  const servicos = activeProposta.servicos && Array.isArray(activeProposta.servicos) && activeProposta.servicos.length > 0
+    ? activeProposta.servicos
+    : [{ tipo: activeProposta.tipo_piso, m2: activeProposta.m2, valor_m2: activeProposta.valor_m2, custo_m2: activeProposta.custo_m2 }];
+
+  const desconto = activeProposta.desconto || 0;
   const totalM2 = servicos.reduce((acc: number, s: any) => acc + (s.m2 || 0), 0);
   const totalBruto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.valor_m2 || 0)), 0);
   const totalCusto = servicos.reduce((acc: number, s: any) => acc + ((s.m2 || 0) * (s.custo_m2 || 0)), 0);
@@ -118,6 +132,11 @@ export default function PropostaDetailsDialog({
       aberta: { label: "Aberta", variant: "default" },
       fechada: { label: "Fechada", variant: "secondary" },
       perdida: { label: "Perdida", variant: "destructive" },
+      substituida: { label: "Substituída", variant: "secondary" },
+      enviada: { label: "Enviada", variant: "outline" },
+      aceita: { label: "Aceita", variant: "default" },
+      recusada: { label: "Recusada", variant: "destructive" },
+      repouso: { label: "Repouso", variant: "outline" },
     };
     const config = statusMap[status] || statusMap.aberta;
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -152,58 +171,129 @@ export default function PropostaDetailsDialog({
 
   const handleViewContrato = () => {
     if (contratoExistente?.id) {
-      // Navegar para a página de contratos e abrir o contrato específico
       window.location.href = `/contratos?id=${contratoExistente.id}`;
     }
   };
 
+  const handleCreateNewVersion = async (reason: ProposalChangeReason, detail?: string) => {
+    try {
+      await createNewVersion.mutateAsync({
+        previousId: proposta.id,
+        data: {
+          servicos: servicos.map((s: any) => ({
+            tipo: s.tipo || "",
+            tipo_outro: s.tipo_outro || "",
+            m2: s.m2 || 0,
+            valor_m2: s.valor_m2 || 0,
+            custo_m2: s.custo_m2 || 0,
+          })),
+          desconto,
+          data: proposta.data,
+          status: "aberta",
+          observacao: proposta.observacao,
+          forma_pagamento: proposta.forma_pagamento,
+        },
+        reason,
+        reasonDetail: detail,
+      });
+      setShowChangeReasonDialog(false);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao criar nova versão:", error);
+    }
+  };
+
+  const handleSelectHistoricVersion = (version: Proposta) => {
+    setViewingHistoricVersion(version);
+  };
+
+  const handleBackToCurrentVersion = () => {
+    setViewingHistoricVersion(null);
+  };
+
+  const handleDialogOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setViewingHistoricVersion(null);
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
-              <span>Detalhes da Proposta</span>
+              <div className="flex items-center gap-3">
+                <span>Detalhes da Proposta</span>
+                {/* Badge de Versão */}
+                {activeProposta.version_number && (
+                  <Badge variant="outline" className="font-mono">
+                    <GitBranch className="h-3 w-3 mr-1" />
+                    V{activeProposta.version_number}
+                  </Badge>
+                )}
+                {isViewingHistoric && (
+                  <Badge variant="secondary">Visualizando histórico</Badge>
+                )}
+              </div>
               <div className="flex items-center gap-2">
-                {getStatusBadge(proposta.status)}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-popover z-50">
-                    <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </DropdownMenuItem>
-                    {proposta.status === "aberta" && (
-                      <>
-                        <DropdownMenuItem onClick={() => handleStatusChange("fechada")}>
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Marcar como Fechada
+                {getStatusBadge(activeProposta.status)}
+                {/* Botão de voltar para versão atual */}
+                {isViewingHistoric && (
+                  <Button variant="outline" size="sm" onClick={handleBackToCurrentVersion}>
+                    Voltar para atual
+                  </Button>
+                )}
+                {/* Menu de ações (só para versão atual) */}
+                {!isViewingHistoric && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-popover z-50">
+                      {!isReadOnly(proposta.status) && (
+                        <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusChange("perdida")}>
-                          <TrendingDown className="h-4 w-4 mr-2" />
-                          Marcar como Perdida
+                      )}
+                      {canCreateVersion && (
+                        <DropdownMenuItem onClick={() => setShowChangeReasonDialog(true)}>
+                          <GitBranch className="h-4 w-4 mr-2" />
+                          Criar Nova Versão (V{(proposta.version_number || 1) + 1})
                         </DropdownMenuItem>
-                      </>
-                    )}
-                    {proposta.status !== "aberta" && (
-                      <DropdownMenuItem onClick={() => handleStatusChange("aberta")}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        Reabrir Proposta
+                      )}
+                      {proposta.status === "aberta" && (
+                        <>
+                          <DropdownMenuItem onClick={() => handleStatusChange("fechada")}>
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Marcar como Fechada
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleStatusChange("perdida")}>
+                            <TrendingDown className="h-4 w-4 mr-2" />
+                            Marcar como Perdida
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      {proposta.status !== "aberta" && !isReadOnly(proposta.status) && (
+                        <DropdownMenuItem onClick={() => handleStatusChange("aberta")}>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Reabrir Proposta
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem 
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
                       </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem 
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -428,6 +518,15 @@ export default function PropostaDetailsDialog({
               </div>
             </div>
 
+            {/* Histórico de Versões */}
+            {proposta.proposal_group_id && !isViewingHistoric && (
+              <VersionHistory
+                currentProposta={proposta}
+                fetchVersionHistory={fetchVersionHistory}
+                onSelectVersion={handleSelectHistoricVersion}
+              />
+            )}
+
             {/* Seção de Arquivos */}
             <div className="rounded-lg border p-4">
               <div className="flex items-center gap-2 mb-4">
@@ -436,14 +535,23 @@ export default function PropostaDetailsDialog({
               </div>
               <ArquivosList 
                 entidade="proposta"
-                entidadeId={proposta.id}
-                showUpload={true}
+                entidadeId={activeProposta.id}
+                showUpload={!isViewingHistoric}
                 compact={false}
               />
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Motivo da Mudança */}
+      <ChangeReasonDialog
+        open={showChangeReasonDialog}
+        onOpenChange={setShowChangeReasonDialog}
+        onConfirm={handleCreateNewVersion}
+        versionNumber={(proposta.version_number || 1) + 1}
+        isLoading={createNewVersion.isPending}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
