@@ -277,6 +277,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
           clientes!inner(nome, cidade)
         `)
         .eq("user_id", user.id)
+        .eq("is_current", true)
         .not("margem_pct", "is", null)
         .not("servicos", "is", null);
 
@@ -338,6 +339,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         .from("propostas")
         .select("valor_total, liquido, custo_m2, m2")
         .eq("user_id", user.id)
+        .eq("is_current", true)
         .not("valor_total", "is", null)
         .not("liquido", "is", null);
 
@@ -558,7 +560,8 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
           cliente_id,
           clientes!inner(nome)
         `)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("is_current", true);
 
       if (filters.startDate) {
         propostasQuery = propostasQuery.gte("data", filters.startDate.toISOString().split("T")[0]);

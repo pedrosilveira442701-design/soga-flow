@@ -71,11 +71,12 @@ export const useMetas = (filters?: MetaFilters) => {
         }
 
         case 'propostas (r$)': {
-          // Soma o valor total de todas as propostas no período
+          // Soma o valor total de todas as propostas correntes no período
           const { data: propostas } = await supabase
             .from('propostas')
             .select('valor_total')
             .eq('user_id', user_id)
+            .eq('is_current', true)
             .gte('created_at', periodo_inicio)
             .lte('created_at', periodo_fim);
           
@@ -89,6 +90,7 @@ export const useMetas = (filters?: MetaFilters) => {
             .from('propostas')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
+            .eq('is_current', true)
             .gte('created_at', periodo_inicio)
             .lte('created_at', periodo_fim);
           
@@ -101,6 +103,7 @@ export const useMetas = (filters?: MetaFilters) => {
             .from('propostas')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
+            .eq('is_current', true)
             .gte('created_at', periodo_inicio)
             .lte('created_at', periodo_fim);
 
