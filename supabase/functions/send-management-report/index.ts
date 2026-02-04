@@ -418,13 +418,31 @@ const handler = async (req: Request): Promise<Response> => {
         // ========== PROPOSTAS DATA ==========
         const { data: propostas } = await supabaseClient
           .from("propostas")
-          .select("id, status, valor_total, liquido, created_at, updated_at, cliente:clientes(nome, bairro, cidade)")
-          .eq("user_id", pref.user_id);
+          .select("id, status, valor_total, liquido, data, data_fechamento, data_perda, created_at, updated_at, cliente:clientes(nome, bairro, cidade)")
+          .eq("user_id", pref.user_id)
+          .eq("is_current", true);
 
         const propostasAbertas = (propostas || []).filter(p => p.status === "aberta");
-        const propostasFechadasMes = (propostas || []).filter(p => p.status === "fechada" && new Date(p.updated_at) >= startOfMonth);
-        const propostasFechadasAno = (propostas || []).filter(p => p.status === "fechada" && new Date(p.updated_at) >= startOfYear);
-        const propostasPerdidasMes = (propostas || []).filter(p => p.status === "perdida" && new Date(p.updated_at) >= startOfMonth);
+        
+        // Usa data_fechamento com fallback para data (data de envio)
+        const propostasFechadasMes = (propostas || []).filter(p => {
+          if (p.status !== "fechada") return false;
+          const dataFechamento = p.data_fechamento ? new Date(p.data_fechamento) : new Date(p.data);
+          return dataFechamento >= startOfMonth;
+        });
+        
+        const propostasFechadasAno = (propostas || []).filter(p => {
+          if (p.status !== "fechada") return false;
+          const dataFechamento = p.data_fechamento ? new Date(p.data_fechamento) : new Date(p.data);
+          return dataFechamento >= startOfYear;
+        });
+        
+        // Usa data_perda com fallback para data
+        const propostasPerdidasMes = (propostas || []).filter(p => {
+          if (p.status !== "perdida") return false;
+          const dataPerda = p.data_perda ? new Date(p.data_perda) : new Date(p.data);
+          return dataPerda >= startOfMonth;
+        });
         const propostasRepouso = (propostas || []).filter(p => p.status === "repouso");
 
         const valorPropostasAbertas = propostasAbertas.reduce((sum, p) => sum + (p.valor_total || 0), 0);
