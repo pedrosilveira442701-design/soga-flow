@@ -129,21 +129,21 @@ export function Topbar() {
   return (
     <header
       className={cn(
-        "fixed top-0 w-full z-50 h-16 flex items-center px-4 transition-all duration-200",
+        "fixed top-0 w-full z-50 h-[72px] flex items-center px-6 transition-all duration-200",
         "backdrop-blur-xl border-b",
         "bg-card/70 dark:bg-card/50 border-border/50 dark:border-border/30",
         scrolled && "shadow-[var(--shadow-elev2)] bg-card/85 dark:bg-card/65"
       )}
     >
       {/* Left: Logo */}
-      <NavLink to="/" className="flex items-center gap-2.5 mr-6 shrink-0">
-        <img src={logoImage} alt="Só Garagens" className="h-8 w-8 object-contain" />
-        <span className="text-sm font-semibold text-foreground hidden lg:inline">Só Garagens</span>
+      <NavLink to="/" className="flex items-center gap-3 mr-8 shrink-0">
+        <img src={logoImage} alt="Só Garagens" className="h-9 w-9 object-contain" />
+        <span className="text-base font-semibold text-foreground hidden lg:inline">Só Garagens</span>
       </NavLink>
 
       {/* Center: Navigation */}
       <NavigationMenu className="flex-1 hidden md:flex">
-        <NavigationMenuList className="gap-0.5">
+        <NavigationMenuList className="gap-1">
           {/* Dashboard direct link */}
           {directLinks.map((item) => {
             const isActive = location.pathname === item.url;
@@ -152,15 +152,15 @@ export function Topbar() {
                 <NavLink
                   to={item.url}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors relative",
+                    "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors relative",
                     "hover:bg-accent/50 hover:text-accent-foreground",
                     isActive && "text-primary bg-primary/10"
                   )}
                 >
-                  <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                  <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
                   <span className="hidden lg:inline">{item.title}</span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
                   )}
                 </NavLink>
               </NavigationMenuItem>
@@ -175,19 +175,19 @@ export function Topbar() {
               <NavigationMenuItem key={group.label}>
                 <NavigationMenuTrigger
                   className={cn(
-                    "h-9 px-3 text-sm font-medium bg-transparent hover:bg-accent/50 data-[state=open]:bg-accent/50 relative",
+                    "h-10 px-4 text-sm font-medium bg-transparent hover:bg-accent/50 data-[state=open]:bg-accent/50 rounded-lg relative",
                     active && "text-primary"
                   )}
                 >
                   <span>{group.label}</span>
                   {groupHasBadge && (
-                    <span className="ml-1 h-1.5 w-1.5 rounded-full bg-destructive inline-block" />
+                    <span className="ml-1.5 h-2 w-2 rounded-full bg-destructive inline-block" />
                   )}
                   {active && (
-                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
                   )}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="backdrop-blur-xl bg-card/90 dark:bg-card/80 border border-border/50 rounded-lg p-2 min-w-[200px]">
+                <NavigationMenuContent className="backdrop-blur-xl bg-card/95 dark:bg-card/90 border border-border/50 rounded-xl p-2.5 min-w-[220px] shadow-lg">
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.url;
@@ -197,12 +197,12 @@ export function Topbar() {
                           <NavLink
                             to={item.url}
                             className={cn(
-                              "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
+                              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
                               "hover:bg-accent/50",
                               isActive && "bg-primary/10 text-primary font-medium"
                             )}
                           >
-                            <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                            <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
                             <span className="flex-1">{item.title}</span>
                             {badge && (
                               <Badge variant={badge.variant} className="h-5 min-w-[20px] px-1.5 text-xs">
@@ -227,15 +227,15 @@ export function Topbar() {
                 <NavLink
                   to={item.url}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-md transition-colors relative",
+                    "inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors relative",
                     "hover:bg-accent/50 hover:text-accent-foreground",
                     isActive && "text-primary bg-primary/10"
                   )}
                 >
-                  <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                  <item.icon className="h-5 w-5" strokeWidth={isActive ? 2 : 1.5} />
                   <span className="hidden lg:inline">{item.title}</span>
                   {isActive && (
-                    <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
                   )}
                 </NavLink>
               </NavigationMenuItem>
@@ -245,10 +245,12 @@ export function Topbar() {
       </NavigationMenu>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-1 ml-auto shrink-0">
+      <div className="flex items-center gap-2 ml-auto shrink-0">
         <SearchCommand />
         <NotificationBell />
-        <UserMenu />
+        <div className="ml-1">
+          <UserMenu />
+        </div>
       </div>
     </header>
   );
