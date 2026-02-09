@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -9,6 +8,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Users,
@@ -21,18 +21,24 @@ import {
   FolderOpen,
   BarChart3,
   Search,
+  Building2,
+  StickyNote,
+  FileBarChart,
 } from "lucide-react";
 
 const menuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Leads", url: "/leads", icon: Target },
   { title: "Propostas", url: "/propostas", icon: FileText },
   { title: "Contratos", url: "/contratos", icon: FileCheck },
+  { title: "Obras", url: "/obras", icon: Building2 },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Metas", url: "/metas", icon: TrendingUp },
   { title: "Visitas", url: "/visitas", icon: Calendar },
+  { title: "Anotações", url: "/anotacoes", icon: StickyNote },
   { title: "Arquivos", url: "/arquivos", icon: FolderOpen },
 ];
 
@@ -59,16 +65,14 @@ export function SearchCommand() {
 
   return (
     <>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-muted-foreground bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+        className="h-9 w-9"
       >
         <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Buscar...</span>
-        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
+      </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Buscar páginas..." />
         <CommandList>
