@@ -23,8 +23,8 @@ const PRESETS: Record<CenarioPreset, { vol: number; conv: number; tick: number }
   agressivo: { vol: 1.2, conv: 1.1, tick: 1.1 },
 };
 
-function fmtBRL(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+function fmtBRL(v: number | undefined | null) {
+  return (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 function fmtPct(v: number) {
   return `${(v * 100).toFixed(1)}%`;
