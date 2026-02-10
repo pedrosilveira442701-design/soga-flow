@@ -1,14 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, subMonths, addMonths } from "date-fns";
+import { format, subMonths, addMonths, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+// ─── Interfaces ───────────────────────────────────────────────
 
 export interface ForecastPageParams {
   horizonte: 3 | 6 | 12;
-  volumeAjuste: number;
-  conversaoAjuste: number;
-  ticketAjuste: number;
+  /** R$ adicionais em propostas/mês que o usuário planeja gerar */
+  valorAdicionalMensal: number;
+  /** Conversão marginal (%) que o usuário espera para novas propostas */
+  conversaoMarginal: number;
+  /** Ticket médio esperado (R$) para novas propostas */
+  ticketMarginal: number;
 }
 
 export interface BaseStats {
@@ -18,25 +23,38 @@ export interface BaseStats {
   ticketReal: number;
   receitaMediaMensal: number;
   numContratos12m: number;
-  volumeEnviadoMensal: number; // media mensal em R$ de propostas enviadas
+  volumeEnviadoMensal: number;
+  tempoMedioFechamentoDias: number;
   amostraPequena: boolean;
 }
 
-export interface CenarioEfetivo {
-  receitaBase: number;       // receita_media_mensal
-  volumeMensal: number;      // volume enviado mensal ajustado (R$)
-  conversao: number;         // conversão financeira ajustada
-  ticket: number;            // ticket médio ajustado
+export interface PipelineItem {
+  id: string;
+  valorTotal: number;
+  status: string;
+  estagio: string | null;
+  probabilidade: number;
+  valorPonderado: number;
+  diasAberta: number;
+}
+
+export interface PipelineResumo {
+  valorBruto: number;
+  valorPonderado: number;
+  qtdPropostas: number;
+  porEstagio: Record<string, { valor: number; ponderado: number; qtd: number }>;
 }
 
 export interface ForecastMensal {
   mes: string;
   mesKey: string;
-  forecast: number;
+  forecastBase: number;
+  forecastIncremental: number;
+  forecastTotal: number;
   meta: number;
   gap: number;
-  acaoNecessariaRS: number;       // gap em R$ de propostas adicionais
-  propostasEquivalentes: number;  // info secundária: gap / (ticket * conversao)
+  acaoNecessariaRS: number;
+  pctPipelineNoForecast: number;
 }
 
 export interface VolumeHistorico {
@@ -62,16 +80,39 @@ export interface Insight {
   level: InsightLevel;
 }
 
+// ─── Probabilidades por estágio do lead (calculadas historicamente, hardcoded como fallback) ───
+
+const PROBABILIDADE_ESTAGIO: Record<string, number> = {
+  contato: 0.05,
+  visita_agendada: 0.15,
+  visita_realizada: 0.25,
+  proposta_pendente: 0.35,
+  proposta: 0.50,
+  contrato: 0.85,
+  execucao: 0.95,
+  finalizado: 1.0,
+};
+
+// Propostas abertas sem lead ou com estágio desconhecido: probabilidade baseada no status
+const PROBABILIDADE_STATUS: Record<string, number> = {
+  aberta: 0.35,
+  fechada: 1.0,
+  perdida: 0,
+  repouso: 0.05,
+};
+
+// ─── Hook principal ───────────────────────────────────────────
+
 export function useForecastPage(params: ForecastPageParams) {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: [
-      "forecast-page",
+      "forecast-page-v2",
       params.horizonte,
-      params.volumeAjuste,
-      params.conversaoAjuste,
-      params.ticketAjuste,
+      params.valorAdicionalMensal,
+      params.conversaoMarginal,
+      params.ticketMarginal,
       user?.id,
     ],
     queryFn: async () => {
@@ -81,33 +122,52 @@ export function useForecastPage(params: ForecastPageParams) {
       const dataLimite12m = subMonths(agora, 12);
       const dataLimite12mStr = format(dataLimite12m, "yyyy-MM-dd");
 
-      // Fetch all data in parallel
-      const [contratosRes, enviadasRes, metasRes] = await Promise.all([
+      // ─── Fetch all data in parallel ────────────────────────
+      const [contratosRes, enviadasRes, abertasRes, metasRes, leadsRes] = await Promise.all([
+        // Contratos com proposta vinculada (fonte de verdade de fechamento)
         supabase
           .from("contratos")
           .select("proposta_id, created_at, data_inicio, valor_negociado")
           .eq("user_id", user.id)
           .not("proposta_id", "is", null),
+        // Propostas enviadas nos últimos 12m (is_current)
         supabase
           .from("propostas")
-          .select("id, data, is_current, data_fechamento, valor_total")
+          .select("id, data, is_current, data_fechamento, valor_total, status")
           .eq("user_id", user.id)
           .eq("is_current", true)
           .gte("data", dataLimite12mStr),
+        // Propostas abertas (pipeline atual — sem filtro de período)
+        supabase
+          .from("propostas")
+          .select("id, data, valor_total, status, lead_id")
+          .eq("user_id", user.id)
+          .eq("is_current", true)
+          .eq("status", "aberta"),
+        // Metas ativas de receita/vendas
         supabase
           .from("metas")
           .select("id, nome, tipo, valor_alvo, periodo_inicio, periodo_fim, status")
           .eq("user_id", user.id)
           .eq("status", "ativa"),
+        // Leads para obter estágio das propostas abertas
+        supabase
+          .from("leads")
+          .select("id, estagio")
+          .eq("user_id", user.id),
       ]);
 
       if (contratosRes.error) throw contratosRes.error;
       if (enviadasRes.error) throw enviadasRes.error;
+      if (abertasRes.error) throw abertasRes.error;
       if (metasRes.error) throw metasRes.error;
+      if (leadsRes.error) throw leadsRes.error;
 
       const contratos = contratosRes.data || [];
       const enviadas12m = enviadasRes.data || [];
+      const abertas = abertasRes.data || [];
       const todasMetas = (metasRes.data || []) as MetaAtiva[];
+      const leads = leadsRes.data || [];
 
       const metasAtivas = todasMetas.filter((m) =>
         ["vendas", "vendas (r$)", "receita"].some(
@@ -115,7 +175,11 @@ export function useForecastPage(params: ForecastPageParams) {
         )
       );
 
-      // Build proposal map for contracts
+      // Lead map: lead_id -> estagio
+      const leadMap = new Map<string, string>();
+      leads.forEach((l) => leadMap.set(l.id, l.estagio));
+
+      // ─── Build proposal map for contracts ──────────────────
       const propostaIds = contratos.map((c) => c.proposta_id).filter(Boolean) as string[];
       const propostasMap = new Map<string, { data: string; data_fechamento: string | null; valor_total: number | null }>();
 
@@ -130,7 +194,7 @@ export function useForecastPage(params: ForecastPageParams) {
         );
       }
 
-      // Build closing records within 12m window
+      // ─── Fechamentos 12m ───────────────────────────────────
       const fechamentos12m = contratos
         .map((c) => {
           const prop = propostasMap.get(c.proposta_id!);
@@ -140,11 +204,13 @@ export function useForecastPage(params: ForecastPageParams) {
           if (closeDate < dataLimite12m) return null;
           const valor = Number(c.valor_negociado || prop.valor_total || 0);
           const mesKey = format(closeDate, "yyyy-MM");
-          return { valor, mesKey };
+          const dataEnvio = new Date(prop.data);
+          const diasFechamento = Math.max(differenceInDays(closeDate, dataEnvio), 0);
+          return { valor, mesKey, diasFechamento };
         })
-        .filter(Boolean) as { valor: number; mesKey: string }[];
+        .filter(Boolean) as { valor: number; mesKey: string; diasFechamento: number }[];
 
-      // === Financial metrics (all in R$) ===
+      // ─── Métricas financeiras base (12m) ───────────────────
       const valorEnviado12m = enviadas12m.reduce((s, p) => s + Number(p.valor_total || 0), 0);
       const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
       const numContratos12m = fechamentos12m.length;
@@ -152,6 +218,9 @@ export function useForecastPage(params: ForecastPageParams) {
       const ticketReal = numContratos12m > 0 ? valorFechado12m / numContratos12m : 0;
       const receitaMediaMensal = valorFechado12m / 12;
       const volumeEnviadoMensal = valorEnviado12m / 12;
+      const tempoMedioFechamentoDias = fechamentos12m.length > 0
+        ? Math.round(fechamentos12m.reduce((s, f) => s + f.diasFechamento, 0) / fechamentos12m.length)
+        : 45; // fallback 45 dias
 
       const baseStats: BaseStats = {
         valorEnviado12m,
@@ -161,21 +230,49 @@ export function useForecastPage(params: ForecastPageParams) {
         receitaMediaMensal,
         numContratos12m,
         volumeEnviadoMensal,
+        tempoMedioFechamentoDias,
         amostraPequena: numContratos12m < 10,
       };
 
-      // Effective scenario
-      const cenario: CenarioEfetivo = {
-        receitaBase: receitaMediaMensal,
-        volumeMensal: volumeEnviadoMensal * params.volumeAjuste,
-        conversao: conversaoFinanceira * params.conversaoAjuste,
-        ticket: ticketReal * params.ticketAjuste,
+      // ─── Pipeline atual (propostas abertas com probabilidade) ──
+      const pipelineItems: PipelineItem[] = abertas.map((p) => {
+        const estagio = p.lead_id ? (leadMap.get(p.lead_id) || null) : null;
+        const probabilidade = estagio
+          ? (PROBABILIDADE_ESTAGIO[estagio] ?? PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35)
+          : (PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35);
+        const valorTotal = Number(p.valor_total || 0);
+        const diasAberta = differenceInDays(agora, new Date(p.data));
+
+        return {
+          id: p.id,
+          valorTotal,
+          status: p.status || "aberta",
+          estagio,
+          probabilidade,
+          valorPonderado: valorTotal * probabilidade,
+          diasAberta,
+        };
+      });
+
+      // Pipeline resumo
+      const pipeline: PipelineResumo = {
+        valorBruto: pipelineItems.reduce((s, p) => s + p.valorTotal, 0),
+        valorPonderado: pipelineItems.reduce((s, p) => s + p.valorPonderado, 0),
+        qtdPropostas: pipelineItems.length,
+        porEstagio: {},
       };
 
-      // Forecast formula: receita_media_mensal * fator_volume * fator_conversao * fator_ticket
-      const forecastValue = receitaMediaMensal * params.volumeAjuste * params.conversaoAjuste * params.ticketAjuste;
+      pipelineItems.forEach((p) => {
+        const key = p.estagio || "sem_lead";
+        if (!pipeline.porEstagio[key]) {
+          pipeline.porEstagio[key] = { valor: 0, ponderado: 0, qtd: 0 };
+        }
+        pipeline.porEstagio[key].valor += p.valorTotal;
+        pipeline.porEstagio[key].ponderado += p.valorPonderado;
+        pipeline.porEstagio[key].qtd += 1;
+      });
 
-      // Get meta for a given month
+      // ─── Get meta for a given month ────────────────────────
       function getMetaMensal(mesKey: string): number {
         let total = 0;
         for (const m of metasAtivas) {
@@ -194,33 +291,68 @@ export function useForecastPage(params: ForecastPageParams) {
         return total;
       }
 
-      // Build forecast mensal
+      // ─── Distribuir pipeline ao longo dos meses ────────────
+      // Distribui o valor ponderado do pipeline baseado no tempo médio de fechamento
+      // menos os dias já decorridos desde o envio da proposta
+      const pipelinePorMes = new Map<string, number>();
+
+      pipelineItems.forEach((p) => {
+        // Estima em quantos dias essa proposta deve fechar
+        const diasRestantes = Math.max(0, tempoMedioFechamentoDias - p.diasAberta);
+        const dataEstimadaFechamento = new Date(agora);
+        dataEstimadaFechamento.setDate(dataEstimadaFechamento.getDate() + diasRestantes);
+        const mesKey = format(dataEstimadaFechamento, "yyyy-MM");
+
+        pipelinePorMes.set(mesKey, (pipelinePorMes.get(mesKey) || 0) + p.valorPonderado);
+      });
+
+      // ─── Build forecast mensal ─────────────────────────────
       const forecastMensal: ForecastMensal[] = [];
+
       for (let i = 0; i < params.horizonte; i++) {
         const mesDate = addMonths(agora, i);
         const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
         const meta = getMetaMensal(mesKey);
-        const gap = Math.max(0, meta - forecastValue);
-        // Ação necessária em R$: quanto precisa enviar a mais em propostas
-        // gap = acaoRS * conversaoFinanceira => acaoRS = gap / conversaoFinanceira
-        const acaoNecessariaRS = cenario.conversao > 0 ? gap / cenario.conversao : 0;
-        const propostasEquivalentes =
-          cenario.ticket > 0 && cenario.conversao > 0
-            ? Math.ceil(gap / (cenario.ticket * cenario.conversao))
-            : 0;
+
+        // Forecast base = receita média mensal + receita esperada do pipeline para este mês
+        const receitaPipeline = pipelinePorMes.get(mesKey) || 0;
+        const forecastBase = receitaMediaMensal + receitaPipeline;
+
+        // Receita incremental = valor adicional em propostas × conversão marginal
+        // Aplica delay: novas propostas geradas agora só fecham após tempoMedioFechamentoDias
+        const mesesDeDelay = Math.ceil(tempoMedioFechamentoDias / 30);
+        const forecastIncremental = i >= mesesDeDelay
+          ? params.valorAdicionalMensal * params.conversaoMarginal
+          : 0;
+
+        const forecastTotal = forecastBase + forecastIncremental;
+        const gap = Math.max(0, meta - forecastTotal);
+
+        // Quanto preciso gerar em propostas adicionais para cobrir o gap
+        const acaoNecessariaRS = params.conversaoMarginal > 0
+          ? gap / params.conversaoMarginal
+          : 0;
+
+        // % do forecast que vem do pipeline
+        const pctPipelineNoForecast = forecastTotal > 0
+          ? (receitaPipeline / forecastTotal) * 100
+          : 0;
+
         forecastMensal.push({
           mes: mesLabel,
           mesKey,
-          forecast: Math.round(forecastValue),
+          forecastBase: Math.round(forecastBase),
+          forecastIncremental: Math.round(forecastIncremental),
+          forecastTotal: Math.round(forecastTotal),
           meta: Math.round(meta),
           gap: Math.round(gap),
           acaoNecessariaRS: Math.round(acaoNecessariaRS),
-          propostasEquivalentes,
+          pctPipelineNoForecast: parseFloat(pctPipelineNoForecast.toFixed(1)),
         });
       }
 
-      // Volume histórico mensal (financial)
+      // ─── Volume histórico mensal ───────────────────────────
       const volumeHistorico: VolumeHistorico[] = [];
       for (let i = 11; i >= 0; i--) {
         const mesDate = subMonths(agora, i);
@@ -240,64 +372,76 @@ export function useForecastPage(params: ForecastPageParams) {
         });
       }
 
-      // Insights engine (deterministic, R$-based)
+      // ─── Insights engine ───────────────────────────────────
       const insights: Insight[] = [];
       const mesAtual = forecastMensal[0];
 
       if (baseStats.amostraPequena) {
         insights.push({
-          text: `Dados insuficientes para previsão confiável (apenas ${numContratos12m} contratos em 12 meses)`,
+          text: `Dados limitados: apenas ${numContratos12m} contratos em 12 meses. Previsões podem ter margem de erro elevada.`,
           level: "muted",
         });
       }
 
+      // "Mantendo o ritmo atual, este mês fecha em R$ X"
+      if (mesAtual && mesAtual.forecastTotal > 0) {
+        insights.push({
+          text: `Mantendo o ritmo atual, este mês fecha em R$ ${mesAtual.forecastTotal.toLocaleString("pt-BR")}`,
+          level: mesAtual.forecastTotal >= mesAtual.meta ? "success" : "muted",
+        });
+      }
+
+      // Pipeline insight
+      if (mesAtual && pipeline.valorPonderado > 0) {
+        const pctPipeline = mesAtual.forecastTotal > 0
+          ? ((pipeline.valorPonderado / mesAtual.forecastTotal) * 100).toFixed(0)
+          : "0";
+        insights.push({
+          text: `R$ ${pipeline.valorPonderado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} do seu forecast já está no pipeline atual (${pctPipeline}% da projeção)`,
+          level: "success",
+        });
+      }
+
+      // Gap & ação
       if (mesAtual && mesAtual.meta > 0) {
-        if (mesAtual.forecast >= mesAtual.meta) {
+        if (mesAtual.forecastTotal >= mesAtual.meta) {
           insights.push({ text: "Você está no caminho para bater a meta deste mês", level: "success" });
         } else {
           const acaoRS = mesAtual.acaoNecessariaRS;
-          const equiv = mesAtual.propostasEquivalentes;
+          const equiv = ticketReal > 0 ? Math.ceil(acaoRS / ticketReal) : 0;
           insights.push({
-            text: `Para bater a meta, precisa gerar +R$ ${acaoRS.toLocaleString("pt-BR")} em propostas (≈ ${equiv} propostas)`,
+            text: `Para bater a meta, é necessário gerar +R$ ${acaoRS.toLocaleString("pt-BR")} em novas propostas (≈ ${equiv} propostas)`,
             level: "warning",
           });
         }
       }
 
-      // Compare forecast vs 12m average
-      if (receitaMediaMensal > 0 && mesAtual) {
-        const delta = ((mesAtual.forecast - receitaMediaMensal) / receitaMediaMensal) * 100;
-        if (Math.abs(delta) > 5) {
-          insights.push({
-            text: `Forecast está ${delta > 0 ? "+" : ""}${delta.toFixed(0)}% ${delta > 0 ? "acima" : "abaixo"} da média dos últimos 12 meses`,
-            level: delta > 0 ? "success" : "warning",
-          });
+      // Gargalo detection
+      if (conversaoFinanceira > 0 && ticketReal > 0 && volumeEnviadoMensal > 0) {
+        // Qual alavanca teria mais impacto: +20% volume vs +20% conversão vs +20% ticket
+        const impactoVolume = receitaMediaMensal * 0.2; // mais volume = mais receita base
+        const impactoConversao = volumeEnviadoMensal * 0.2 * conversaoFinanceira; // mais conv sobre volume existente
+        const impactoTicket = receitaMediaMensal * 0.2; // mais ticket sobre contratos existentes
+
+        const min = Math.min(impactoVolume, impactoConversao, impactoTicket);
+        if (conversaoFinanceira < 0.15) {
+          insights.push({ text: `Seu gargalo principal hoje é a conversão financeira (${(conversaoFinanceira * 100).toFixed(1)}%). Melhore a qualidade das propostas ou o processo de follow-up.`, level: "destructive" });
+        } else if (volumeEnviadoMensal < ticketReal * 2) {
+          insights.push({ text: `Seu gargalo principal hoje é o volume de propostas enviadas (R$ ${volumeEnviadoMensal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}/mês). Gerar mais demanda é prioridade.`, level: "destructive" });
+        } else if (min === impactoTicket) {
+          insights.push({ text: `Aumente o ticket médio (atual: R$ ${ticketReal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}). Projetos maiores trazem mais retorno por esforço.`, level: "warning" });
         }
       }
 
-      // Bottleneck detection: which factor is dragging the most
-      const volFactor = params.volumeAjuste;
-      const convFactor = params.conversaoAjuste;
-      const tickFactor = params.ticketAjuste;
-      const minFactor = Math.min(volFactor, convFactor, tickFactor);
-      if (minFactor < 0.8) {
-        if (minFactor === volFactor) {
-          insights.push({ text: "Seu principal gargalo hoje é o volume de propostas enviadas", level: "destructive" });
-        } else if (minFactor === convFactor) {
-          insights.push({ text: "Seu principal gargalo hoje é a conversão financeira", level: "destructive" });
-        } else {
-          insights.push({ text: "Seu principal gargalo hoje é o ticket médio", level: "destructive" });
-        }
-      }
-
-      if (mesAtual && mesAtual.forecast > 0) {
+      // Tempo médio
+      if (tempoMedioFechamentoDias > 0) {
         insights.push({
-          text: `Mantendo o cenário atual, o mês fecha em R$ ${mesAtual.forecast.toLocaleString("pt-BR")}`,
+          text: `Tempo médio de fechamento: ${tempoMedioFechamentoDias} dias. Novas propostas só impactam o faturamento após esse período.`,
           level: "muted",
         });
       }
 
-      return { baseStats, cenario, forecastMensal, volumeHistorico, metasAtivas, insights };
+      return { baseStats, pipeline, forecastMensal, volumeHistorico, metasAtivas, insights };
     },
     enabled: !!user,
   });
