@@ -86,6 +86,7 @@ const dropdownGroups = [
     label: "Análise",
     items: [
       { title: "Analytics", url: "/analytics", icon: BarChart3 },
+      { title: "Forecast", url: "/forecast", icon: TrendingUp },
       { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
     ],
   },
