@@ -1,32 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, subMonths, addMonths, addDays, differenceInDays } from "date-fns";
+import { format, subMonths, addMonths, differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// ─────────────────────────────────────────────────────────────
-// Interfaces
-// ─────────────────────────────────────────────────────────────
+// ─── Interfaces ───────────────────────────────────────────────
 
 export interface ForecastPageParams {
   horizonte: 3 | 6 | 12;
   /** R$ adicionais em propostas/mês que o usuário planeja gerar */
   valorAdicionalMensal: number;
-  /** Conversão marginal (%) que o usuário espera para novas propostas (ex: 0.3 ou 30) */
+  /** Conversão marginal (%) que o usuário espera para novas propostas (0..1) */
   conversaoMarginal: number;
-  /** Ticket médio esperado (R$) para novas propostas (usado para equivalência em "qtd propostas") */
+  /** Ticket médio esperado (R$) para novas propostas */
   ticketMarginal: number;
 }
 
 export interface BaseStats {
   valorEnviado12m: number;
   valorFechado12m: number;
-  conversaoFinanceira: number; // valorFechado/valorEnviado
-  ticketReal: number; // valorFechado/numContratos
-  receitaMediaMensal: number; // valorFechado/12
+  conversaoFinanceira: number;
+  ticketReal: number;
+  receitaMediaMensal: number;
   numContratos12m: number;
-  volumeEnviadoMensal: number; // valorEnviado/12
-  tempoMedioFechamentoDias: number; // mediana (P50) dos dias
+  volumeEnviadoMensal: number;
+  tempoMedioFechamentoDias: number; // P50 recomendado
   amostraPequena: boolean;
 }
 
@@ -47,6 +45,34 @@ export interface PipelineResumo {
   porEstagio: Record<string, { valor: number; ponderado: number; qtd: number }>;
 }
 
+export interface ForecastMensal {
+  mes: string;
+  mesKey: string;
+
+  // 3 séries separadas (para não ficar “valor fixo repetido”)
+  baseline: number;
+  pipelineAlloc: number;
+  incrementalAlloc: number;
+
+  forecastTotal: number;
+
+  // metas
+  metaReceita: number;
+  metaPropostasRS: number;
+  metaByTipo: Record<string, number>;
+
+  gapReceita: number;
+  acaoNecessariaRS: number;
+  propostasEquiv: number;
+}
+
+export interface VolumeHistorico {
+  mes: string;
+  valorEnviado: number;
+  valorFechado: number;
+  conversaoFinanceira: number;
+}
+
 export interface MetaAtiva {
   id: string;
   nome: string | null;
@@ -57,48 +83,6 @@ export interface MetaAtiva {
   status?: string;
 }
 
-export interface MetaMensalDetalhe {
-  id: string;
-  nome: string | null;
-  tipo: string;
-  valorMensal: number;
-}
-
-export interface ForecastMensal {
-  mes: string;
-  mesKey: string;
-
-  // séries mensais independentes (corrige "valor repetido"):
-  baseline: number; // constante (receitaMediaMensal)
-  pipelineAlloc: number; // variável (pipeline distribuído no mês)
-  incrementalAlloc: number; // variável (a partir do delay)
-
-  forecastTotal: number;
-
-  // metas (soma por tipo)
-  metaReceita: number; // 0 se não houver meta vigente
-  metaPropostas: number; // 0 se não houver meta vigente
-  hasMetaReceita: boolean;
-  hasMetaPropostas: boolean;
-
-  // detalhamento por meta (todas as metas ativas que cobrem o mês)
-  metasDetalhadas: MetaMensalDetalhe[];
-
-  // gap e ação (baseados em metaReceita)
-  gapReceita: number; // 0 se não houver metaReceita
-  acaoNecessariaRS: number; // R$ adicionais em propostas (volume) para cobrir o gap
-  propostasEquiv: number; // gap / (ticketMarginal * convMarginal) (informativo)
-
-  pctPipelineNoForecast: number;
-}
-
-export interface VolumeHistorico {
-  mes: string;
-  valorEnviado: number;
-  valorFechado: number;
-  conversaoFinanceira: number; // %
-}
-
 export type InsightLevel = "success" | "warning" | "destructive" | "muted";
 
 export interface Insight {
@@ -106,10 +90,7 @@ export interface Insight {
   level: InsightLevel;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Probabilidades (fallback)
-// ─────────────────────────────────────────────────────────────
-
+// ─── Probabilidades (fallback) ────────────────────────────────
 const PROBABILIDADE_ESTAGIO: Record<string, number> = {
   contato: 0.05,
   visita_agendada: 0.15,
@@ -128,63 +109,37 @@ const PROBABILIDADE_STATUS: Record<string, number> = {
   repouso: 0.05,
 };
 
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-
-function safeNumber(v: any): number {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 0;
+// ─── Helpers ────────────────────────────────────────────────
+function median(nums: number[]): number {
+  if (!nums.length) return 0;
+  const arr = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(arr.length / 2);
+  return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
 }
 
-/** Aceita 0.3 ou 30 e retorna sempre 0..1 */
-function normalizePct(v: number): number {
-  const n = safeNumber(v);
-  if (n <= 0) return 0;
-  if (n > 1) return n / 100;
-  return n;
+function monthsInclusive(start: Date, end: Date): number {
+  const s = startOfMonth(start);
+  const e = startOfMonth(end);
+  return Math.max(1, (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1);
 }
 
-function monthKey(date: Date): string {
-  return format(date, "yyyy-MM");
+function normalizeTipo(tipo: string): string {
+  return (tipo || "").trim().toLowerCase();
 }
 
-function normalizeKey(s: string | null | undefined): string {
-  return (s || "").toString().trim().toLowerCase().replace(/\s+/g, "_").replace(/-+/g, "_");
+function isTipoReceita(tipo: string): boolean {
+  const t = normalizeTipo(tipo);
+  // cobre "vendas (r$)", "vendas", "receita"
+  return t.includes("vendas") || t.includes("receita");
 }
 
-function percentile(sorted: number[], p: number): number {
-  if (sorted.length === 0) return 0;
-  const idx = (p / 100) * (sorted.length - 1);
-  const lo = Math.floor(idx);
-  const hi = Math.ceil(idx);
-  if (lo === hi) return sorted[lo];
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+function isTipoPropostasRS(tipo: string): boolean {
+  const t = normalizeTipo(tipo);
+  // cobre "propostas (r$)"
+  return t.includes("propostas") && t.includes("(r$)");
 }
 
-function clamp(n: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, n));
-}
-
-/** Classifica o tipo da meta de forma resiliente */
-function classifyMetaType(tipoRaw: string): "receita" | "propostas" | "outros" {
-  const t = (tipoRaw || "").toLowerCase();
-
-  // receita / vendas / faturamento
-  if (t.includes("receita") || t.includes("vendas") || t.includes("fatur") || t.includes("(r$)") || t.includes("r$")) {
-    return "receita";
-  }
-
-  // propostas (quantidade)
-  if (t.includes("proposta")) return "propostas";
-
-  return "outros";
-}
-
-// ─────────────────────────────────────────────────────────────
-// Hook principal
-// ─────────────────────────────────────────────────────────────
-
+// ─── Hook principal ───────────────────────────────────────────
 export function useForecastPage(params: ForecastPageParams) {
   const { user } = useAuth();
 
@@ -197,7 +152,6 @@ export function useForecastPage(params: ForecastPageParams) {
       params.ticketMarginal,
       user?.id,
     ],
-    enabled: !!user,
     queryFn: async () => {
       if (!user) return null;
 
@@ -205,15 +159,11 @@ export function useForecastPage(params: ForecastPageParams) {
       const dataLimite12m = subMonths(agora, 12);
       const dataLimite12mStr = format(dataLimite12m, "yyyy-MM-dd");
 
-      const convMarginal = normalizePct(params.conversaoMarginal);
-      const ticketMarginal = safeNumber(params.ticketMarginal);
-      const valorAdicionalMensal = safeNumber(params.valorAdicionalMensal);
-
-      // ─── Fetch em paralelo ─────────────────────────────────
+      // ─── Fetch em paralelo ───────────────────────────────
       const [contratosRes, enviadasRes, abertasRes, metasRes, leadsRes] = await Promise.all([
         supabase
           .from("contratos")
-          .select("proposta_id, created_at, data_inicio, valor_negociado")
+          .select("id, proposta_id, created_at, data_inicio, valor_negociado")
           .eq("user_id", user.id)
           .not("proposta_id", "is", null),
 
@@ -226,7 +176,7 @@ export function useForecastPage(params: ForecastPageParams) {
 
         supabase
           .from("propostas")
-          .select("id, data, valor_total, liquido, status, lead_id")
+          .select("id, data, valor_total, status, lead_id")
           .eq("user_id", user.id)
           .eq("is_current", true)
           .eq("status", "aberta"),
@@ -247,18 +197,35 @@ export function useForecastPage(params: ForecastPageParams) {
       if (leadsRes.error) throw leadsRes.error;
 
       const contratos = contratosRes.data || [];
-      const enviadas12m = (enviadasRes.data || []) as any[];
-      const abertas = (abertasRes.data || []) as any[];
+      const enviadas12m = (enviadasRes.data || []) as Array<{
+        id: string;
+        data: string;
+        data_fechamento: string | null;
+        valor_total: number | null;
+        status: string | null;
+      }>;
+      const abertasRaw = (abertasRes.data || []) as Array<{
+        id: string;
+        data: string;
+        valor_total: number | null;
+        status: string | null;
+        lead_id: string | null;
+      }>;
       const metasAtivas = (metasRes.data || []) as MetaAtiva[];
-      const leads = (leadsRes.data || []) as any[];
+      const leads = (leadsRes.data || []) as Array<{ id: string; estagio: string | null }>;
 
-      // ─── Map lead_id -> estagio ────────────────────────────
+      // Map de estágios
       const leadMap = new Map<string, string>();
-      for (const l of leads) leadMap.set(l.id, l.estagio);
+      leads.forEach((l) => {
+        if (l?.id && l?.estagio) leadMap.set(l.id, l.estagio);
+      });
 
-      // ─── Build proposalsMap para contratos ─────────────────
+      // Excluir do pipeline propostas que já têm contrato (fonte da verdade de fechamento)
+      const propostaIdsComContrato = new Set<string>(contratos.map((c: any) => c.proposta_id).filter(Boolean));
+      const abertas = abertasRaw.filter((p) => !propostaIdsComContrato.has(p.id));
+
+      // ─── Buscar propostas vinculadas aos contratos (para data envio/fechamento e fallback de valor) ───
       const propostaIds = contratos.map((c: any) => c.proposta_id).filter(Boolean) as string[];
-
       const propostasMap = new Map<
         string,
         { data: string; data_fechamento: string | null; valor_total: number | null }
@@ -269,32 +236,28 @@ export function useForecastPage(params: ForecastPageParams) {
           .from("propostas")
           .select("id, data, data_fechamento, valor_total")
           .in("id", propostaIds);
-
         if (error) throw error;
-
-        for (const p of pf || []) {
+        (pf || []).forEach((p: any) => {
           propostasMap.set(p.id, {
             data: p.data,
             data_fechamento: p.data_fechamento,
             valor_total: p.valor_total,
           });
-        }
+        });
       }
 
-      // ─── Fechamentos 12m (fonte da verdade = contratos) ─────
+      // ─── Fechamentos 12m (contratos como verdade) ───────────────────────────────
       const fechamentos12m = contratos
         .map((c: any) => {
           const prop = propostasMap.get(c.proposta_id);
           if (!prop) return null;
 
           const closeDateStr = prop.data_fechamento || c.created_at || c.data_inicio;
-          if (!closeDateStr) return null;
-
           const closeDate = new Date(closeDateStr);
-          if (Number.isNaN(closeDate.getTime())) return null;
+
           if (closeDate < dataLimite12m) return null;
 
-          const valor = safeNumber(c.valor_negociado || prop.valor_total || 0);
+          const valor = Number(c.valor_negociado || prop.valor_total || 0);
           const mesKey = format(closeDate, "yyyy-MM");
 
           const dataEnvio = new Date(prop.data);
@@ -304,23 +267,22 @@ export function useForecastPage(params: ForecastPageParams) {
         })
         .filter(Boolean) as { valor: number; mesKey: string; diasFechamento: number }[];
 
-      // ─── Métricas base (12m) ───────────────────────────────
-      const valorEnviado12m = enviadas12m.reduce((s, p) => s + safeNumber(p.valor_total), 0);
-      const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
+      // ─── BaseStats (financeiro) ───────────────────────────────
+      const valorEnviado12m = enviadas12m.reduce((s, p) => s + Number(p.valor_total || 0), 0);
+      const valorFechado12m = fechamentos12m.reduce((s, f) => s + Number(f.valor || 0), 0);
       const numContratos12m = fechamentos12m.length;
 
       const conversaoFinanceira = valorEnviado12m > 0 ? valorFechado12m / valorEnviado12m : 0;
-
       const ticketReal = numContratos12m > 0 ? valorFechado12m / numContratos12m : 0;
-
       const receitaMediaMensal = valorFechado12m / 12;
       const volumeEnviadoMensal = valorEnviado12m / 12;
 
-      // tempo de fechamento: usar mediana (P50) para robustez
-      const diasSorted = fechamentos12m.map((f) => f.diasFechamento).sort((a, b) => a - b);
-
-      const p50 = percentile(diasSorted, 50);
-      const tempoMedioFechamentoDias = clamp(Math.round(p50 || 45), 7, 210);
+      // P50 recomendado para distribuir pipeline com mais realismo
+      const tempoMedioFechamentoDias = (() => {
+        const dias = fechamentos12m.map((f) => f.diasFechamento).filter((d) => Number.isFinite(d));
+        const p50 = median(dias);
+        return Math.round(p50 || 45);
+      })();
 
       const baseStats: BaseStats = {
         valorEnviado12m,
@@ -334,29 +296,24 @@ export function useForecastPage(params: ForecastPageParams) {
         amostraPequena: numContratos12m < 10,
       };
 
-      // ─── Pipeline atual (propostas abertas) ─────────────────
-      const pipelineItems: PipelineItem[] = abertas.map((p: any) => {
-        const estagioRaw = p.lead_id ? leadMap.get(p.lead_id) : null;
-        const estagioKey = normalizeKey(estagioRaw);
+      // ─── Pipeline atual (R$ ponderado) ───────────────────────────────
+      const pipelineItems: PipelineItem[] = abertas.map((p) => {
+        const estagio = p.lead_id ? leadMap.get(p.lead_id) || null : null;
 
-        const statusKey = normalizeKey(p.status || "aberta");
-        const probabilidade = estagioKey
-          ? (PROBABILIDADE_ESTAGIO[estagioKey] ?? PROBABILIDADE_STATUS[statusKey] ?? 0.35)
-          : (PROBABILIDADE_STATUS[statusKey] ?? 0.35);
+        const prob = estagio
+          ? (PROBABILIDADE_ESTAGIO[estagio] ?? PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35)
+          : (PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35);
 
-        // usar liquido quando existir (mais realista)
-        const valorTotal = safeNumber(p.liquido ?? p.valor_total ?? 0);
-
-        // dias aberta: quanto tempo desde "data" (envio)
+        const valorTotal = Number(p.valor_total || 0);
         const diasAberta = Math.max(differenceInDays(agora, new Date(p.data)), 0);
 
         return {
           id: p.id,
           valorTotal,
-          status: statusKey || "aberta",
-          estagio: estagioKey || null,
-          probabilidade,
-          valorPonderado: valorTotal * probabilidade,
+          status: p.status || "aberta",
+          estagio,
+          probabilidade: prob,
+          valorPonderado: valorTotal * prob,
           diasAberta,
         };
       });
@@ -368,119 +325,99 @@ export function useForecastPage(params: ForecastPageParams) {
         porEstagio: {},
       };
 
-      for (const p of pipelineItems) {
-        const k = p.estagio || "sem_lead";
-        if (!pipeline.porEstagio[k]) pipeline.porEstagio[k] = { valor: 0, ponderado: 0, qtd: 0 };
-        pipeline.porEstagio[k].valor += p.valorTotal;
-        pipeline.porEstagio[k].ponderado += p.valorPonderado;
-        pipeline.porEstagio[k].qtd += 1;
-      }
+      pipelineItems.forEach((p) => {
+        const key = p.estagio || "sem_lead";
+        if (!pipeline.porEstagio[key]) pipeline.porEstagio[key] = { valor: 0, ponderado: 0, qtd: 0 };
+        pipeline.porEstagio[key].valor += p.valorTotal;
+        pipeline.porEstagio[key].ponderado += p.valorPonderado;
+        pipeline.porEstagio[key].qtd += 1;
+      });
 
-      // ─── Metas: calcula meta mensal por mês, por tipo e por meta ──
-      function metasDoMes(mesKeyStr: string): {
-        metaReceita: number;
-        metaPropostas: number;
-        hasMetaReceita: boolean;
-        hasMetaPropostas: boolean;
-        metasDetalhadas: MetaMensalDetalhe[];
-      } {
-        const mesDate = new Date(`${mesKeyStr}-01T00:00:00`);
-        let receita = 0;
-        let propostas = 0;
-        const detalhes: MetaMensalDetalhe[] = [];
+      // ─── Metas: calcular MÊS a MÊS por TIPO ───────────────────────────────
+      function getMetaMensalByTipo(mesKey: string): Record<string, number> {
+        const res: Record<string, number> = {};
+        const mesDate = startOfMonth(new Date(mesKey + "-01"));
 
         for (const m of metasAtivas) {
-          const inicio = new Date(m.periodo_inicio);
-          const fim = new Date(m.periodo_fim);
-          if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) continue;
+          const inicio = startOfMonth(new Date(m.periodo_inicio));
+          const fim = endOfMonth(new Date(m.periodo_fim));
 
           if (mesDate < inicio || mesDate > fim) continue;
 
-          const meses =
-            Math.max(1, (fim.getFullYear() - inicio.getFullYear()) * 12 + (fim.getMonth() - inicio.getMonth()) + 1) ||
-            1;
+          const meses = monthsInclusive(inicio, fim);
+          const valorMensal = Number(m.valor_alvo || 0) / meses;
 
-          const mensal = safeNumber(m.valor_alvo) / meses;
-          detalhes.push({
-            id: m.id,
-            nome: m.nome || null,
-            tipo: m.tipo,
-            valorMensal: mensal,
-          });
-
-          const cat = classifyMetaType(m.tipo);
-          if (cat === "receita") receita += mensal;
-          if (cat === "propostas") propostas += mensal;
+          const tipo = m.tipo || "Meta";
+          res[tipo] = (res[tipo] || 0) + valorMensal;
         }
 
-        return {
-          metaReceita: receita,
-          metaPropostas: propostas,
-          hasMetaReceita: receita > 0,
-          hasMetaPropostas: propostas > 0,
-          metasDetalhadas: detalhes,
-        };
+        // arredonda só no final
+        Object.keys(res).forEach((k) => (res[k] = Math.round(res[k])));
+        return res;
       }
 
-      // ─── Distribuir pipeline em 3 meses (30/50/20) ──────────
+      function sumByPredicate(metaByTipo: Record<string, number>, pred: (tipo: string) => boolean): number {
+        return Object.entries(metaByTipo).reduce((s, [tipo, v]) => (pred(tipo) ? s + Number(v || 0) : s), 0);
+      }
+
+      // ─── Distribuir pipeline por mês (30/50/20) ───────────────────────────────
       const pipelinePorMes = new Map<string, number>();
+      const spread = [
+        { deltaMonth: -1, w: 0.3 },
+        { deltaMonth: 0, w: 0.5 },
+        { deltaMonth: +1, w: 0.2 },
+      ];
 
-      function addPipeline(mKey: string, v: number) {
-        pipelinePorMes.set(mKey, (pipelinePorMes.get(mKey) || 0) + v);
-      }
-
-      for (const p of pipelineItems) {
-        // quanto falta para "fechar"
+      pipelineItems.forEach((p) => {
         const diasRestantes = Math.max(0, tempoMedioFechamentoDias - p.diasAberta);
-        const dataEstimada = addDays(agora, diasRestantes);
+        const dataEstimada = new Date(agora);
+        dataEstimada.setDate(dataEstimada.getDate() + diasRestantes);
 
-        const mPrev = monthKey(addMonths(dataEstimada, -1));
-        const mCur = monthKey(dataEstimada);
-        const mNext = monthKey(addMonths(dataEstimada, 1));
+        spread.forEach(({ deltaMonth, w }) => {
+          const d = addMonths(dataEstimada, deltaMonth);
+          const mesKey = format(d, "yyyy-MM");
+          const add = p.valorPonderado * w;
+          pipelinePorMes.set(mesKey, (pipelinePorMes.get(mesKey) || 0) + add);
+        });
+      });
 
-        addPipeline(mPrev, p.valorPonderado * 0.3);
-        addPipeline(mCur, p.valorPonderado * 0.5);
-        addPipeline(mNext, p.valorPonderado * 0.2);
-      }
+      // ─── Incremental com delay (impacto após tempo médio) ───────────────────
+      const mesesDeDelay = Math.max(0, Math.ceil(tempoMedioFechamentoDias / 30));
 
-      // ─── Incremental: começa após delay (em meses) ───────────
-      const mesesDeDelay = Math.ceil(tempoMedioFechamentoDias / 30);
-      const incrementalMensal = valorAdicionalMensal * convMarginal; // R$ que deve fechar/mês
-
-      // ─── Build forecast mensal (3/6/12) ─────────────────────
+      // ─── Forecast mensal (com 3 séries separadas) ───────────────────────────
       const forecastMensal: ForecastMensal[] = [];
 
       for (let i = 0; i < params.horizonte; i++) {
         const mesDate = addMonths(agora, i);
-        const mesKeyStr = format(mesDate, "yyyy-MM");
+        const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
 
+        const metaByTipo = getMetaMensalByTipo(mesKey);
+
+        const metaReceita = sumByPredicate(metaByTipo, isTipoReceita);
+        const metaPropostasRS = sumByPredicate(metaByTipo, isTipoPropostasRS);
+
         const baseline = receitaMediaMensal;
-        const pipelineAlloc = pipelinePorMes.get(mesKeyStr) || 0;
-        const incrementalAlloc = i >= mesesDeDelay ? incrementalMensal : 0;
+        const pipelineAlloc = pipelinePorMes.get(mesKey) || 0;
+
+        const incrementalAlloc =
+          i >= mesesDeDelay ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0) : 0;
 
         const forecastTotal = baseline + pipelineAlloc + incrementalAlloc;
 
-        const metasInfo = metasDoMes(mesKeyStr);
+        // Gap é calculado contra meta de RECEITA (Vendas/Receita)
+        const gapReceita = Math.max(0, metaReceita - forecastTotal);
 
-        // gap e ação (somente receita; se não houver meta, fica 0)
-        const metaReceita = metasInfo.metaReceita;
-        const gapReceita = metasInfo.hasMetaReceita ? Math.max(0, metaReceita - forecastTotal) : 0;
+        // Quanto precisa GERAR em propostas (R$) para cobrir o gap (usando conversão marginal como “alavanca”)
+        const conv = Number(params.conversaoMarginal || 0) > 0 ? Number(params.conversaoMarginal) : 0;
+        const acaoNecessariaRS = conv > 0 ? gapReceita / conv : 0;
 
-        // acaoNecessariaRS: quanto precisa gerar a mais de volume em propostas
-        // preferir convMarginal (simulador) se existir; senão usar conversaoFinanceira histórica
-        const convParaAcao = convMarginal > 0 ? convMarginal : conversaoFinanceira;
-        const acaoNecessariaRS = convParaAcao > 0 ? gapReceita / convParaAcao : 0;
-
-        // propostasEquiv (informativo)
-        const propostasEquiv =
-          ticketMarginal > 0 && convParaAcao > 0 ? gapReceita / (ticketMarginal * convParaAcao) : 0;
-
-        const pctPipelineNoForecast = forecastTotal > 0 ? (pipelineAlloc / forecastTotal) * 100 : 0;
+        // Equivalente em número de propostas (informativo)
+        const propostasEquiv = ticketReal > 0 && conv > 0 ? Math.ceil(acaoNecessariaRS / ticketReal) : 0;
 
         forecastMensal.push({
           mes: mesLabel,
-          mesKey: mesKeyStr,
+          mesKey,
 
           baseline: Math.round(baseline),
           pipelineAlloc: Math.round(pipelineAlloc),
@@ -489,50 +426,45 @@ export function useForecastPage(params: ForecastPageParams) {
           forecastTotal: Math.round(forecastTotal),
 
           metaReceita: Math.round(metaReceita),
-          metaPropostas: Math.round(metasInfo.metaPropostas),
-          hasMetaReceita: metasInfo.hasMetaReceita,
-          hasMetaPropostas: metasInfo.hasMetaPropostas,
-          metasDetalhadas: metasInfo.metasDetalhadas.map((d) => ({
-            ...d,
-            valorMensal: Math.round(d.valorMensal),
-          })),
+          metaPropostasRS: Math.round(metaPropostasRS),
+          metaByTipo,
 
           gapReceita: Math.round(gapReceita),
           acaoNecessariaRS: Math.round(acaoNecessariaRS),
-          propostasEquiv: Math.ceil(propostasEquiv),
-
-          pctPipelineNoForecast: parseFloat(pctPipelineNoForecast.toFixed(1)),
+          propostasEquiv,
         });
       }
 
-      // ─── Histórico 12m (R$ enviado x fechado e conversão %) ─
+      // ─── Histórico 12m (R$ enviado/fechado + conversão financeira %) ─────────
       const volumeHistorico: VolumeHistorico[] = [];
       for (let i = 11; i >= 0; i--) {
         const mesDate = subMonths(agora, i);
-        const mKey = format(mesDate, "yyyy-MM");
-        const mLabel = format(mesDate, "MMM/yy", { locale: ptBR });
+        const mesKey = format(mesDate, "yyyy-MM");
+        const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
 
-        const enviado = enviadas12m
-          .filter((p) => format(new Date(p.data), "yyyy-MM") === mKey)
-          .reduce((s, p) => s + safeNumber(p.valor_total), 0);
+        const envMesValor = enviadas12m
+          .filter((p) => format(new Date(p.data), "yyyy-MM") === mesKey)
+          .reduce((s, p) => s + Number(p.valor_total || 0), 0);
 
-        const fechado = fechamentos12m.filter((f) => f.mesKey === mKey).reduce((s, f) => s + f.valor, 0);
+        const fechMesValor = fechamentos12m
+          .filter((f) => f.mesKey === mesKey)
+          .reduce((s, f) => s + Number(f.valor || 0), 0);
 
         volumeHistorico.push({
-          mes: mLabel,
-          valorEnviado: Math.round(enviado),
-          valorFechado: Math.round(fechado),
-          conversaoFinanceira: enviado > 0 ? parseFloat(((fechado / enviado) * 100).toFixed(1)) : 0,
+          mes: mesLabel,
+          valorEnviado: Math.round(envMesValor),
+          valorFechado: Math.round(fechMesValor),
+          conversaoFinanceira: envMesValor > 0 ? parseFloat(((fechMesValor / envMesValor) * 100).toFixed(1)) : 0,
         });
       }
 
-      // ─── Insights ───────────────────────────────────────────
+      // ─── Insights (mantém simples e correto) ────────────────────────────────
       const insights: Insight[] = [];
       const mesAtual = forecastMensal[0];
 
       if (baseStats.amostraPequena) {
         insights.push({
-          text: `Dados limitados: apenas ${numContratos12m} contratos em 12 meses. Previsões podem ter margem de erro elevada.`,
+          text: `Dados limitados: apenas ${numContratos12m} contratos em 12 meses. Previsões podem ter margem de erro maior.`,
           level: "muted",
         });
       }
@@ -540,48 +472,35 @@ export function useForecastPage(params: ForecastPageParams) {
       if (mesAtual) {
         insights.push({
           text: `Mantendo o ritmo atual, este mês fecha em R$ ${mesAtual.forecastTotal.toLocaleString("pt-BR")}`,
-          level: mesAtual.hasMetaReceita && mesAtual.forecastTotal >= mesAtual.metaReceita ? "success" : "muted",
+          level: mesAtual.metaReceita > 0 && mesAtual.forecastTotal >= mesAtual.metaReceita ? "success" : "muted",
         });
 
         if (pipeline.valorPonderado > 0) {
-          const pct =
-            mesAtual.forecastTotal > 0 ? ((pipeline.valorPonderado / mesAtual.forecastTotal) * 100).toFixed(0) : "0";
           insights.push({
-            text: `R$ ${pipeline.valorPonderado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} do seu forecast vem do pipeline atual (${pct}% da projeção do mês foco).`,
+            text: `Pipeline ponderado atual: R$ ${pipeline.valorPonderado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} (${pipeline.qtdPropostas} propostas abertas)`,
             level: "success",
           });
         }
 
-        if (mesAtual.hasMetaReceita) {
+        if (mesAtual.metaReceita > 0) {
           if (mesAtual.forecastTotal >= mesAtual.metaReceita) {
-            insights.push({
-              text: "Você está no caminho para bater a meta de faturamento do mês selecionado.",
-              level: "success",
-            });
+            insights.push({ text: "Você está no caminho para bater a meta de receita deste mês.", level: "success" });
           } else {
             insights.push({
-              text: `Para bater a meta, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString("pt-BR")} em novas propostas (≈ ${mesAtual.propostasEquiv} propostas).`,
+              text: `Para bater a meta de receita, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString("pt-BR")} em novas propostas (≈ ${mesAtual.propostasEquiv} propostas).`,
               level: "warning",
             });
           }
+        } else {
+          insights.push({
+            text: "Nenhuma meta de receita ativa encontrada para este mês. Cadastre uma meta em Metas → Vendas (R$).",
+            level: "muted",
+          });
         }
       }
 
-      if (tempoMedioFechamentoDias > 0) {
-        insights.push({
-          text: `Tempo mediano de fechamento: ${tempoMedioFechamentoDias} dias. Esforço adicional só impacta após esse período.`,
-          level: "muted",
-        });
-      }
-
-      return {
-        baseStats,
-        pipeline,
-        forecastMensal,
-        volumeHistorico,
-        metasAtivas,
-        insights,
-      };
+      return { baseStats, pipeline, forecastMensal, volumeHistorico, metasAtivas, insights };
     },
+    enabled: !!user,
   });
 }
