@@ -10,7 +10,7 @@ export interface ForecastPageParams {
   horizonte: 3 | 6 | 12;
   /** R$ adicionais em propostas/mês que o usuário planeja gerar */
   valorAdicionalMensal: number;
-  /** Conversão marginal (%) que o usuário espera para novas propostas */
+  /** Conversão marginal (0..1) que o usuário espera para novas propostas */
   conversaoMarginal: number;
   /** Ticket médio esperado (R$) para novas propostas */
   ticketMarginal: number;
@@ -54,9 +54,15 @@ export interface ForecastMensal {
   incrementalAlloc: number; // variável por mês (com delay)
 
   forecastTotal: number;
+
   meta: number;
   gap: number;
+
   acaoNecessariaRS: number;
+
+  // ✅ volta a existir para não quebrar o Forecast.tsx
+  propostasEquiv: number;
+
   pctPipelineNoForecast: number;
 }
 
@@ -84,7 +90,7 @@ export interface Insight {
   level: InsightLevel;
 }
 
-// ─── Normalização (evita bugs de "Ativa" vs "ativa", "Vendas (R$)" etc) ───
+// ─── Normalização (evita bugs de "Ativa" vs "ativa", acentos, etc) ─────────
 const norm = (s?: string | null) =>
   (s ?? "")
     .normalize("NFD")
@@ -95,11 +101,15 @@ const norm = (s?: string | null) =>
 const META_TIPOS_RECEITA = new Set(["vendas", "vendas (r$)", "receita"]);
 const META_STATUS_ATIVO = new Set(["ativa", "ativo", "active"]);
 
-// ─── Probabilidades por estágio do lead ───────────────────────
+// ─── Probabilidades ───────────────────────────────────────────
 
+// Observação importante:
+// lead.estagio costuma vir como "Visita agendada" (com espaço).
+// Vamos normalizar e também criar uma chave com underscore.
 const PROBABILIDADE_ESTAGIO: Record<string, number> = {
   contato: 0.05,
   visita_agendada: 0.15,
+  visita_agendada_: 0.15, // fallback
   visita_realizada: 0.25,
   proposta_pendente: 0.35,
   proposta: 0.5,
@@ -115,6 +125,14 @@ const PROBABILIDADE_STATUS: Record<string, number> = {
   repouso: 0.05,
 };
 
+// ─── Helpers ──────────────────────────────────────────────────
+
+function monthsInclusive(start: Date, end: Date): number {
+  const s = startOfMonth(start);
+  const e = startOfMonth(end);
+  return Math.max(1, (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1);
+}
+
 // ─── Hook principal ───────────────────────────────────────────
 
 export function useForecastPage(params: ForecastPageParams) {
@@ -129,6 +147,7 @@ export function useForecastPage(params: ForecastPageParams) {
       params.ticketMarginal,
       user?.id,
     ],
+    enabled: !!user,
     queryFn: async () => {
       if (!user) return null;
 
@@ -153,13 +172,12 @@ export function useForecastPage(params: ForecastPageParams) {
 
         supabase
           .from("propostas")
-          .select("id, data, valor_total, status, lead_id")
+          .select("id, data, valor_total, status, lead_id, is_current")
           .eq("user_id", user.id)
           .eq("is_current", true)
           .eq("status", "aberta"),
 
-        // ✅ IMPORTANTE: não usar filtros case-sensitive aqui
-        // (deixa o JS normalizar e filtrar)
+        // metas: não filtrar por status aqui (case/acentos podem variar)
         supabase
           .from("metas")
           .select("id, nome, tipo, valor_alvo, periodo_inicio, periodo_fim, status")
@@ -176,24 +194,29 @@ export function useForecastPage(params: ForecastPageParams) {
 
       const contratos = contratosRes.data || [];
       const enviadas12m = enviadasRes.data || [];
-      const abertas = abertasRes.data || [];
+      const abertasRaw = abertasRes.data || [];
       const todasMetas = (metasRes.data || []) as MetaAtiva[];
       const leads = leadsRes.data || [];
 
-      // ✅ Filtra metas de receita + status ativo com normalização
+      // ✅ Filtra metas de receita + status ativo (normalizado)
       const metasAtivas = todasMetas.filter((m) => {
         const tipoOk = META_TIPOS_RECEITA.has(norm(m.tipo));
         const status = norm(m.status);
-        const statusOk = status ? META_STATUS_ATIVO.has(status) : true; // se não tiver status na tabela, não bloqueia
+        const statusOk = status ? META_STATUS_ATIVO.has(status) : true;
         return tipoOk && statusOk;
       });
 
       // Lead map: lead_id -> estagio
       const leadMap = new Map<string, string | null>();
-      leads.forEach((l: any) => leadMap.set(l.id, l.estagio ?? null));
+      (leads as any[]).forEach((l) => leadMap.set(l.id, l.estagio ?? null));
+
+      // ✅ Excluir do pipeline propostas que já têm contrato (evita duplicidade)
+      const propostaIdsComContrato = new Set<string>((contratos as any[]).map((c) => c.proposta_id).filter(Boolean));
+      const abertas = (abertasRaw as any[]).filter((p) => !propostaIdsComContrato.has(p.id));
 
       // ─── Build proposal map for contracts ──────────────────
-      const propostaIds = contratos.map((c: any) => c.proposta_id).filter(Boolean) as string[];
+      const propostaIds = (contratos as any[]).map((c) => c.proposta_id).filter(Boolean) as string[];
+
       const propostasMap = new Map<
         string,
         { data: string; data_fechamento: string | null; valor_total: number | null }
@@ -204,21 +227,22 @@ export function useForecastPage(params: ForecastPageParams) {
           .from("propostas")
           .select("id, data, data_fechamento, valor_total")
           .in("id", propostaIds);
+
         if (error) throw error;
 
-        (pf || []).forEach((p: any) =>
+        (pf || []).forEach((p: any) => {
           propostasMap.set(p.id, {
             data: p.data,
             data_fechamento: p.data_fechamento,
             valor_total: p.valor_total,
-          }),
-        );
+          });
+        });
       }
 
-      // ─── Fechamentos 12m ───────────────────────────────────
-      const fechamentos12m = contratos
-        .map((c: any) => {
-          const prop = propostasMap.get(c.proposta_id!);
+      // ─── Fechamentos 12m (contratos como verdade) ───────────
+      const fechamentos12m = (contratos as any[])
+        .map((c) => {
+          const prop = propostasMap.get(c.proposta_id);
           if (!prop) return null;
 
           const closeDateStr = prop.data_fechamento || c.created_at || c.data_inicio;
@@ -236,8 +260,8 @@ export function useForecastPage(params: ForecastPageParams) {
         .filter(Boolean) as { valor: number; mesKey: string; diasFechamento: number }[];
 
       // ─── Métricas financeiras base (12m) ───────────────────
-      const valorEnviado12m = enviadas12m.reduce((s: number, p: any) => s + Number(p.valor_total || 0), 0);
-      const valorFechado12m = fechamentos12m.reduce((s: number, f) => s + f.valor, 0);
+      const valorEnviado12m = (enviadas12m as any[]).reduce((s, p) => s + Number(p.valor_total || 0), 0);
+      const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
       const numContratos12m = fechamentos12m.length;
 
       const conversaoFinanceira = valorEnviado12m > 0 ? valorFechado12m / valorEnviado12m : 0;
@@ -262,14 +286,19 @@ export function useForecastPage(params: ForecastPageParams) {
         amostraPequena: numContratos12m < 10,
       };
 
-      // ─── Pipeline atual ────────────────────────────────────
-      const pipelineItems: PipelineItem[] = abertas.map((p: any) => {
+      // ─── Pipeline atual (R$ ponderado) ──────────────────────
+      const pipelineItems: PipelineItem[] = (abertas as any[]).map((p) => {
         const estagio = p.lead_id ? (leadMap.get(p.lead_id) ?? null) : null;
 
+        // normaliza e tenta duas chaves: com espaço e com underscore
         const estKey = estagio ? norm(estagio) : "";
-        const probabilidade = estagio
-          ? (PROBABILIDADE_ESTAGIO[estKey] ?? PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35)
-          : (PROBABILIDADE_STATUS[p.status || "aberta"] ?? 0.35);
+        const estKeyUnderscore = estKey.replace(/\s+/g, "_");
+        const probEstagio = PROBABILIDADE_ESTAGIO[estKeyUnderscore] ?? PROBABILIDADE_ESTAGIO[estKey] ?? undefined;
+
+        const statusKey = norm(p.status || "aberta");
+        const probStatus = PROBABILIDADE_STATUS[statusKey] ?? 0.35;
+
+        const probabilidade = estagio ? (probEstagio ?? probStatus) : probStatus;
 
         const valorTotal = Number(p.valor_total || 0);
         const dataEnvio = p.data ? new Date(p.data) : agora;
@@ -295,15 +324,13 @@ export function useForecastPage(params: ForecastPageParams) {
 
       pipelineItems.forEach((p) => {
         const key = p.estagio || "sem_lead";
-        if (!pipeline.porEstagio[key]) {
-          pipeline.porEstagio[key] = { valor: 0, ponderado: 0, qtd: 0 };
-        }
+        if (!pipeline.porEstagio[key]) pipeline.porEstagio[key] = { valor: 0, ponderado: 0, qtd: 0 };
         pipeline.porEstagio[key].valor += p.valorTotal;
         pipeline.porEstagio[key].ponderado += p.valorPonderado;
         pipeline.porEstagio[key].qtd += 1;
       });
 
-      // ─── Meta mensal (corrigida) ───────────────────────────
+      // ─── Meta mensal (prorrateada corretamente) ─────────────
       function getMetaMensal(mesKey: string): number {
         let total = 0;
 
@@ -314,19 +341,17 @@ export function useForecastPage(params: ForecastPageParams) {
           const inicio = new Date(m.periodo_inicio);
           const fim = new Date(m.periodo_fim);
 
-          // overlap do mês com o período da meta
           const cobreMes = mesEnd >= inicio && mesStart <= fim;
           if (!cobreMes) continue;
 
-          const meses = (fim.getFullYear() - inicio.getFullYear()) * 12 + (fim.getMonth() - inicio.getMonth()) + 1;
-
-          total += Number(m.valor_alvo) / Math.max(1, meses);
+          const meses = monthsInclusive(inicio, fim);
+          total += Number(m.valor_alvo || 0) / Math.max(1, meses);
         }
 
         return total;
       }
 
-      // ─── Distribuir pipeline por mês (com spread 30/50/20) ──
+      // ─── Distribuir pipeline por mês (spread 30/50/20) ──────
       const pipelinePorMes = new Map<string, number>();
 
       pipelineItems.forEach((p) => {
@@ -358,12 +383,18 @@ export function useForecastPage(params: ForecastPageParams) {
         const meta = getMetaMensal(mesKey);
         const pipelineAlloc = pipelinePorMes.get(mesKey) || 0;
 
-        const incrementalAlloc = i >= mesesDeDelay ? params.valorAdicionalMensal * params.conversaoMarginal : 0;
+        const incrementalAlloc =
+          i >= mesesDeDelay ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0) : 0;
 
         const forecastTotal = baseline + pipelineAlloc + incrementalAlloc;
         const gap = Math.max(0, meta - forecastTotal);
 
-        const acaoNecessariaRS = params.conversaoMarginal > 0 ? gap / params.conversaoMarginal : 0;
+        const convMarginal = Number(params.conversaoMarginal || 0);
+        const acaoNecessariaRS = convMarginal > 0 ? gap / convMarginal : 0;
+
+        // ✅ este campo é o que estava faltando (resolve o build)
+        const ticketMarginal = Number(params.ticketMarginal || 0);
+        const propostasEquiv = ticketMarginal > 0 ? Math.ceil(acaoNecessariaRS / ticketMarginal) : 0;
 
         const pctPipelineNoForecast = forecastTotal > 0 ? (pipelineAlloc / forecastTotal) * 100 : 0;
 
@@ -377,6 +408,7 @@ export function useForecastPage(params: ForecastPageParams) {
           meta: Math.round(meta),
           gap: Math.round(gap),
           acaoNecessariaRS: Math.round(acaoNecessariaRS),
+          propostasEquiv,
           pctPipelineNoForecast: parseFloat(pctPipelineNoForecast.toFixed(1)),
         });
       }
@@ -388,9 +420,9 @@ export function useForecastPage(params: ForecastPageParams) {
         const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
 
-        const envMesValor = enviadas12m
-          .filter((p: any) => format(new Date(p.data), "yyyy-MM") === mesKey)
-          .reduce((s: number, p: any) => s + Number(p.valor_total || 0), 0);
+        const envMesValor = (enviadas12m as any[])
+          .filter((p) => format(new Date(p.data), "yyyy-MM") === mesKey)
+          .reduce((s, p) => s + Number(p.valor_total || 0), 0);
 
         const fechMesValor = fechamentos12m.filter((f) => f.mesKey === mesKey).reduce((s, f) => s + f.valor, 0);
 
@@ -423,6 +455,7 @@ export function useForecastPage(params: ForecastPageParams) {
       if (mesAtual && pipeline.valorPonderado > 0) {
         const pctPipeline =
           mesAtual.forecastTotal > 0 ? ((pipeline.valorPonderado / mesAtual.forecastTotal) * 100).toFixed(0) : "0";
+
         insights.push({
           text: `R$ ${pipeline.valorPonderado.toLocaleString("pt-BR", {
             maximumFractionDigits: 0,
@@ -438,12 +471,10 @@ export function useForecastPage(params: ForecastPageParams) {
             level: "success",
           });
         } else {
-          const acaoRS = mesAtual.acaoNecessariaRS;
-          const equiv = params.ticketMarginal > 0 ? Math.ceil(acaoRS / params.ticketMarginal) : 0;
           insights.push({
-            text: `Para bater a meta, é necessário gerar +R$ ${acaoRS.toLocaleString(
+            text: `Para bater a meta, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString(
               "pt-BR",
-            )} em novas propostas (≈ ${equiv} propostas)`,
+            )} em novas propostas (≈ ${mesAtual.propostasEquiv} propostas)`,
             level: "warning",
           });
         }
@@ -465,6 +496,5 @@ export function useForecastPage(params: ForecastPageParams) {
         insights,
       };
     },
-    enabled: !!user,
   });
 }
