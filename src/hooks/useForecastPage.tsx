@@ -1,32 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, subMonths, differenceInDays, addMonths } from "date-fns";
+import { format, subMonths, addMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export interface ForecastPageParams {
   horizonte: 3 | 6 | 12;
-  volumeAjuste: number;   // 0.5–2.0
+  volumeAjuste: number;
   conversaoAjuste: number;
   ticketAjuste: number;
 }
 
 export interface BaseStats {
-  mediaEnviadasMes: number;
-  conversaoReal: number;
+  valorEnviado12m: number;
+  valorFechado12m: number;
+  conversaoFinanceira: number;
   ticketReal: number;
-  p25: number;
-  p50: number;
-  p75: number;
-  totalFechadas12m: number;
-  totalEnviadas12m: number;
+  receitaMediaMensal: number;
+  numContratos12m: number;
+  volumeEnviadoMensal: number; // media mensal em R$ de propostas enviadas
   amostraPequena: boolean;
 }
 
 export interface CenarioEfetivo {
-  volumeMensal: number;
-  conversao: number;
-  ticket: number;
+  receitaBase: number;       // receita_media_mensal
+  volumeMensal: number;      // volume enviado mensal ajustado (R$)
+  conversao: number;         // conversão financeira ajustada
+  ticket: number;            // ticket médio ajustado
 }
 
 export interface ForecastMensal {
@@ -35,14 +35,15 @@ export interface ForecastMensal {
   forecast: number;
   meta: number;
   gap: number;
-  propostasNecessarias: number;
+  acaoNecessariaRS: number;       // gap em R$ de propostas adicionais
+  propostasEquivalentes: number;  // info secundária: gap / (ticket * conversao)
 }
 
 export interface VolumeHistorico {
   mes: string;
-  enviadas: number;
-  fechadas: number;
-  taxaConversao: number;
+  valorEnviado: number;
+  valorFechado: number;
+  conversaoFinanceira: number;
 }
 
 export interface MetaAtiva {
@@ -60,17 +61,6 @@ export interface Insight {
   text: string;
   level: InsightLevel;
 }
-
-function percentile(sorted: number[], p: number): number {
-  if (sorted.length === 0) return 0;
-  const idx = (p / 100) * (sorted.length - 1);
-  const lo = Math.floor(idx);
-  const hi = Math.ceil(idx);
-  if (lo === hi) return sorted[lo];
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
-}
-
-const OUTLIER_LIMIT = 180;
 
 export function useForecastPage(params: ForecastPageParams) {
   const { user } = useAuth();
@@ -91,6 +81,7 @@ export function useForecastPage(params: ForecastPageParams) {
       const dataLimite12m = subMonths(agora, 12);
       const dataLimite12mStr = format(dataLimite12m, "yyyy-MM-dd");
 
+      // Fetch all data in parallel
       const [contratosRes, enviadasRes, metasRes] = await Promise.all([
         supabase
           .from("contratos")
@@ -118,9 +109,8 @@ export function useForecastPage(params: ForecastPageParams) {
       const enviadas12m = enviadasRes.data || [];
       const todasMetas = (metasRes.data || []) as MetaAtiva[];
 
-      // Filter metas relevant to revenue/sales
       const metasAtivas = todasMetas.filter((m) =>
-        ["vendas", "vendas (r$)", "receita", "Vendas (R$)"].some(
+        ["vendas", "vendas (r$)", "receita"].some(
           (t) => m.tipo.toLowerCase() === t.toLowerCase()
         )
       );
@@ -148,47 +138,42 @@ export function useForecastPage(params: ForecastPageParams) {
           const closeDateStr = prop.data_fechamento || c.created_at || c.data_inicio;
           const closeDate = new Date(closeDateStr);
           if (closeDate < dataLimite12m) return null;
-          const dataEnvio = new Date(prop.data);
           const valor = Number(c.valor_negociado || prop.valor_total || 0);
-          const dias = Math.max(differenceInDays(closeDate, dataEnvio), 0);
           const mesKey = format(closeDate, "yyyy-MM");
-          return { dias, valor, mesKey };
+          return { valor, mesKey };
         })
-        .filter(Boolean) as { dias: number; valor: number; mesKey: string }[];
+        .filter(Boolean) as { valor: number; mesKey: string }[];
 
-      const semOutliers = fechamentos12m.filter((f) => f.dias <= OUTLIER_LIMIT);
-      const diasSorted = semOutliers.map((f) => f.dias).sort((a, b) => a - b);
-
-      const p25 = Math.round(percentile(diasSorted, 25));
-      const p50 = Math.round(percentile(diasSorted, 50));
-      const p75 = Math.round(percentile(diasSorted, 75));
-      const totalFechadas12m = fechamentos12m.length;
-      const totalEnviadas12m = enviadas12m.length;
-      const conversaoReal = totalEnviadas12m > 0 ? totalFechadas12m / totalEnviadas12m : 0;
-      const ticketReal =
-        semOutliers.length > 0
-          ? semOutliers.reduce((s, f) => s + f.valor, 0) / semOutliers.length
-          : 0;
-      const mediaEnviadasMes = totalEnviadas12m / 12;
+      // === Financial metrics (all in R$) ===
+      const valorEnviado12m = enviadas12m.reduce((s, p) => s + Number(p.valor_total || 0), 0);
+      const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
+      const numContratos12m = fechamentos12m.length;
+      const conversaoFinanceira = valorEnviado12m > 0 ? valorFechado12m / valorEnviado12m : 0;
+      const ticketReal = numContratos12m > 0 ? valorFechado12m / numContratos12m : 0;
+      const receitaMediaMensal = valorFechado12m / 12;
+      const volumeEnviadoMensal = valorEnviado12m / 12;
 
       const baseStats: BaseStats = {
-        mediaEnviadasMes,
-        conversaoReal,
+        valorEnviado12m,
+        valorFechado12m,
+        conversaoFinanceira,
         ticketReal,
-        p25,
-        p50,
-        p75,
-        totalFechadas12m,
-        totalEnviadas12m,
-        amostraPequena: totalFechadas12m < 10,
+        receitaMediaMensal,
+        numContratos12m,
+        volumeEnviadoMensal,
+        amostraPequena: numContratos12m < 10,
       };
 
       // Effective scenario
       const cenario: CenarioEfetivo = {
-        volumeMensal: mediaEnviadasMes * params.volumeAjuste,
-        conversao: conversaoReal * params.conversaoAjuste,
+        receitaBase: receitaMediaMensal,
+        volumeMensal: volumeEnviadoMensal * params.volumeAjuste,
+        conversao: conversaoFinanceira * params.conversaoAjuste,
         ticket: ticketReal * params.ticketAjuste,
       };
+
+      // Forecast formula: receita_media_mensal * fator_volume * fator_conversao * fator_ticket
+      const forecastValue = receitaMediaMensal * params.volumeAjuste * params.conversaoAjuste * params.ticketAjuste;
 
       // Get meta for a given month
       function getMetaMensal(mesKey: string): number {
@@ -215,56 +200,73 @@ export function useForecastPage(params: ForecastPageParams) {
         const mesDate = addMonths(agora, i);
         const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
-        const forecast = cenario.volumeMensal * cenario.conversao * cenario.ticket;
         const meta = getMetaMensal(mesKey);
-        const gap = Math.max(0, meta - forecast);
-        const propostasNecessarias =
+        const gap = Math.max(0, meta - forecastValue);
+        // Ação necessária em R$: quanto precisa enviar a mais em propostas
+        // gap = acaoRS * conversaoFinanceira => acaoRS = gap / conversaoFinanceira
+        const acaoNecessariaRS = cenario.conversao > 0 ? gap / cenario.conversao : 0;
+        const propostasEquivalentes =
           cenario.ticket > 0 && cenario.conversao > 0
             ? Math.ceil(gap / (cenario.ticket * cenario.conversao))
             : 0;
-        forecastMensal.push({ mes: mesLabel, mesKey, forecast: Math.round(forecast), meta: Math.round(meta), gap: Math.round(gap), propostasNecessarias });
+        forecastMensal.push({
+          mes: mesLabel,
+          mesKey,
+          forecast: Math.round(forecastValue),
+          meta: Math.round(meta),
+          gap: Math.round(gap),
+          acaoNecessariaRS: Math.round(acaoNecessariaRS),
+          propostasEquivalentes,
+        });
       }
 
-      // Volume histórico mensal
+      // Volume histórico mensal (financial)
       const volumeHistorico: VolumeHistorico[] = [];
       for (let i = 11; i >= 0; i--) {
         const mesDate = subMonths(agora, i);
         const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
-        const envMes = enviadas12m.filter((p) => format(new Date(p.data), "yyyy-MM") === mesKey).length;
-        const fechMes = fechamentos12m.filter((f) => f.mesKey === mesKey).length;
+        const envMesValor = enviadas12m
+          .filter((p) => format(new Date(p.data), "yyyy-MM") === mesKey)
+          .reduce((s, p) => s + Number(p.valor_total || 0), 0);
+        const fechMesValor = fechamentos12m
+          .filter((f) => f.mesKey === mesKey)
+          .reduce((s, f) => s + f.valor, 0);
         volumeHistorico.push({
           mes: mesLabel,
-          enviadas: envMes,
-          fechadas: fechMes,
-          taxaConversao: envMes > 0 ? parseFloat(((fechMes / envMes) * 100).toFixed(1)) : 0,
+          valorEnviado: Math.round(envMesValor),
+          valorFechado: Math.round(fechMesValor),
+          conversaoFinanceira: envMesValor > 0 ? parseFloat(((fechMesValor / envMesValor) * 100).toFixed(1)) : 0,
         });
       }
 
-      // Insights engine (deterministic rules)
+      // Insights engine (deterministic, R$-based)
       const insights: Insight[] = [];
-      const forecastMesAtual = forecastMensal[0]?.forecast || 0;
-      const metaMesAtual = forecastMensal[0]?.meta || 0;
-      const media12mReceita = volumeHistorico.reduce((s, v) => {
-        const fechValor = fechamentos12m.filter((f) => f.mesKey === format(subMonths(agora, volumeHistorico.indexOf(v)), "yyyy-MM")).reduce((ss, f) => ss + f.valor, 0);
-        return s + fechValor;
-      }, 0) / 12;
+      const mesAtual = forecastMensal[0];
 
       if (baseStats.amostraPequena) {
-        insights.push({ text: `Dados insuficientes para previsão confiável (apenas ${totalFechadas12m} fechamentos em 12 meses)`, level: "muted" });
+        insights.push({
+          text: `Dados insuficientes para previsão confiável (apenas ${numContratos12m} contratos em 12 meses)`,
+          level: "muted",
+        });
       }
 
-      if (metaMesAtual > 0) {
-        if (forecastMesAtual >= metaMesAtual) {
+      if (mesAtual && mesAtual.meta > 0) {
+        if (mesAtual.forecast >= mesAtual.meta) {
           insights.push({ text: "Você está no caminho para bater a meta deste mês", level: "success" });
         } else {
-          const propostasNec = forecastMensal[0]?.propostasNecessarias || 0;
-          insights.push({ text: `Para bater a meta do mês, precisa de +${propostasNec} propostas enviadas`, level: "warning" });
+          const acaoRS = mesAtual.acaoNecessariaRS;
+          const equiv = mesAtual.propostasEquivalentes;
+          insights.push({
+            text: `Para bater a meta, precisa gerar +R$ ${acaoRS.toLocaleString("pt-BR")} em propostas (≈ ${equiv} propostas)`,
+            level: "warning",
+          });
         }
       }
 
-      if (media12mReceita > 0) {
-        const delta = ((forecastMesAtual - media12mReceita) / media12mReceita) * 100;
+      // Compare forecast vs 12m average
+      if (receitaMediaMensal > 0 && mesAtual) {
+        const delta = ((mesAtual.forecast - receitaMediaMensal) / receitaMediaMensal) * 100;
         if (Math.abs(delta) > 5) {
           insights.push({
             text: `Forecast está ${delta > 0 ? "+" : ""}${delta.toFixed(0)}% ${delta > 0 ? "acima" : "abaixo"} da média dos últimos 12 meses`,
@@ -273,23 +275,24 @@ export function useForecastPage(params: ForecastPageParams) {
         }
       }
 
-      // Bottleneck detection
-      const volEfetivo = cenario.volumeMensal;
-      const convEfetiva = cenario.conversao;
-      const tickEfetivo = cenario.ticket;
-      if (mediaEnviadasMes > 0 && volEfetivo < mediaEnviadasMes * 0.8) {
-        insights.push({ text: "Seu gargalo está no volume de propostas", level: "destructive" });
-      }
-      if (conversaoReal > 0 && convEfetiva < conversaoReal * 0.8) {
-        insights.push({ text: "Seu gargalo está na conversão", level: "destructive" });
-      }
-      if (ticketReal > 0 && tickEfetivo < ticketReal * 0.8) {
-        insights.push({ text: "Seu gargalo está no ticket médio", level: "destructive" });
+      // Bottleneck detection: which factor is dragging the most
+      const volFactor = params.volumeAjuste;
+      const convFactor = params.conversaoAjuste;
+      const tickFactor = params.ticketAjuste;
+      const minFactor = Math.min(volFactor, convFactor, tickFactor);
+      if (minFactor < 0.8) {
+        if (minFactor === volFactor) {
+          insights.push({ text: "Seu principal gargalo hoje é o volume de propostas enviadas", level: "destructive" });
+        } else if (minFactor === convFactor) {
+          insights.push({ text: "Seu principal gargalo hoje é a conversão financeira", level: "destructive" });
+        } else {
+          insights.push({ text: "Seu principal gargalo hoje é o ticket médio", level: "destructive" });
+        }
       }
 
-      if (forecastMesAtual > 0) {
+      if (mesAtual && mesAtual.forecast > 0) {
         insights.push({
-          text: `Se mantiver a taxa atual, o mês fecha em R$ ${forecastMesAtual.toLocaleString("pt-BR")}`,
+          text: `Mantendo o cenário atual, o mês fecha em R$ ${mesAtual.forecast.toLocaleString("pt-BR")}`,
           level: "muted",
         });
       }
