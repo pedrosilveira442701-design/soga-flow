@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useForecast } from "@/hooks/useForecast";
@@ -143,6 +144,17 @@ export function ForecastSection() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Aviso de amostra pequena */}
+      {kpis.sampleWarning && (
+        <Alert className="border-yellow-500/50 bg-yellow-500/10">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription className="text-sm">
+            <strong>Amostra pequena:</strong> apenas {kpis.totalFechadas} contratos fechados nos últimos 12 meses.
+            A previsibilidade pode ficar distorcida.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Forecast de Receita */}
       <Card>
