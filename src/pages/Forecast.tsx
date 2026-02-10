@@ -2,23 +2,20 @@ import { useState, useCallback, useMemo } from "react";
 import {
   TrendingUp, RotateCcw, Target, DollarSign, BarChart3, Percent,
   Lightbulb, AlertTriangle, CheckCircle, XCircle, Info, FileText,
-  Clock, PieChart, Crosshair,
+  Clock, PieChart, Crosshair, Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  AreaChart, Area,
 } from "recharts";
 
 type Horizonte = 3 | 6 | 12;
@@ -28,9 +25,6 @@ function fmtBRL(v: number | undefined | null) {
 }
 function fmtPct(v: number | undefined | null) {
   return `${((v ?? 0) * 100).toFixed(1)}%`;
-}
-function fmtPctRaw(v: number | undefined | null) {
-  return `${(v ?? 0).toFixed(1)}%`;
 }
 
 const insightIcons: Record<InsightLevel, React.ReactNode> = {
@@ -49,8 +43,9 @@ const insightBg: Record<InsightLevel, string> = {
 
 export default function Forecast() {
   const [horizonte, setHorizonte] = useState<Horizonte>(6);
+  const [mesFoco, setMesFoco] = useState(0);
   const [valorAdicional, setValorAdicional] = useState(0);
-  const [conversaoMarg, setConversaoMarg] = useState(0.30); // 30% default
+  const [conversaoMarg, setConversaoMarg] = useState(0.30);
   const [ticketMarg, setTicketMarg] = useState(0);
 
   const params: ForecastPageParams = {
@@ -61,21 +56,29 @@ export default function Forecast() {
   };
   const { data, isLoading } = useForecastPage(params);
 
-  // When data loads, seed ticket marginal from history if not set
   const bs = data?.baseStats;
   const pipeline = data?.pipeline;
   const fm = data?.forecastMensal || [];
   const vh = data?.volumeHistorico || [];
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
-  const mesAtual = fm[0];
+
+  // Reset mesFoco when horizon changes or exceeds array
+  const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
+  const mesFocoData = fm[safeMesFoco] || null;
+
+  const handleHorizonteChange = useCallback((v: string) => {
+    if (v) {
+      setHorizonte(Number(v) as Horizonte);
+      setMesFoco(0);
+    }
+  }, []);
 
   // Auto-seed conversão marginal from history
-  const seededConversao = useMemo(() => {
+  useMemo(() => {
     if (bs && conversaoMarg === 0.30 && bs.conversaoFinanceira > 0) {
-      return bs.conversaoFinanceira;
+      setConversaoMarg(bs.conversaoFinanceira);
     }
-    return conversaoMarg;
   }, [bs?.conversaoFinanceira]);
 
   const resetControles = useCallback(() => {
@@ -94,22 +97,24 @@ export default function Forecast() {
     const item = payload[0]?.payload;
     if (!item) return null;
     return (
-      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1">
-        <p className="font-medium text-foreground">{label}</p>
-        <p className="text-primary">Forecast Base: {fmtBRL(item.forecastBase)}</p>
-        {item.forecastIncremental > 0 && (
-          <p className="text-accent-foreground">+ Esforço: {fmtBRL(item.forecastIncremental)}</p>
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[220px]">
+        <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
+        <div className="flex justify-between"><span className="text-muted-foreground">Baseline:</span><span>{fmtBRL(item.baseline)}</span></div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Pipeline:</span><span>{fmtBRL(item.pipelineAlloc)}</span></div>
+        {item.incrementalAlloc > 0 && (
+          <div className="flex justify-between"><span className="text-muted-foreground">Incremental:</span><span>{fmtBRL(item.incrementalAlloc)}</span></div>
         )}
-        <p className="text-primary font-semibold">Total: {fmtBRL(item.forecastTotal)}</p>
-        <p className="text-success">Meta: {fmtBRL(item.meta)}</p>
+        <div className="flex justify-between border-t border-border pt-1 font-semibold">
+          <span>Total:</span><span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
+        </div>
+        <div className="flex justify-between"><span className="text-muted-foreground">Meta:</span><span className="text-success">{fmtBRL(item.meta)}</span></div>
         {item.gap > 0 && (
           <>
-            <p className="text-destructive">Gap: {fmtBRL(item.gap)}</p>
-            <p className="text-warning text-xs">Ação: +{fmtBRL(item.acaoNecessariaRS)} em propostas</p>
+            <div className="flex justify-between text-destructive"><span>Gap:</span><span>{fmtBRL(item.gap)}</span></div>
+            <div className="text-xs text-warning mt-1">
+              Ação: +{fmtBRL(item.acaoNecessariaRS)} em propostas (~{item.propostasEquiv} prop.)
+            </div>
           </>
-        )}
-        {item.pctPipelineNoForecast > 0 && (
-          <p className="text-muted-foreground text-xs">{fmtPctRaw(item.pctPipelineNoForecast)} vem do pipeline</p>
         )}
       </div>
     );
@@ -128,7 +133,7 @@ export default function Forecast() {
             Motor de decisão comercial baseado no pipeline real e histórico de 12 meses
           </p>
         </div>
-        <ToggleGroup type="single" value={String(horizonte)} onValueChange={(v) => v && setHorizonte(Number(v) as Horizonte)} className="bg-muted rounded-lg p-0.5">
+        <ToggleGroup type="single" value={String(horizonte)} onValueChange={handleHorizonteChange} className="bg-muted rounded-lg p-0.5">
           {[3, 6, 12].map((h) => (
             <ToggleGroupItem key={h} value={String(h)} className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md">
               {h}m
@@ -147,7 +152,31 @@ export default function Forecast() {
         </Alert>
       )}
 
-      {/* KPI Cards — "Onde eu estou hoje?" */}
+      {/* Month focus selector */}
+      {!isLoading && fm.length > 0 && (
+        <div className="flex items-center gap-3">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Mês foco:</span>
+          <ToggleGroup
+            type="single"
+            value={String(safeMesFoco)}
+            onValueChange={(v) => v !== undefined && v !== "" && setMesFoco(Number(v))}
+            className="bg-muted rounded-lg p-0.5 flex-wrap"
+          >
+            {fm.map((m, i) => (
+              <ToggleGroupItem
+                key={i}
+                value={String(i)}
+                className="text-xs px-2.5 py-1 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
+              >
+                {m.mes}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      )}
+
+      {/* KPI Cards */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-24" />)}
@@ -157,28 +186,28 @@ export default function Forecast() {
           <KPICard
             icon={<DollarSign className="h-4 w-4" />}
             label="Receita s/ Esforço"
-            value={fmtBRL(mesAtual?.forecastBase)}
-            sub="Pipeline + média histórica"
+            value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
+            sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
           />
           <KPICard
             icon={<TrendingUp className="h-4 w-4" />}
             label="Receita Projetada"
-            value={fmtBRL(mesAtual?.forecastTotal)}
+            value={fmtBRL(mesFocoData?.forecastTotal)}
             sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
-            variant={mesAtual && mesAtual.forecastTotal >= mesAtual.meta ? "success" : undefined}
+            variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
           />
           <KPICard
             icon={<Target className="h-4 w-4" />}
             label="Gap vs Meta"
-            value={fmtBRL(mesAtual?.gap)}
-            variant={(mesAtual?.gap || 0) > 0 ? "destructive" : "success"}
-            sub={mesAtual?.meta ? `Meta: ${fmtBRL(mesAtual.meta)}` : "Sem meta definida"}
+            value={fmtBRL(mesFocoData?.gap)}
+            variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
+            sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
           />
           <KPICard
             icon={<FileText className="h-4 w-4" />}
             label="Ação Necessária"
-            value={fmtBRL(mesAtual?.acaoNecessariaRS)}
-            sub={`≈ ${bs && bs.ticketReal > 0 ? Math.ceil((mesAtual?.acaoNecessariaRS || 0) / bs.ticketReal) : 0} propostas`}
+            value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
+            sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
           />
           <KPICard
             icon={<PieChart className="h-4 w-4" />}
@@ -195,7 +224,7 @@ export default function Forecast() {
         </div>
       )}
 
-      {/* Meta do mês (if no meta, show CTA) */}
+      {/* Meta CTA */}
       {!isLoading && metasAtivas.length === 0 && (
         <Alert>
           <Target className="h-4 w-4" />
@@ -206,7 +235,7 @@ export default function Forecast() {
         </Alert>
       )}
 
-      {/* Alavancas de controle — "O que posso mudar?" */}
+      {/* Simulador de Esforço Comercial */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -228,7 +257,6 @@ export default function Forecast() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* 1: Valor adicional em propostas (R$/mês) */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Valor adicional em propostas (R$/mês)</Label>
                 <Slider
@@ -242,14 +270,8 @@ export default function Forecast() {
                   <span className="font-medium text-foreground">{fmtBRL(valorAdicional)}/mês</span>
                   <span>Hist: {fmtBRL(bs?.volumeEnviadoMensal)}/mês</span>
                 </div>
-                {valorAdicional > 0 && (
-                  <p className="text-xs text-primary">
-                    Impacto: +{fmtBRL(valorAdicional * conversaoMarg)} de receita/mês (após {bs?.tempoMedioFechamentoDias || 45}d)
-                  </p>
-                )}
               </div>
 
-              {/* 2: Conversão financeira marginal */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Conversão financeira marginal (%)</Label>
                 <Slider
@@ -265,7 +287,6 @@ export default function Forecast() {
                 </div>
               </div>
 
-              {/* 3: Ticket médio esperado */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Ticket médio esperado (R$)</Label>
                 <Slider
@@ -283,17 +304,18 @@ export default function Forecast() {
             </div>
           )}
 
-          {/* Impacto resumo */}
           {!isLoading && valorAdicional > 0 && (
             <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
               <div className="flex items-center gap-2 text-sm">
                 <Crosshair className="h-4 w-4 text-primary" />
                 <span className="text-foreground">
-                  Gerando <strong>{fmtBRL(valorAdicional)}</strong>/mês em propostas com{" "}
-                  <strong>{(conversaoMarg * 100).toFixed(0)}%</strong> de conversão = {" "}
-                  <strong className="text-primary">{fmtBRL(valorAdicional * conversaoMarg)}</strong> de receita adicional/mês
+                  Gerando <strong>{fmtBRL(valorAdicional)}</strong>/mês com{" "}
+                  <strong>{(conversaoMarg * 100).toFixed(0)}%</strong> de conversão ={" "}
+                  <strong className="text-primary">{fmtBRL(valorAdicional * conversaoMarg)}</strong> de receita/mês.
                   {bs && bs.tempoMedioFechamentoDias > 0 && (
-                    <span className="text-muted-foreground"> (a partir do {Math.ceil(bs.tempoMedioFechamentoDias / 30)}º mês)</span>
+                    <span className="text-muted-foreground">
+                      {" "}Impacto começa em ~{bs.tempoMedioFechamentoDias} dias (mês {fm[Math.max(1, Math.ceil(bs.tempoMedioFechamentoDias / 30))]?.mes || "—"})
+                    </span>
                   )}
                 </span>
               </div>
@@ -302,7 +324,7 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
-      {/* Forecast vs Meta Chart */}
+      {/* Forecast vs Meta — Stacked Bar */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Forecast vs Meta — Mês a Mês</CardTitle>
@@ -316,11 +338,12 @@ export default function Forecast() {
                 <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                 <Tooltip content={forecastTooltip} />
                 <Legend />
-                <Bar dataKey="forecastBase" name="Forecast Base (R$)" fill="hsl(210, 92%, 57%)" radius={[4, 4, 0, 0]} stackId="forecast" />
+                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} stackId="forecast" />
+                <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" radius={[0, 0, 0, 0]} stackId="forecast" />
                 {valorAdicional > 0 && (
-                  <Bar dataKey="forecastIncremental" name="Esforço Adicional (R$)" fill="hsl(210, 70%, 75%)" radius={[4, 4, 0, 0]} stackId="forecast" />
+                  <Bar dataKey="incrementalAlloc" name="Esforço Adicional" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} stackId="forecast" />
                 )}
-                <Line dataKey="meta" name="Meta" type="monotone" stroke="hsl(145, 63%, 39%)" strokeWidth={2} strokeDasharray="6 3" dot={false} />
+                <Line dataKey="meta" name="Meta" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={2} strokeDasharray="6 3" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -342,9 +365,9 @@ export default function Forecast() {
                 <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={tooltipFormatter} />
                 <Legend />
-                <Bar yAxisId="left" dataKey="valorEnviado" name="Valor Enviado (R$)" fill="hsl(210, 92%, 57%)" radius={[3, 3, 0, 0]} opacity={0.7} />
-                <Bar yAxisId="left" dataKey="valorFechado" name="Valor Fechado (R$)" fill="hsl(145, 63%, 39%)" radius={[3, 3, 0, 0]} />
-                <Line yAxisId="right" dataKey="conversaoFinanceira" name="Conversão %" type="monotone" stroke="hsl(36, 96%, 57%)" strokeWidth={2} dot={{ r: 2 }} />
+                <Bar yAxisId="left" dataKey="valorEnviado" name="Valor Enviado (R$)" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} opacity={0.7} />
+                <Bar yAxisId="left" dataKey="valorFechado" name="Valor Fechado (R$)" fill="hsl(var(--chart-2))" radius={[3, 3, 0, 0]} />
+                <Line yAxisId="right" dataKey="conversaoFinanceira" name="Conversão %" type="monotone" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={{ r: 2 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -372,12 +395,12 @@ export default function Forecast() {
                   </div>
                 ))}
             </div>
-            <div className="mt-3 flex items-center gap-4 text-sm">
-              <span className="text-muted-foreground">Total pipeline bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong></span>
-              <span className="text-muted-foreground">Valor ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong></span>
+            <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
+              <span className="text-muted-foreground">Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong></span>
+              <span className="text-muted-foreground">Ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong></span>
               <span className="text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 inline mr-1" />
-                Tempo médio fechamento: <strong className="text-foreground">{bs?.tempoMedioFechamentoDias || "—"}d</strong>
+                Fechamento (P50): <strong className="text-foreground">{bs?.tempoMedioFechamentoDias || "—"}d</strong>
               </span>
             </div>
           </CardContent>
