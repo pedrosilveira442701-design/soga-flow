@@ -16,7 +16,7 @@ import { MaturacaoBoxplot } from "@/components/analytics/MaturacaoBoxplot";
 import { MaturacaoScatter } from "@/components/analytics/MaturacaoScatter";
 import { ChannelAnalyticsSection } from "@/components/analytics/ChannelAnalyticsSection";
 import { InconsistenciasReport } from "@/components/analytics/InconsistenciasReport";
-import { ForecastSection } from "@/components/analytics/ForecastSection";
+import { PlanejamentoFaturamentoSection } from "@/components/analytics/PlanejamentoFaturamentoSection";
 import { useAnalytics, AnalyticsFilters as Filters } from "@/hooks/useAnalytics";
 import { useMaturacaoComercial } from "@/hooks/useMaturacaoComercial";
 import { Card, CardContent } from "@/components/ui/card";
@@ -125,9 +125,9 @@ export default function Analytics() {
         {/* Relatório de Inconsistências */}
         <InconsistenciasReport />
 
-        {/* Previsibilidade de Fechamento */}
+        {/* Planejamento de Faturamento */}
         <Separator className="my-8" />
-        <ForecastSection />
+        <PlanejamentoFaturamentoSection />
         <Separator className="my-8" />
 
         {/* Taxas de Conversão */}
