@@ -1,106 +1,116 @@
 
 
-# Plano: Refatorar /forecast para Motor Financeiro (R$)
+# Plano: Corrigir Forecast para Variar Mês a Mês
 
-## Problema Atual
+## Problema
 
-O hook `useForecastPage.tsx` calcula tudo baseado em **contagem de propostas**:
-- `conversaoReal = totalFechadas / totalEnviadas` (contagem)
-- `mediaEnviadasMes = totalEnviadas / 12` (contagem)
-- `forecast = volumeMensal * conversao * ticket` (contagem x taxa x valor)
+O hook atual soma `receitaMediaMensal` (constante) + `pipelinePorMes` (concentrado em 1-2 meses) resultando em valores quase iguais na maioria dos meses. O `forecastBase` inclui a baseline dentro dele, impossibilitando separar visualmente os 3 componentes no grafico.
 
-A especificacao exige que **tudo seja em R$**:
-- `conversao = valor_fechado / valor_enviado` (financeira)
-- `receita_media_mensal = valor_fechado / 12` (financeira)
-- `forecast = receita_media_mensal * fator_volume * fator_conversao * fator_ticket`
+## Solucao
 
----
+### 1. Hook `src/hooks/useForecastPage.tsx` -- Separar 3 series independentes
 
-## O Que Muda
+**Interface `ForecastMensal` atualizada:**
 
-### 1. `src/hooks/useForecastPage.tsx` (reescrever logica central)
+| Campo | Descricao |
+|-------|-----------|
+| `baseline` | `valor_fechado_12m / 12` (constante) |
+| `pipelineAlloc` | Valor ponderado do pipeline distribuido naquele mes (variavel) |
+| `incrementalAlloc` | Receita incremental do esforco comercial naquele mes (variavel, com delay) |
+| `forecastTotal` | `baseline + pipelineAlloc + incrementalAlloc` |
+| `meta` | Meta mensal prorrateada |
+| `gap` | `max(0, meta - forecastTotal)` |
+| `acaoNecessariaRS` | `gap / conversaoFinanceira` |
+| `propostasEquiv` | `gap / (ticketReal * conversaoFinanceira)` |
 
-**Novas metricas base (todas em R$):**
+**Distribuicao do pipeline com spread (nao ponto unico):**
 
-| Metrica | Calculo |
-|---------|---------|
-| Valor total enviado (R$) | Soma de `propostas.valor_total` (is_current=true, 12m) |
-| Valor total fechado (R$) | Soma de `COALESCE(contratos.valor_negociado, propostas.valor_total)` no periodo |
-| Conversao financeira (%) | `valor_fechado / valor_enviado` |
-| Ticket medio (R$) | `valor_fechado / numero_de_contratos` |
-| Receita media mensal (R$) | `valor_fechado / 12` |
+Atualmente cada proposta cai em um unico mes. Mudanca: distribuir em 3 meses ao redor do ponto estimado de fechamento:
+- 30% no mes anterior ao estimado
+- 50% no mes estimado
+- 20% no mes seguinte
 
-**Nova formula de forecast:**
+Isso gera uma curva suave e realista em vez de "degraus".
+
+**Incremental com delay recorrente:**
+
+Para cada mes `i` no horizonte:
 ```text
-forecast_mensal = receita_media_mensal * fator_volume * fator_conversao * fator_ticket
+se i >= mesesDeDelay:
+  incrementalAlloc[i] = valorAdicionalMensal * conversaoMarginal
+senao:
+  incrementalAlloc[i] = 0
 ```
 
-**Interfaces atualizadas:**
-- `BaseStats`: trocar `mediaEnviadasMes` e `conversaoReal` por `valorEnviado12m`, `valorFechado12m`, `conversaoFinanceira`, `receitaMediaMensal`, `ticketReal`, `numContratos12m`
-- `VolumeHistorico`: trocar `enviadas`/`fechadas` (contagem) por `valorEnviado`/`valorFechado` (R$), manter `conversaoFinanceira` (%)
-- `ForecastMensal`: adicionar `acaoNecessariaRS` (gap em R$ de propostas adicionais)
-- `CenarioEfetivo`: trocar `volumeMensal` (contagem) por `receitaBase` (R$)
+Isso ja existe na logica atual, mas sera separado como campo proprio.
 
-**Insights atualizados:**
-- "Para bater a meta, precisa gerar +R$ Y em propostas" (em vez de "+N propostas")
-- Manter calculo de "propostas equivalentes" como info secundaria: `gap / (ticket * conversao)`
-- Gargalo: comparar impacto dos 3 fatores sobre o forecast
+### 2. Pagina `src/pages/Forecast.tsx` -- Stacked bars + Mes foco
 
-**Sliders:**
-- Volume mensal de propostas (R$): base = media de `valor_total` enviado por mes nos 12m
-- Conversao financeira (%): base = `valor_fechado / valor_enviado`
-- Ticket medio (R$): base = `valor_fechado / num_contratos`
+**Grafico principal (stacked bar):**
 
-### 2. `src/pages/Forecast.tsx` (atualizar UI)
+3 barras empilhadas:
+- Baseline (azul escuro)
+- Pipeline (azul medio)
+- Esforco Adicional (azul claro) -- so aparece quando `valorAdicional > 0`
 
-**Header:**
-- Titulo: "Forecast de Faturamento"
-- Subtitulo: "Planejamento financeiro baseado no comportamento real dos ultimos 12 meses"
+Linha tracejada: Meta mensal
 
-**Controles do Cenario:**
-- Slider "Volume mensal (R$)": mostra valor absoluto em R$ e % vs historico
-- Slider "Conversao financeira (%)": mostra % absoluto e delta
-- Slider "Ticket medio (R$)": mostra valor absoluto e delta
-- Nao mostrar contagem de propostas como valor principal do slider
+**Tooltip rico:**
 
-**KPI Cards (4 principais + 2 apoio):**
-1. Receita Esperada (receita media mensal historica)
-2. Receita Projetada (forecast do cenario)
-3. Gap de Faturamento (R$ e %)
-4. Acao Necessaria: valor em R$ de propostas + volume equivalente como sub-info
-5. Conversao financeira (12m + ajuste)
-6. Ticket medio (12m + ajuste)
+```text
+[mes]
+Baseline:      R$ X
+Pipeline:      R$ Y
+Incremental:   R$ Z
+───────────────
+Total:         R$ T
+Meta:          R$ M
+Gap:           R$ G
+Acao:          +R$ A em propostas (~N propostas)
+```
 
-**Grafico principal (Forecast vs Meta):**
-- Barras: Forecast mensal (R$)
-- Linha: Meta mensal
-- Tooltip: forecast, meta, gap, acao necessaria em R$
+**Seletor de mes foco:**
 
-**Historico 12m:**
-- Barras: Valor enviado (R$) e Valor fechado (R$)
-- Linha: Conversao financeira (%)
-- Eixo Y em R$ (nao contagem)
+Adicionar um ToggleGroup acima dos KPIs com os meses do horizonte (ex: "fev/26", "mar/26", ...).
+Default: mes atual (indice 0).
+Ao clicar num mes, os 6 KPI cards passam a refletir aquele mes.
 
-**Insights:**
-- Frases em R$: "Para bater a meta, precisa gerar +R$ X em propostas"
-- Volume equivalente como informacao complementar entre parenteses
+**KPIs atualizados com mes foco:**
 
----
+| KPI | Valor |
+|-----|-------|
+| Receita s/ Esforco | `baseline[mesFoco] + pipelineAlloc[mesFoco]` |
+| Receita Projetada | `forecastTotal[mesFoco]` |
+| Gap vs Meta | `gap[mesFoco]` |
+| Acao Necessaria | `acaoNecessariaRS[mesFoco]` + subinfo propostas equiv |
+| Pipeline Vivo | Total ponderado (global, nao varia por mes) |
+| Conversao (12m) | Conversao financeira base (global) |
 
-## O Que NAO Muda
+**Horizonte (3/6/12m):**
 
-- Rota `/forecast` e posicao no menu (ja existem)
-- Estrutura visual geral (header, sliders, KPIs, graficos, insights)
-- Logica de metas (leitura e prorrateio)
-- Presets conservador/base/agressivo (mesmos fatores)
-- Modulo `/analytics` e `PlanejamentoFaturamentoSection` (intocados)
+Ao trocar, o array `forecastMensal` muda de tamanho, o grafico renderiza mais/menos barras, o seletor de mes foco se ajusta e o mesFoco reseta para 0.
+
+### 3. Detalhe do simulador
+
+Adicionar linha informativa no card:
+```text
+"Impacto comeca em ~{tempoMedioFechamentoDias} dias (mes {mesLabel})"
+```
 
 ---
 
-## Resumo de Entregas
+## Arquivos
 
 | # | Arquivo | Acao |
 |---|---------|------|
-| 1 | `src/hooks/useForecastPage.tsx` | Reescrever: metricas financeiras (R$), nova formula de forecast |
-| 2 | `src/pages/Forecast.tsx` | Atualizar: labels, KPIs, sliders e graficos para refletir base financeira |
+| 1 | `src/hooks/useForecastPage.tsx` | Separar baseline/pipelineAlloc/incrementalAlloc no ForecastMensal; distribuir pipeline em 3 meses |
+| 2 | `src/pages/Forecast.tsx` | Stacked bar chart; seletor de mes foco; tooltip rico; KPIs por mes |
+
+## O que NAO muda
+
+- Rota, menu, navegacao
+- Logica de metas (leitura/prorrateio)
+- Historico 12m (grafico inferior)
+- Pipeline breakdown por estagio
+- Insights engine (ja funciona sobre forecastMensal[0])
 
