@@ -25,6 +25,7 @@ import Preferencias from "./pages/conta/Preferencias";
 import Ajuda from "./pages/conta/Ajuda";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import Forecast from "./pages/Forecast";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/visitas" element={<ProtectedRoute><DashboardLayout><Visitas /></DashboardLayout></ProtectedRoute>} />
             <Route path="/anotacoes" element={<ProtectedRoute><DashboardLayout><Anotacoes /></DashboardLayout></ProtectedRoute>} />
             <Route path="/arquivos" element={<ProtectedRoute><DashboardLayout><Arquivos /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/forecast" element={<ProtectedRoute><DashboardLayout><Forecast /></DashboardLayout></ProtectedRoute>} />
             <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><DashboardLayout><NotificationSettings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/perfil" element={<ProtectedRoute><DashboardLayout><Perfil /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/preferencias" element={<ProtectedRoute><DashboardLayout><Preferencias /></DashboardLayout></ProtectedRoute>} />
