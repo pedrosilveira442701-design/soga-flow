@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { addDays, format, startOfMonth, differenceInDays } from "date-fns";
+import { addDays, format, subMonths, differenceInDays } from "date-fns";
 
 export interface ForecastFilters {
   outlierLimit: number; // dias máximo
@@ -71,27 +71,32 @@ export function useForecast(filters: ForecastFilters = { outlierLimit: 180 }) {
     queryFn: async () => {
       if (!user) return null;
 
-      // 1) Propostas fechadas (com contrato) - is_current, status fechada
+      // Janela móvel de 12 meses
+      const dataLimite12m = format(subMonths(new Date(), 12), "yyyy-MM-dd");
+
+      // 1) Propostas fechadas nos últimos 12 meses (por data_fechamento)
       const { data: fechadas, error: e1 } = await supabase
         .from("propostas")
         .select("data, data_fechamento, valor_total, liquido")
         .eq("user_id", user.id)
         .eq("is_current", true)
         .eq("status", "fechada")
-        .not("data_fechamento", "is", null);
+        .not("data_fechamento", "is", null)
+        .gte("data_fechamento", dataLimite12m);
 
       if (e1) throw e1;
 
-      // 2) Total de propostas enviadas (para taxa de conversão)
+      // 2) Total de propostas enviadas nos últimos 12 meses (por data de envio)
       const { count: totalEnviadas, error: e2 } = await supabase
         .from("propostas")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
-        .eq("is_current", true);
+        .eq("is_current", true)
+        .gte("data", dataLimite12m);
 
       if (e2) throw e2;
 
-      // 3) Propostas abertas (para projeção)
+      // 3) Propostas abertas (para projeção futura – sem filtro de período)
       const { data: abertas, error: e3 } = await supabase
         .from("propostas")
         .select("data, valor_total, liquido")
