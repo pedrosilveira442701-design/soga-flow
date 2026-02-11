@@ -1,64 +1,71 @@
 
 
-# Corrigir Posicionamento dos Dropdowns do Menu
+# Adicionar Receita Real, Margem Real e Delta vs Forecast
 
-## Problema
+## Resumo
 
-O componente `NavigationMenu` do Radix usa um **viewport compartilhado** (`NavigationMenuViewport`) que e posicionado com `absolute left-0 top-full` relativo ao root do menu. Isso faz com que todos os dropdowns aparecam alinhados a esquerda, independente de qual trigger foi clicado (ex: clicar em "Analise" abre o dropdown embaixo de "Comercial").
+Adicionar 3 novos KPI cards no topo da pagina /forecast que mostram dados reais do mes foco selecionado, sem alterar nenhuma logica existente de forecast.
 
-## Solucao
+## Fonte de Dados
 
-Trocar a estrategia de posicionamento: em vez de usar o viewport compartilhado do Radix, fazer cada `NavigationMenuContent` renderizar posicionado diretamente abaixo do seu proprio trigger (`NavigationMenuItem`).
+**Receita Real do mes foco**: soma de `contratos.valor_negociado` onde o contrato tem close date dentro do mes foco. Close date segue a regra existente: `COALESCE(propostas.data_fechamento, contratos.created_at, contratos.data_inicio)`.
 
-## Mudancas Tecnicas
+**Custo Real**: calculado como `valor_negociado * (1 - margem_pct / 100)` por contrato. So contratos com `margem_pct > 0` sao considerados.
 
-### 1. `src/components/ui/navigation-menu.tsx`
+**Margem Real**: `(Receita Real - Custo Real) / Receita Real * 100`.
 
-- Remover o `<NavigationMenuViewport />` que e auto-incluido dentro do componente `NavigationMenu`
-- Isso fara com que o conteudo renderize diretamente no DOM em vez de ser teleportado para o viewport compartilhado
+**Delta**: `Receita Real - Receita Projetada (forecastTotal do mes foco)`.
 
-Mudanca concreta:
+## Mudancas
+
+### 1. Hook `src/hooks/useForecastPage.tsx`
+
+- Na query paralela de contratos, incluir o campo `margem_pct` que ja existe na tabela
+- Criar um mapa `receitaRealPorMes` e `custoRealPorMes` agrupando fechamentos por mesKey
+- Adicionar ao `ForecastMensal` 3 novos campos opcionais:
+  - `receitaReal: number` (soma dos valores fechados naquele mes)
+  - `custoReal: number` (soma de valor * (1 - margem/100))
+  - `margemReal: number | null` (percentual, null se receita = 0)
+- Preencher esses campos no loop de construcao do `forecastMensal`
+- Os fechamentos ja estao calculados em `fechamentos12m` com mesKey; basta reutiliza-los e adicionar margem_pct
+
+### 2. Pagina `src/pages/Forecast.tsx`
+
+- Adicionar uma nova linha de 4 cards entre o seletor de mes foco e os KPIs existentes:
+
 ```text
-// ANTES (inclui viewport automaticamente)
-<NavigationMenuPrimitive.Root ...>
-  {children}
-  <NavigationMenuViewport />
-</NavigationMenuPrimitive.Root>
-
-// DEPOIS (sem viewport, conteudo renderiza in-place)
-<NavigationMenuPrimitive.Root ...>
-  {children}
-</NavigationMenuPrimitive.Root>
+| Receita Projetada | Receita Real | Margem Real | Delta vs Forecast |
 ```
 
-### 2. `src/components/layout/Topbar.tsx`
+Detalhes visuais:
+- **Receita Projetada**: valor existente (`forecastTotal`), mantido para contexto lado a lado
+- **Receita Real**: `fmtBRL(receitaReal)`, exibe "--" se 0
+- **Margem Real**: `X.X%`, exibe "--" se receita = 0
+- **Delta vs Forecast**: `fmtBRL(delta)`, cor verde se positivo, vermelho se negativo, cinza se zero. Subinfo: "acima/abaixo do projetado"
 
-- Adicionar `position: relative` ao `NavigationMenuItem` de cada grupo dropdown
-- Ajustar o `NavigationMenuContent` para usar posicionamento absoluto relativo ao seu pai (`top-full left-0` ou `left-1/2 -translate-x-1/2` para centralizar)
-- Garantir `z-50` no conteudo para nao ficar atras de outros elementos
+Os 6 KPI cards existentes permanecem inalterados abaixo.
 
-Mudanca no `NavigationMenuContent`:
+## O que NAO muda
+
+- Logica de forecast (baseline, pipeline, incremental)
+- Simulador de esforco
+- Graficos existentes
+- Historico 12m
+- Pipeline breakdown
+- Insights
+- Metas
+- Estrutura do banco
+
+## Detalhe tecnico
+
+Para incluir `margem_pct` nos contratos, a query existente:
 ```text
-// Adicionar classes de posicionamento direto
-className="absolute top-full left-1/2 -translate-x-1/2 mt-2 ..."
+supabase.from("contratos").select("proposta_id, created_at, data_inicio, valor_negociado")
+```
+Passa a ser:
+```text
+supabase.from("contratos").select("proposta_id, created_at, data_inicio, valor_negociado, margem_pct")
 ```
 
-E no `NavigationMenuItem` pai:
-```text
-<NavigationMenuItem key={group.label} className="relative">
-```
-
-## Resultado
-
-- Cada dropdown aparecera centralizado abaixo do seu proprio trigger
-- "Comercial" -> dropdown abaixo de "Comercial"
-- "Analise" -> dropdown abaixo de "Analise"
-- Animacoes de abertura/fechamento continuam funcionando
-
-## Arquivos
-
-| # | Arquivo | Acao |
-|---|---------|------|
-| 1 | `src/components/ui/navigation-menu.tsx` | Remover auto-include do `NavigationMenuViewport` |
-| 2 | `src/components/layout/Topbar.tsx` | Posicionar cada dropdown relativo ao seu trigger |
+Os fechamentos ja calculados passam a incluir `margemPct` para permitir calculo de custo real por mes.
 
