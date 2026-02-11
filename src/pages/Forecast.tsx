@@ -176,6 +176,53 @@ export default function Forecast() {
         </div>
       )}
 
+      {/* Real vs Forecast Cards */}
+      {!isLoading && mesFocoData && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <KPICard
+            icon={<TrendingUp className="h-4 w-4" />}
+            label="Receita Projetada"
+            value={fmtBRL(mesFocoData.forecastTotal)}
+            sub={mesFocoData.mes}
+          />
+          <KPICard
+            icon={<DollarSign className="h-4 w-4" />}
+            label="Receita Real"
+            value={mesFocoData.receitaReal > 0 ? fmtBRL(mesFocoData.receitaReal) : "—"}
+            sub={mesFocoData.receitaReal > 0 ? `Fechado em ${mesFocoData.mes}` : "Sem fechamentos"}
+          />
+          <KPICard
+            icon={<Percent className="h-4 w-4" />}
+            label="Margem Real"
+            value={mesFocoData.margemReal !== null ? `${mesFocoData.margemReal.toFixed(1)}%` : "—"}
+            sub={mesFocoData.margemReal !== null ? `Custo: ${fmtBRL(mesFocoData.custoReal)}` : "Sem dados de margem"}
+          />
+          <KPICard
+            icon={<BarChart3 className="h-4 w-4" />}
+            label="Delta vs Forecast"
+            value={(() => {
+              if (mesFocoData.receitaReal === 0) return "—";
+              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
+              return `${delta >= 0 ? "+" : ""}${fmtBRL(delta)}`;
+            })()}
+            variant={(() => {
+              if (mesFocoData.receitaReal === 0) return undefined;
+              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
+              if (delta > 0) return "success" as const;
+              if (delta < 0) return "destructive" as const;
+              return undefined;
+            })()}
+            sub={(() => {
+              if (mesFocoData.receitaReal === 0) return "Aguardando fechamentos";
+              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
+              if (delta > 0) return "acima do projetado";
+              if (delta < 0) return "abaixo do projetado";
+              return "igual ao projetado";
+            })()}
+          />
+        </div>
+      )}
+
       {/* KPI Cards */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
