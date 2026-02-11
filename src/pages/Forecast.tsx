@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   TrendingUp,
   RotateCcw,
@@ -32,21 +32,17 @@ import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 type Horizonte = 3 | 6 | 12;
 
 function fmtBRL(v: number | undefined | null) {
-  return (v ?? 0).toLocaleString("pt-BR", {
+  if (v === null || v === undefined) return "—";
+  return v.toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
     maximumFractionDigits: 0,
   });
 }
-function fmtSignedBRL(v: number) {
-  const sign = v >= 0 ? "+" : "";
-  return `${sign}${fmtBRL(v)}`;
-}
-function fmtPct01(v: number | undefined | null) {
-  return `${((v ?? 0) * 100).toFixed(1)}%`;
-}
-function fmtPct100(v: number | undefined | null) {
-  return `${(v ?? 0).toFixed(1)}%`;
+
+function fmtPct(v: number | undefined | null) {
+  if (v === null || v === undefined) return "—";
+  return `${v.toFixed(1)}%`;
 }
 
 const insightIcons: Record<InsightLevel, React.ReactNode> = {
@@ -63,12 +59,9 @@ const insightBg: Record<InsightLevel, string> = {
   muted: "bg-muted border-border",
 };
 
-type KPIStatus = "success" | "destructive" | undefined;
-
 export default function Forecast() {
   const [horizonte, setHorizonte] = useState<Horizonte>(6);
   const [mesFoco, setMesFoco] = useState(0);
-
   const [valorAdicional, setValorAdicional] = useState(0);
   const [conversaoMarg, setConversaoMarg] = useState(0.3);
   const [ticketMarg, setTicketMarg] = useState(0);
@@ -89,27 +82,30 @@ export default function Forecast() {
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
 
-  const safeMesFoco = useMemo(() => (mesFoco < fm.length ? mesFoco : 0), [mesFoco, fm.length]);
-  const mesFocoData = useMemo(() => fm[safeMesFoco] || null, [fm, safeMesFoco]);
+  const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
+  const mesFocoData = fm[safeMesFoco] || null;
 
   const handleHorizonteChange = useCallback((v: string) => {
-    if (v) {
-      setHorizonte(Number(v) as Horizonte);
-      setMesFoco(0);
-    }
+    if (!v) return;
+    setHorizonte(Number(v) as Horizonte);
+    setMesFoco(0);
   }, []);
 
-  // Auto-seed conversão marginal / ticket marginal com base no histórico, apenas se usuário ainda não ajustou.
+  // Auto-seed conversão marginal com histórico
   useEffect(() => {
     if (!bs) return;
-
     if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
-    if (ticketMarg === 0 && (bs.ticketReal || 0) > 0) {
-      setTicketMarg(bs.ticketReal || 0);
+  }, [bs, conversaoMarg]);
+
+  // Auto-seed ticket marginal com histórico (se ainda não mexeu)
+  useEffect(() => {
+    if (!bs) return;
+    if (ticketMarg === 0 && bs.ticketReal > 0) {
+      setTicketMarg(bs.ticketReal);
     }
-  }, [bs, conversaoMarg, ticketMarg]);
+  }, [bs, ticketMarg]);
 
   const resetControles = useCallback(() => {
     setValorAdicional(0);
@@ -127,20 +123,21 @@ export default function Forecast() {
     const item = payload[0]?.payload;
     if (!item) return null;
 
+    const faturado = item.receitaReal ?? null;
+    const delta = item.deltaVsForecast ?? null;
+
     return (
-      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[220px]">
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[240px]">
         <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
 
         <div className="flex justify-between">
           <span className="text-muted-foreground">Baseline:</span>
           <span>{fmtBRL(item.baseline)}</span>
         </div>
-
         <div className="flex justify-between">
           <span className="text-muted-foreground">Pipeline:</span>
           <span>{fmtBRL(item.pipelineAlloc)}</span>
         </div>
-
         {item.incrementalAlloc > 0 && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Incremental:</span>
@@ -149,7 +146,7 @@ export default function Forecast() {
         )}
 
         <div className="flex justify-between border-t border-border pt-1 font-semibold">
-          <span>Total:</span>
+          <span>Forecast:</span>
           <span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
         </div>
 
@@ -158,10 +155,24 @@ export default function Forecast() {
           <span className="text-success">{fmtBRL(item.meta)}</span>
         </div>
 
+        {faturado !== null && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Faturado:</span>
+            <span className="font-medium">{fmtBRL(faturado)}</span>
+          </div>
+        )}
+
+        {delta !== null && (
+          <div className={cn("flex justify-between", delta < 0 && "text-destructive", delta > 0 && "text-success")}>
+            <span>Delta:</span>
+            <span>{`${delta >= 0 ? "+" : "-"}${fmtBRL(Math.abs(delta))}`}</span>
+          </div>
+        )}
+
         {item.gap > 0 && (
           <>
             <div className="flex justify-between text-destructive">
-              <span>Gap:</span>
+              <span>Gap vs Meta:</span>
               <span>{fmtBRL(item.gap)}</span>
             </div>
             <div className="text-xs text-warning mt-1">
@@ -173,58 +184,13 @@ export default function Forecast() {
     );
   };
 
-  const realVsForecast = useMemo(() => {
-    if (!mesFocoData) return null;
-
-    const forecastTotal = Number(mesFocoData.forecastTotal || 0);
-
-    // Se veio undefined/null do backend, tratamos como "sem dado" (mostrar —).
-    const receitaRealRaw = (mesFocoData as any).receitaReal;
-    const custoRealRaw = (mesFocoData as any).custoReal;
-    const margemRealRaw = (mesFocoData as any).margemReal;
-
-    const temReceitaReal = receitaRealRaw !== undefined && receitaRealRaw !== null;
-    const temCustoReal = custoRealRaw !== undefined && custoRealRaw !== null;
-    const temMargemReal = margemRealRaw !== undefined && margemRealRaw !== null;
-
-    const receitaReal = temReceitaReal ? Number(receitaRealRaw || 0) : null;
-    const custoReal = temCustoReal ? Number(custoRealRaw || 0) : null;
-    const margemReal = temMargemReal ? Number(margemRealRaw) : null;
-
-    const delta = receitaReal === null ? null : receitaReal - forecastTotal;
-
-    const deltaVariant: KPIStatus =
-      delta === null ? undefined : delta > 0 ? "success" : delta < 0 ? "destructive" : undefined;
-
-    const deltaSub =
-      delta === null
-        ? "Sem dados de realizado"
-        : delta > 0
-          ? "acima do projetado"
-          : delta < 0
-            ? "abaixo do projetado"
-            : "igual ao projetado";
-
-    const margemSub = margemReal === null ? "Sem dados de margem" : `Custo: ${fmtBRL(custoReal || 0)}`;
-
-    const receitaSub = receitaReal === null ? "Sem dados de fechado" : `Fechado em ${mesFocoData.mes}`;
-
-    return {
-      mes: mesFocoData.mes as string,
-      forecastTotal,
-      receitaReal,
-      custoReal,
-      margemReal,
-      delta,
-      deltaVariant,
-      deltaSub,
-      margemSub,
-      receitaSub,
-    };
-  }, [mesFocoData]);
-
-  const showMonthSelector = !isLoading && fm.length > 0;
-  const showRealCards = !isLoading && !!mesFocoData;
+  // Para o gráfico “Faturado” não desenhar 0 em meses sem faturamento
+  const fmChart = useMemo(() => {
+    return fm.map((m) => ({
+      ...m,
+      receitaRealChart: m.receitaReal ?? null,
+    }));
+  }, [fm]);
 
   return (
     <div className="space-y-6">
@@ -269,7 +235,7 @@ export default function Forecast() {
       )}
 
       {/* Month focus selector */}
-      {showMonthSelector && (
+      {!isLoading && fm.length > 0 && (
         <div className="flex items-center gap-3">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Mês foco:</span>
@@ -292,55 +258,65 @@ export default function Forecast() {
         </div>
       )}
 
-      {/* Real vs Forecast Cards */}
-      {isLoading ? (
+      {/* Linha/Resumo: Real vs Forecast do mês foco */}
+      {!isLoading && mesFocoData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      ) : (
-        showRealCards &&
-        realVsForecast && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KPICard
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Receita Projetada"
-              value={fmtBRL(realVsForecast.forecastTotal)}
-              sub={realVsForecast.mes}
-            />
+          <KPICard
+            icon={<TrendingUp className="h-4 w-4" />}
+            label="Receita Projetada"
+            value={fmtBRL(mesFocoData.forecastTotal)}
+            sub={mesFocoData.mes}
+          />
 
-            <KPICard
-              icon={<DollarSign className="h-4 w-4" />}
-              label="Receita Real"
-              value={realVsForecast.receitaReal === null ? "—" : fmtBRL(realVsForecast.receitaReal)}
-              sub={realVsForecast.receitaSub}
-              variant={
-                realVsForecast.receitaReal !== null && realVsForecast.receitaReal >= realVsForecast.forecastTotal
+          <KPICard
+            icon={<DollarSign className="h-4 w-4" />}
+            label="Faturado (Bruto)"
+            value={mesFocoData.receitaReal !== null ? fmtBRL(mesFocoData.receitaReal) : "—"}
+            sub={mesFocoData.receitaReal !== null ? `Fechado em ${mesFocoData.mes}` : "Sem faturamento no mês"}
+          />
+
+          <KPICard
+            icon={<Percent className="h-4 w-4" />}
+            label="Lucro / Margem"
+            value={mesFocoData.lucroReal !== null ? fmtBRL(mesFocoData.lucroReal) : "—"}
+            sub={
+              mesFocoData.margemReal !== null
+                ? `Margem: ${fmtPct(mesFocoData.margemReal)} | Custo: ${fmtBRL(mesFocoData.custoReal)}`
+                : "Sem dados de margem (margem_pct faltando)"
+            }
+          />
+
+          <KPICard
+            icon={<BarChart3 className="h-4 w-4" />}
+            label="Delta vs Forecast"
+            value={
+              mesFocoData.deltaVsForecast !== null
+                ? `${mesFocoData.deltaVsForecast >= 0 ? "+" : "-"}${fmtBRL(Math.abs(mesFocoData.deltaVsForecast))}`
+                : "—"
+            }
+            variant={
+              mesFocoData.deltaVsForecast === null
+                ? undefined
+                : mesFocoData.deltaVsForecast > 0
                   ? "success"
-                  : undefined
-              }
-            />
-
-            <KPICard
-              icon={<Percent className="h-4 w-4" />}
-              label="Margem Real"
-              value={realVsForecast.margemReal === null ? "—" : fmtPct100(realVsForecast.margemReal)}
-              sub={realVsForecast.margemSub}
-            />
-
-            <KPICard
-              icon={<BarChart3 className="h-4 w-4" />}
-              label="Delta vs Forecast"
-              value={realVsForecast.delta === null ? "—" : fmtSignedBRL(realVsForecast.delta)}
-              variant={realVsForecast.deltaVariant}
-              sub={realVsForecast.deltaSub}
-            />
-          </div>
-        )
+                  : mesFocoData.deltaVsForecast < 0
+                    ? "destructive"
+                    : undefined
+            }
+            sub={
+              mesFocoData.statusVsForecast === "acima"
+                ? "acima do projetado"
+                : mesFocoData.statusVsForecast === "abaixo"
+                  ? "abaixo do projetado"
+                  : mesFocoData.statusVsForecast === "igual"
+                    ? "igual ao projetado"
+                    : "Sem faturamento para comparar"
+            }
+          />
+        </div>
       )}
 
-      {/* KPI Cards (core) */}
+      {/* KPI Cards principais */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -355,14 +331,13 @@ export default function Forecast() {
             value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
             sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
           />
-
           <KPICard
-            icon={<Target className="h-4 w-4" />}
-            label="Meta do mês"
-            value={fmtBRL(mesFocoData?.meta)}
-            sub={mesFocoData?.meta ? `Mês: ${mesFocoData.mes}` : "Sem meta definida"}
+            icon={<TrendingUp className="h-4 w-4" />}
+            label="Receita Projetada"
+            value={fmtBRL(mesFocoData?.forecastTotal)}
+            sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
+            variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
           />
-
           <KPICard
             icon={<Target className="h-4 w-4" />}
             label="Gap vs Meta"
@@ -370,25 +345,22 @@ export default function Forecast() {
             variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
             sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
           />
-
           <KPICard
             icon={<FileText className="h-4 w-4" />}
             label="Ação Necessária"
             value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
             sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
           />
-
           <KPICard
             icon={<PieChart className="h-4 w-4" />}
             label="Pipeline Vivo"
             value={fmtBRL(pipeline?.valorPonderado)}
             sub={`${pipeline?.qtdPropostas || 0} propostas abertas`}
           />
-
           <KPICard
             icon={<Percent className="h-4 w-4" />}
             label="Conversão (12m)"
-            value={fmtPct01(bs?.conversaoFinanceira)}
+            value={bs?.conversaoFinanceira ? `${(bs.conversaoFinanceira * 100).toFixed(1)}%` : "—"}
             sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
           />
         </div>
@@ -407,7 +379,7 @@ export default function Forecast() {
         </Alert>
       )}
 
-      {/* Simulador de Esforço Comercial */}
+      {/* Simulador */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -422,7 +394,6 @@ export default function Forecast() {
             </Button>
           </div>
         </CardHeader>
-
         <CardContent>
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -458,7 +429,7 @@ export default function Forecast() {
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{(conversaoMarg * 100).toFixed(0)}%</span>
-                  <span>Hist: {fmtPct01(bs?.conversaoFinanceira)}</span>
+                  <span>Hist: {bs?.conversaoFinanceira ? `${(bs.conversaoFinanceira * 100).toFixed(1)}%` : "—"}</span>
                 </div>
               </div>
 
@@ -490,8 +461,7 @@ export default function Forecast() {
                   {bs && bs.tempoMedioFechamentoDias > 0 && (
                     <span className="text-muted-foreground">
                       {" "}
-                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias (mês{" "}
-                      {fm[Math.max(1, Math.ceil(bs.tempoMedioFechamentoDias / 30))]?.mes || "—"})
+                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias
                     </span>
                   )}
                 </span>
@@ -501,7 +471,7 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
-      {/* Forecast vs Meta — Stacked Bar */}
+      {/* Forecast vs Meta */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Forecast vs Meta — Mês a Mês</CardTitle>
@@ -511,32 +481,19 @@ export default function Forecast() {
             <Skeleton className="h-[320px]" />
           ) : (
             <ResponsiveContainer width="100%" height={320}>
-              <ComposedChart data={fm}>
+              <ComposedChart data={fmChart}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                 <Tooltip content={forecastTooltip} />
                 <Legend />
-                <Bar
-                  dataKey="baseline"
-                  name="Baseline"
-                  fill="hsl(var(--primary))"
-                  radius={[0, 0, 0, 0]}
-                  stackId="forecast"
-                />
-                <Bar
-                  dataKey="pipelineAlloc"
-                  name="Pipeline"
-                  fill="hsl(var(--chart-2))"
-                  radius={[0, 0, 0, 0]}
-                  stackId="forecast"
-                />
+                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" stackId="forecast" />
+                <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" stackId="forecast" />
                 {valorAdicional > 0 && (
                   <Bar
                     dataKey="incrementalAlloc"
                     name="Esforço Adicional"
                     fill="hsl(var(--chart-3))"
-                    radius={[4, 4, 0, 0]}
                     stackId="forecast"
                   />
                 )}
@@ -548,6 +505,16 @@ export default function Forecast() {
                   strokeWidth={2}
                   strokeDasharray="6 3"
                   dot={false}
+                />
+
+                <Line
+                  dataKey="receitaRealChart"
+                  name="Faturado"
+                  type="monotone"
+                  stroke="hsl(var(--chart-4))"
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                  connectNulls={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -577,16 +544,9 @@ export default function Forecast() {
                   dataKey="valorEnviado"
                   name="Valor Enviado (R$)"
                   fill="hsl(var(--primary))"
-                  radius={[3, 3, 0, 0]}
                   opacity={0.7}
                 />
-                <Bar
-                  yAxisId="left"
-                  dataKey="valorFechado"
-                  name="Valor Fechado (R$)"
-                  fill="hsl(var(--chart-2))"
-                  radius={[3, 3, 0, 0]}
-                />
+                <Bar yAxisId="left" dataKey="valorFechado" name="Valor Fechado (R$)" fill="hsl(var(--chart-2))" />
                 <Line
                   yAxisId="right"
                   dataKey="conversaoFinanceira"
@@ -625,7 +585,6 @@ export default function Forecast() {
                   </div>
                 ))}
             </div>
-
             <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
               <span className="text-muted-foreground">
                 Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong>
@@ -649,7 +608,6 @@ export default function Forecast() {
             <Lightbulb className="h-5 w-5 text-warning" />
             <h2 className="text-base font-semibold text-foreground">Insights</h2>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {insights.map((ins, i) => (
               <div key={i} className={cn("flex items-start gap-3 p-4 rounded-xl border", insightBg[ins.level])}>
@@ -665,7 +623,6 @@ export default function Forecast() {
 }
 
 // ─── Sub-components ──────────────────────────────────────────
-
 function KPICard({
   icon,
   label,
