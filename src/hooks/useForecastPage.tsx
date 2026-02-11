@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { addMonths, differenceInDays, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
+import { addDays, addMonths, differenceInDays, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 // ─────────────────────────────────────────────────────────────
@@ -32,7 +32,8 @@ export interface PipelineItem {
   valorTotal: number;
   status: string;
   estagio: string | null;
-  probabilidade: number; // 0..1
+  probabilidade: number; // 0..1 (antes do decaimento)
+  decay: number; // 0..1
   valorPonderado: number;
   diasAberta: number;
 }
@@ -90,7 +91,7 @@ export interface Insight {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Normalização / Regras
+// Normalização
 // ─────────────────────────────────────────────────────────────
 
 const norm = (s?: string | null) =>
@@ -103,6 +104,7 @@ const norm = (s?: string | null) =>
 const META_TIPOS_RECEITA = new Set(["vendas", "vendas (r$)", "receita"]);
 const META_STATUS_ATIVO = new Set(["ativa", "ativo", "active", "on", "running"]);
 
+// Status que DEVEM ser tratados como "não-abertos"
 const STATUS_FECHADOS_OU_PERDIDOS = new Set([
   "fechada",
   "fechado",
@@ -112,41 +114,80 @@ const STATUS_FECHADOS_OU_PERDIDOS = new Set([
   "perdido",
   "cancelada",
   "cancelado",
+
+  // comuns em CRMs
+  "contrato",
+  "contratado",
+  "aprovada",
+  "aprovado",
+  "assinada",
+  "assinado",
+  "executando",
+  "execucao",
+  "em_execucao",
+  "finalizado",
+  "finalizada",
+  "concluido",
+  "concluida",
+  "encerrado",
+  "encerrada",
+  "faturado",
+  "faturada",
+  "pago",
+  "paga",
 ]);
 
 function isStatusAberto(status?: string | null) {
   const s = norm(status);
   if (!s) return true;
-  return !STATUS_FECHADOS_OU_PERDIDOS.has(s);
+
+  if (STATUS_FECHADOS_OU_PERDIDOS.has(s)) return false;
+
+  // fallback robusto (caso alguém digite diferente)
+  if (
+    s.includes("fech") ||
+    s.includes("ganh") ||
+    s.includes("perd") ||
+    s.includes("cancel") ||
+    s.includes("assin") ||
+    s.includes("contrat") ||
+    s.includes("finaliz") ||
+    s.includes("conclu") ||
+    s.includes("encerr") ||
+    s.includes("fatur") ||
+    s.includes("pag")
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
-// Probabilidades padrão (sem “empurrar” por idade)
+// Probabilidades por estágio (lead.estagio) - ajuste conforme seu funil real
 const PROBABILIDADE_ESTAGIO: Record<string, number> = {
   contato: 0.05,
   visita_agendada: 0.15,
   visita_realizada: 0.25,
   proposta_pendente: 0.35,
   proposta: 0.5,
-  contrato: 0.85,
-  execucao: 0.95,
-  finalizado: 1.0,
+  negociacao: 0.6,
+  em_analise: 0.35,
+
+  // se "repouso" significa “gelado/pausado”, mantenha baixo
+  repouso: 0.08,
 };
 
+// Probabilidades por status da proposta (fallback)
 const PROBABILIDADE_STATUS: Record<string, number> = {
   aberta: 0.35,
   aberto: 0.35,
   em_analise: 0.35,
   analise: 0.35,
   negociacao: 0.45,
-  fechada: 1.0,
-  fechado: 1.0,
-  ganha: 1.0,
-  ganho: 1.0,
-  perdida: 0.0,
-  perdido: 0.0,
-  cancelada: 0.0,
-  cancelado: 0.0,
 };
+
+// Se você NÃO quiser que "Repouso" conte no Pipeline Vivo, marque true.
+const EXCLUIR_REPOUSO_DO_PIPELINE = true;
 
 function monthsInclusive(start: Date, end: Date): number {
   const s = startOfMonth(start);
@@ -163,8 +204,7 @@ export function useForecastPage(params: ForecastPageParams) {
 
   return useQuery({
     queryKey: [
-      // Volta ao padrão (e força “zerar cache” do react-query)
-      "forecast-page-v3-standard",
+      "forecast-page-v5", // bump versão p/ evitar cache antigo
       params.horizonte,
       params.valorAdicionalMensal,
       params.conversaoMarginal,
@@ -172,36 +212,28 @@ export function useForecastPage(params: ForecastPageParams) {
       user?.id,
     ],
     enabled: !!user?.id,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
     queryFn: async () => {
       if (!user?.id) return null;
 
       const agora = new Date();
+      const mesAgoraKey = format(agora, "yyyy-MM");
       const dataLimite12m = subMonths(agora, 12);
       const dataLimite12mStr = format(dataLimite12m, "yyyy-MM-dd");
 
-      // 1) Buscar dados
-      const [contratosRes, propostas12mRes, propostasCurrentRes, metasRes, leadsRes] = await Promise.all([
+      // 1) Buscar dados base
+      const [contratosRes, propostas12mRes, metasRes, leadsRes] = await Promise.all([
         supabase
           .from("contratos")
           .select("proposta_id, created_at, data_inicio, valor_negociado, margem_pct")
           .eq("user_id", user.id)
           .not("proposta_id", "is", null),
 
+        // Histórico 12m: NÃO filtra is_current
         supabase
           .from("propostas")
-          .select("id, data, data_fechamento, valor_total, status, is_current")
+          .select("id, data, data_fechamento, valor_total, status")
           .eq("user_id", user.id)
-          .gte("data", dataLimite12mStr)
-          .or("is_current.is.null,is_current.eq.true"),
-
-        supabase
-          .from("propostas")
-          .select("id, data, valor_total, status, lead_id, is_current")
-          .eq("user_id", user.id)
-          .or("is_current.is.null,is_current.eq.true"),
+          .gte("data", dataLimite12mStr),
 
         supabase
           .from("metas")
@@ -213,13 +245,34 @@ export function useForecastPage(params: ForecastPageParams) {
 
       if (contratosRes.error) throw contratosRes.error;
       if (propostas12mRes.error) throw propostas12mRes.error;
-      if (propostasCurrentRes.error) throw propostasCurrentRes.error;
       if (metasRes.error) throw metasRes.error;
       if (leadsRes.error) throw leadsRes.error;
 
+      // 2) Propostas atuais: PRIORIZA is_current = true (evita inflar com NULL antigo)
+      const propostasCurrentTrueRes = await supabase
+        .from("propostas")
+        .select("id, data, valor_total, status, lead_id, is_current")
+        .eq("user_id", user.id)
+        .eq("is_current", true);
+
+      let propostasCurrent = (propostasCurrentTrueRes.data || []) as any[];
+
+      // fallback (legado): se não existir nenhuma marcada como current
+      if (propostasCurrent.length === 0) {
+        const propostasCurrentLegacyRes = await supabase
+          .from("propostas")
+          .select("id, data, valor_total, status, lead_id, is_current")
+          .eq("user_id", user.id)
+          .or("is_current.is.null,is_current.eq.true");
+
+        if (propostasCurrentLegacyRes.error) throw propostasCurrentLegacyRes.error;
+        propostasCurrent = (propostasCurrentLegacyRes.data || []) as any[];
+      } else {
+        if (propostasCurrentTrueRes.error) throw propostasCurrentTrueRes.error;
+      }
+
       const contratos = (contratosRes.data || []) as any[];
       const propostas12m = (propostas12mRes.data || []) as any[];
-      const propostasCurrent = (propostasCurrentRes.data || []) as any[];
       const todasMetas = (metasRes.data || []) as MetaAtiva[];
       const leads = (leadsRes.data || []) as any[];
 
@@ -238,18 +291,19 @@ export function useForecastPage(params: ForecastPageParams) {
       // propostas com contrato (para excluir do pipeline)
       const propostaIdsComContrato = new Set<string>(contratos.map((c) => c.proposta_id).filter(Boolean));
 
-      // pipeline bruto: aberto + sem contrato
+      // pipeline bruto: abertas + sem contrato
       const abertas = propostasCurrent.filter((p) => {
         if (!p?.id) return false;
         if (propostaIdsComContrato.has(p.id)) return false;
         return isStatusAberto(p.status);
       });
 
-      // 2) Fechamentos 12m (contrato como verdade)
+      // 3) Fechamentos 12m (contrato como verdade)
       const propMap = new Map<
         string,
         { data?: string; data_fechamento?: string | null; valor_total?: number | null }
       >();
+
       propostas12m.forEach((p) => {
         propMap.set(p.id, {
           data: p.data,
@@ -282,7 +336,7 @@ export function useForecastPage(params: ForecastPageParams) {
         diasFechamento: number;
       }[];
 
-      // 3) BaseStats
+      // 4) BaseStats
       const valorEnviado12m = propostas12m.reduce((s, p) => s + Number(p.valor_total || 0), 0);
       const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
       const numContratos12m = fechamentos12m.length;
@@ -310,36 +364,50 @@ export function useForecastPage(params: ForecastPageParams) {
         amostraPequena: numContratos12m < 10,
       };
 
-      // ─────────────────────────────────────────────────────
-      // 4) Pipeline (PADRÃO): prob por estágio/status (SEM empurrar por idade)
-      // ─────────────────────────────────────────────────────
+      // 5) Pipeline (com decaimento por idade)
+      const tempo = Math.max(30, tempoMedioFechamentoDias || 0);
 
-      const pipelineItems: PipelineItem[] = abertas.map((p) => {
-        const estagio = p.lead_id ? (leadMap.get(p.lead_id) ?? null) : null;
+      const pipelineItems: PipelineItem[] = abertas
+        .map((p) => {
+          const estagio = p.lead_id ? (leadMap.get(p.lead_id) ?? null) : null;
 
-        const statusKey = norm(p.status || "");
-        const estKey = estagio ? norm(estagio).replace(/\s+/g, "_") : "";
+          // excluir repouso do “pipeline vivo” (opcional)
+          if (EXCLUIR_REPOUSO_DO_PIPELINE && norm(estagio) === "repouso") {
+            return null;
+          }
 
-        const probStatus = PROBABILIDADE_STATUS[statusKey] ?? 0.35;
-        const probEstagio = estKey ? PROBABILIDADE_ESTAGIO[estKey] : undefined;
+          const statusKey = norm(p.status || "");
+          const estKey = estagio ? norm(estagio).replace(/\s+/g, "_") : "";
 
-        const probStatusAjustada = statusKey ? probStatus : 0.2;
-        const probabilidade = estagio ? (probEstagio ?? probStatusAjustada) : probStatusAjustada;
+          // base prob: usa estágio se existir no mapa; se não, cai pro status; se não, baixo
+          const probEstagio = estKey ? PROBABILIDADE_ESTAGIO[estKey] : undefined;
+          const probStatus = PROBABILIDADE_STATUS[statusKey] ?? (statusKey ? 0.28 : 0.18);
 
-        const valorTotal = Number(p.valor_total || 0);
-        const dataEnvio = p.data ? new Date(p.data) : agora;
-        const diasAberta = Math.max(differenceInDays(agora, dataEnvio), 0);
+          const probabilidade = probEstagio ?? probStatus;
 
-        return {
-          id: p.id,
-          valorTotal,
-          status: String(p.status || "aberta"),
-          estagio,
-          probabilidade,
-          valorPonderado: valorTotal * probabilidade,
-          diasAberta,
-        };
-      });
+          const valorTotal = Number(p.valor_total || 0);
+          const dataEnvio = p.data ? new Date(p.data) : agora;
+          const diasAberta = Math.max(differenceInDays(agora, dataEnvio), 0);
+
+          // decaimento
+          const overdue = Math.max(0, diasAberta - tempo);
+          let decay = Math.exp(-overdue / (tempo * 0.9));
+          if (diasAberta > tempo * 2.5) decay *= 0.15;
+
+          const valorPonderado = valorTotal * probabilidade * decay;
+
+          return {
+            id: p.id,
+            valorTotal,
+            status: String(p.status || "aberta"),
+            estagio,
+            probabilidade,
+            decay,
+            valorPonderado,
+            diasAberta,
+          };
+        })
+        .filter(Boolean) as PipelineItem[];
 
       const pipeline: PipelineResumo = {
         valorBruto: pipelineItems.reduce((s, x) => s + x.valorTotal, 0),
@@ -356,10 +424,7 @@ export function useForecastPage(params: ForecastPageParams) {
         pipeline.porEstagio[key].qtd += 1;
       });
 
-      // ─────────────────────────────────────────────────────
-      // 5) Meta mensal prorrateada
-      // ─────────────────────────────────────────────────────
-
+      // 6) Meta mensal prorrateada
       function getMetaMensal(mesKey: string): number {
         let total = 0;
         const mesStart = startOfMonth(new Date(mesKey + "-01"));
@@ -379,35 +444,35 @@ export function useForecastPage(params: ForecastPageParams) {
         return total;
       }
 
-      // ─────────────────────────────────────────────────────
-      // 6) Alocação do pipeline por mês (PADRÃO ANTIGO)
-      //    Pipeline só começa a impactar após o P50 (tempo médio)
-      // ─────────────────────────────────────────────────────
-
-      const tempo = Math.max(30, tempoMedioFechamentoDias || 0);
-      const delayMonthsRaw = Math.max(1, Math.ceil(tempo / 30));
-
-      // garante que não “sai do horizonte” (se sair, joga no último mês exibido)
-      const delayMonths = Math.min(delayMonthsRaw, Math.max(1, params.horizonte - 1));
-
-      const center = format(addMonths(agora, delayMonths), "yyyy-MM");
-      const prev = format(addMonths(agora, Math.max(0, delayMonths - 1)), "yyyy-MM");
-      const next = format(addMonths(agora, Math.min(params.horizonte - 1, delayMonths + 1)), "yyyy-MM");
-
+      // 7) Distribuir pipeline por mês
       const pipelinePorMes = new Map<string, number>();
 
-      // distribuição leve (25/50/25) no “bloco” onde normalmente fecha
       pipelineItems.forEach((p) => {
+        const dataEnvio = addDays(agora, -p.diasAberta);
+
+        const baseClose = addDays(dataEnvio, tempo);
+        const estimada =
+          baseClose < agora ? addDays(agora, Math.min(45, Math.max(30, Math.round(tempo * 0.25)))) : baseClose;
+
+        const mesEstimado = format(estimada, "yyyy-MM");
+        const mesSeguinte = format(addMonths(new Date(mesEstimado + "-01"), 1), "yyyy-MM");
+        const mesSeguinte2 = format(addMonths(new Date(mesEstimado + "-01"), 2), "yyyy-MM");
+        const mesAnterior = format(addMonths(new Date(mesEstimado + "-01"), -1), "yyyy-MM");
+
         const v = p.valorPonderado;
-        pipelinePorMes.set(prev, (pipelinePorMes.get(prev) || 0) + v * 0.25);
-        pipelinePorMes.set(center, (pipelinePorMes.get(center) || 0) + v * 0.5);
-        pipelinePorMes.set(next, (pipelinePorMes.get(next) || 0) + v * 0.25);
+
+        if (mesEstimado === mesAgoraKey) {
+          pipelinePorMes.set(mesEstimado, (pipelinePorMes.get(mesEstimado) || 0) + v * 0.25);
+          pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.45);
+          pipelinePorMes.set(mesSeguinte2, (pipelinePorMes.get(mesSeguinte2) || 0) + v * 0.3);
+        } else {
+          pipelinePorMes.set(mesAnterior, (pipelinePorMes.get(mesAnterior) || 0) + v * 0.3);
+          pipelinePorMes.set(mesEstimado, (pipelinePorMes.get(mesEstimado) || 0) + v * 0.5);
+          pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.2);
+        }
       });
 
-      // ─────────────────────────────────────────────────────
-      // 7) Receita real/custo real por mês
-      // ─────────────────────────────────────────────────────
-
+      // 8) Receita real/custo real por mês
       const receitaRealPorMes = new Map<string, number>();
       const custoRealPorMes = new Map<string, number>();
 
@@ -419,14 +484,10 @@ export function useForecastPage(params: ForecastPageParams) {
         }
       });
 
-      // ─────────────────────────────────────────────────────
-      // 8) Forecast mensal
-      // ─────────────────────────────────────────────────────
-
+      // 9) Forecast mensal
       const forecastMensal: ForecastMensal[] = [];
       const baseline = receitaMediaMensal;
-
-      const mesesDeDelayEsforco = delayMonths;
+      const mesesDeDelay = Math.ceil(tempo / 30);
 
       for (let i = 0; i < params.horizonte; i++) {
         const mesDate = addMonths(agora, i);
@@ -437,9 +498,7 @@ export function useForecastPage(params: ForecastPageParams) {
         const pipelineAlloc = pipelinePorMes.get(mesKey) || 0;
 
         const incrementalAlloc =
-          i >= mesesDeDelayEsforco
-            ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0)
-            : 0;
+          i >= mesesDeDelay ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0) : 0;
 
         const forecastTotal = baseline + pipelineAlloc + incrementalAlloc;
         const gap = Math.max(0, meta - forecastTotal);
@@ -476,10 +535,7 @@ export function useForecastPage(params: ForecastPageParams) {
         });
       }
 
-      // ─────────────────────────────────────────────────────
-      // 9) Histórico 12m
-      // ─────────────────────────────────────────────────────
-
+      // 10) Histórico 12m
       const volumeHistorico: VolumeHistorico[] = [];
       for (let i = 11; i >= 0; i--) {
         const mesDate = subMonths(agora, i);
@@ -500,10 +556,7 @@ export function useForecastPage(params: ForecastPageParams) {
         });
       }
 
-      // ─────────────────────────────────────────────────────
-      // 10) Insights
-      // ─────────────────────────────────────────────────────
-
+      // 11) Insights
       const insights: Insight[] = [];
       const mesAtual = forecastMensal[0];
 
@@ -530,8 +583,21 @@ export function useForecastPage(params: ForecastPageParams) {
         });
       }
 
+      if (mesAtual && mesAtual.meta > 0) {
+        if (mesAtual.forecastTotal >= mesAtual.meta) {
+          insights.push({ text: "Você está no caminho para bater a meta deste mês", level: "success" });
+        } else {
+          insights.push({
+            text: `Para bater a meta, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString(
+              "pt-BR",
+            )} em novas propostas (≈ ${mesAtual.propostasEquiv} propostas)`,
+            level: "warning",
+          });
+        }
+      }
+
       insights.push({
-        text: `Tempo médio de fechamento (P50): ${tempo} dias. Pipeline e esforço só impactam após ~${delayMonthsRaw} meses.`,
+        text: `Tempo médio de fechamento (P50): ${tempo} dias. Propostas antigas sofrem decaimento no forecast.`,
         level: "muted",
       });
 
