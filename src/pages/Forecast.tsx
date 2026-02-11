@@ -18,6 +18,7 @@ import {
   Crosshair,
   Calendar,
 } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -27,8 +28,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+
 import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 type Horizonte = 3 | 6 | 12;
 
@@ -41,42 +44,43 @@ function fmtBRL(v: number | undefined | null) {
 }
 
 function fmtPctRatio(v: number | undefined | null) {
-  // v no formato 0..1
   return `${((v ?? 0) * 100).toFixed(1)}%`;
 }
 
-// arredonda "pra cima" em passos bonitos (1, 2, 5, 10…)
-function niceCeil(value: number) {
-  const v = Math.max(0, value || 0);
-  if (v <= 1000) return 1000;
+// Cores do gráfico: MESMAS famílias do sumário (CSS vars), só suavizadas
+const COLORS = {
+  baseline: { solid: "hsl(var(--primary))" },
+  pipeline: { solid: "hsl(var(--chart-2))" },
+  effort: { solid: "hsl(var(--chart-3))" },
+  meta: { solid: "hsl(var(--destructive))" },
+  realized: { solid: "hsl(var(--chart-4))" },
 
-  const magnitude = Math.pow(10, Math.floor(Math.log10(v)));
-  const residual = v / magnitude;
+  grid: "hsl(var(--border) / 0.35)",
+  axis: "hsl(var(--muted-foreground) / 0.85)",
+  cursor: "hsl(var(--muted) / 0.35)",
+};
 
-  let niceResidual = 10;
-  if (residual <= 1) niceResidual = 1;
-  else if (residual <= 2) niceResidual = 2;
-  else if (residual <= 5) niceResidual = 5;
-
-  return niceResidual * magnitude;
+// y-axis “bonito”
+function niceCeil(n: number) {
+  if (!isFinite(n) || n <= 0) return 1000;
+  const pow = Math.pow(10, Math.floor(Math.log10(n)));
+  const base = n / pow;
+  let niceBase = 10;
+  if (base <= 1) niceBase = 1;
+  else if (base <= 2) niceBase = 2;
+  else if (base <= 5) niceBase = 5;
+  else niceBase = 10;
+  return niceBase * pow;
 }
 
-function buildTicks(max: number, count = 6) {
-  const top = Math.max(1000, max);
-  const steps = Math.max(2, count - 1);
-  const rawStep = top / steps;
-
-  // arredonda passo pra múltiplos de 1000
-  const step = Math.max(1000, Math.round(rawStep / 1000) * 1000);
-
-  const ticks: number[] = [];
-  for (let i = 0; i <= steps; i++) ticks.push(i * step);
-
-  // garante que o último tick cubra o topo
-  const last = ticks[ticks.length - 1] ?? 0;
-  if (last < top) ticks[ticks.length - 1] = top;
-
-  return ticks;
+function buildTicks(maxValue: number, tickCount = 6) {
+  const safeMax = Math.max(0, maxValue);
+  const top = niceCeil(safeMax * 1.12);
+  const rawStep = top / (tickCount - 1);
+  const step = niceCeil(rawStep);
+  const yTop = step * (tickCount - 1);
+  const ticks = Array.from({ length: tickCount }, (_, i) => i * step);
+  return { yTop, ticks };
 }
 
 const insightIcons: Record<InsightLevel, ReactNode> = {
@@ -120,7 +124,6 @@ export default function Forecast() {
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
 
-  // mês foco seguro
   const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
   const mesFocoData = fm[safeMesFoco] || null;
 
@@ -130,14 +133,13 @@ export default function Forecast() {
     setMesFoco(0);
   }, []);
 
-  // seed conversão/ticket ao carregar baseStats
+  // seed controls a partir do histórico (evita 0 prop / ticket 0)
   useEffect(() => {
     if (!bs) return;
 
     if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
-
     if (ticketMarg === 0 && bs.ticketReal > 0) {
       setTicketMarg(bs.ticketReal);
     }
@@ -149,87 +151,82 @@ export default function Forecast() {
     setTicketMarg(bs?.ticketReal || 0);
   }, [bs]);
 
-  // Tooltip do histórico
-  const tooltipFormatter = (value: number, name: string) => {
+  // dataset do gráfico (linhas sempre com número)
+  const fmChart = useMemo(() => {
+    return fm.map((m) => ({
+      ...m,
+      faturadoPlot: Number(m?.receitaReal || 0),
+      forecastLine: Number(m?.forecastTotal || 0),
+      stackTotal: Number(m?.baseline || 0) + Number(m?.pipelineAlloc || 0) + Number(m?.incrementalAlloc || 0),
+    }));
+  }, [fm]);
+
+  // escala Y correta
+  const { yTop, yTicks } = useMemo(() => {
+    const maxY = fmChart.reduce((acc, m) => {
+      const meta = Number(m?.meta || 0);
+      const total = Number(m?.stackTotal || 0);
+      const realizado = Number(m?.faturadoPlot || 0);
+      return Math.max(acc, meta, total, realizado);
+    }, 0);
+
+    return buildTicks(maxY, 6);
+  }, [fmChart]);
+
+  const tooltipHistorico = (value: number, name: string) => {
     if (name === "Conversão %") return [`${value.toFixed(1)}%`, name];
     return [fmtBRL(value), name];
   };
 
-  // Dados do gráfico principal com chaves explícitas
-  const fmChart = useMemo(() => {
-    return (fm || []).map((m: any) => ({
-      ...m,
-      faturadoPlot: Number(m?.receitaReal || 0),
-      forecastLine: Number(m?.forecastTotal || 0),
-    }));
-  }, [fm]);
-
-  // ✅ escala Y corrigida (considera META/FORECAST/REAL)
-  const yTop = useMemo(() => {
-    const maxValue = (fmChart || []).reduce((acc: number, item: any) => {
-      const meta = Number(item?.meta || 0);
-      const forecast = Number(item?.forecastLine || 0);
-      const real = Number(item?.faturadoPlot || 0);
-      const bars = Number(item?.baseline || 0) + Number(item?.pipelineAlloc || 0) + Number(item?.incrementalAlloc || 0);
-      return Math.max(acc, meta, forecast, real, bars);
-    }, 0);
-
-    // “respiro” pra linha não grudar no topo
-    return niceCeil(maxValue * 1.15);
-  }, [fmChart]);
-
-  const yTicks = useMemo(() => buildTicks(yTop, 6), [yTop]);
-
   const forecastTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-
     const item = payload[0]?.payload;
     if (!item) return null;
 
     const faturado = Number(item.faturadoPlot || 0);
 
     return (
-      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[250px]">
-        <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
+      <div className="bg-popover/95 backdrop-blur border border-border/70 rounded-xl shadow-lg p-3 text-sm space-y-1 min-w-[260px]">
+        <p className="font-semibold text-foreground border-b border-border/60 pb-1 mb-1">{label}</p>
 
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Baseline:</span>
-          <span>{fmtBRL(item.baseline)}</span>
+          <span className="text-muted-foreground">Base</span>
+          <span className="text-foreground">{fmtBRL(item.baseline)}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Pipeline:</span>
-          <span>{fmtBRL(item.pipelineAlloc)}</span>
+          <span className="text-muted-foreground">Pipeline</span>
+          <span className="text-foreground">{fmtBRL(item.pipelineAlloc)}</span>
         </div>
 
-        {item.incrementalAlloc > 0 && (
+        {Number(item.incrementalAlloc) > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Esforço:</span>
-            <span>{fmtBRL(item.incrementalAlloc)}</span>
+            <span className="text-muted-foreground">Esforço</span>
+            <span className="text-foreground">{fmtBRL(item.incrementalAlloc)}</span>
           </div>
         )}
 
-        <div className="flex justify-between border-t border-border pt-1 font-semibold">
-          <span>Forecast:</span>
+        <div className="flex justify-between border-t border-border/60 pt-1 font-semibold">
+          <span className="text-foreground">Forecast</span>
           <span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Meta:</span>
+          <span className="text-muted-foreground">Meta</span>
           <span className="text-success">{fmtBRL(item.meta)}</span>
         </div>
 
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Faturado:</span>
+          <span className="text-muted-foreground">Realizado</span>
           <span className={faturado > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
             {faturado > 0 ? fmtBRL(faturado) : "—"}
           </span>
         </div>
 
-        {item.gap > 0 && (
+        {Number(item.gap) > 0 && (
           <>
             <div className="flex justify-between text-destructive">
-              <span>Gap:</span>
+              <span>Gap</span>
               <span>{fmtBRL(item.gap)}</span>
             </div>
             <div className="text-xs text-warning mt-1">
@@ -240,8 +237,6 @@ export default function Forecast() {
       </div>
     );
   };
-
-  const hasEffort = valorAdicional > 0;
 
   return (
     <div className="space-y-6">
@@ -297,7 +292,7 @@ export default function Forecast() {
             onValueChange={(v) => v !== undefined && v !== "" && setMesFoco(Number(v))}
             className="bg-muted rounded-lg p-0.5 flex-wrap"
           >
-            {fm.map((m: any, i: number) => (
+            {fm.map((m, i) => (
               <ToggleGroupItem
                 key={i}
                 value={String(i)}
@@ -421,7 +416,7 @@ export default function Forecast() {
       )}
 
       {/* Simulador */}
-      <Card>
+      <Card className="border-border/60 bg-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -493,7 +488,7 @@ export default function Forecast() {
           )}
 
           {!isLoading && valorAdicional > 0 && (
-            <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/10">
               <div className="flex items-center gap-2 text-sm">
                 <Crosshair className="h-4 w-4 text-primary" />
                 <span className="text-foreground">
@@ -513,85 +508,160 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
-      {/* Gráfico principal */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Projeção vs Meta</CardTitle>
+      {/* GRÁFICO PRINCIPAL (minimalista, pastel e alinhado ao sumário) */}
+      <Card className="border-border/60 bg-card">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <CardTitle className="text-base text-foreground">Projeção vs Meta</CardTitle>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.baseline.solid, opacity: 0.55 }} />
+                Base
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.pipeline.solid, opacity: 0.55 }} />
+                Pipeline
+              </div>
+              {valorAdicional > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.effort.solid, opacity: 0.55 }} />
+                  Esforço
+                </div>
+              )}
+              <div className="flex items-center gap-1.5">
+                <span className="h-0.5 w-4 rounded-full" style={{ background: COLORS.meta.solid, opacity: 0.9 }} />
+                Meta
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="h-0.5 w-4 rounded-full" style={{ background: COLORS.realized.solid, opacity: 0.9 }} />
+                Realizado
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="pt-4">
+
+        <CardContent className="pt-2">
           {isLoading ? (
             <Skeleton className="h-[340px]" />
           ) : (
             <div className="h-[340px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={fmChart} margin={{ top: 16, right: 24, bottom: 10, left: 6 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                <ComposedChart
+                  data={fmChart}
+                  margin={{ top: 14, right: 18, bottom: 8, left: 6 }}
+                  barCategoryGap="22%"
+                  barGap={6}
+                >
+                  <defs>
+                    <linearGradient id="gradBaseline" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={COLORS.baseline.solid} stopOpacity={0.55} />
+                      <stop offset="100%" stopColor={COLORS.baseline.solid} stopOpacity={0.18} />
+                    </linearGradient>
+
+                    <linearGradient id="gradPipeline" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={COLORS.pipeline.solid} stopOpacity={0.55} />
+                      <stop offset="100%" stopColor={COLORS.pipeline.solid} stopOpacity={0.18} />
+                    </linearGradient>
+
+                    <linearGradient id="gradEffort" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={COLORS.effort.solid} stopOpacity={0.55} />
+                      <stop offset="100%" stopColor={COLORS.effort.solid} stopOpacity={0.18} />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid stroke={COLORS.grid} strokeDasharray="4 6" vertical={false} />
+
+                  <XAxis
+                    dataKey="mes"
+                    tick={{ fontSize: 12, fill: COLORS.axis }}
+                    axisLine={false}
+                    tickLine={false}
+                    dy={8}
+                  />
+
                   <YAxis
                     domain={[0, yTop]}
                     ticks={yTicks}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 12, fill: COLORS.axis }}
                     axisLine={false}
                     tickLine={false}
                     width={44}
                   />
-                  <Tooltip content={forecastTooltip} />
-                  <Legend />
 
-                  <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" stackId="forecast" />
+                  <Tooltip content={forecastTooltip} cursor={{ fill: COLORS.cursor }} />
+
+                  <Bar
+                    dataKey="baseline"
+                    name="Base"
+                    fill="url(#gradBaseline)"
+                    stackId="forecast"
+                    barSize={34}
+                    radius={[0, 0, 0, 0]}
+                    isAnimationActive={false}
+                  />
+
                   <Bar
                     dataKey="pipelineAlloc"
                     name="Pipeline"
-                    fill="hsl(var(--chart-2))"
+                    fill="url(#gradPipeline)"
                     stackId="forecast"
-                    radius={hasEffort ? [0, 0, 0, 0] : [6, 6, 0, 0]}
+                    barSize={34}
+                    radius={valorAdicional > 0 ? [0, 0, 0, 0] : [8, 8, 0, 0]}
+                    isAnimationActive={false}
                   />
-                  {hasEffort && (
+
+                  {valorAdicional > 0 && (
                     <Bar
                       dataKey="incrementalAlloc"
-                      name="Esforço Adicional"
-                      fill="hsl(var(--chart-3))"
+                      name="Esforço"
+                      fill="url(#gradEffort)"
                       stackId="forecast"
-                      radius={[6, 6, 0, 0]}
+                      barSize={34}
+                      radius={[8, 8, 0, 0]}
+                      isAnimationActive={false}
                     />
                   )}
 
-                  {/* Linha do total do Forecast */}
                   <Line
                     dataKey="forecastLine"
-                    name="Forecast (Total)"
+                    name="Forecast"
                     type="monotone"
-                    stroke="hsl(var(--primary))"
+                    stroke={COLORS.baseline.solid}
+                    strokeOpacity={0.55}
                     strokeWidth={2}
                     dot={false}
+                    isAnimationActive={false}
                   />
 
-                  {/* Meta */}
                   <Line
                     dataKey="meta"
                     name="Meta"
                     type="monotone"
-                    stroke="hsl(var(--destructive))"
+                    stroke={COLORS.meta.solid}
+                    strokeOpacity={0.85}
                     strokeWidth={2}
-                    strokeDasharray="6 3"
+                    strokeDasharray="6 6"
                     dot={false}
+                    isAnimationActive={false}
                   />
 
-                  {/* Realizado/Faturado */}
+                  {/* Realizado sempre aparece (mesmo 0), com dots visíveis */}
                   <Line
                     dataKey="faturadoPlot"
                     name="Realizado"
                     type="monotone"
-                    stroke="hsl(var(--chart-4))"
+                    stroke={COLORS.realized.solid}
+                    strokeOpacity={0.95}
                     strokeWidth={3}
                     dot={{
-                      r: 5,
-                      fill: "hsl(var(--chart-4))",
-                      stroke: "hsl(var(--background))",
+                      r: 4.5,
+                      fill: "hsl(var(--background))",
+                      stroke: COLORS.realized.solid,
                       strokeWidth: 2,
                     }}
-                    activeDot={{ r: 7 }}
+                    activeDot={{ r: 6, strokeWidth: 0 }}
                     isAnimationActive={false}
                   />
                 </ComposedChart>
@@ -602,7 +672,7 @@ export default function Forecast() {
       </Card>
 
       {/* Histórico */}
-      <Card>
+      <Card className="border-border/60 bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Histórico 12m — Valor Enviado vs Fechado (R$)</CardTitle>
         </CardHeader>
@@ -612,35 +682,52 @@ export default function Forecast() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={vh}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="left" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={tooltipFormatter} />
-                <Legend />
+                <CartesianGrid strokeDasharray="4 6" className="opacity-40" vertical={false} />
+                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: COLORS.axis }} axisLine={false} tickLine={false} />
+                <YAxis
+                  yAxisId="left"
+                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  tick={{ fontSize: 11, fill: COLORS.axis }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tickFormatter={(v) => `${v}%`}
+                  tick={{ fontSize: 11, fill: COLORS.axis }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip formatter={tooltipHistorico} cursor={{ fill: COLORS.cursor }} />
+
                 <Bar
                   yAxisId="left"
                   dataKey="valorEnviado"
                   name="Valor Enviado (R$)"
-                  fill="hsl(var(--primary))"
-                  radius={[3, 3, 0, 0]}
-                  opacity={0.7}
+                  fill={COLORS.baseline.solid}
+                  opacity={0.35}
+                  radius={[6, 6, 0, 0]}
+                  isAnimationActive={false}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="valorFechado"
                   name="Valor Fechado (R$)"
-                  fill="hsl(var(--chart-2))"
-                  radius={[3, 3, 0, 0]}
+                  fill={COLORS.pipeline.solid}
+                  opacity={0.55}
+                  radius={[6, 6, 0, 0]}
+                  isAnimationActive={false}
                 />
                 <Line
                   yAxisId="right"
                   dataKey="conversaoFinanceira"
                   name="Conversão %"
                   type="monotone"
-                  stroke="hsl(var(--chart-4))"
+                  stroke={COLORS.realized.solid}
                   strokeWidth={2}
-                  dot={{ r: 2 }}
+                  dot={{ r: 2.5, strokeWidth: 0 }}
+                  isAnimationActive={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -650,7 +737,7 @@ export default function Forecast() {
 
       {/* Pipeline breakdown */}
       {!isLoading && pipeline && pipeline.qtdPropostas > 0 && (
-        <Card>
+        <Card className="border-border/60 bg-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <PieChart className="h-4 w-4" />
@@ -662,7 +749,7 @@ export default function Forecast() {
               {Object.entries(pipeline.porEstagio)
                 .sort(([, a]: any, [, b]: any) => b.ponderado - a.ponderado)
                 .map(([estagio, info]: any) => (
-                  <div key={estagio} className="p-3 rounded-lg bg-muted/50 border border-border">
+                  <div key={estagio} className="p-3 rounded-xl bg-muted/40 border border-border/70">
                     <p className="text-xs text-muted-foreground capitalize truncate">
                       {String(estagio).replace(/_/g, " ")}
                     </p>
@@ -726,7 +813,7 @@ function KPICard({
   variant?: "destructive" | "success";
 }) {
   return (
-    <Card className="p-3">
+    <Card className="p-3 border-border/60 bg-card">
       <div className="flex items-center gap-2 text-muted-foreground mb-1">
         {icon}
         <span className="text-xs font-medium truncate">{label}</span>
