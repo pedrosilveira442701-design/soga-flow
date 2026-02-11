@@ -42,7 +42,26 @@ import {
   Cell,
 } from "recharts";
 
-// ... (Funções fmtBRL e fmtPct permanecem iguais)
+type Horizonte = 3 | 6 | 12;
+
+const fmtBRL = (v: number | null | undefined) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v ?? 0);
+
+const fmtPct = (v: number | null | undefined) => `${(v ?? 0).toFixed(1)}%`;
+
+const insightBg: Record<string, string> = {
+  success: "bg-success/5 border-success/20",
+  warning: "bg-warning/5 border-warning/20",
+  danger: "bg-destructive/5 border-destructive/20",
+  info: "bg-primary/5 border-primary/20",
+};
+
+const insightIcons: Record<string, React.ReactNode> = {
+  success: <CheckCircle className="h-5 w-5 text-success shrink-0" />,
+  warning: <AlertTriangle className="h-5 w-5 text-warning shrink-0" />,
+  danger: <XCircle className="h-5 w-5 text-destructive shrink-0" />,
+  info: <Info className="h-5 w-5 text-primary shrink-0" />,
+};
 
 export default function Forecast() {
   const [horizonte, setHorizonte] = useState<Horizonte>(6);
@@ -311,7 +330,7 @@ function KPICard({ label, value, icon, sub, variant, trend }: any) {
         <div className="flex justify-between items-start mb-4">
           <div className="p-2 bg-muted rounded-lg text-muted-foreground">{icon}</div>
           {trend && (
-            <Badge variant={trend === "up" ? "success" : "destructive"} className="text-[10px]">
+            <Badge variant={trend === "up" ? "default" : "destructive"} className="text-[10px]">
               {trend === "up" ? "Dentro da Meta" : "Abaixo da Meta"}
             </Badge>
           )}
