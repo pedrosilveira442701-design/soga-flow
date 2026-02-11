@@ -7,31 +7,59 @@ import {
   DollarSign,
   BarChart3,
   Percent,
-  Lightbulb,
   AlertTriangle,
   CheckCircle,
   XCircle,
   Info,
-  FileText,
-  Clock,
-  PieChart,
   Crosshair,
-  Calendar,
+  PieChart,
 } from "lucide-react";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-
 import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
-
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+// --- SISTEMA DE CORES UNIFICADO (Single Source of Truth) ---
+// Usamos estas constantes para garantir que o Gráfico e o Sumário usem EXATAMENTE a mesma cor.
+const COLORS = {
+  baseline: {
+    hex: "#6366f1", // Indigo 500
+    bg: "bg-indigo-500",
+    text: "text-indigo-600",
+    border: "border-indigo-200",
+  },
+  pipeline: {
+    hex: "#a855f7", // Purple 500
+    bg: "bg-purple-500",
+    text: "text-purple-600",
+    border: "border-purple-200",
+  },
+  effort: {
+    hex: "#10b981", // Emerald 500
+    bg: "bg-emerald-500",
+    text: "text-emerald-600",
+    border: "border-emerald-200",
+  },
+  realized: {
+    hex: "#3b82f6", // Blue 500 (Royal)
+    bg: "bg-blue-500",
+    text: "text-blue-600",
+    border: "border-blue-200",
+  },
+  meta: {
+    hex: "#ef4444", // Red 500
+    bg: "bg-red-500",
+    text: "text-red-600",
+    border: "border-red-200",
+  },
+  text: "#64748b", // Slate 500
+  grid: "#e2e8f0", // Slate 200
+};
 
 type Horizonte = 3 | 6 | 12;
 
@@ -48,29 +76,17 @@ function fmtPctRatio(v: number | undefined | null) {
 }
 
 const insightIcons: Record<InsightLevel, ReactNode> = {
-  success: <CheckCircle className="h-5 w-5 text-success shrink-0" />,
-  warning: <AlertTriangle className="h-5 w-5 text-warning shrink-0" />,
-  destructive: <XCircle className="h-5 w-5 text-destructive shrink-0" />,
-  muted: <Info className="h-5 w-5 text-muted-foreground shrink-0" />,
+  success: <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />,
+  warning: <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />,
+  destructive: <XCircle className="h-5 w-5 text-red-600 shrink-0" />,
+  muted: <Info className="h-5 w-5 text-slate-500 shrink-0" />,
 };
 
-const insightBg: Record<InsightLevel, string> = {
-  success: "bg-success/10 border-success/20",
-  warning: "bg-warning/10 border-warning/20",
-  destructive: "bg-destructive/10 border-destructive/20",
-  muted: "bg-muted border-border",
-};
-
-// Paleta pastel/translúcida baseada nas cores do tema (consistente com o “sumário”)
-const CHART = {
-  baseline: { hex: "hsl(var(--primary))" },
-  pipeline: { hex: "hsl(var(--chart-2))" },
-  effort: { hex: "hsl(var(--chart-3))" },
-  meta: { hex: "hsl(var(--success))" },
-  realized: { hex: "hsl(var(--chart-4))" },
-  grid: "hsl(var(--border))",
-  text: "hsl(var(--muted-foreground))",
-  axis: "hsl(var(--foreground))",
+const insightStyles: Record<InsightLevel, string> = {
+  success: "bg-emerald-50 border-emerald-200 text-emerald-900",
+  warning: "bg-amber-50 border-amber-200 text-amber-900",
+  destructive: "bg-red-50 border-red-200 text-red-900",
+  muted: "bg-slate-50 border-slate-200 text-slate-700",
 };
 
 export default function Forecast() {
@@ -91,14 +107,13 @@ export default function Forecast() {
     [horizonte, valorAdicional, conversaoMarg, ticketMarg],
   );
 
-  const { data, isLoading, isFetching, refetch } = useForecastPage(params);
+  const { data, isLoading } = useForecastPage(params);
 
   const bs = data?.baseStats;
   const pipeline = data?.pipeline;
   const fm = data?.forecastMensal || [];
   const vh = data?.volumeHistorico || [];
   const insights = data?.insights || [];
-  const metasAtivas = data?.metasAtivas || [];
 
   const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
   const mesFocoData = fm[safeMesFoco] || null;
@@ -109,10 +124,8 @@ export default function Forecast() {
     setMesFoco(0);
   }, []);
 
-  // seed conversão/ticket com histórico (evita “≈ 0 propostas” por ticket 0)
   useEffect(() => {
     if (!bs) return;
-
     if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
@@ -127,13 +140,11 @@ export default function Forecast() {
     setTicketMarg(bs?.ticketReal || 0);
   }, [bs]);
 
-  // Tooltip do histórico
   const tooltipFormatter = (value: number, name: string) => {
     if (name === "Conversão %") return [`${value.toFixed(1)}%`, name];
     return [fmtBRL(value), name];
   };
 
-  // Dados do gráfico principal com chaves explícitas
   const fmChart = useMemo(() => {
     return (fm || []).map((m: any) => ({
       ...m,
@@ -142,416 +153,360 @@ export default function Forecast() {
     }));
   }, [fm]);
 
-  const yDomainMax = useMemo(() => {
-    const vals = fmChart.flatMap((m: any) => [
-      Number(m.baseline || 0),
-      Number(m.pipelineAlloc || 0),
-      Number(m.incrementalAlloc || 0),
-      Number(m.forecastTotal || 0),
-      Number(m.meta || 0),
-      Number(m.faturadoPlot || 0),
-    ]);
-    const max = Math.max(0, ...vals);
-    // margem visual + arredonda para “degraus” limpos
-    const padded = max * 1.15;
-    const step = 10000;
-    return Math.max(step, Math.ceil(padded / step) * step);
-  }, [fmChart]);
-
+  // --- TOOLTIP SINCRONIZADO (CORES IDÊNTICAS AO GRÁFICO) ---
   const forecastTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const item = payload[0]?.payload;
     if (!item) return null;
 
     const faturado = Number(item.faturadoPlot || 0);
+    const hasGap = item.gap > 0;
 
     return (
-      <div className="bg-popover/95 backdrop-blur border border-border rounded-xl shadow-lg p-3 text-sm space-y-1 min-w-[260px]">
-        <p className="font-semibold text-foreground border-b border-border/60 pb-1 mb-1">{label}</p>
+      <div className="bg-white/95 backdrop-blur rounded-xl shadow-xl border border-slate-200 p-4 min-w-[280px] text-sm z-50">
+        <p className="font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3 text-base capitalize">{label}</p>
 
-        <Row label="Base" value={fmtBRL(item.baseline)} />
-        <Row label="Pipeline" value={fmtBRL(item.pipelineAlloc)} />
-        {Number(item.incrementalAlloc || 0) > 0 && <Row label="Esforço" value={fmtBRL(item.incrementalAlloc)} />}
-
-        <div className="flex justify-between border-t border-border/60 pt-1 font-semibold">
-          <span>Forecast</span>
-          <span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
+        {/* Seção de Barras (Stack) */}
+        <div className="space-y-2 mb-4">
+          <div className="flex justify-between items-center">
+            <span className={cn("flex items-center gap-2 font-medium", COLORS.baseline.text)}>
+              <div className={cn("w-3 h-3 rounded", COLORS.baseline.bg)}></div>
+              Baseline
+            </span>
+            <span className="font-semibold text-slate-700 tabular-nums">{fmtBRL(item.baseline)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className={cn("flex items-center gap-2 font-medium", COLORS.pipeline.text)}>
+              <div className={cn("w-3 h-3 rounded", COLORS.pipeline.bg)}></div>
+              Pipeline
+            </span>
+            <span className="font-semibold text-slate-700 tabular-nums">{fmtBRL(item.pipelineAlloc)}</span>
+          </div>
+          {item.incrementalAlloc > 0 && (
+            <div className="flex justify-between items-center">
+              <span className={cn("flex items-center gap-2 font-medium", COLORS.effort.text)}>
+                <div className={cn("w-3 h-3 rounded", COLORS.effort.bg)}></div>
+                Esforço
+              </span>
+              <span className="font-semibold text-slate-700 tabular-nums">{fmtBRL(item.incrementalAlloc)}</span>
+            </div>
+          )}
         </div>
 
-        <Row label="Meta" value={fmtBRL(item.meta)} valueClass="text-success" />
-        <Row
-          label="Realizado"
-          value={faturado > 0 ? fmtBRL(faturado) : "—"}
-          valueClass={faturado > 0 ? "text-foreground font-medium" : "text-muted-foreground"}
-        />
+        <div className="border-t border-slate-100 pt-3 space-y-2">
+          {/* Forecast Total (Soma) */}
+          <div className="flex justify-between items-center font-bold text-base">
+            <span className="text-slate-800">Forecast Total</span>
+            <span className="text-slate-900 tabular-nums">{fmtBRL(item.forecastTotal)}</span>
+          </div>
 
-        {Number(item.gap || 0) > 0 && (
-          <>
-            <div className="flex justify-between text-destructive">
-              <span>Gap</span>
-              <span>{fmtBRL(item.gap)}</span>
+          {/* Meta (Vermelho = Linha Vermelha) */}
+          <div className="flex justify-between items-center">
+            <span
+              className={cn("flex items-center gap-2 text-xs uppercase font-bold tracking-wider", COLORS.meta.text)}
+            >
+              Meta
+            </span>
+            <span className={cn("font-bold tabular-nums", COLORS.meta.text)}>{fmtBRL(item.meta)}</span>
+          </div>
+
+          {/* Faturado (Azul = Linha Azul) */}
+          <div className="flex justify-between items-center">
+            <span
+              className={cn("flex items-center gap-2 text-xs uppercase font-bold tracking-wider", COLORS.realized.text)}
+            >
+              Realizado
+            </span>
+            <span className={cn("font-bold tabular-nums", faturado > 0 ? COLORS.realized.text : "text-slate-300")}>
+              {faturado > 0 ? fmtBRL(faturado) : "—"}
+            </span>
+          </div>
+        </div>
+
+        {hasGap && (
+          <div className="mt-3 pt-2 border-t border-red-100 bg-red-50/50 -mx-4 px-4 pb-2 rounded-b-xl">
+            <div className="flex justify-between items-center text-red-600 font-bold mb-1">
+              <span>Gap:</span>
+              <span className="tabular-nums">{fmtBRL(item.gap)}</span>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Ação: +{fmtBRL(item.acaoNecessariaRS)} em propostas (~{item.propostasEquiv} prop.)
+            <div className="text-[11px] text-red-500/80 leading-tight font-medium">
+              Necessário: +{fmtBRL(item.acaoNecessariaRS)} em propostas
             </div>
-          </>
+          </div>
         )}
       </div>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-10 text-slate-700">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-4 border-b border-slate-200">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <TrendingUp className="h-7 w-7 text-primary" />
-            <h1 className="text-h2 text-foreground">Forecast de Faturamento</h1>
+            <div className="p-2.5 bg-slate-100 rounded-xl">
+              <TrendingUp className="h-6 w-6 text-slate-700" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Forecast de Faturamento</h1>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Motor de decisão comercial baseado no pipeline real e histórico de 12 meses
-          </p>
+          <p className="text-slate-500 text-base max-w-2xl pl-[3.5rem]">Visão estratégica de receita.</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-            className="gap-1.5 text-xs"
-            disabled={isLoading || isFetching}
-          >
-            <RotateCcw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} />
-            Atualizar
-          </Button>
-
+        <div className="flex flex-col items-end gap-2">
           <ToggleGroup
             type="single"
             value={String(horizonte)}
             onValueChange={handleHorizonteChange}
-            className="bg-muted rounded-lg p-0.5"
+            className="bg-slate-100 p-1 rounded-lg"
           >
             {[3, 6, 12].map((h) => (
               <ToggleGroupItem
                 key={h}
                 value={String(h)}
-                className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
+                className="text-sm px-4 data-[state=on]:bg-white data-[state=on]:text-indigo-600 data-[state=on]:shadow-sm rounded-md font-medium text-slate-500"
               >
-                {h}m
+                {h} meses
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
         </div>
       </div>
 
-      {/* Aviso amostra pequena */}
-      {bs?.amostraPequena && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Amostra pequena: apenas {bs.numContratos12m} contratos em 12 meses. Previsões podem estar distorcidas.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Seleção mês foco */}
-      {!isLoading && fm.length > 0 && (
-        <div className="flex items-center gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Mês foco:</span>
-
-          <ToggleGroup
-            type="single"
-            value={String(safeMesFoco)}
-            onValueChange={(v) => v !== undefined && v !== "" && setMesFoco(Number(v))}
-            className="bg-muted rounded-lg p-0.5 flex-wrap"
-          >
-            {fm.map((m: any, i: number) => (
-              <ToggleGroupItem
-                key={i}
-                value={String(i)}
-                className="text-xs px-2.5 py-1 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
-              >
-                {m.mes}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      )}
-
-      {/* KPIs principais */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* KPI Cards */}
+      {!isLoading && mesFocoData && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Receita s/ Esforço"
-            value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
-            sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
-          />
-          <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
+            icon={<TrendingUp className="h-5 w-5" />}
             label="Receita Projetada"
-            value={fmtBRL(mesFocoData?.forecastTotal)}
-            sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
-            variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
+            value={fmtBRL(mesFocoData.forecastTotal)}
+            sub={<span className="font-medium text-indigo-600">{mesFocoData.mes}</span>}
+            highlight
           />
           <KPICard
-            icon={<Target className="h-4 w-4" />}
-            label="Gap vs Meta"
-            value={fmtBRL(mesFocoData?.gap)}
-            variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
-            sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
+            icon={<DollarSign className="h-5 w-5" />}
+            label="Receita Real"
+            value={mesFocoData.receitaReal > 0 ? fmtBRL(mesFocoData.receitaReal) : "—"}
+            sub={mesFocoData.receitaReal > 0 ? "Fechado" : "Em aberto"}
           />
           <KPICard
-            icon={<FileText className="h-4 w-4" />}
-            label="Ação Necessária"
-            value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
-            sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
+            icon={<Percent className="h-5 w-5" />}
+            label="Margem Real"
+            value={mesFocoData.margemReal !== null ? `${mesFocoData.margemReal.toFixed(1)}%` : "—"}
+            sub={mesFocoData.margemReal !== null ? `Custo: ${fmtBRL(mesFocoData.custoReal)}` : "—"}
           />
           <KPICard
-            icon={<PieChart className="h-4 w-4" />}
-            label="Pipeline Vivo"
-            value={fmtBRL(pipeline?.valorPonderado)}
-            sub={`${pipeline?.qtdPropostas || 0} propostas abertas`}
-          />
-          <KPICard
-            icon={<Percent className="h-4 w-4" />}
-            label="Conversão (12m)"
-            value={fmtPctRatio(bs?.conversaoFinanceira)}
-            sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
+            icon={<BarChart3 className="h-5 w-5" />}
+            label="Delta vs Forecast"
+            value={(() => {
+              if (mesFocoData.receitaReal === 0) return "—";
+              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
+              return `${delta >= 0 ? "+" : ""}${fmtBRL(delta)}`;
+            })()}
+            variant={(() => {
+              if (mesFocoData.receitaReal === 0) return undefined;
+              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
+              return delta > 0 ? "success" : delta < 0 ? "destructive" : undefined;
+            })()}
           />
         </div>
-      )}
-
-      {/* CTA metas */}
-      {!isLoading && metasAtivas.length === 0 && (
-        <Alert>
-          <Target className="h-4 w-4" />
-          <AlertDescription className="flex items-center gap-2">
-            Nenhuma meta de vendas ativa encontrada.
-            <Link to="/metas" className="text-primary font-medium hover:underline">
-              Criar meta →
-            </Link>
-          </AlertDescription>
-        </Alert>
       )}
 
       {/* Simulador */}
-      <Card className="border-border/60">
-        <CardHeader className="pb-3">
+      <Card className="border-indigo-100 bg-gradient-to-br from-indigo-50/20 to-white shadow-sm">
+        <CardHeader className="border-b border-indigo-100/50 pb-4">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Simulador de Esforço Comercial</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ajuste quanto pretende investir em novas propostas e veja o impacto no faturamento
-              </p>
+            <div className="space-y-1">
+              <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
+                <Crosshair className="w-5 h-5 text-indigo-500" />
+                Simulador de Esforço
+              </CardTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={resetControles} className="gap-1.5 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetControles}
+              className="gap-2 h-8 text-xs text-slate-500 hover:text-indigo-600 hover:bg-white"
+            >
               <RotateCcw className="h-3.5 w-3.5" /> Resetar
             </Button>
           </div>
         </CardHeader>
-
-        <CardContent>
+        <CardContent className="pt-6">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-20" />
-              ))}
-            </div>
+            <Skeleton className="h-24 w-full" />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Valor adicional em propostas (R$/mês)</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium text-slate-500">Volume de Propostas (+R$)</Label>
+                  <span className="text-sm font-bold text-slate-700">{fmtBRL(valorAdicional)}</span>
+                </div>
                 <Slider
                   min={0}
                   max={Math.max(500000, Math.round((bs?.volumeEnviadoMensal || 100000) * 3))}
                   step={5000}
                   value={[valorAdicional]}
                   onValueChange={([v]) => setValorAdicional(v)}
+                  className="py-2"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{fmtBRL(valorAdicional)}/mês</span>
-                  <span>Hist: {fmtBRL(bs?.volumeEnviadoMensal)}/mês</span>
-                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Conversão financeira marginal (%)</Label>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium text-slate-500">Taxa de Conversão</Label>
+                  <span className="text-sm font-bold text-slate-700">{(conversaoMarg * 100).toFixed(0)}%</span>
+                </div>
                 <Slider
                   min={5}
                   max={80}
                   step={1}
                   value={[Math.round(conversaoMarg * 100)]}
                   onValueChange={([v]) => setConversaoMarg(v / 100)}
+                  className="py-2"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{(conversaoMarg * 100).toFixed(0)}%</span>
-                  <span>Hist: {fmtPctRatio(bs?.conversaoFinanceira)}</span>
-                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Ticket médio esperado (R$)</Label>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium text-slate-500">Ticket Médio</Label>
+                  <span className="text-sm font-bold text-slate-700">{fmtBRL(ticketMarg)}</span>
+                </div>
                 <Slider
                   min={0}
                   max={Math.max(200000, Math.round((bs?.ticketReal || 50000) * 3))}
                   step={1000}
                   value={[ticketMarg]}
                   onValueChange={([v]) => setTicketMarg(v)}
+                  className="py-2"
                 />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{fmtBRL(ticketMarg)}</span>
-                  <span>Hist: {fmtBRL(bs?.ticketReal)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && valorAdicional > 0 && (
-            <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/10">
-              <div className="flex items-center gap-2 text-sm">
-                <Crosshair className="h-4 w-4 text-primary" />
-                <span className="text-foreground">
-                  Gerando <strong>{fmtBRL(valorAdicional)}</strong>/mês com{" "}
-                  <strong>{(conversaoMarg * 100).toFixed(0)}%</strong> de conversão ={" "}
-                  <strong className="text-primary">{fmtBRL(valorAdicional * conversaoMarg)}</strong> de receita/mês.
-                  {bs && bs.tempoMedioFechamentoDias > 0 && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias.
-                    </span>
-                  )}
-                </span>
               </div>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Gráfico principal (pastel, minimalista, coerente com sumário) */}
-      <Card className="shadow-lg border-border/60 bg-card">
-        <CardHeader className="pb-6 border-b border-border/60">
+      {/* GRÁFICO PRINCIPAL */}
+      <Card className="shadow-lg border-slate-200 bg-white">
+        <CardHeader className="pb-6 border-b border-slate-100">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="text-base text-foreground">Forecast vs Meta — Mês a Mês</CardTitle>
+            <CardTitle className="text-lg text-slate-800">Projeção vs Meta</CardTitle>
 
-            {/* legenda minimalista */}
-            <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-              <LegendDot label="Base" color={CHART.baseline.hex} />
-              <LegendDot label="Pipeline" color={CHART.pipeline.hex} />
-              <LegendDot label="Esforço" color={CHART.effort.hex} />
-              <LegendLine label="Meta" color={CHART.meta.hex} dashed />
-              <LegendLine label="Realizado" color={CHART.realized.hex} />
+            {/* LEGENDA CUSTOMIZADA (CORES CORRESPONDENTES) */}
+            <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-500">
+              <div className={cn("flex items-center gap-1.5", COLORS.baseline.text)}>
+                <div className={cn("w-3 h-3 rounded", COLORS.baseline.bg)} />
+                Base
+              </div>
+              <div className={cn("flex items-center gap-1.5", COLORS.pipeline.text)}>
+                <div className={cn("w-3 h-3 rounded", COLORS.pipeline.bg)} />
+                Pipeline
+              </div>
+              <div className={cn("flex items-center gap-1.5", COLORS.effort.text)}>
+                <div className={cn("w-3 h-3 rounded", COLORS.effort.bg)} />
+                Esforço
+              </div>
+              <div className={cn("flex items-center gap-1.5", COLORS.meta.text)}>
+                <div className={cn("w-4 h-0.5", COLORS.meta.bg)} />
+                Meta
+              </div>
+              <div className={cn("flex items-center gap-1.5", COLORS.realized.text)}>
+                <div className={cn("w-4 h-1 rounded-full", COLORS.realized.bg)} />
+                Realizado
+              </div>
             </div>
           </div>
         </CardHeader>
-
         <CardContent className="pt-8 pl-0">
           {isLoading ? (
-            <Skeleton className="h-[380px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
           ) : (
-            <div className="h-[380px] w-full">
+            <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={fmChart} margin={{ top: 16, right: 24, bottom: 18, left: 0 }}>
+                <ComposedChart data={fmChart} margin={{ top: 20, right: 30, bottom: 20, left: 10 }}>
                   <defs>
                     <linearGradient id="gradBaseline" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART.baseline.hex} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={CHART.baseline.hex} stopOpacity={0.12} />
+                      <stop offset="0%" stopColor={COLORS.baseline.hex} stopOpacity={1} />
+                      <stop offset="100%" stopColor={COLORS.baseline.hex} stopOpacity={0.6} />
                     </linearGradient>
-
                     <linearGradient id="gradPipeline" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART.pipeline.hex} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={CHART.pipeline.hex} stopOpacity={0.12} />
+                      <stop offset="0%" stopColor={COLORS.pipeline.hex} stopOpacity={1} />
+                      <stop offset="100%" stopColor={COLORS.pipeline.hex} stopOpacity={0.6} />
                     </linearGradient>
-
                     <linearGradient id="gradEffort" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={CHART.effort.hex} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={CHART.effort.hex} stopOpacity={0.12} />
+                      <stop offset="0%" stopColor={COLORS.effort.hex} stopOpacity={1} />
+                      <stop offset="100%" stopColor={COLORS.effort.hex} stopOpacity={0.6} />
                     </linearGradient>
-
-                    <filter id="shadowRealized" height="140%">
+                    <filter id="shadowRealized" height="130%">
                       <feDropShadow
                         dx="0"
                         dy="2"
                         stdDeviation="2"
-                        floodColor={CHART.realized.hex}
-                        floodOpacity="0.22"
+                        floodColor={COLORS.realized.hex}
+                        floodOpacity="0.3"
                       />
                     </filter>
                   </defs>
 
-                  <CartesianGrid strokeDasharray="3 6" vertical={false} stroke={CHART.grid} opacity={0.45} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
 
                   <XAxis
                     dataKey="mes"
-                    tick={{ fontSize: 12, fill: CHART.text }}
+                    tick={{ fontSize: 12, fill: COLORS.text }}
                     axisLine={false}
                     tickLine={false}
-                    dy={12}
+                    dy={15}
                   />
-
                   <YAxis
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 12, fill: CHART.text }}
+                    tick={{ fontSize: 12, fill: COLORS.text }}
                     axisLine={false}
                     tickLine={false}
-                    width={46}
-                    tickCount={6}
-                    domain={[0, yDomainMax]}
+                    dx={-10}
                   />
 
-                  <Tooltip content={forecastTooltip} cursor={{ fill: "rgba(241, 245, 249, 0.35)" }} />
+                  <Tooltip content={forecastTooltip} cursor={{ fill: "rgba(241, 245, 249, 0.4)" }} />
 
-                  <Bar dataKey="baseline" fill="url(#gradBaseline)" stackId="forecast" barSize={44} />
-                  <Bar dataKey="pipelineAlloc" fill="url(#gradPipeline)" stackId="forecast" barSize={44} />
-
-                  {valorAdicional > 0 ? (
+                  <Bar dataKey="baseline" fill="url(#gradBaseline)" stackId="forecast" barSize={48} />
+                  <Bar dataKey="pipelineAlloc" fill="url(#gradPipeline)" stackId="forecast" barSize={48} />
+                  {valorAdicional > 0 && (
                     <Bar
                       dataKey="incrementalAlloc"
                       fill="url(#gradEffort)"
                       stackId="forecast"
-                      radius={[10, 10, 0, 0]}
-                      barSize={44}
+                      radius={[6, 6, 0, 0]}
+                      barSize={48}
                     />
-                  ) : (
+                  )}
+                  {valorAdicional === 0 && (
                     <Bar
                       dataKey="pipelineAlloc"
                       fill="url(#gradPipeline)"
                       stackId="forecast"
-                      radius={[10, 10, 0, 0]}
-                      barSize={44}
+                      barSize={48}
+                      radius={[6, 6, 0, 0]}
                     />
                   )}
 
                   <Line
                     dataKey="meta"
                     type="step"
-                    stroke={CHART.meta.hex}
+                    stroke={COLORS.meta.hex}
                     strokeWidth={2}
-                    strokeDasharray="4 6"
+                    strokeDasharray="4 4"
                     dot={false}
                   />
 
                   <Line
                     dataKey="faturadoPlot"
                     type="monotone"
-                    stroke={CHART.realized.hex}
-                    strokeWidth={3.5}
+                    stroke={COLORS.realized.hex}
+                    strokeWidth={4}
                     filter="url(#shadowRealized)"
                     dot={{
-                      r: 5,
-                      fill: "hsl(var(--background))",
-                      stroke: CHART.realized.hex,
-                      strokeWidth: 2.5,
+                      r: 6,
+                      fill: "#fff",
+                      stroke: COLORS.realized.hex,
+                      strokeWidth: 3,
                     }}
-                    activeDot={{ r: 7, strokeWidth: 0, fill: CHART.realized.hex }}
+                    activeDot={{ r: 8, strokeWidth: 0, fill: COLORS.realized.hex }}
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -560,105 +515,119 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
-      {/* Histórico */}
-      <Card className="border-border/60">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Histórico 12m — Valor Enviado vs Fechado (R$)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-[280px]" />
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={vh}>
-                <CartesianGrid strokeDasharray="3 6" className="opacity-40" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
-                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} width={46} />
-                <Tooltip formatter={tooltipFormatter} />
-
-                <Bar
-                  dataKey="valorEnviado"
-                  name="Valor Enviado (R$)"
-                  fill={CHART.baseline.hex}
-                  opacity={0.25}
-                  radius={[8, 8, 0, 0]}
-                />
-                <Bar
-                  dataKey="valorFechado"
-                  name="Valor Fechado (R$)"
-                  fill={CHART.pipeline.hex}
-                  opacity={0.35}
-                  radius={[8, 8, 0, 0]}
-                />
-                <Line
-                  dataKey="conversaoFinanceira"
-                  name="Conversão %"
-                  type="monotone"
-                  stroke={CHART.realized.hex}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pipeline breakdown */}
-      {!isLoading && pipeline && pipeline.qtdPropostas > 0 && (
-        <Card className="border-border/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <PieChart className="h-4 w-4" />
-              Pipeline Atual — Receita Esperada por Estágio
-            </CardTitle>
+      {/* Histórico e Pipeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="pb-4 border-b border-slate-100">
+            <CardTitle className="text-base text-slate-700">Histórico de Fechamento</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {Object.entries(pipeline.porEstagio)
-                .sort(([, a]: any, [, b]: any) => b.ponderado - a.ponderado)
-                .map(([estagio, info]: any) => (
-                  <div key={estagio} className="p-3 rounded-xl bg-muted/40 border border-border/60">
-                    <p className="text-xs text-muted-foreground capitalize truncate">
-                      {String(estagio).replace(/_/g, " ")}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mt-1">{fmtBRL(info.ponderado)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {info.qtd} prop. · {fmtBRL(info.valor)} bruto
-                    </p>
-                  </div>
-                ))}
-            </div>
+          <CardContent className="pt-6">
+            {isLoading ? (
+              <Skeleton className="h-[250px]" />
+            ) : (
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={vh} margin={{ top: 10, right: 0, bottom: 0, left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={COLORS.grid} />
+                    <XAxis
+                      dataKey="mes"
+                      tick={{ fontSize: 10, fill: COLORS.text }}
+                      axisLine={false}
+                      tickLine={false}
+                      dy={10}
+                    />
+                    <YAxis
+                      yAxisId="left"
+                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      tick={{ fontSize: 10, fill: COLORS.text }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      tickFormatter={(v) => `${v}%`}
+                      tick={{ fontSize: 10, fill: COLORS.text }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip formatter={tooltipFormatter} />
 
-            <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
-              <span className="text-muted-foreground">
-                Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong>
-              </span>
-              <span className="text-muted-foreground">
-                Ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong>
-              </span>
-              <span className="text-muted-foreground">
-                <Clock className="h-3.5 w-3.5 inline mr-1" />
-                Fechamento (P50): <strong className="text-foreground">{bs?.tempoMedioFechamentoDias || "—"}d</strong>
-              </span>
-            </div>
+                    <Bar yAxisId="left" dataKey="valorEnviado" fill="#e2e8f0" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar
+                      yAxisId="left"
+                      dataKey="valorFechado"
+                      fill={COLORS.baseline.hex}
+                      radius={[4, 4, 0, 0]}
+                      barSize={20}
+                    />
+                    <Line
+                      yAxisId="right"
+                      dataKey="conversaoFinanceira"
+                      type="monotone"
+                      stroke={COLORS.effort.hex}
+                      strokeWidth={2}
+                      dot={{ r: 2, fill: COLORS.effort.hex }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Insights */}
+        {!isLoading && pipeline && pipeline.qtdPropostas > 0 && (
+          <Card className="shadow-sm border-slate-200 flex flex-col">
+            <CardHeader className="pb-4 border-b border-slate-100">
+              <CardTitle className="text-base flex items-center gap-2 text-slate-700">
+                <PieChart className="h-4 w-4" />
+                Composição do Pipeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 flex-1 flex flex-col justify-between">
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(pipeline.porEstagio)
+                  .sort(([, a]: any, [, b]: any) => b.ponderado - a.ponderado)
+                  .map(([estagio, info]: any) => (
+                    <div
+                      key={estagio}
+                      className="p-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                          {String(estagio).replace(/_/g, " ")}
+                        </p>
+                        <span className="text-[10px] bg-white text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200 shadow-sm">
+                          {info.qtd}
+                        </span>
+                      </div>
+                      <p className="text-lg font-bold text-slate-800 tracking-tight">{fmtBRL(info.ponderado)}</p>
+                    </div>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
       {insights.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="h-5 w-5 text-warning" />
-            <h2 className="text-base font-semibold text-foreground">Insights</h2>
+        <div className="pt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-slate-800">Insights Gerados</h2>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {insights.map((ins: any, i: number) => (
-              <div key={i} className={cn("flex items-start gap-3 p-4 rounded-xl border", insightBg[ins.level])}>
-                {insightIcons[ins.level]}
-                <p className="text-sm text-foreground">{ins.text}</p>
+              <div
+                key={i}
+                className={cn(
+                  "flex items-start gap-4 p-5 rounded-xl border transition-all hover:shadow-md bg-white",
+                  insightStyles[ins.level],
+                )}
+              >
+                <div className="mt-0.5">{insightIcons[ins.level]}</div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-relaxed opacity-90">{ins.text}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -674,67 +643,43 @@ function KPICard({
   value,
   sub,
   variant,
+  highlight = false,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   sub?: ReactNode;
   variant?: "destructive" | "success";
+  highlight?: boolean;
 }) {
   return (
-    <Card className="p-3 border-border/60">
-      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-        {icon}
-        <span className="text-xs font-medium truncate">{label}</span>
+    <Card
+      className={cn(
+        "p-5 transition-all hover:shadow-lg border-0 bg-white shadow-sm ring-1 ring-slate-100",
+        highlight ? "ring-2 ring-indigo-200 shadow-md bg-indigo-50/10" : "",
+      )}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider truncate pr-2">{label}</span>
+        <div
+          className={cn("p-2 rounded-lg", highlight ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-500")}
+        >
+          {icon}
+        </div>
       </div>
-
-      <p
-        className={cn(
-          "text-lg font-semibold tabular-nums",
-          variant === "destructive" && "text-destructive",
-          variant === "success" && "text-success",
-        )}
-      >
-        {value}
-      </p>
-
-      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
+      <div className="space-y-1">
+        <p
+          className={cn(
+            "text-2xl font-bold tracking-tight tabular-nums text-slate-800",
+            variant === "destructive" && "text-red-600",
+            variant === "success" && "text-emerald-600",
+            highlight && "text-indigo-700",
+          )}
+        >
+          {value}
+        </p>
+        {sub && <div className="text-xs text-slate-500 font-medium">{sub}</div>}
+      </div>
     </Card>
-  );
-}
-
-function Row({ label, value, valueClass }: { label: string; value: ReactNode; valueClass?: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-muted-foreground">{label}:</span>
-      <span className={valueClass}>{value}</span>
-    </div>
-  );
-}
-
-function LegendDot({ label, color }: { label: string; color: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color, opacity: 0.35 }} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function LegendLine({ label, color, dashed }: { label: string; color: string; dashed?: boolean }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className="inline-block w-5 h-[2px] rounded-full"
-        style={{
-          backgroundColor: color,
-          opacity: 0.85,
-          backgroundImage: dashed
-            ? `repeating-linear-gradient(90deg, ${color} 0 6px, transparent 6px 12px)`
-            : undefined,
-        }}
-      />
-      <span>{label}</span>
-    </div>
   );
 }
