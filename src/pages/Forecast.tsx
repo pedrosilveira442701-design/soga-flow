@@ -1,8 +1,21 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import {
-  TrendingUp, RotateCcw, Target, DollarSign, BarChart3, Percent,
-  Lightbulb, AlertTriangle, CheckCircle, XCircle, Info, FileText,
-  Clock, PieChart, Crosshair, Calendar,
+  TrendingUp,
+  RotateCcw,
+  Target,
+  DollarSign,
+  BarChart3,
+  Percent,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Info,
+  FileText,
+  Clock,
+  PieChart,
+  Crosshair,
+  Calendar,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,17 +27,26 @@ import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
-import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from "recharts";
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type Horizonte = 3 | 6 | 12;
 
 function fmtBRL(v: number | undefined | null) {
-  return (v ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return (v ?? 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
 }
-function fmtPct(v: number | undefined | null) {
+function fmtSignedBRL(v: number) {
+  const sign = v >= 0 ? "+" : "";
+  return `${sign}${fmtBRL(v)}`;
+}
+function fmtPct01(v: number | undefined | null) {
   return `${((v ?? 0) * 100).toFixed(1)}%`;
+}
+function fmtPct100(v: number | undefined | null) {
+  return `${(v ?? 0).toFixed(1)}%`;
 }
 
 const insightIcons: Record<InsightLevel, React.ReactNode> = {
@@ -41,11 +63,14 @@ const insightBg: Record<InsightLevel, string> = {
   muted: "bg-muted border-border",
 };
 
+type KPIStatus = "success" | "destructive" | undefined;
+
 export default function Forecast() {
   const [horizonte, setHorizonte] = useState<Horizonte>(6);
   const [mesFoco, setMesFoco] = useState(0);
+
   const [valorAdicional, setValorAdicional] = useState(0);
-  const [conversaoMarg, setConversaoMarg] = useState(0.30);
+  const [conversaoMarg, setConversaoMarg] = useState(0.3);
   const [ticketMarg, setTicketMarg] = useState(0);
 
   const params: ForecastPageParams = {
@@ -54,6 +79,7 @@ export default function Forecast() {
     conversaoMarginal: conversaoMarg,
     ticketMarginal: ticketMarg,
   };
+
   const { data, isLoading } = useForecastPage(params);
 
   const bs = data?.baseStats;
@@ -63,9 +89,8 @@ export default function Forecast() {
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
 
-  // Reset mesFoco when horizon changes or exceeds array
-  const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
-  const mesFocoData = fm[safeMesFoco] || null;
+  const safeMesFoco = useMemo(() => (mesFoco < fm.length ? mesFoco : 0), [mesFoco, fm.length]);
+  const mesFocoData = useMemo(() => fm[safeMesFoco] || null, [fm, safeMesFoco]);
 
   const handleHorizonteChange = useCallback((v: string) => {
     if (v) {
@@ -74,16 +99,21 @@ export default function Forecast() {
     }
   }, []);
 
-  // Auto-seed conversão marginal from history
-  useMemo(() => {
-    if (bs && conversaoMarg === 0.30 && bs.conversaoFinanceira > 0) {
+  // Auto-seed conversão marginal / ticket marginal com base no histórico, apenas se usuário ainda não ajustou.
+  useEffect(() => {
+    if (!bs) return;
+
+    if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
-  }, [bs?.conversaoFinanceira]);
+    if (ticketMarg === 0 && (bs.ticketReal || 0) > 0) {
+      setTicketMarg(bs.ticketReal || 0);
+    }
+  }, [bs, conversaoMarg, ticketMarg]);
 
   const resetControles = useCallback(() => {
     setValorAdicional(0);
-    setConversaoMarg(bs?.conversaoFinanceira || 0.30);
+    setConversaoMarg(bs?.conversaoFinanceira || 0.3);
     setTicketMarg(bs?.ticketReal || 0);
   }, [bs]);
 
@@ -96,21 +126,44 @@ export default function Forecast() {
     if (!active || !payload?.length) return null;
     const item = payload[0]?.payload;
     if (!item) return null;
+
     return (
       <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[220px]">
         <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
-        <div className="flex justify-between"><span className="text-muted-foreground">Baseline:</span><span>{fmtBRL(item.baseline)}</span></div>
-        <div className="flex justify-between"><span className="text-muted-foreground">Pipeline:</span><span>{fmtBRL(item.pipelineAlloc)}</span></div>
-        {item.incrementalAlloc > 0 && (
-          <div className="flex justify-between"><span className="text-muted-foreground">Incremental:</span><span>{fmtBRL(item.incrementalAlloc)}</span></div>
-        )}
-        <div className="flex justify-between border-t border-border pt-1 font-semibold">
-          <span>Total:</span><span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
+
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Baseline:</span>
+          <span>{fmtBRL(item.baseline)}</span>
         </div>
-        <div className="flex justify-between"><span className="text-muted-foreground">Meta:</span><span className="text-success">{fmtBRL(item.meta)}</span></div>
+
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Pipeline:</span>
+          <span>{fmtBRL(item.pipelineAlloc)}</span>
+        </div>
+
+        {item.incrementalAlloc > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Incremental:</span>
+            <span>{fmtBRL(item.incrementalAlloc)}</span>
+          </div>
+        )}
+
+        <div className="flex justify-between border-t border-border pt-1 font-semibold">
+          <span>Total:</span>
+          <span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Meta:</span>
+          <span className="text-success">{fmtBRL(item.meta)}</span>
+        </div>
+
         {item.gap > 0 && (
           <>
-            <div className="flex justify-between text-destructive"><span>Gap:</span><span>{fmtBRL(item.gap)}</span></div>
+            <div className="flex justify-between text-destructive">
+              <span>Gap:</span>
+              <span>{fmtBRL(item.gap)}</span>
+            </div>
             <div className="text-xs text-warning mt-1">
               Ação: +{fmtBRL(item.acaoNecessariaRS)} em propostas (~{item.propostasEquiv} prop.)
             </div>
@@ -119,6 +172,59 @@ export default function Forecast() {
       </div>
     );
   };
+
+  const realVsForecast = useMemo(() => {
+    if (!mesFocoData) return null;
+
+    const forecastTotal = Number(mesFocoData.forecastTotal || 0);
+
+    // Se veio undefined/null do backend, tratamos como "sem dado" (mostrar —).
+    const receitaRealRaw = (mesFocoData as any).receitaReal;
+    const custoRealRaw = (mesFocoData as any).custoReal;
+    const margemRealRaw = (mesFocoData as any).margemReal;
+
+    const temReceitaReal = receitaRealRaw !== undefined && receitaRealRaw !== null;
+    const temCustoReal = custoRealRaw !== undefined && custoRealRaw !== null;
+    const temMargemReal = margemRealRaw !== undefined && margemRealRaw !== null;
+
+    const receitaReal = temReceitaReal ? Number(receitaRealRaw || 0) : null;
+    const custoReal = temCustoReal ? Number(custoRealRaw || 0) : null;
+    const margemReal = temMargemReal ? Number(margemRealRaw) : null;
+
+    const delta = receitaReal === null ? null : receitaReal - forecastTotal;
+
+    const deltaVariant: KPIStatus =
+      delta === null ? undefined : delta > 0 ? "success" : delta < 0 ? "destructive" : undefined;
+
+    const deltaSub =
+      delta === null
+        ? "Sem dados de realizado"
+        : delta > 0
+          ? "acima do projetado"
+          : delta < 0
+            ? "abaixo do projetado"
+            : "igual ao projetado";
+
+    const margemSub = margemReal === null ? "Sem dados de margem" : `Custo: ${fmtBRL(custoReal || 0)}`;
+
+    const receitaSub = receitaReal === null ? "Sem dados de fechado" : `Fechado em ${mesFocoData.mes}`;
+
+    return {
+      mes: mesFocoData.mes as string,
+      forecastTotal,
+      receitaReal,
+      custoReal,
+      margemReal,
+      delta,
+      deltaVariant,
+      deltaSub,
+      margemSub,
+      receitaSub,
+    };
+  }, [mesFocoData]);
+
+  const showMonthSelector = !isLoading && fm.length > 0;
+  const showRealCards = !isLoading && !!mesFocoData;
 
   return (
     <div className="space-y-6">
@@ -133,9 +239,19 @@ export default function Forecast() {
             Motor de decisão comercial baseado no pipeline real e histórico de 12 meses
           </p>
         </div>
-        <ToggleGroup type="single" value={String(horizonte)} onValueChange={handleHorizonteChange} className="bg-muted rounded-lg p-0.5">
+
+        <ToggleGroup
+          type="single"
+          value={String(horizonte)}
+          onValueChange={handleHorizonteChange}
+          className="bg-muted rounded-lg p-0.5"
+        >
           {[3, 6, 12].map((h) => (
-            <ToggleGroupItem key={h} value={String(h)} className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md">
+            <ToggleGroupItem
+              key={h}
+              value={String(h)}
+              className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
+            >
               {h}m
             </ToggleGroupItem>
           ))}
@@ -153,7 +269,7 @@ export default function Forecast() {
       )}
 
       {/* Month focus selector */}
-      {!isLoading && fm.length > 0 && (
+      {showMonthSelector && (
         <div className="flex items-center gap-3">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Mês foco:</span>
@@ -177,56 +293,59 @@ export default function Forecast() {
       )}
 
       {/* Real vs Forecast Cards */}
-      {!isLoading && mesFocoData && (
+      {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Receita Projetada"
-            value={fmtBRL(mesFocoData.forecastTotal)}
-            sub={mesFocoData.mes}
-          />
-          <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Receita Real"
-            value={mesFocoData.receitaReal > 0 ? fmtBRL(mesFocoData.receitaReal) : "—"}
-            sub={mesFocoData.receitaReal > 0 ? `Fechado em ${mesFocoData.mes}` : "Sem fechamentos"}
-          />
-          <KPICard
-            icon={<Percent className="h-4 w-4" />}
-            label="Margem Real"
-            value={mesFocoData.margemReal !== null ? `${mesFocoData.margemReal.toFixed(1)}%` : "—"}
-            sub={mesFocoData.margemReal !== null ? `Custo: ${fmtBRL(mesFocoData.custoReal)}` : "Sem dados de margem"}
-          />
-          <KPICard
-            icon={<BarChart3 className="h-4 w-4" />}
-            label="Delta vs Forecast"
-            value={(() => {
-              if (mesFocoData.receitaReal === 0) return "—";
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              return `${delta >= 0 ? "+" : ""}${fmtBRL(delta)}`;
-            })()}
-            variant={(() => {
-              if (mesFocoData.receitaReal === 0) return undefined;
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              if (delta > 0) return "success" as const;
-              if (delta < 0) return "destructive" as const;
-              return undefined;
-            })()}
-            sub={(() => {
-              if (mesFocoData.receitaReal === 0) return "Aguardando fechamentos";
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              if (delta > 0) return "acima do projetado";
-              if (delta < 0) return "abaixo do projetado";
-              return "igual ao projetado";
-            })()}
-          />
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
+      ) : (
+        showRealCards &&
+        realVsForecast && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KPICard
+              icon={<TrendingUp className="h-4 w-4" />}
+              label="Receita Projetada"
+              value={fmtBRL(realVsForecast.forecastTotal)}
+              sub={realVsForecast.mes}
+            />
+
+            <KPICard
+              icon={<DollarSign className="h-4 w-4" />}
+              label="Receita Real"
+              value={realVsForecast.receitaReal === null ? "—" : fmtBRL(realVsForecast.receitaReal)}
+              sub={realVsForecast.receitaSub}
+              variant={
+                realVsForecast.receitaReal !== null && realVsForecast.receitaReal >= realVsForecast.forecastTotal
+                  ? "success"
+                  : undefined
+              }
+            />
+
+            <KPICard
+              icon={<Percent className="h-4 w-4" />}
+              label="Margem Real"
+              value={realVsForecast.margemReal === null ? "—" : fmtPct100(realVsForecast.margemReal)}
+              sub={realVsForecast.margemSub}
+            />
+
+            <KPICard
+              icon={<BarChart3 className="h-4 w-4" />}
+              label="Delta vs Forecast"
+              value={realVsForecast.delta === null ? "—" : fmtSignedBRL(realVsForecast.delta)}
+              variant={realVsForecast.deltaVariant}
+              sub={realVsForecast.deltaSub}
+            />
+          </div>
+        )
       )}
 
-      {/* KPI Cards */}
+      {/* KPI Cards (core) */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-24" />)}
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -236,13 +355,14 @@ export default function Forecast() {
             value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
             sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
           />
+
           <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Receita Projetada"
-            value={fmtBRL(mesFocoData?.forecastTotal)}
-            sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
-            variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
+            icon={<Target className="h-4 w-4" />}
+            label="Meta do mês"
+            value={fmtBRL(mesFocoData?.meta)}
+            sub={mesFocoData?.meta ? `Mês: ${mesFocoData.mes}` : "Sem meta definida"}
           />
+
           <KPICard
             icon={<Target className="h-4 w-4" />}
             label="Gap vs Meta"
@@ -250,22 +370,25 @@ export default function Forecast() {
             variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
             sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
           />
+
           <KPICard
             icon={<FileText className="h-4 w-4" />}
             label="Ação Necessária"
             value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
             sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
           />
+
           <KPICard
             icon={<PieChart className="h-4 w-4" />}
             label="Pipeline Vivo"
             value={fmtBRL(pipeline?.valorPonderado)}
             sub={`${pipeline?.qtdPropostas || 0} propostas abertas`}
           />
+
           <KPICard
             icon={<Percent className="h-4 w-4" />}
             label="Conversão (12m)"
-            value={fmtPct(bs?.conversaoFinanceira)}
+            value={fmtPct01(bs?.conversaoFinanceira)}
             sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
           />
         </div>
@@ -277,7 +400,9 @@ export default function Forecast() {
           <Target className="h-4 w-4" />
           <AlertDescription className="flex items-center gap-2">
             Nenhuma meta de vendas ativa encontrada.
-            <Link to="/metas" className="text-primary font-medium hover:underline">Criar meta →</Link>
+            <Link to="/metas" className="text-primary font-medium hover:underline">
+              Criar meta →
+            </Link>
           </AlertDescription>
         </Alert>
       )}
@@ -297,10 +422,13 @@ export default function Forecast() {
             </Button>
           </div>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-20" />
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -330,7 +458,7 @@ export default function Forecast() {
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{(conversaoMarg * 100).toFixed(0)}%</span>
-                  <span>Hist: {fmtPct(bs?.conversaoFinanceira)}</span>
+                  <span>Hist: {fmtPct01(bs?.conversaoFinanceira)}</span>
                 </div>
               </div>
 
@@ -340,7 +468,7 @@ export default function Forecast() {
                   min={0}
                   max={Math.max(200000, Math.round((bs?.ticketReal || 50000) * 3))}
                   step={1000}
-                  value={[ticketMarg || (bs?.ticketReal || 0)]}
+                  value={[ticketMarg || bs?.ticketReal || 0]}
                   onValueChange={([v]) => setTicketMarg(v)}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
@@ -361,7 +489,9 @@ export default function Forecast() {
                   <strong className="text-primary">{fmtBRL(valorAdicional * conversaoMarg)}</strong> de receita/mês.
                   {bs && bs.tempoMedioFechamentoDias > 0 && (
                     <span className="text-muted-foreground">
-                      {" "}Impacto começa em ~{bs.tempoMedioFechamentoDias} dias (mês {fm[Math.max(1, Math.ceil(bs.tempoMedioFechamentoDias / 30))]?.mes || "—"})
+                      {" "}
+                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias (mês{" "}
+                      {fm[Math.max(1, Math.ceil(bs.tempoMedioFechamentoDias / 30))]?.mes || "—"})
                     </span>
                   )}
                 </span>
@@ -377,7 +507,9 @@ export default function Forecast() {
           <CardTitle className="text-base">Forecast vs Meta — Mês a Mês</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? <Skeleton className="h-[320px]" /> : (
+          {isLoading ? (
+            <Skeleton className="h-[320px]" />
+          ) : (
             <ResponsiveContainer width="100%" height={320}>
               <ComposedChart data={fm}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -385,12 +517,38 @@ export default function Forecast() {
                 <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
                 <Tooltip content={forecastTooltip} />
                 <Legend />
-                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" radius={[0, 0, 0, 0]} stackId="forecast" />
-                <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" radius={[0, 0, 0, 0]} stackId="forecast" />
+                <Bar
+                  dataKey="baseline"
+                  name="Baseline"
+                  fill="hsl(var(--primary))"
+                  radius={[0, 0, 0, 0]}
+                  stackId="forecast"
+                />
+                <Bar
+                  dataKey="pipelineAlloc"
+                  name="Pipeline"
+                  fill="hsl(var(--chart-2))"
+                  radius={[0, 0, 0, 0]}
+                  stackId="forecast"
+                />
                 {valorAdicional > 0 && (
-                  <Bar dataKey="incrementalAlloc" name="Esforço Adicional" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} stackId="forecast" />
+                  <Bar
+                    dataKey="incrementalAlloc"
+                    name="Esforço Adicional"
+                    fill="hsl(var(--chart-3))"
+                    radius={[4, 4, 0, 0]}
+                    stackId="forecast"
+                  />
                 )}
-                <Line dataKey="meta" name="Meta" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={2} strokeDasharray="6 3" dot={false} />
+                <Line
+                  dataKey="meta"
+                  name="Meta"
+                  type="monotone"
+                  stroke="hsl(var(--destructive))"
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -403,7 +561,9 @@ export default function Forecast() {
           <CardTitle className="text-base">Histórico 12m — Valor Enviado vs Fechado (R$)</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? <Skeleton className="h-[280px]" /> : (
+          {isLoading ? (
+            <Skeleton className="h-[280px]" />
+          ) : (
             <ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={vh}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -412,9 +572,30 @@ export default function Forecast() {
                 <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={tooltipFormatter} />
                 <Legend />
-                <Bar yAxisId="left" dataKey="valorEnviado" name="Valor Enviado (R$)" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} opacity={0.7} />
-                <Bar yAxisId="left" dataKey="valorFechado" name="Valor Fechado (R$)" fill="hsl(var(--chart-2))" radius={[3, 3, 0, 0]} />
-                <Line yAxisId="right" dataKey="conversaoFinanceira" name="Conversão %" type="monotone" stroke="hsl(var(--chart-4))" strokeWidth={2} dot={{ r: 2 }} />
+                <Bar
+                  yAxisId="left"
+                  dataKey="valorEnviado"
+                  name="Valor Enviado (R$)"
+                  fill="hsl(var(--primary))"
+                  radius={[3, 3, 0, 0]}
+                  opacity={0.7}
+                />
+                <Bar
+                  yAxisId="left"
+                  dataKey="valorFechado"
+                  name="Valor Fechado (R$)"
+                  fill="hsl(var(--chart-2))"
+                  radius={[3, 3, 0, 0]}
+                />
+                <Line
+                  yAxisId="right"
+                  dataKey="conversaoFinanceira"
+                  name="Conversão %"
+                  type="monotone"
+                  stroke="hsl(var(--chart-4))"
+                  strokeWidth={2}
+                  dot={{ r: 2 }}
+                />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -438,13 +619,20 @@ export default function Forecast() {
                   <div key={estagio} className="p-3 rounded-lg bg-muted/50 border border-border">
                     <p className="text-xs text-muted-foreground capitalize truncate">{estagio.replace(/_/g, " ")}</p>
                     <p className="text-sm font-semibold text-foreground mt-1">{fmtBRL(info.ponderado)}</p>
-                    <p className="text-xs text-muted-foreground">{info.qtd} prop. · {fmtBRL(info.valor)} bruto</p>
+                    <p className="text-xs text-muted-foreground">
+                      {info.qtd} prop. · {fmtBRL(info.valor)} bruto
+                    </p>
                   </div>
                 ))}
             </div>
+
             <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
-              <span className="text-muted-foreground">Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong></span>
-              <span className="text-muted-foreground">Ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong></span>
+              <span className="text-muted-foreground">
+                Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong>
+              </span>
+              <span className="text-muted-foreground">
+                Ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong>
+              </span>
               <span className="text-muted-foreground">
                 <Clock className="h-3.5 w-3.5 inline mr-1" />
                 Fechamento (P50): <strong className="text-foreground">{bs?.tempoMedioFechamentoDias || "—"}d</strong>
@@ -461,6 +649,7 @@ export default function Forecast() {
             <Lightbulb className="h-5 w-5 text-warning" />
             <h2 className="text-base font-semibold text-foreground">Insights</h2>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {insights.map((ins, i) => (
               <div key={i} className={cn("flex items-start gap-3 p-4 rounded-xl border", insightBg[ins.level])}>
@@ -478,10 +667,17 @@ export default function Forecast() {
 // ─── Sub-components ──────────────────────────────────────────
 
 function KPICard({
-  icon, label, value, sub, variant,
+  icon,
+  label,
+  value,
+  sub,
+  variant,
 }: {
-  icon: React.ReactNode; label: string; value: string;
-  sub?: React.ReactNode; variant?: "destructive" | "success";
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub?: React.ReactNode;
+  variant?: "destructive" | "success";
 }) {
   return (
     <Card className="p-3">
@@ -489,7 +685,13 @@ function KPICard({
         {icon}
         <span className="text-xs font-medium truncate">{label}</span>
       </div>
-      <p className={cn("text-lg font-semibold tabular-nums", variant === "destructive" && "text-destructive", variant === "success" && "text-success")}>
+      <p
+        className={cn(
+          "text-lg font-semibold tabular-nums",
+          variant === "destructive" && "text-destructive",
+          variant === "success" && "text-success",
+        )}
+      >
         {value}
       </p>
       {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
