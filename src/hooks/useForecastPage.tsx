@@ -49,9 +49,9 @@ export interface ForecastMensal {
   mes: string;
   mesKey: string;
 
-  baseline: number; // constante (valor_fechado_12m/12)
-  pipelineAlloc: number; // variável por mês
-  incrementalAlloc: number; // variável por mês (com delay)
+  baseline: number;
+  pipelineAlloc: number;
+  incrementalAlloc: number;
 
   forecastTotal: number;
 
@@ -59,11 +59,13 @@ export interface ForecastMensal {
   gap: number;
 
   acaoNecessariaRS: number;
-
-  // ✅ volta a existir para não quebrar o Forecast.tsx
   propostasEquiv: number;
-
   pctPipelineNoForecast: number;
+
+  // Receita real
+  receitaReal: number;
+  custoReal: number;
+  margemReal: number | null;
 }
 
 export interface VolumeHistorico {
@@ -159,7 +161,7 @@ export function useForecastPage(params: ForecastPageParams) {
       const [contratosRes, enviadasRes, abertasRes, metasRes, leadsRes] = await Promise.all([
         supabase
           .from("contratos")
-          .select("proposta_id, created_at, data_inicio, valor_negociado")
+          .select("proposta_id, created_at, data_inicio, valor_negociado, margem_pct")
           .eq("user_id", user.id)
           .not("proposta_id", "is", null),
 
@@ -250,14 +252,15 @@ export function useForecastPage(params: ForecastPageParams) {
           if (closeDate < dataLimite12m) return null;
 
           const valor = Number(c.valor_negociado || prop.valor_total || 0);
+          const margemPct = Number(c.margem_pct || 0);
           const mesKey = format(closeDate, "yyyy-MM");
 
           const dataEnvio = prop.data ? new Date(prop.data) : closeDate;
           const diasFechamento = Math.max(differenceInDays(closeDate, dataEnvio), 0);
 
-          return { valor, mesKey, diasFechamento };
+          return { valor, margemPct, mesKey, diasFechamento };
         })
-        .filter(Boolean) as { valor: number; mesKey: string; diasFechamento: number }[];
+        .filter(Boolean) as { valor: number; margemPct: number; mesKey: string; diasFechamento: number }[];
 
       // ─── Métricas financeiras base (12m) ───────────────────
       const valorEnviado12m = (enviadas12m as any[]).reduce((s, p) => s + Number(p.valor_total || 0), 0);
@@ -369,6 +372,17 @@ export function useForecastPage(params: ForecastPageParams) {
         pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.2);
       });
 
+      // ─── Receita real por mês (para KPI cards) ─────────────
+      const receitaRealPorMes = new Map<string, number>();
+      const custoRealPorMes = new Map<string, number>();
+      fechamentos12m.forEach((f) => {
+        receitaRealPorMes.set(f.mesKey, (receitaRealPorMes.get(f.mesKey) || 0) + f.valor);
+        if (f.margemPct > 0) {
+          const custo = f.valor * (1 - f.margemPct / 100);
+          custoRealPorMes.set(f.mesKey, (custoRealPorMes.get(f.mesKey) || 0) + custo);
+        }
+      });
+
       // ─── Forecast mensal ───────────────────────────────────
       const forecastMensal: ForecastMensal[] = [];
       const baseline = receitaMediaMensal;
@@ -398,6 +412,10 @@ export function useForecastPage(params: ForecastPageParams) {
 
         const pctPipelineNoForecast = forecastTotal > 0 ? (pipelineAlloc / forecastTotal) * 100 : 0;
 
+        const receitaReal = receitaRealPorMes.get(mesKey) || 0;
+        const custoReal = custoRealPorMes.get(mesKey) || 0;
+        const margemReal = receitaReal > 0 ? ((receitaReal - custoReal) / receitaReal) * 100 : null;
+
         forecastMensal.push({
           mes: mesLabel,
           mesKey,
@@ -410,6 +428,9 @@ export function useForecastPage(params: ForecastPageParams) {
           acaoNecessariaRS: Math.round(acaoNecessariaRS),
           propostasEquiv,
           pctPipelineNoForecast: parseFloat(pctPipelineNoForecast.toFixed(1)),
+          receitaReal: Math.round(receitaReal),
+          custoReal: Math.round(custoReal),
+          margemReal: margemReal !== null ? parseFloat(margemReal.toFixed(1)) : null,
         });
       }
 
