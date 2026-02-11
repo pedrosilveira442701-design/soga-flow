@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   TrendingUp,
@@ -39,7 +39,9 @@ function fmtBRL(v: number | undefined | null) {
     maximumFractionDigits: 0,
   });
 }
-function fmtPct(v: number | undefined | null) {
+
+function fmtPctRatio(v: number | undefined | null) {
+  // v no formato 0..1
   return `${((v ?? 0) * 100).toFixed(1)}%`;
 }
 
@@ -60,16 +62,21 @@ const insightBg: Record<InsightLevel, string> = {
 export default function Forecast() {
   const [horizonte, setHorizonte] = useState<Horizonte>(6);
   const [mesFoco, setMesFoco] = useState(0);
+
   const [valorAdicional, setValorAdicional] = useState(0);
   const [conversaoMarg, setConversaoMarg] = useState(0.3);
   const [ticketMarg, setTicketMarg] = useState(0);
 
-  const params: ForecastPageParams = {
-    horizonte,
-    valorAdicionalMensal: valorAdicional,
-    conversaoMarginal: conversaoMarg,
-    ticketMarginal: ticketMarg,
-  };
+  // Params do hook: vamos garantir que ticket/conversão nunca vão "zerados" sem querer
+  const params: ForecastPageParams = useMemo(
+    () => ({
+      horizonte,
+      valorAdicionalMensal: valorAdicional,
+      conversaoMarginal: conversaoMarg,
+      ticketMarginal: ticketMarg,
+    }),
+    [horizonte, valorAdicional, conversaoMarg, ticketMarg],
+  );
 
   const { data, isLoading } = useForecastPage(params);
 
@@ -80,21 +87,30 @@ export default function Forecast() {
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
 
+  // mês foco seguro
   const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
   const mesFocoData = fm[safeMesFoco] || null;
 
   const handleHorizonteChange = useCallback((v: string) => {
-    if (v) {
-      setHorizonte(Number(v) as Horizonte);
-      setMesFoco(0);
-    }
+    if (!v) return;
+    setHorizonte(Number(v) as Horizonte);
+    setMesFoco(0);
   }, []);
 
-  useMemo(() => {
-    if (bs && conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
+  // ✅ seed conversão/ticket ao carregar baseStats (corrige “~0 prop.”)
+  useEffect(() => {
+    if (!bs) return;
+
+    // se ainda estiver no default 0.30, ajusta para histórico
+    if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
-  }, [bs?.conversaoFinanceira]);
+
+    // se ticket ainda está 0, seta histórico
+    if (ticketMarg === 0 && bs.ticketReal > 0) {
+      setTicketMarg(bs.ticketReal);
+    }
+  }, [bs, conversaoMarg, ticketMarg]);
 
   const resetControles = useCallback(() => {
     setValorAdicional(0);
@@ -102,20 +118,20 @@ export default function Forecast() {
     setTicketMarg(bs?.ticketReal || 0);
   }, [bs]);
 
+  // Tooltip do histórico
   const tooltipFormatter = (value: number, name: string) => {
     if (name === "Conversão %") return [`${value.toFixed(1)}%`, name];
     return [fmtBRL(value), name];
   };
 
-  /**
-   * Chart data:
-   * - receitaRealChart: usa null quando não há faturamento, para evitar linha “colada” no zero.
-   *   A linha aparece somente nos meses com receitaReal > 0 (com pontos visíveis).
-   */
+  // ✅ Dados do gráfico principal com chaves explícitas
+  // - faturadoPlot = receitaReal (0..), SEM null => linha sempre existe
+  // - forecastLine = forecastTotal (linha do total)
   const fmChart = useMemo(() => {
     return (fm || []).map((m: any) => ({
       ...m,
-      receitaRealChart: m?.receitaReal > 0 ? Number(m.receitaReal) : null,
+      faturadoPlot: Number(m?.receitaReal || 0),
+      forecastLine: Number(m?.forecastTotal || 0),
     }));
   }, [fm]);
 
@@ -125,10 +141,10 @@ export default function Forecast() {
     const item = payload[0]?.payload;
     if (!item) return null;
 
-    const faturado = typeof item.receitaRealChart === "number" ? item.receitaRealChart : null;
+    const faturado = Number(item.faturadoPlot || 0);
 
     return (
-      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[240px]">
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[250px]">
         <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
 
         <div className="flex justify-between">
@@ -143,7 +159,7 @@ export default function Forecast() {
 
         {item.incrementalAlloc > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Incremental:</span>
+            <span className="text-muted-foreground">Esforço:</span>
             <span>{fmtBRL(item.incrementalAlloc)}</span>
           </div>
         )}
@@ -160,8 +176,8 @@ export default function Forecast() {
 
         <div className="flex justify-between">
           <span className="text-muted-foreground">Faturado:</span>
-          <span className={faturado !== null ? "text-foreground font-medium" : "text-muted-foreground"}>
-            {faturado !== null ? fmtBRL(faturado) : "—"}
+          <span className={faturado > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
+            {faturado > 0 ? fmtBRL(faturado) : "—"}
           </span>
         </div>
 
@@ -182,6 +198,7 @@ export default function Forecast() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -211,6 +228,7 @@ export default function Forecast() {
         </ToggleGroup>
       </div>
 
+      {/* Aviso amostra pequena */}
       {bs?.amostraPequena && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -220,6 +238,7 @@ export default function Forecast() {
         </Alert>
       )}
 
+      {/* Seleção mês foco */}
       {!isLoading && fm.length > 0 && (
         <div className="flex items-center gap-3">
           <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -244,6 +263,7 @@ export default function Forecast() {
         </div>
       )}
 
+      {/* Linha extra de KPIs do mês foco */}
       {!isLoading && mesFocoData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KPICard
@@ -290,6 +310,7 @@ export default function Forecast() {
         </div>
       )}
 
+      {/* KPI Cards */}
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -333,12 +354,13 @@ export default function Forecast() {
           <KPICard
             icon={<Percent className="h-4 w-4" />}
             label="Conversão (12m)"
-            value={fmtPct(bs?.conversaoFinanceira)}
+            value={fmtPctRatio(bs?.conversaoFinanceira)}
             sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
           />
         </div>
       )}
 
+      {/* CTA metas */}
       {!isLoading && metasAtivas.length === 0 && (
         <Alert>
           <Target className="h-4 w-4" />
@@ -351,6 +373,7 @@ export default function Forecast() {
         </Alert>
       )}
 
+      {/* Simulador */}
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -401,7 +424,7 @@ export default function Forecast() {
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{(conversaoMarg * 100).toFixed(0)}%</span>
-                  <span>Hist: {fmtPct(bs?.conversaoFinanceira)}</span>
+                  <span>Hist: {fmtPctRatio(bs?.conversaoFinanceira)}</span>
                 </div>
               </div>
 
@@ -411,11 +434,11 @@ export default function Forecast() {
                   min={0}
                   max={Math.max(200000, Math.round((bs?.ticketReal || 50000) * 3))}
                   step={1000}
-                  value={[ticketMarg || bs?.ticketReal || 0]}
+                  value={[ticketMarg]}
                   onValueChange={([v]) => setTicketMarg(v)}
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{fmtBRL(ticketMarg || bs?.ticketReal)}</span>
+                  <span className="font-medium text-foreground">{fmtBRL(ticketMarg)}</span>
                   <span>Hist: {fmtBRL(bs?.ticketReal)}</span>
                 </div>
               </div>
@@ -433,8 +456,7 @@ export default function Forecast() {
                   {bs && bs.tempoMedioFechamentoDias > 0 && (
                     <span className="text-muted-foreground">
                       {" "}
-                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias (mês{" "}
-                      {fm[Math.max(1, Math.ceil(bs.tempoMedioFechamentoDias / 30))]?.mes || "—"})
+                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias.
                     </span>
                   )}
                 </span>
@@ -444,6 +466,7 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
+      {/* Gráfico principal */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Forecast vs Meta — Mês a Mês</CardTitle>
@@ -460,29 +483,26 @@ export default function Forecast() {
                 <Tooltip content={forecastTooltip} />
                 <Legend />
 
-                <Bar
-                  dataKey="baseline"
-                  name="Baseline"
-                  fill="hsl(var(--primary))"
-                  radius={[0, 0, 0, 0]}
-                  stackId="forecast"
-                />
-                <Bar
-                  dataKey="pipelineAlloc"
-                  name="Pipeline"
-                  fill="hsl(var(--chart-2))"
-                  radius={[0, 0, 0, 0]}
-                  stackId="forecast"
-                />
+                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" stackId="forecast" />
+                <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" stackId="forecast" />
                 {valorAdicional > 0 && (
                   <Bar
                     dataKey="incrementalAlloc"
                     name="Esforço Adicional"
                     fill="hsl(var(--chart-3))"
-                    radius={[4, 4, 0, 0]}
                     stackId="forecast"
                   />
                 )}
+
+                {/* Linha do total do Forecast (pra “ver” o número do tooltip no gráfico) */}
+                <Line
+                  dataKey="forecastLine"
+                  name="Forecast (Total)"
+                  type="monotone"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                />
 
                 <Line
                   dataKey="meta"
@@ -494,15 +514,20 @@ export default function Forecast() {
                   dot={false}
                 />
 
+                {/* ✅ Faturado: aparece mesmo com 0 (linha na base + dots visíveis) */}
                 <Line
-                  dataKey="receitaRealChart"
+                  dataKey="faturadoPlot"
                   name="Faturado"
                   type="monotone"
                   stroke="hsl(var(--chart-4))"
                   strokeWidth={3}
-                  dot={{ r: 5 }}
+                  dot={{
+                    r: 5,
+                    fill: "hsl(var(--chart-4))",
+                    stroke: "hsl(var(--background))",
+                    strokeWidth: 2,
+                  }}
                   activeDot={{ r: 7 }}
-                  connectNulls={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -510,6 +535,7 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
+      {/* Histórico */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Histórico 12m — Valor Enviado vs Fechado (R$)</CardTitle>
@@ -526,6 +552,7 @@ export default function Forecast() {
                 <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => `${v}%`} tick={{ fontSize: 11 }} />
                 <Tooltip formatter={tooltipFormatter} />
                 <Legend />
+
                 <Bar
                   yAxisId="left"
                   dataKey="valorEnviado"
@@ -556,6 +583,7 @@ export default function Forecast() {
         </CardContent>
       </Card>
 
+      {/* Pipeline breakdown */}
       {!isLoading && pipeline && pipeline.qtdPropostas > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -567,10 +595,12 @@ export default function Forecast() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
               {Object.entries(pipeline.porEstagio)
-                .sort(([, a], [, b]) => b.ponderado - a.ponderado)
-                .map(([estagio, info]) => (
+                .sort(([, a]: any, [, b]: any) => b.ponderado - a.ponderado)
+                .map(([estagio, info]: any) => (
                   <div key={estagio} className="p-3 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-xs text-muted-foreground capitalize truncate">{estagio.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-muted-foreground capitalize truncate">
+                      {String(estagio).replace(/_/g, " ")}
+                    </p>
                     <p className="text-sm font-semibold text-foreground mt-1">{fmtBRL(info.ponderado)}</p>
                     <p className="text-xs text-muted-foreground">
                       {info.qtd} prop. · {fmtBRL(info.valor)} bruto
@@ -595,6 +625,7 @@ export default function Forecast() {
         </Card>
       )}
 
+      {/* Insights */}
       {insights.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-3">
