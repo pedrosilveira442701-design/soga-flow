@@ -173,7 +173,7 @@ export function Topbar() {
             const active = isGroupActive(group.items);
             const groupHasBadge = group.items.some((i) => getBadge(i.title));
             return (
-              <NavigationMenuItem key={group.label}>
+              <NavigationMenuItem key={group.label} className="relative">
                 <NavigationMenuTrigger
                   className={cn(
                     "h-10 px-4 text-sm font-medium bg-transparent hover:bg-accent/50 data-[state=open]:bg-accent/50 rounded-lg relative",
@@ -188,7 +188,7 @@ export function Topbar() {
                     <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full" />
                   )}
                 </NavigationMenuTrigger>
-                <NavigationMenuContent className="backdrop-blur-xl bg-card/95 dark:bg-card/90 border border-border/50 rounded-xl p-2.5 min-w-[220px] shadow-lg">
+                <NavigationMenuContent className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 backdrop-blur-xl bg-card/95 dark:bg-card/90 border border-border/50 rounded-xl p-2.5 min-w-[220px] shadow-lg">
                   <ul className="space-y-0.5">
                     {group.items.map((item) => {
                       const isActive = location.pathname === item.url;
