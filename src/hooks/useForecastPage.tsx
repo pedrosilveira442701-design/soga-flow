@@ -45,6 +45,8 @@ export interface PipelineResumo {
   porEstagio: Record<string, { valor: number; ponderado: number; qtd: number }>;
 }
 
+export type ForecastVsStatus = "acima" | "abaixo" | "igual";
+
 export interface ForecastMensal {
   mes: string;
   mesKey: string;
@@ -62,10 +64,17 @@ export interface ForecastMensal {
   propostasEquiv: number;
   pctPipelineNoForecast: number;
 
-  // Receita real
-  receitaReal: number;
-  custoReal: number;
+  // Real (faturado)
+  receitaReal: number | null;
+
+  // Real (margem/lucro) — só aparece se TODOS os contratos do mês tiverem margem_pct válida
+  custoReal: number | null;
+  lucroReal: number | null;
   margemReal: number | null;
+
+  // Comparação do real vs forecast do mês
+  deltaVsForecast: number | null;
+  statusVsForecast: ForecastVsStatus | null;
 }
 
 export interface VolumeHistorico {
@@ -92,7 +101,7 @@ export interface Insight {
   level: InsightLevel;
 }
 
-// ─── Normalização (evita bugs de "Ativa" vs "ativa", acentos, etc) ─────────
+// ─── Normalização ─────────────────────────────────────────────
 const norm = (s?: string | null) =>
   (s ?? "")
     .normalize("NFD")
@@ -104,14 +113,10 @@ const META_TIPOS_RECEITA = new Set(["vendas", "vendas (r$)", "receita"]);
 const META_STATUS_ATIVO = new Set(["ativa", "ativo", "active"]);
 
 // ─── Probabilidades ───────────────────────────────────────────
-
-// Observação importante:
-// lead.estagio costuma vir como "Visita agendada" (com espaço).
-// Vamos normalizar e também criar uma chave com underscore.
 const PROBABILIDADE_ESTAGIO: Record<string, number> = {
   contato: 0.05,
   visita_agendada: 0.15,
-  visita_agendada_: 0.15, // fallback
+  visita_agendada_: 0.15,
   visita_realizada: 0.25,
   proposta_pendente: 0.35,
   proposta: 0.5,
@@ -128,21 +133,27 @@ const PROBABILIDADE_STATUS: Record<string, number> = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────
-
 function monthsInclusive(start: Date, end: Date): number {
   const s = startOfMonth(start);
   const e = startOfMonth(end);
   return Math.max(1, (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1);
 }
 
-// ─── Hook principal ───────────────────────────────────────────
+const toNum = (v: any) => Number(v ?? 0) || 0;
 
+function vsStatus(delta: number): ForecastVsStatus {
+  if (delta > 0) return "acima";
+  if (delta < 0) return "abaixo";
+  return "igual";
+}
+
+// ─── Hook principal ───────────────────────────────────────────
 export function useForecastPage(params: ForecastPageParams) {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: [
-      "forecast-page-v2",
+      "forecast-page-v3",
       params.horizonte,
       params.valorAdicionalMensal,
       params.conversaoMarginal,
@@ -179,7 +190,6 @@ export function useForecastPage(params: ForecastPageParams) {
           .eq("is_current", true)
           .eq("status", "aberta"),
 
-        // metas: não filtrar por status aqui (case/acentos podem variar)
         supabase
           .from("metas")
           .select("id, nome, tipo, valor_alvo, periodo_inicio, periodo_fim, status")
@@ -200,7 +210,7 @@ export function useForecastPage(params: ForecastPageParams) {
       const todasMetas = (metasRes.data || []) as MetaAtiva[];
       const leads = leadsRes.data || [];
 
-      // ✅ Filtra metas de receita + status ativo (normalizado)
+      // Metas ativas (normalizado)
       const metasAtivas = todasMetas.filter((m) => {
         const tipoOk = META_TIPOS_RECEITA.has(norm(m.tipo));
         const status = norm(m.status);
@@ -208,20 +218,20 @@ export function useForecastPage(params: ForecastPageParams) {
         return tipoOk && statusOk;
       });
 
-      // Lead map: lead_id -> estagio
+      // Lead map
       const leadMap = new Map<string, string | null>();
       (leads as any[]).forEach((l) => leadMap.set(l.id, l.estagio ?? null));
 
-      // ✅ Excluir do pipeline propostas que já têm contrato (evita duplicidade)
+      // Excluir do pipeline propostas que já têm contrato
       const propostaIdsComContrato = new Set<string>((contratos as any[]).map((c) => c.proposta_id).filter(Boolean));
       const abertas = (abertasRaw as any[]).filter((p) => !propostaIdsComContrato.has(p.id));
 
-      // ─── Build proposal map for contracts ──────────────────
+      // Propostas referenciadas por contratos (para pegar data_fechamento etc.)
       const propostaIds = (contratos as any[]).map((c) => c.proposta_id).filter(Boolean) as string[];
 
       const propostasMap = new Map<
         string,
-        { data: string; data_fechamento: string | null; valor_total: number | null }
+        { data: string | null; data_fechamento: string | null; valor_total: number | null }
       >();
 
       if (propostaIds.length > 0) {
@@ -234,9 +244,9 @@ export function useForecastPage(params: ForecastPageParams) {
 
         (pf || []).forEach((p: any) => {
           propostasMap.set(p.id, {
-            data: p.data,
-            data_fechamento: p.data_fechamento,
-            valor_total: p.valor_total,
+            data: p.data ?? null,
+            data_fechamento: p.data_fechamento ?? null,
+            valor_total: p.valor_total ?? null,
           });
         });
       }
@@ -248,22 +258,31 @@ export function useForecastPage(params: ForecastPageParams) {
           if (!prop) return null;
 
           const closeDateStr = prop.data_fechamento || c.created_at || c.data_inicio;
+          if (!closeDateStr) return null;
+
           const closeDate = new Date(closeDateStr);
           if (closeDate < dataLimite12m) return null;
 
-          const valor = Number(c.valor_negociado || prop.valor_total || 0);
-          const margemPct = Number(c.margem_pct || 0);
-          const mesKey = format(closeDate, "yyyy-MM");
+          const valor = toNum(c.valor_negociado || prop.valor_total || 0);
+          const margemPct = Number(c.margem_pct ?? 0);
+          const margemValida = Number.isFinite(margemPct) && margemPct > 0 && margemPct < 100;
 
+          const mesKey = format(closeDate, "yyyy-MM");
           const dataEnvio = prop.data ? new Date(prop.data) : closeDate;
           const diasFechamento = Math.max(differenceInDays(closeDate, dataEnvio), 0);
 
-          return { valor, margemPct, mesKey, diasFechamento };
+          return { valor, margemPct, margemValida, mesKey, diasFechamento };
         })
-        .filter(Boolean) as { valor: number; margemPct: number; mesKey: string; diasFechamento: number }[];
+        .filter(Boolean) as {
+        valor: number;
+        margemPct: number;
+        margemValida: boolean;
+        mesKey: string;
+        diasFechamento: number;
+      }[];
 
-      // ─── Métricas financeiras base (12m) ───────────────────
-      const valorEnviado12m = (enviadas12m as any[]).reduce((s, p) => s + Number(p.valor_total || 0), 0);
+      // ─── Métricas base ──────────────────────────────────────
+      const valorEnviado12m = (enviadas12m as any[]).reduce((s, p) => s + toNum(p.valor_total), 0);
       const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
       const numContratos12m = fechamentos12m.length;
 
@@ -289,11 +308,10 @@ export function useForecastPage(params: ForecastPageParams) {
         amostraPequena: numContratos12m < 10,
       };
 
-      // ─── Pipeline atual (R$ ponderado) ──────────────────────
+      // ─── Pipeline atual ─────────────────────────────────────
       const pipelineItems: PipelineItem[] = (abertas as any[]).map((p) => {
         const estagio = p.lead_id ? (leadMap.get(p.lead_id) ?? null) : null;
 
-        // normaliza e tenta duas chaves: com espaço e com underscore
         const estKey = estagio ? norm(estagio) : "";
         const estKeyUnderscore = estKey.replace(/\s+/g, "_");
         const probEstagio = PROBABILIDADE_ESTAGIO[estKeyUnderscore] ?? PROBABILIDADE_ESTAGIO[estKey] ?? undefined;
@@ -303,7 +321,7 @@ export function useForecastPage(params: ForecastPageParams) {
 
         const probabilidade = estagio ? (probEstagio ?? probStatus) : probStatus;
 
-        const valorTotal = Number(p.valor_total || 0);
+        const valorTotal = toNum(p.valor_total);
         const dataEnvio = p.data ? new Date(p.data) : agora;
         const diasAberta = Math.max(differenceInDays(agora, dataEnvio), 0);
 
@@ -333,10 +351,9 @@ export function useForecastPage(params: ForecastPageParams) {
         pipeline.porEstagio[key].qtd += 1;
       });
 
-      // ─── Meta mensal (prorrateada corretamente) ─────────────
+      // ─── Meta mensal (prorrateada) ──────────────────────────
       function getMetaMensal(mesKey: string): number {
         let total = 0;
-
         const mesStart = startOfMonth(new Date(mesKey + "-01"));
         const mesEnd = endOfMonth(mesStart);
 
@@ -348,13 +365,13 @@ export function useForecastPage(params: ForecastPageParams) {
           if (!cobreMes) continue;
 
           const meses = monthsInclusive(inicio, fim);
-          total += Number(m.valor_alvo || 0) / Math.max(1, meses);
+          total += toNum(m.valor_alvo) / Math.max(1, meses);
         }
 
         return total;
       }
 
-      // ─── Distribuir pipeline por mês (spread 30/50/20) ──────
+      // ─── Distribuir pipeline por mês (30/50/20) ─────────────
       const pipelinePorMes = new Map<string, number>();
 
       pipelineItems.forEach((p) => {
@@ -372,21 +389,27 @@ export function useForecastPage(params: ForecastPageParams) {
         pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.2);
       });
 
-      // ─── Receita real por mês (para KPI cards) ─────────────
+      // ─── Receita / Custo real por mês ───────────────────────
       const receitaRealPorMes = new Map<string, number>();
       const custoRealPorMes = new Map<string, number>();
+      const custoDesconhecidoPorMes = new Map<string, boolean>();
+
       fechamentos12m.forEach((f) => {
         receitaRealPorMes.set(f.mesKey, (receitaRealPorMes.get(f.mesKey) || 0) + f.valor);
-        if (f.margemPct > 0) {
-          const custo = f.valor * (1 - f.margemPct / 100);
-          custoRealPorMes.set(f.mesKey, (custoRealPorMes.get(f.mesKey) || 0) + custo);
+
+        // Se algum contrato do mês não tem margem válida, o custo/margem do mês vira "desconhecido"
+        if (!f.margemValida) {
+          custoDesconhecidoPorMes.set(f.mesKey, true);
+          return;
         }
+
+        const custo = f.valor * (1 - f.margemPct / 100);
+        custoRealPorMes.set(f.mesKey, (custoRealPorMes.get(f.mesKey) || 0) + custo);
       });
 
       // ─── Forecast mensal ───────────────────────────────────
       const forecastMensal: ForecastMensal[] = [];
       const baseline = receitaMediaMensal;
-
       const mesesDeDelay = Math.ceil(tempoMedioFechamentoDias / 30);
 
       for (let i = 0; i < params.horizonte; i++) {
@@ -398,23 +421,42 @@ export function useForecastPage(params: ForecastPageParams) {
         const pipelineAlloc = pipelinePorMes.get(mesKey) || 0;
 
         const incrementalAlloc =
-          i >= mesesDeDelay ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0) : 0;
+          i >= mesesDeDelay ? toNum(params.valorAdicionalMensal) * toNum(params.conversaoMarginal) : 0;
 
         const forecastTotal = baseline + pipelineAlloc + incrementalAlloc;
         const gap = Math.max(0, meta - forecastTotal);
 
-        const convMarginal = Number(params.conversaoMarginal || 0);
+        const convMarginal = toNum(params.conversaoMarginal);
         const acaoNecessariaRS = convMarginal > 0 ? gap / convMarginal : 0;
 
-        // ✅ este campo é o que estava faltando (resolve o build)
-        const ticketMarginal = Number(params.ticketMarginal || 0);
+        const ticketMarginal = toNum(params.ticketMarginal);
         const propostasEquiv = ticketMarginal > 0 ? Math.ceil(acaoNecessariaRS / ticketMarginal) : 0;
 
         const pctPipelineNoForecast = forecastTotal > 0 ? (pipelineAlloc / forecastTotal) * 100 : 0;
 
-        const receitaReal = receitaRealPorMes.get(mesKey) || 0;
-        const custoReal = custoRealPorMes.get(mesKey) || 0;
-        const margemReal = receitaReal > 0 ? ((receitaReal - custoReal) / receitaReal) * 100 : null;
+        const receitaRealRaw = receitaRealPorMes.get(mesKey) || 0;
+        const temReceitaReal = receitaRealRaw > 0;
+
+        const receitaReal = temReceitaReal ? Math.round(receitaRealRaw) : null;
+
+        // custo/margem só se não houver custo desconhecido naquele mês
+        const custoDesconhecido = custoDesconhecidoPorMes.get(mesKey) === true;
+
+        let custoReal: number | null = null;
+        let lucroReal: number | null = null;
+        let margemReal: number | null = null;
+
+        if (temReceitaReal && !custoDesconhecido) {
+          const custo = custoRealPorMes.get(mesKey) || 0;
+          custoReal = Math.round(custo);
+          lucroReal = Math.round(receitaRealRaw - custo);
+          margemReal = receitaRealRaw > 0 ? ((receitaRealRaw - custo) / receitaRealRaw) * 100 : null;
+          margemReal = margemReal !== null ? parseFloat(margemReal.toFixed(1)) : null;
+        }
+
+        const deltaVsForecast = temReceitaReal ? Math.round(receitaRealRaw - forecastTotal) : null;
+
+        const statusVsForecast = deltaVsForecast !== null ? vsStatus(deltaVsForecast) : null;
 
         forecastMensal.push({
           mes: mesLabel,
@@ -428,9 +470,12 @@ export function useForecastPage(params: ForecastPageParams) {
           acaoNecessariaRS: Math.round(acaoNecessariaRS),
           propostasEquiv,
           pctPipelineNoForecast: parseFloat(pctPipelineNoForecast.toFixed(1)),
-          receitaReal: Math.round(receitaReal),
-          custoReal: Math.round(custoReal),
-          margemReal: margemReal !== null ? parseFloat(margemReal.toFixed(1)) : null,
+          receitaReal,
+          custoReal,
+          lucroReal,
+          margemReal,
+          deltaVsForecast,
+          statusVsForecast,
         });
       }
 
@@ -442,8 +487,11 @@ export function useForecastPage(params: ForecastPageParams) {
         const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
 
         const envMesValor = (enviadas12m as any[])
-          .filter((p) => format(new Date(p.data), "yyyy-MM") === mesKey)
-          .reduce((s, p) => s + Number(p.valor_total || 0), 0);
+          .filter((p) => {
+            if (!p?.data) return false;
+            return format(new Date(p.data), "yyyy-MM") === mesKey;
+          })
+          .reduce((s, p) => s + toNum(p.valor_total), 0);
 
         const fechMesValor = fechamentos12m.filter((f) => f.mesKey === mesKey).reduce((s, f) => s + f.valor, 0);
 
@@ -473,6 +521,17 @@ export function useForecastPage(params: ForecastPageParams) {
         });
       }
 
+      if (mesAtual?.receitaReal !== null && mesAtual.deltaVsForecast !== null) {
+        const sinal = mesAtual.deltaVsForecast >= 0 ? "+" : "";
+        const txt = `Faturado no mês: R$ ${mesAtual.receitaReal.toLocaleString("pt-BR")} (${sinal}R$ ${Math.abs(
+          mesAtual.deltaVsForecast,
+        ).toLocaleString("pt-BR")} vs projetado)`;
+        insights.push({
+          text: txt,
+          level: mesAtual.deltaVsForecast >= 0 ? "success" : "warning",
+        });
+      }
+
       if (mesAtual && pipeline.valorPonderado > 0) {
         const pctPipeline =
           mesAtual.forecastTotal > 0 ? ((pipeline.valorPonderado / mesAtual.forecastTotal) * 100).toFixed(0) : "0";
@@ -487,10 +546,7 @@ export function useForecastPage(params: ForecastPageParams) {
 
       if (mesAtual && mesAtual.meta > 0) {
         if (mesAtual.forecastTotal >= mesAtual.meta) {
-          insights.push({
-            text: "Você está no caminho para bater a meta deste mês",
-            level: "success",
-          });
+          insights.push({ text: "Você está no caminho para bater a meta deste mês", level: "success" });
         } else {
           insights.push({
             text: `Para bater a meta, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString(
