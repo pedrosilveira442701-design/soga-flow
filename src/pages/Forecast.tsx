@@ -12,12 +12,12 @@ import {
   CheckCircle,
   XCircle,
   Info,
+  FileText,
   Clock,
   PieChart,
   Crosshair,
   Calendar,
 } from "lucide-react";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -27,9 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-
 import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
-
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 type Horizonte = 3 | 6 | 12;
@@ -43,6 +41,7 @@ function fmtBRL(v: number | undefined | null) {
 }
 
 function fmtPctRatio(v: number | undefined | null) {
+  // v no formato 0..1
   return `${((v ?? 0) * 100).toFixed(1)}%`;
 }
 
@@ -68,6 +67,7 @@ export default function Forecast() {
   const [conversaoMarg, setConversaoMarg] = useState(0.3);
   const [ticketMarg, setTicketMarg] = useState(0);
 
+  // Params do hook: vamos garantir que ticket/conversão nunca vão "zerados" sem querer
   const params: ForecastPageParams = useMemo(
     () => ({
       horizonte,
@@ -87,6 +87,7 @@ export default function Forecast() {
   const insights = data?.insights || [];
   const metasAtivas = data?.metasAtivas || [];
 
+  // mês foco seguro
   const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
   const mesFocoData = fm[safeMesFoco] || null;
 
@@ -96,14 +97,16 @@ export default function Forecast() {
     setMesFoco(0);
   }, []);
 
-  // seed conversão/ticket ao carregar baseStats (evita "~0 prop." ou sliders zerados)
+  // ✅ seed conversão/ticket ao carregar baseStats (corrige “~0 prop.”)
   useEffect(() => {
     if (!bs) return;
 
+    // se ainda estiver no default 0.30, ajusta para histórico
     if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
       setConversaoMarg(bs.conversaoFinanceira);
     }
 
+    // se ticket ainda está 0, seta histórico
     if (ticketMarg === 0 && bs.ticketReal > 0) {
       setTicketMarg(bs.ticketReal);
     }
@@ -115,11 +118,15 @@ export default function Forecast() {
     setTicketMarg(bs?.ticketReal || 0);
   }, [bs]);
 
+  // Tooltip do histórico
   const tooltipFormatter = (value: number, name: string) => {
     if (name === "Conversão %") return [`${value.toFixed(1)}%`, name];
     return [fmtBRL(value), name];
   };
 
+  // ✅ Dados do gráfico principal com chaves explícitas
+  // - faturadoPlot = receitaReal (0..), SEM null => linha sempre existe
+  // - forecastLine = forecastTotal (linha do total)
   const fmChart = useMemo(() => {
     return (fm || []).map((m: any) => ({
       ...m,
@@ -333,7 +340,7 @@ export default function Forecast() {
             sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
           />
           <KPICard
-            icon={<BarChart3 className="h-4 w-4" />}
+            icon={<FileText className="h-4 w-4" />}
             label="Ação Necessária"
             value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
             sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
@@ -476,15 +483,21 @@ export default function Forecast() {
                 <Tooltip content={forecastTooltip} />
                 <Legend />
 
-                <Bar dataKey="baseline" name="Base" fill="hsl(var(--primary))" stackId="forecast" />
+                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" stackId="forecast" />
                 <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" stackId="forecast" />
                 {valorAdicional > 0 && (
-                  <Bar dataKey="incrementalAlloc" name="Esforço" fill="hsl(var(--chart-3))" stackId="forecast" />
+                  <Bar
+                    dataKey="incrementalAlloc"
+                    name="Esforço Adicional"
+                    fill="hsl(var(--chart-3))"
+                    stackId="forecast"
+                  />
                 )}
 
+                {/* Linha do total do Forecast (pra “ver” o número do tooltip no gráfico) */}
                 <Line
                   dataKey="forecastLine"
-                  name="Forecast"
+                  name="Forecast (Total)"
                   type="monotone"
                   stroke="hsl(var(--primary))"
                   strokeWidth={2}
@@ -501,9 +514,10 @@ export default function Forecast() {
                   dot={false}
                 />
 
+                {/* ✅ Faturado: aparece mesmo com 0 (linha na base + dots visíveis) */}
                 <Line
                   dataKey="faturadoPlot"
-                  name="Realizado"
+                  name="Faturado"
                   type="monotone"
                   stroke="hsl(var(--chart-4))"
                   strokeWidth={3}
