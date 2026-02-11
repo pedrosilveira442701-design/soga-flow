@@ -1,835 +1,577 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
-import {
-  TrendingUp,
-  RotateCcw,
-  Target,
-  DollarSign,
-  BarChart3,
-  Percent,
-  Lightbulb,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Info,
-  FileText,
-  Clock,
-  PieChart,
-  Crosshair,
-  Calendar,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { addDays, addMonths, differenceInDays, endOfMonth, format, startOfMonth, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
 
-import { useForecastPage, type ForecastPageParams, type InsightLevel } from "@/hooks/useForecastPage";
+export interface ForecastPageParams {
+  horizonte: 3 | 6 | 12;
+  valorAdicionalMensal: number; // R$/mês
+  conversaoMarginal: number; // 0..1
+  ticketMarginal: number; // R$
+}
 
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+export interface BaseStats {
+  valorEnviado12m: number;
+  valorFechado12m: number;
+  conversaoFinanceira: number; // 0..1
+  ticketReal: number;
+  receitaMediaMensal: number;
+  numContratos12m: number;
+  volumeEnviadoMensal: number;
+  tempoMedioFechamentoDias: number;
+  amostraPequena: boolean;
+}
 
-type Horizonte = 3 | 6 | 12;
+export interface PipelineItem {
+  id: string;
+  valorTotal: number;
+  status: string;
+  estagio: string | null;
+  probabilidade: number; // 0..1 (antes do decaimento)
+  decay: number; // 0..1
+  valorPonderado: number;
+  diasAberta: number;
+}
 
-function fmtBRL(v: number | undefined | null) {
-  return (v ?? 0).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    maximumFractionDigits: 0,
+export interface PipelineResumo {
+  valorBruto: number;
+  valorPonderado: number;
+  qtdPropostas: number;
+  porEstagio: Record<string, { valor: number; ponderado: number; qtd: number }>;
+}
+
+export interface ForecastMensal {
+  mes: string;
+  mesKey: string;
+
+  baseline: number;
+  pipelineAlloc: number;
+  incrementalAlloc: number;
+
+  forecastTotal: number;
+
+  meta: number;
+  gap: number;
+
+  acaoNecessariaRS: number;
+  propostasEquiv: number;
+
+  receitaReal: number;
+  custoReal: number;
+  margemReal: number | null;
+}
+
+export interface VolumeHistorico {
+  mes: string;
+  valorEnviado: number;
+  valorFechado: number;
+  conversaoFinanceira: number; // %
+}
+
+export interface MetaAtiva {
+  id: string;
+  nome: string | null;
+  tipo: string;
+  valor_alvo: number;
+  periodo_inicio: string;
+  periodo_fim: string;
+  status?: string | null;
+}
+
+export type InsightLevel = "success" | "warning" | "destructive" | "muted";
+
+export interface Insight {
+  text: string;
+  level: InsightLevel;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Normalização
+// ─────────────────────────────────────────────────────────────
+
+const norm = (s?: string | null) =>
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+const META_TIPOS_RECEITA = new Set(["vendas", "vendas (r$)", "receita"]);
+const META_STATUS_ATIVO = new Set(["ativa", "ativo", "active", "on", "running"]);
+
+const STATUS_FECHADOS_OU_PERDIDOS = new Set([
+  "fechada",
+  "fechado",
+  "ganha",
+  "ganho",
+  "perdida",
+  "perdido",
+  "cancelada",
+  "cancelado",
+]);
+
+function isStatusAberto(status?: string | null) {
+  const s = norm(status);
+  if (!s) return true; // sem status => considera aberto (mas com prob menor, abaixo)
+  return !STATUS_FECHADOS_OU_PERDIDOS.has(s);
+}
+
+// Probabilidades (mantidas, mas agora com “decaimento por idade”)
+const PROBABILIDADE_ESTAGIO: Record<string, number> = {
+  contato: 0.05,
+  visita_agendada: 0.15,
+  visita_realizada: 0.25,
+  proposta_pendente: 0.35,
+  proposta: 0.5,
+  contrato: 0.85,
+  execucao: 0.95,
+  finalizado: 1.0,
+};
+
+const PROBABILIDADE_STATUS: Record<string, number> = {
+  aberta: 0.35,
+  aberto: 0.35,
+  em_analise: 0.35,
+  analise: 0.35,
+  negociacao: 0.45,
+  fechada: 1.0,
+  fechado: 1.0,
+  ganha: 1.0,
+  ganho: 1.0,
+  perdida: 0.0,
+  perdido: 0.0,
+  cancelada: 0.0,
+  cancelado: 0.0,
+};
+
+function monthsInclusive(start: Date, end: Date): number {
+  const s = startOfMonth(start);
+  const e = startOfMonth(end);
+  return Math.max(1, (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth()) + 1);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hook
+// ─────────────────────────────────────────────────────────────
+
+export function useForecastPage(params: ForecastPageParams) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: [
+      "forecast-page-v4",
+      params.horizonte,
+      params.valorAdicionalMensal,
+      params.conversaoMarginal,
+      params.ticketMarginal,
+      user?.id,
+    ],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const agora = new Date();
+      const mesAgoraKey = format(agora, "yyyy-MM");
+      const dataLimite12m = subMonths(agora, 12);
+      const dataLimite12mStr = format(dataLimite12m, "yyyy-MM-dd");
+
+      // 1) Buscar dados
+      const [contratosRes, propostas12mRes, propostasCurrentRes, metasRes, leadsRes] = await Promise.all([
+        supabase
+          .from("contratos")
+          .select("proposta_id, created_at, data_inicio, valor_negociado, margem_pct")
+          .eq("user_id", user.id)
+          .not("proposta_id", "is", null),
+
+        supabase
+          .from("propostas")
+          .select("id, data, data_fechamento, valor_total, status, is_current")
+          .eq("user_id", user.id)
+          .gte("data", dataLimite12mStr)
+          .or("is_current.is.null,is_current.eq.true"),
+
+        supabase
+          .from("propostas")
+          .select("id, data, valor_total, status, lead_id, is_current")
+          .eq("user_id", user.id)
+          .or("is_current.is.null,is_current.eq.true"),
+
+        supabase
+          .from("metas")
+          .select("id, nome, tipo, valor_alvo, periodo_inicio, periodo_fim, status")
+          .eq("user_id", user.id),
+
+        supabase.from("leads").select("id, estagio").eq("user_id", user.id),
+      ]);
+
+      if (contratosRes.error) throw contratosRes.error;
+      if (propostas12mRes.error) throw propostas12mRes.error;
+      if (propostasCurrentRes.error) throw propostasCurrentRes.error;
+      if (metasRes.error) throw metasRes.error;
+      if (leadsRes.error) throw leadsRes.error;
+
+      const contratos = (contratosRes.data || []) as any[];
+      const propostas12m = (propostas12mRes.data || []) as any[];
+      const propostasCurrent = (propostasCurrentRes.data || []) as any[];
+      const todasMetas = (metasRes.data || []) as MetaAtiva[];
+      const leads = (leadsRes.data || []) as any[];
+
+      // metas ativas (receita)
+      const metasAtivas = todasMetas.filter((m) => {
+        const tipoOk = META_TIPOS_RECEITA.has(norm(m.tipo));
+        const st = norm(m.status);
+        const statusOk = st ? META_STATUS_ATIVO.has(st) : true;
+        return tipoOk && statusOk;
+      });
+
+      // lead map
+      const leadMap = new Map<string, string | null>();
+      leads.forEach((l) => leadMap.set(l.id, l.estagio ?? null));
+
+      // propostas com contrato (para excluir do pipeline)
+      const propostaIdsComContrato = new Set<string>(contratos.map((c) => c.proposta_id).filter(Boolean));
+
+      // pipeline bruto: “não fechada/perdida” + sem contrato
+      const abertas = propostasCurrent.filter((p) => {
+        if (!p?.id) return false;
+        if (propostaIdsComContrato.has(p.id)) return false;
+        return isStatusAberto(p.status);
+      });
+
+      // 2) Fechamentos 12m (contrato como verdade)
+      const propMap = new Map<
+        string,
+        { data?: string; data_fechamento?: string | null; valor_total?: number | null }
+      >();
+      propostas12m.forEach((p) => {
+        propMap.set(p.id, {
+          data: p.data,
+          data_fechamento: p.data_fechamento,
+          valor_total: p.valor_total,
+        });
+      });
+
+      const fechamentos12m = contratos
+        .map((c) => {
+          const prop = propMap.get(c.proposta_id);
+          const closeDateStr = prop?.data_fechamento || c.created_at || c.data_inicio;
+          const closeDate = closeDateStr ? new Date(closeDateStr) : null;
+          if (!closeDate) return null;
+          if (closeDate < dataLimite12m) return null;
+
+          const valor = Number(c.valor_negociado || prop?.valor_total || 0);
+          const margemPct = Number(c.margem_pct || 0);
+          const mesKey = format(closeDate, "yyyy-MM");
+
+          const dataEnvio = prop?.data ? new Date(prop.data) : closeDate;
+          const diasFechamento = Math.max(differenceInDays(closeDate, dataEnvio), 0);
+
+          return { valor, margemPct, mesKey, diasFechamento };
+        })
+        .filter(Boolean) as {
+        valor: number;
+        margemPct: number;
+        mesKey: string;
+        diasFechamento: number;
+      }[];
+
+      // 3) BaseStats
+      const valorEnviado12m = propostas12m.reduce((s, p) => s + Number(p.valor_total || 0), 0);
+      const valorFechado12m = fechamentos12m.reduce((s, f) => s + f.valor, 0);
+      const numContratos12m = fechamentos12m.length;
+
+      const conversaoFinanceira = valorEnviado12m > 0 ? valorFechado12m / valorEnviado12m : 0;
+      const ticketReal = numContratos12m > 0 ? valorFechado12m / numContratos12m : 0;
+
+      const receitaMediaMensal = valorFechado12m / 12;
+      const volumeEnviadoMensal = valorEnviado12m / 12;
+
+      const tempoMedioFechamentoDias =
+        fechamentos12m.length > 0
+          ? Math.round(fechamentos12m.reduce((s, f) => s + f.diasFechamento, 0) / fechamentos12m.length)
+          : 45;
+
+      const baseStats: BaseStats = {
+        valorEnviado12m,
+        valorFechado12m,
+        conversaoFinanceira,
+        ticketReal,
+        receitaMediaMensal,
+        numContratos12m,
+        volumeEnviadoMensal,
+        tempoMedioFechamentoDias,
+        amostraPequena: numContratos12m < 10,
+      };
+
+      // ─────────────────────────────────────────────────────
+      // 4) Pipeline (COM DECAIMENTO POR IDADE)
+      // ─────────────────────────────────────────────────────
+
+      const tempo = Math.max(30, tempoMedioFechamentoDias || 0);
+
+      const pipelineItems: PipelineItem[] = abertas.map((p) => {
+        const estagio = p.lead_id ? (leadMap.get(p.lead_id) ?? null) : null;
+
+        const statusKey = norm(p.status || "");
+        const estKey = estagio ? norm(estagio).replace(/\s+/g, "_") : "";
+
+        // base prob
+        const probStatus = PROBABILIDADE_STATUS[statusKey] ?? 0.35;
+        const probEstagio = estKey ? PROBABILIDADE_ESTAGIO[estKey] : undefined;
+
+        // se status vazio, reduz um pouco a prob (pra não inflar por “dados incompletos”)
+        const probStatusAjustada = statusKey ? probStatus : 0.2;
+
+        const probabilidade = estagio ? (probEstagio ?? probStatusAjustada) : probStatusAjustada;
+
+        const valorTotal = Number(p.valor_total || 0);
+        const dataEnvio = p.data ? new Date(p.data) : agora;
+        const diasAberta = Math.max(differenceInDays(agora, dataEnvio), 0);
+
+        // decaimento: quanto mais “passou do P50”, menos provável
+        const overdue = Math.max(0, diasAberta - tempo);
+        let decay = Math.exp(-overdue / (tempo * 0.9)); // suave, mas efetivo
+
+        // muito antiga: derruba forte (sem excluir, só reduz)
+        if (diasAberta > tempo * 2.5) decay *= 0.15;
+
+        const valorPonderado = valorTotal * probabilidade * decay;
+
+        return {
+          id: p.id,
+          valorTotal,
+          status: String(p.status || "aberta"),
+          estagio,
+          probabilidade,
+          decay,
+          valorPonderado,
+          diasAberta,
+        };
+      });
+
+      const pipeline: PipelineResumo = {
+        valorBruto: pipelineItems.reduce((s, x) => s + x.valorTotal, 0),
+        valorPonderado: pipelineItems.reduce((s, x) => s + x.valorPonderado, 0),
+        qtdPropostas: pipelineItems.length,
+        porEstagio: {},
+      };
+
+      pipelineItems.forEach((p) => {
+        const key = p.estagio || "sem_lead";
+        if (!pipeline.porEstagio[key]) pipeline.porEstagio[key] = { valor: 0, ponderado: 0, qtd: 0 };
+        pipeline.porEstagio[key].valor += p.valorTotal;
+        pipeline.porEstagio[key].ponderado += p.valorPonderado;
+        pipeline.porEstagio[key].qtd += 1;
+      });
+
+      // ─────────────────────────────────────────────────────
+      // 5) Meta mensal prorrateada
+      // ─────────────────────────────────────────────────────
+
+      function getMetaMensal(mesKey: string): number {
+        let total = 0;
+        const mesStart = startOfMonth(new Date(mesKey + "-01"));
+        const mesEnd = endOfMonth(mesStart);
+
+        for (const m of metasAtivas) {
+          const inicio = new Date(m.periodo_inicio);
+          const fim = new Date(m.periodo_fim);
+
+          const cobreMes = mesEnd >= inicio && mesStart <= fim;
+          if (!cobreMes) continue;
+
+          const meses = monthsInclusive(inicio, fim);
+          total += Number(m.valor_alvo || 0) / Math.max(1, meses);
+        }
+
+        return total;
+      }
+
+      // ─────────────────────────────────────────────────────
+      // 6) Distribuir pipeline por mês (EVITA “jogar tudo no mês atual”)
+      // ─────────────────────────────────────────────────────
+
+      const pipelinePorMes = new Map<string, number>();
+
+      pipelineItems.forEach((p) => {
+        const dataEnvio = p.diasAberta >= 0 ? addDays(agora, -p.diasAberta) : agora;
+
+        // em vez de “dias restantes = 0 => fecha hoje”, usamos:
+        // data estimada = dataEnvio + P50; se já passou, empurra ~30–45 dias pra frente
+        const baseClose = addDays(dataEnvio, tempo);
+        const estimada =
+          baseClose < agora ? addDays(agora, Math.min(45, Math.max(30, Math.round(tempo * 0.25)))) : baseClose;
+
+        const mesEstimado = format(estimada, "yyyy-MM");
+        const mesSeguinte = format(addMonths(new Date(mesEstimado + "-01"), 1), "yyyy-MM");
+        const mesSeguinte2 = format(addMonths(new Date(mesEstimado + "-01"), 2), "yyyy-MM");
+        const mesAnterior = format(addMonths(new Date(mesEstimado + "-01"), -1), "yyyy-MM");
+
+        const v = p.valorPonderado;
+
+        // se cair no mês atual, espalha mais pra frente (para não “explodir” fev/26)
+        if (mesEstimado === mesAgoraKey) {
+          pipelinePorMes.set(mesEstimado, (pipelinePorMes.get(mesEstimado) || 0) + v * 0.25);
+          pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.45);
+          pipelinePorMes.set(mesSeguinte2, (pipelinePorMes.get(mesSeguinte2) || 0) + v * 0.3);
+        } else {
+          // distribuição “normal” em torno do mês estimado
+          pipelinePorMes.set(mesAnterior, (pipelinePorMes.get(mesAnterior) || 0) + v * 0.3);
+          pipelinePorMes.set(mesEstimado, (pipelinePorMes.get(mesEstimado) || 0) + v * 0.5);
+          pipelinePorMes.set(mesSeguinte, (pipelinePorMes.get(mesSeguinte) || 0) + v * 0.2);
+        }
+      });
+
+      // ─────────────────────────────────────────────────────
+      // 7) Receita real/custo real por mês
+      // ─────────────────────────────────────────────────────
+
+      const receitaRealPorMes = new Map<string, number>();
+      const custoRealPorMes = new Map<string, number>();
+
+      fechamentos12m.forEach((f) => {
+        receitaRealPorMes.set(f.mesKey, (receitaRealPorMes.get(f.mesKey) || 0) + f.valor);
+        if (f.margemPct > 0) {
+          const custo = f.valor * (1 - f.margemPct / 100);
+          custoRealPorMes.set(f.mesKey, (custoRealPorMes.get(f.mesKey) || 0) + custo);
+        }
+      });
+
+      // ─────────────────────────────────────────────────────
+      // 8) Forecast mensal
+      // ─────────────────────────────────────────────────────
+
+      const forecastMensal: ForecastMensal[] = [];
+      const baseline = receitaMediaMensal;
+
+      const mesesDeDelay = Math.ceil(tempo / 30);
+
+      for (let i = 0; i < params.horizonte; i++) {
+        const mesDate = addMonths(agora, i);
+        const mesKey = format(mesDate, "yyyy-MM");
+        const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
+
+        const meta = getMetaMensal(mesKey);
+        const pipelineAlloc = pipelinePorMes.get(mesKey) || 0;
+
+        const incrementalAlloc =
+          i >= mesesDeDelay ? Number(params.valorAdicionalMensal || 0) * Number(params.conversaoMarginal || 0) : 0;
+
+        const forecastTotal = baseline + pipelineAlloc + incrementalAlloc;
+        const gap = Math.max(0, meta - forecastTotal);
+
+        const convMarginal = Number(params.conversaoMarginal || 0);
+        const acaoNecessariaRS = convMarginal > 0 ? gap / convMarginal : 0;
+
+        const ticketMarginal = Number(params.ticketMarginal || 0);
+        const propostasEquiv = ticketMarginal > 0 ? Math.ceil(acaoNecessariaRS / ticketMarginal) : 0;
+
+        const receitaReal = receitaRealPorMes.get(mesKey) || 0;
+        const custoReal = custoRealPorMes.get(mesKey) || 0;
+        const margemReal = receitaReal > 0 ? ((receitaReal - custoReal) / receitaReal) * 100 : null;
+
+        forecastMensal.push({
+          mes: mesLabel,
+          mesKey,
+
+          baseline: Math.round(baseline),
+          pipelineAlloc: Math.round(pipelineAlloc),
+          incrementalAlloc: Math.round(incrementalAlloc),
+
+          forecastTotal: Math.round(forecastTotal),
+
+          meta: Math.round(meta),
+          gap: Math.round(gap),
+
+          acaoNecessariaRS: Math.round(acaoNecessariaRS),
+          propostasEquiv,
+
+          receitaReal: Math.round(receitaReal),
+          custoReal: Math.round(custoReal),
+          margemReal: margemReal !== null ? parseFloat(margemReal.toFixed(1)) : null,
+        });
+      }
+
+      // ─────────────────────────────────────────────────────
+      // 9) Histórico 12m
+      // ─────────────────────────────────────────────────────
+
+      const volumeHistorico: VolumeHistorico[] = [];
+      for (let i = 11; i >= 0; i--) {
+        const mesDate = subMonths(agora, i);
+        const mesKey = format(mesDate, "yyyy-MM");
+        const mesLabel = format(mesDate, "MMM/yy", { locale: ptBR });
+
+        const envMesValor = propostas12m
+          .filter((p) => p?.data && format(new Date(p.data), "yyyy-MM") === mesKey)
+          .reduce((s, p) => s + Number(p.valor_total || 0), 0);
+
+        const fechMesValor = fechamentos12m.filter((f) => f.mesKey === mesKey).reduce((s, f) => s + f.valor, 0);
+
+        volumeHistorico.push({
+          mes: mesLabel,
+          valorEnviado: Math.round(envMesValor),
+          valorFechado: Math.round(fechMesValor),
+          conversaoFinanceira: envMesValor > 0 ? parseFloat(((fechMesValor / envMesValor) * 100).toFixed(1)) : 0,
+        });
+      }
+
+      // ─────────────────────────────────────────────────────
+      // 10) Insights
+      // ─────────────────────────────────────────────────────
+
+      const insights: Insight[] = [];
+      const mesAtual = forecastMensal[0];
+
+      if (baseStats.amostraPequena) {
+        insights.push({
+          text: `Dados limitados: apenas ${numContratos12m} contratos em 12 meses. Previsões podem ter margem de erro elevada.`,
+          level: "muted",
+        });
+      }
+
+      if (mesAtual) {
+        insights.push({
+          text: `Mantendo o ritmo atual, este mês fecha em R$ ${mesAtual.forecastTotal.toLocaleString("pt-BR")}`,
+          level: mesAtual.meta > 0 && mesAtual.forecastTotal >= mesAtual.meta ? "success" : "muted",
+        });
+      }
+
+      if (mesAtual && pipeline.valorPonderado > 0) {
+        insights.push({
+          text: `Pipeline ponderado atual: R$ ${pipeline.valorPonderado.toLocaleString("pt-BR", {
+            maximumFractionDigits: 0,
+          })} em ${pipeline.qtdPropostas} propostas.`,
+          level: "muted",
+        });
+      }
+
+      if (mesAtual && mesAtual.meta > 0) {
+        if (mesAtual.forecastTotal >= mesAtual.meta) {
+          insights.push({ text: "Você está no caminho para bater a meta deste mês", level: "success" });
+        } else {
+          insights.push({
+            text: `Para bater a meta, é necessário gerar +R$ ${mesAtual.acaoNecessariaRS.toLocaleString(
+              "pt-BR",
+            )} em novas propostas (≈ ${mesAtual.propostasEquiv} propostas)`,
+            level: "warning",
+          });
+        }
+      }
+
+      if (tempo > 0) {
+        insights.push({
+          text: `Tempo médio de fechamento (P50): ${tempo} dias. Propostas antigas têm decaimento de probabilidade no forecast.`,
+          level: "muted",
+        });
+      }
+
+      return { baseStats, pipeline, forecastMensal, volumeHistorico, metasAtivas, insights };
+    },
   });
-}
-
-function fmtPctRatio(v: number | undefined | null) {
-  return `${((v ?? 0) * 100).toFixed(1)}%`;
-}
-
-// Cores do gráfico: MESMAS famílias do sumário (CSS vars), só suavizadas
-const COLORS = {
-  baseline: { solid: "hsl(var(--primary))" },
-  pipeline: { solid: "hsl(var(--chart-2))" },
-  effort: { solid: "hsl(var(--chart-3))" },
-  meta: { solid: "hsl(var(--destructive))" },
-  realized: { solid: "hsl(var(--chart-4))" },
-
-  grid: "hsl(var(--border) / 0.35)",
-  axis: "hsl(var(--muted-foreground) / 0.85)",
-  cursor: "hsl(var(--muted) / 0.35)",
-};
-
-// y-axis “bonito”
-function niceCeil(n: number) {
-  if (!isFinite(n) || n <= 0) return 1000;
-  const pow = Math.pow(10, Math.floor(Math.log10(n)));
-  const base = n / pow;
-  let niceBase = 10;
-  if (base <= 1) niceBase = 1;
-  else if (base <= 2) niceBase = 2;
-  else if (base <= 5) niceBase = 5;
-  else niceBase = 10;
-  return niceBase * pow;
-}
-
-function buildTicks(maxValue: number, tickCount = 6) {
-  const safeMax = Math.max(0, maxValue);
-  const top = niceCeil(safeMax * 1.12);
-  const rawStep = top / (tickCount - 1);
-  const step = niceCeil(rawStep);
-  const yTop = step * (tickCount - 1);
-  const ticks = Array.from({ length: tickCount }, (_, i) => i * step);
-  return { yTop, ticks };
-}
-
-const insightIcons: Record<InsightLevel, ReactNode> = {
-  success: <CheckCircle className="h-5 w-5 text-success shrink-0" />,
-  warning: <AlertTriangle className="h-5 w-5 text-warning shrink-0" />,
-  destructive: <XCircle className="h-5 w-5 text-destructive shrink-0" />,
-  muted: <Info className="h-5 w-5 text-muted-foreground shrink-0" />,
-};
-
-const insightBg: Record<InsightLevel, string> = {
-  success: "bg-success/10 border-success/20",
-  warning: "bg-warning/10 border-warning/20",
-  destructive: "bg-destructive/10 border-destructive/20",
-  muted: "bg-muted border-border",
-};
-
-export default function Forecast() {
-  const [horizonte, setHorizonte] = useState<Horizonte>(6);
-  const [mesFoco, setMesFoco] = useState(0);
-
-  const [valorAdicional, setValorAdicional] = useState(0);
-  const [conversaoMarg, setConversaoMarg] = useState(0.3);
-  const [ticketMarg, setTicketMarg] = useState(0);
-
-  const params: ForecastPageParams = useMemo(
-    () => ({
-      horizonte,
-      valorAdicionalMensal: valorAdicional,
-      conversaoMarginal: conversaoMarg,
-      ticketMarginal: ticketMarg,
-    }),
-    [horizonte, valorAdicional, conversaoMarg, ticketMarg],
-  );
-
-  const { data, isLoading } = useForecastPage(params);
-
-  const bs = data?.baseStats;
-  const pipeline = data?.pipeline;
-  const fm = data?.forecastMensal || [];
-  const vh = data?.volumeHistorico || [];
-  const insights = data?.insights || [];
-  const metasAtivas = data?.metasAtivas || [];
-
-  const safeMesFoco = mesFoco < fm.length ? mesFoco : 0;
-  const mesFocoData = fm[safeMesFoco] || null;
-
-  const handleHorizonteChange = useCallback((v: string) => {
-    if (!v) return;
-    setHorizonte(Number(v) as Horizonte);
-    setMesFoco(0);
-  }, []);
-
-  // seed controls a partir do histórico (evita 0 prop / ticket 0)
-  useEffect(() => {
-    if (!bs) return;
-
-    if (conversaoMarg === 0.3 && bs.conversaoFinanceira > 0) {
-      setConversaoMarg(bs.conversaoFinanceira);
-    }
-    if (ticketMarg === 0 && bs.ticketReal > 0) {
-      setTicketMarg(bs.ticketReal);
-    }
-  }, [bs, conversaoMarg, ticketMarg]);
-
-  const resetControles = useCallback(() => {
-    setValorAdicional(0);
-    setConversaoMarg(bs?.conversaoFinanceira || 0.3);
-    setTicketMarg(bs?.ticketReal || 0);
-  }, [bs]);
-
-  // dataset do gráfico (linhas sempre com número)
-  const fmChart = useMemo(() => {
-    return fm.map((m) => ({
-      ...m,
-      faturadoPlot: Number(m?.receitaReal || 0),
-      forecastLine: Number(m?.forecastTotal || 0),
-      stackTotal: Number(m?.baseline || 0) + Number(m?.pipelineAlloc || 0) + Number(m?.incrementalAlloc || 0),
-    }));
-  }, [fm]);
-
-  // escala Y correta
-  const { yTop, yTicks } = useMemo(() => {
-    const maxY = fmChart.reduce((acc, m) => {
-      const meta = Number(m?.meta || 0);
-      const total = Number(m?.stackTotal || 0);
-      const realizado = Number(m?.faturadoPlot || 0);
-      return Math.max(acc, meta, total, realizado);
-    }, 0);
-
-    return buildTicks(maxY, 6);
-  }, [fmChart]);
-
-  const tooltipHistorico = (value: number, name: string) => {
-    if (name === "Conversão %") return [`${value.toFixed(1)}%`, name];
-    return [fmtBRL(value), name];
-  };
-
-  const forecastTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload?.length) return null;
-    const item = payload[0]?.payload;
-    if (!item) return null;
-
-    const faturado = Number(item.faturadoPlot || 0);
-
-    return (
-      <div className="bg-popover/95 backdrop-blur border border-border/70 rounded-xl shadow-lg p-3 text-sm space-y-1 min-w-[260px]">
-        <p className="font-semibold text-foreground border-b border-border/60 pb-1 mb-1">{label}</p>
-
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Base</span>
-          <span className="text-foreground">{fmtBRL(item.baseline)}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Pipeline</span>
-          <span className="text-foreground">{fmtBRL(item.pipelineAlloc)}</span>
-        </div>
-
-        {Number(item.incrementalAlloc) > 0 && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Esforço</span>
-            <span className="text-foreground">{fmtBRL(item.incrementalAlloc)}</span>
-          </div>
-        )}
-
-        <div className="flex justify-between border-t border-border/60 pt-1 font-semibold">
-          <span className="text-foreground">Forecast</span>
-          <span className="text-primary">{fmtBRL(item.forecastTotal)}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Meta</span>
-          <span className="text-success">{fmtBRL(item.meta)}</span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Realizado</span>
-          <span className={faturado > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
-            {faturado > 0 ? fmtBRL(faturado) : "—"}
-          </span>
-        </div>
-
-        {Number(item.gap) > 0 && (
-          <>
-            <div className="flex justify-between text-destructive">
-              <span>Gap</span>
-              <span>{fmtBRL(item.gap)}</span>
-            </div>
-            <div className="text-xs text-warning mt-1">
-              Ação: +{fmtBRL(item.acaoNecessariaRS)} em propostas (~{item.propostasEquiv} prop.)
-            </div>
-          </>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <TrendingUp className="h-7 w-7 text-primary" />
-            <h1 className="text-h2 text-foreground">Forecast de Faturamento</h1>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1">
-            Motor de decisão comercial baseado no pipeline real e histórico de 12 meses
-          </p>
-        </div>
-
-        <ToggleGroup
-          type="single"
-          value={String(horizonte)}
-          onValueChange={handleHorizonteChange}
-          className="bg-muted rounded-lg p-0.5"
-        >
-          {[3, 6, 12].map((h) => (
-            <ToggleGroupItem
-              key={h}
-              value={String(h)}
-              className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
-            >
-              {h}m
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-
-      {/* Aviso amostra pequena */}
-      {bs?.amostraPequena && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Amostra pequena: apenas {bs.numContratos12m} contratos em 12 meses. Previsões podem estar distorcidas.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Seleção mês foco */}
-      {!isLoading && fm.length > 0 && (
-        <div className="flex items-center gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Mês foco:</span>
-
-          <ToggleGroup
-            type="single"
-            value={String(safeMesFoco)}
-            onValueChange={(v) => v !== undefined && v !== "" && setMesFoco(Number(v))}
-            className="bg-muted rounded-lg p-0.5 flex-wrap"
-          >
-            {fm.map((m, i) => (
-              <ToggleGroupItem
-                key={i}
-                value={String(i)}
-                className="text-xs px-2.5 py-1 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
-              >
-                {m.mes}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      )}
-
-      {/* Linha extra de KPIs do mês foco */}
-      {!isLoading && mesFocoData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Receita Projetada"
-            value={fmtBRL(mesFocoData.forecastTotal)}
-            sub={mesFocoData.mes}
-          />
-          <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Receita Real"
-            value={mesFocoData.receitaReal > 0 ? fmtBRL(mesFocoData.receitaReal) : "—"}
-            sub={mesFocoData.receitaReal > 0 ? `Fechado em ${mesFocoData.mes}` : "Sem fechamentos"}
-          />
-          <KPICard
-            icon={<Percent className="h-4 w-4" />}
-            label="Margem Real"
-            value={mesFocoData.margemReal !== null ? `${mesFocoData.margemReal.toFixed(1)}%` : "—"}
-            sub={mesFocoData.margemReal !== null ? `Custo: ${fmtBRL(mesFocoData.custoReal)}` : "Sem dados de margem"}
-          />
-          <KPICard
-            icon={<BarChart3 className="h-4 w-4" />}
-            label="Delta vs Forecast"
-            value={(() => {
-              if (mesFocoData.receitaReal === 0) return "—";
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              return `${delta >= 0 ? "+" : ""}${fmtBRL(delta)}`;
-            })()}
-            variant={(() => {
-              if (mesFocoData.receitaReal === 0) return undefined;
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              if (delta > 0) return "success" as const;
-              if (delta < 0) return "destructive" as const;
-              return undefined;
-            })()}
-            sub={(() => {
-              if (mesFocoData.receitaReal === 0) return "Aguardando fechamentos";
-              const delta = mesFocoData.receitaReal - mesFocoData.forecastTotal;
-              if (delta > 0) return "acima do projetado";
-              if (delta < 0) return "abaixo do projetado";
-              return "igual ao projetado";
-            })()}
-          />
-        </div>
-      )}
-
-      {/* KPI Cards */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
-            label="Receita s/ Esforço"
-            value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
-            sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
-          />
-          <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
-            label="Receita Projetada"
-            value={fmtBRL(mesFocoData?.forecastTotal)}
-            sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
-            variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
-          />
-          <KPICard
-            icon={<Target className="h-4 w-4" />}
-            label="Gap vs Meta"
-            value={fmtBRL(mesFocoData?.gap)}
-            variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
-            sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
-          />
-          <KPICard
-            icon={<FileText className="h-4 w-4" />}
-            label="Ação Necessária"
-            value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
-            sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
-          />
-          <KPICard
-            icon={<PieChart className="h-4 w-4" />}
-            label="Pipeline Vivo"
-            value={fmtBRL(pipeline?.valorPonderado)}
-            sub={`${pipeline?.qtdPropostas || 0} propostas abertas`}
-          />
-          <KPICard
-            icon={<Percent className="h-4 w-4" />}
-            label="Conversão (12m)"
-            value={fmtPctRatio(bs?.conversaoFinanceira)}
-            sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
-          />
-        </div>
-      )}
-
-      {/* CTA metas */}
-      {!isLoading && metasAtivas.length === 0 && (
-        <Alert>
-          <Target className="h-4 w-4" />
-          <AlertDescription className="flex items-center gap-2">
-            Nenhuma meta de vendas ativa encontrada.
-            <Link to="/metas" className="text-primary font-medium hover:underline">
-              Criar meta →
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Simulador */}
-      <Card className="border-border/60 bg-card">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Simulador de Esforço Comercial</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ajuste quanto pretende investir em novas propostas e veja o impacto no faturamento
-              </p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={resetControles} className="gap-1.5 text-xs">
-              <RotateCcw className="h-3.5 w-3.5" /> Resetar
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-20" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Valor adicional em propostas (R$/mês)</Label>
-                <Slider
-                  min={0}
-                  max={Math.max(500000, Math.round((bs?.volumeEnviadoMensal || 100000) * 3))}
-                  step={5000}
-                  value={[valorAdicional]}
-                  onValueChange={([v]) => setValorAdicional(v)}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{fmtBRL(valorAdicional)}/mês</span>
-                  <span>Hist: {fmtBRL(bs?.volumeEnviadoMensal)}/mês</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Conversão financeira marginal (%)</Label>
-                <Slider
-                  min={5}
-                  max={80}
-                  step={1}
-                  value={[Math.round(conversaoMarg * 100)]}
-                  onValueChange={([v]) => setConversaoMarg(v / 100)}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{(conversaoMarg * 100).toFixed(0)}%</span>
-                  <span>Hist: {fmtPctRatio(bs?.conversaoFinanceira)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Ticket médio esperado (R$)</Label>
-                <Slider
-                  min={0}
-                  max={Math.max(200000, Math.round((bs?.ticketReal || 50000) * 3))}
-                  step={1000}
-                  value={[ticketMarg]}
-                  onValueChange={([v]) => setTicketMarg(v)}
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{fmtBRL(ticketMarg)}</span>
-                  <span>Hist: {fmtBRL(bs?.ticketReal)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && valorAdicional > 0 && (
-            <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/10">
-              <div className="flex items-center gap-2 text-sm">
-                <Crosshair className="h-4 w-4 text-primary" />
-                <span className="text-foreground">
-                  Gerando <strong>{fmtBRL(valorAdicional)}</strong>/mês com{" "}
-                  <strong>{(conversaoMarg * 100).toFixed(0)}%</strong> de conversão ={" "}
-                  <strong className="text-primary">{fmtBRL(valorAdicional * conversaoMarg)}</strong> de receita/mês.
-                  {bs && bs.tempoMedioFechamentoDias > 0 && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      Impacto começa em ~{bs.tempoMedioFechamentoDias} dias.
-                    </span>
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* GRÁFICO PRINCIPAL (minimalista, pastel e alinhado ao sumário) */}
-      <Card className="border-border/60 bg-card">
-        <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <CardTitle className="text-base text-foreground">Projeção vs Meta</CardTitle>
-
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.baseline.solid, opacity: 0.55 }} />
-                Base
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.pipeline.solid, opacity: 0.55 }} />
-                Pipeline
-              </div>
-              {valorAdicional > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS.effort.solid, opacity: 0.55 }} />
-                  Esforço
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <span className="h-0.5 w-4 rounded-full" style={{ background: COLORS.meta.solid, opacity: 0.9 }} />
-                Meta
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="h-0.5 w-4 rounded-full" style={{ background: COLORS.realized.solid, opacity: 0.9 }} />
-                Realizado
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="pt-2">
-          {isLoading ? (
-            <Skeleton className="h-[340px]" />
-          ) : (
-            <div className="h-[340px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={fmChart}
-                  margin={{ top: 14, right: 18, bottom: 8, left: 6 }}
-                  barCategoryGap="22%"
-                  barGap={6}
-                >
-                  <defs>
-                    <linearGradient id="gradBaseline" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={COLORS.baseline.solid} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={COLORS.baseline.solid} stopOpacity={0.18} />
-                    </linearGradient>
-
-                    <linearGradient id="gradPipeline" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={COLORS.pipeline.solid} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={COLORS.pipeline.solid} stopOpacity={0.18} />
-                    </linearGradient>
-
-                    <linearGradient id="gradEffort" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={COLORS.effort.solid} stopOpacity={0.55} />
-                      <stop offset="100%" stopColor={COLORS.effort.solid} stopOpacity={0.18} />
-                    </linearGradient>
-                  </defs>
-
-                  <CartesianGrid stroke={COLORS.grid} strokeDasharray="4 6" vertical={false} />
-
-                  <XAxis
-                    dataKey="mes"
-                    tick={{ fontSize: 12, fill: COLORS.axis }}
-                    axisLine={false}
-                    tickLine={false}
-                    dy={8}
-                  />
-
-                  <YAxis
-                    domain={[0, yTop]}
-                    ticks={yTicks}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                    tick={{ fontSize: 12, fill: COLORS.axis }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={44}
-                  />
-
-                  <Tooltip content={forecastTooltip} cursor={{ fill: COLORS.cursor }} />
-
-                  <Bar
-                    dataKey="baseline"
-                    name="Base"
-                    fill="url(#gradBaseline)"
-                    stackId="forecast"
-                    barSize={34}
-                    radius={[0, 0, 0, 0]}
-                    isAnimationActive={false}
-                  />
-
-                  <Bar
-                    dataKey="pipelineAlloc"
-                    name="Pipeline"
-                    fill="url(#gradPipeline)"
-                    stackId="forecast"
-                    barSize={34}
-                    radius={valorAdicional > 0 ? [0, 0, 0, 0] : [8, 8, 0, 0]}
-                    isAnimationActive={false}
-                  />
-
-                  {valorAdicional > 0 && (
-                    <Bar
-                      dataKey="incrementalAlloc"
-                      name="Esforço"
-                      fill="url(#gradEffort)"
-                      stackId="forecast"
-                      barSize={34}
-                      radius={[8, 8, 0, 0]}
-                      isAnimationActive={false}
-                    />
-                  )}
-
-                  <Line
-                    dataKey="forecastLine"
-                    name="Forecast"
-                    type="monotone"
-                    stroke={COLORS.baseline.solid}
-                    strokeOpacity={0.55}
-                    strokeWidth={2}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-
-                  <Line
-                    dataKey="meta"
-                    name="Meta"
-                    type="monotone"
-                    stroke={COLORS.meta.solid}
-                    strokeOpacity={0.85}
-                    strokeWidth={2}
-                    strokeDasharray="6 6"
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-
-                  {/* Realizado sempre aparece (mesmo 0), com dots visíveis */}
-                  <Line
-                    dataKey="faturadoPlot"
-                    name="Realizado"
-                    type="monotone"
-                    stroke={COLORS.realized.solid}
-                    strokeOpacity={0.95}
-                    strokeWidth={3}
-                    dot={{
-                      r: 4.5,
-                      fill: "hsl(var(--background))",
-                      stroke: COLORS.realized.solid,
-                      strokeWidth: 2,
-                    }}
-                    activeDot={{ r: 6, strokeWidth: 0 }}
-                    isAnimationActive={false}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Histórico */}
-      <Card className="border-border/60 bg-card">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Histórico 12m — Valor Enviado vs Fechado (R$)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-[280px]" />
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <ComposedChart data={vh}>
-                <CartesianGrid strokeDasharray="4 6" className="opacity-40" vertical={false} />
-                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: COLORS.axis }} axisLine={false} tickLine={false} />
-                <YAxis
-                  yAxisId="left"
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                  tick={{ fontSize: 11, fill: COLORS.axis }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tickFormatter={(v) => `${v}%`}
-                  tick={{ fontSize: 11, fill: COLORS.axis }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip formatter={tooltipHistorico} cursor={{ fill: COLORS.cursor }} />
-
-                <Bar
-                  yAxisId="left"
-                  dataKey="valorEnviado"
-                  name="Valor Enviado (R$)"
-                  fill={COLORS.baseline.solid}
-                  opacity={0.35}
-                  radius={[6, 6, 0, 0]}
-                  isAnimationActive={false}
-                />
-                <Bar
-                  yAxisId="left"
-                  dataKey="valorFechado"
-                  name="Valor Fechado (R$)"
-                  fill={COLORS.pipeline.solid}
-                  opacity={0.55}
-                  radius={[6, 6, 0, 0]}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="right"
-                  dataKey="conversaoFinanceira"
-                  name="Conversão %"
-                  type="monotone"
-                  stroke={COLORS.realized.solid}
-                  strokeWidth={2}
-                  dot={{ r: 2.5, strokeWidth: 0 }}
-                  isAnimationActive={false}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pipeline breakdown */}
-      {!isLoading && pipeline && pipeline.qtdPropostas > 0 && (
-        <Card className="border-border/60 bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <PieChart className="h-4 w-4" />
-              Pipeline Atual — Receita Esperada por Estágio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {Object.entries(pipeline.porEstagio)
-                .sort(([, a]: any, [, b]: any) => b.ponderado - a.ponderado)
-                .map(([estagio, info]: any) => (
-                  <div key={estagio} className="p-3 rounded-xl bg-muted/40 border border-border/70">
-                    <p className="text-xs text-muted-foreground capitalize truncate">
-                      {String(estagio).replace(/_/g, " ")}
-                    </p>
-                    <p className="text-sm font-semibold text-foreground mt-1">{fmtBRL(info.ponderado)}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {info.qtd} prop. · {fmtBRL(info.valor)} bruto
-                    </p>
-                  </div>
-                ))}
-            </div>
-
-            <div className="mt-3 flex items-center gap-4 text-sm flex-wrap">
-              <span className="text-muted-foreground">
-                Total bruto: <strong className="text-foreground">{fmtBRL(pipeline.valorBruto)}</strong>
-              </span>
-              <span className="text-muted-foreground">
-                Ponderado: <strong className="text-primary">{fmtBRL(pipeline.valorPonderado)}</strong>
-              </span>
-              <span className="text-muted-foreground">
-                <Clock className="h-3.5 w-3.5 inline mr-1" />
-                Fechamento (P50): <strong className="text-foreground">{bs?.tempoMedioFechamentoDias || "—"}d</strong>
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Insights */}
-      {insights.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb className="h-5 w-5 text-warning" />
-            <h2 className="text-base font-semibold text-foreground">Insights</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {insights.map((ins: any, i: number) => (
-              <div key={i} className={cn("flex items-start gap-3 p-4 rounded-xl border", insightBg[ins.level])}>
-                {insightIcons[ins.level]}
-                <p className="text-sm text-foreground">{ins.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function KPICard({
-  icon,
-  label,
-  value,
-  sub,
-  variant,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  sub?: ReactNode;
-  variant?: "destructive" | "success";
-}) {
-  return (
-    <Card className="p-3 border-border/60 bg-card">
-      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-        {icon}
-        <span className="text-xs font-medium truncate">{label}</span>
-      </div>
-
-      <p
-        className={cn(
-          "text-lg font-semibold tabular-nums",
-          variant === "destructive" && "text-destructive",
-          variant === "success" && "text-success",
-        )}
-      >
-        {value}
-      </p>
-
-      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
-    </Card>
-  );
 }
