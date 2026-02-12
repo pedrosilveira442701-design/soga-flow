@@ -199,6 +199,11 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
       const produtos = lead.produtos as Array<{ tipo: string; medida: number | null; valor?: string | number }> | null;
       if (produtos && Array.isArray(produtos) && produtos.length > 0) {
         const suggestedTypes = new Set<string>();
+
+        // Calcular m2 total para distribuir valor_potencial proporcionalmente
+        const m2Total = produtos.reduce((acc, p) => acc + parseFloat(String(p.medida || 0)), 0);
+        const valorPotencial = parseFloat(String(lead.valor_potencial || 0));
+
         const servicosPreenchidos = produtos.map((p) => {
           let tipo = p.tipo;
           let tipo_outro = "";
@@ -209,8 +214,12 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
           }
 
           const medida = parseFloat(String(p.medida || 0));
-          const valor = parseFloat(String(p.valor || 0));
-          const valor_m2 = medida > 0 && valor > 0 ? Math.round((valor / medida) * 100) / 100 : 0;
+          // Usar valor individual do produto se existir, senão distribuir valor_potencial proporcionalmente pela metragem
+          const valorIndividual = parseFloat(String(p.valor || 0));
+          const valorServico = valorIndividual > 0
+            ? valorIndividual
+            : (medida > 0 && m2Total > 0 && valorPotencial > 0 ? (medida / m2Total) * valorPotencial : 0);
+          const valor_m2 = medida > 0 && valorServico > 0 ? Math.round((valorServico / medida) * 100) / 100 : 0;
 
           // Sugestão de custo histórico
           const tipoKey = tipo === "Outro" ? tipo_outro || tipo : tipo;
