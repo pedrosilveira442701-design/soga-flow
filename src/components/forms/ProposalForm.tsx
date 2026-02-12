@@ -1,7 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -95,10 +95,19 @@ interface ProposalFormProps {
   initialData?: Partial<ProposalFormValues> & { id?: string };
 }
 
+// Helper to calculate median
+function calcMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 export default function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   const [autoFilledFromLead, setAutoFilledFromLead] = useState(false);
   const [leadInfo, setLeadInfo] = useState<{ id: string; name: string } | null>(null);
+  const [suggestedCostTypes, setSuggestedCostTypes] = useState<Set<string>>(new Set());
 
   const form = useForm<ProposalFormValues>({
     resolver: zodResolver(proposalSchema),
@@ -123,6 +132,40 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
   const servicos = form.watch("servicos");
   const desconto = form.watch("desconto") || 0;
   const selectedClienteId = form.watch("cliente_id");
+
+  // Buscar custos históricos de propostas anteriores
+  const { data: historicalProposals } = useQuery({
+    queryKey: ["historical-costs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("propostas")
+        .select("servicos")
+        .eq("is_current", true);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Mapa tipo -> mediana de custo_m2
+  const costMap = useMemo(() => {
+    const map: Record<string, number[]> = {};
+    if (!historicalProposals) return new Map<string, number>();
+    for (const p of historicalProposals) {
+      const servicos = p.servicos as Array<{ tipo?: string; custo_m2?: number }> | null;
+      if (!servicos || !Array.isArray(servicos)) continue;
+      for (const s of servicos) {
+        if (s.tipo && typeof s.custo_m2 === "number" && s.custo_m2 > 0) {
+          if (!map[s.tipo]) map[s.tipo] = [];
+          map[s.tipo].push(s.custo_m2);
+        }
+      }
+    }
+    const result = new Map<string, number>();
+    for (const [tipo, values] of Object.entries(map)) {
+      result.set(tipo, calcMedian(values));
+    }
+    return result;
+  }, [historicalProposals]);
 
   // Buscar leads do cliente selecionado (qualquer lead, independente de ter produtos)
   const { data: leadsDoCliente } = useQuery({
@@ -153,8 +196,9 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
       setLeadInfo({ id: lead.id, name: `Lead #${lead.id.slice(0, 8)}` });
       
       // Só auto-preenche serviços se o lead tiver produtos
-      const produtos = lead.produtos as Array<{ tipo: string; medida: number | null }> | null;
+      const produtos = lead.produtos as Array<{ tipo: string; medida: number | null; valor?: string | number }> | null;
       if (produtos && Array.isArray(produtos) && produtos.length > 0) {
+        const suggestedTypes = new Set<string>();
         const servicosPreenchidos = produtos.map((p) => {
           let tipo = p.tipo;
           let tipo_outro = "";
@@ -164,21 +208,32 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
             tipo_outro = p.tipo.replace("Outro:", "").trim();
           }
 
+          const medida = parseFloat(String(p.medida || 0));
+          const valor = parseFloat(String(p.valor || 0));
+          const valor_m2 = medida > 0 && valor > 0 ? Math.round((valor / medida) * 100) / 100 : 0;
+
+          // Sugestão de custo histórico
+          const tipoKey = tipo === "Outro" ? tipo_outro || tipo : tipo;
+          const custoSugerido = costMap.get(tipoKey) || costMap.get(tipo) || 0;
+          const custo_m2 = Math.round(custoSugerido * 100) / 100;
+          if (custo_m2 > 0) suggestedTypes.add(`${tipo}-${tipo_outro}`);
+
           return {
             tipo,
             tipo_outro,
-            m2: p.medida || 0,
-            valor_m2: 0,
-            custo_m2: 0,
+            m2: medida,
+            valor_m2,
+            custo_m2,
           };
         });
 
         form.setValue("servicos", servicosPreenchidos);
+        setSuggestedCostTypes(suggestedTypes);
       }
       
       setAutoFilledFromLead(true);
     }
-  }, [leadsDoCliente, autoFilledFromLead, initialData, form]);
+  }, [leadsDoCliente, autoFilledFromLead, initialData, form, costMap]);
 
   const totalBruto = servicos.reduce((acc, s) => acc + s.m2 * s.valor_m2, 0);
   const totalCusto = servicos.reduce((acc, s) => acc + s.m2 * s.custo_m2, 0);
@@ -351,7 +406,12 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
                           const unidadeInfo = getUnidadeInfo(tipoSelecionado);
                           return (
                             <FormItem>
-                              <FormLabel>{unidadeInfo.labelCusto} *</FormLabel>
+                              <FormLabel className="flex items-center gap-1.5">
+                                {unidadeInfo.labelCusto} *
+                                {suggestedCostTypes.has(`${form.watch(`servicos.${index}.tipo`)}-${form.watch(`servicos.${index}.tipo_outro`) || ""}`) && (
+                                  <span className="text-xs font-normal text-muted-foreground">(sugestão)</span>
+                                )}
+                              </FormLabel>
                               <FormControl>
                                 <Input
                                   type="number"
