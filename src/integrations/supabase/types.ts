@@ -352,6 +352,60 @@ export type Database = {
           },
         ]
       }
+      contrato_recebiveis: {
+        Row: {
+          contrato_id: string
+          created_at: string
+          data_recebimento: string | null
+          id: string
+          numero: number
+          status: string
+          updated_at: string
+          user_id: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          contrato_id: string
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          numero: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          valor: number
+          vencimento: string
+        }
+        Update: {
+          contrato_id?: string
+          created_at?: string
+          data_recebimento?: string | null
+          id?: string
+          numero?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_recebiveis_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrato_recebiveis_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "vw_vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contratos: {
         Row: {
           cliente_id: string
