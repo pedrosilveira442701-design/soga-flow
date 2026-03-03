@@ -1,86 +1,49 @@
 
 
-# Cronograma de Recebíveis (Negociação de Margem)
+# Melhorar UX dos Recebíveis da Margem
 
 ## Problema
 
-Hoje a margem é calculada uniformemente como percentual de cada parcela do cliente. O usuário precisa poder negociar com sua célula de custos um cronograma próprio de recebimentos da margem, independente do cronograma do cliente. Ex: margem total R$3.000, receber R$2.000 na primeira e R$1.000 na segunda.
+A seção "Recebíveis da Margem" está confusa para o usuário. Falta contexto explicativo, o nome é técnico demais, e não fica claro o que são, para que servem, e se estão conectados a outras partes do sistema (financeiro, relatórios).
 
-## Solução
+## Abordagem
 
-Criar uma seção "Recebíveis" dentro do detalhe do contrato, com um cronograma editável de recebimentos da margem, totalmente independente das parcelas do cliente.
+Melhorar a UX com foco em clareza, contexto e guia visual, sem alterar a lógica existente.
 
-## Mudanças
+### Mudanças no `RecebiveisManager.tsx`
 
-### 1. Nova tabela `contrato_recebiveis` (migration)
+1. **Renomear título**: de "Recebíveis da Margem" para **"Meus Recebimentos (Lucro)"** -- linguagem mais próxima do usuário
 
-```sql
-CREATE TABLE public.contrato_recebiveis (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  contrato_id uuid NOT NULL REFERENCES contratos(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL,
-  numero integer NOT NULL,
-  valor numeric NOT NULL,
-  vencimento date NOT NULL,
-  status text NOT NULL DEFAULT 'pendente', -- pendente | recebido
-  data_recebimento date,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
+2. **Adicionar texto explicativo** abaixo do título:
+   > "Aqui você define quando vai receber o seu lucro neste contrato. O valor total do seu lucro é {margemTotal}. Divida em parcelas conforme negociado com sua célula de custos."
 
-ALTER TABLE contrato_recebiveis ENABLE ROW LEVEL SECURITY;
+3. **Simplificar o botão "Gerar automático"**: transformar em um card de ação quando a lista está vazia, tipo onboarding:
+   - Card com ícone, texto "Dividir meu lucro em parcelas iguais", input de quantidade e botão "Gerar"
+   - Mais intuitivo que botão solto no header
 
--- RLS policies (CRUD para o próprio usuário)
-CREATE POLICY "Users can view own recebiveis" ON contrato_recebiveis FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own recebiveis" ON contrato_recebiveis FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own recebiveis" ON contrato_recebiveis FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete own recebiveis" ON contrato_recebiveis FOR DELETE USING (auth.uid() = user_id);
-```
+4. **Resumo visual no topo** quando há recebíveis: mostrar uma barra de progresso com "Recebido X de Y" em verde, similar ao progresso de parcelas que já existe acima
 
-### 2. Novo hook `src/hooks/useRecebiveis.tsx`
+5. **Remover a tabela de 6 colunas em telas pequenas** -- usar cards compactos para mobile com as informações essenciais (nº, valor, vencimento, status, ação)
 
-CRUD simples para a tabela `contrato_recebiveis`, similar ao `useParcelas`:
-- Listar por `contrato_id`
-- Adicionar recebível
-- Editar valor/vencimento
-- Marcar como recebido
-- Excluir
+6. **Nota informativa**: adicionar um texto discreto no rodapé:
+   > "Estes recebimentos são independentes das parcelas do cliente acima. Alterações aqui não afetam o financeiro do contrato."
 
-### 3. Novo componente `src/components/contratos/RecebiveisManager.tsx`
+### Mudanças no `ContratoDetailsDialog.tsx`
 
-Seção que aparece abaixo das parcelas no `ContratoDetailsDialog`:
-- Tabela com colunas: Nº, Vencimento, Valor, Status, Data Recebimento, Ações
-- Botão "Adicionar Recebível"
-- Botão "Gerar automático" que divide a margem total igualmente em N parcelas
-- Footer com: Total Recebíveis, Total Recebido, Pendente, e alerta se soma ≠ margem total
-- Editar e excluir em cada linha (mesma UX das parcelas)
-- Marcar como "Recebido" com data
+- Envolver a seção de recebíveis em um `Collapsible` com título e badge mostrando status resumido ("3 parcelas · R$ 2.000 recebido"), para reduzir ruído visual quando o usuário não precisa interagir
 
-### 4. Integrar no `ContratoDetailsDialog.tsx`
+## Arquivos alterados
 
-Adicionar o `<RecebiveisManager>` abaixo do `<ParcelasManager>`, passando `contratoId`, `margemTotal` (valor_negociado * margem_pct / 100).
-
-## Comportamento
-
-- Contratos antigos: seção aparece vazia, usuário pode adicionar recebíveis a qualquer momento
-- Se soma dos recebíveis ≠ margem total, exibir alerta amarelo informativo (não bloqueante)
-- Todos os campos são editáveis pelo usuário
-- Independente das parcelas do cliente (são dois cronogramas separados)
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/contratos/RecebiveisManager.tsx` | Novo título, texto guia, empty state card, barra progresso, nota informativa, layout mobile |
+| `src/components/contratos/ContratoDetailsDialog.tsx` | Envolver em Collapsible com resumo |
 
 ## O que NÃO muda
 
-- Parcelas do cliente (cronograma existente)
-- Cálculo de margem percentual
-- Financeiro
-- Forecast
-- Nenhum componente existente é alterado além do `ContratoDetailsDialog`
-
-## Arquivos
-
-| # | Arquivo | Ação |
-|---|---------|------|
-| 1 | Migration SQL | Criar tabela `contrato_recebiveis` |
-| 2 | `src/hooks/useRecebiveis.tsx` | Novo hook CRUD |
-| 3 | `src/components/contratos/RecebiveisManager.tsx` | Novo componente |
-| 4 | `src/components/contratos/ContratoDetailsDialog.tsx` | Incluir RecebiveisManager |
+- Lógica de CRUD dos recebíveis
+- Tabela `contrato_recebiveis`
+- Hook `useRecebiveis`
+- Financeiro, Forecast, Relatórios
+- Parcelas do cliente
 
