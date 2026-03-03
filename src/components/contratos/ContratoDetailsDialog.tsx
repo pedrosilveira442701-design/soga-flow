@@ -8,6 +8,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
 import { ParcelasManager } from "./ParcelasManager";
+import { RecebiveisManager } from "./RecebiveisManager";
 import ArquivosList from "@/components/arquivos/ArquivosList";
 import { Paperclip } from "lucide-react";
 import {
@@ -230,6 +231,14 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
             valorNegociado={Number(contrato.valor_negociado)}
             margem_pct={contrato.margem_pct || 0}
             propostaInfo={contrato.proposta}
+          />
+
+          <Separator />
+
+          {/* Gerenciador de Recebíveis da Margem */}
+          <RecebiveisManager
+            contratoId={contrato.id}
+            margemTotal={Number(contrato.valor_negociado) * (contrato.margem_pct || 0) / 100}
           />
 
           <Separator />
