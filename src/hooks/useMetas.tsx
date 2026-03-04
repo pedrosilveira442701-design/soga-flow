@@ -238,8 +238,8 @@ export const useMetas = (filters?: MetaFilters) => {
   // Enriquecer metas com insights
   const metasComInsights: MetaComInsights[] = metas.map((meta) => {
     const hoje = new Date();
-    const inicio = new Date(meta.periodo_inicio);
-    const fim = new Date(meta.periodo_fim);
+    const inicio = new Date(meta.periodo_inicio + 'T12:00:00');
+    const fim = new Date(meta.periodo_fim + 'T12:00:00');
     
     const totalDias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
     const diasDecorridos = Math.ceil((hoje.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
