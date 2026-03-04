@@ -1,49 +1,33 @@
 
 
-# Melhorar UX dos Recebíveis da Margem
+# Corrigir Datas de Referência nas Metas
 
 ## Problema
 
-A seção "Recebíveis da Margem" está confusa para o usuário. Falta contexto explicativo, o nome é técnico demais, e não fica claro o que são, para que servem, e se estão conectados a outras partes do sistema (financeiro, relatórios).
+Nas queries de cálculo de progresso das metas em `useMetas.tsx`, as propostas estão sendo filtradas por `created_at` (data de criação do registro) em vez de `data` (data de envio da proposta -- o campo de data de negócio). Isso faz com que uma meta com `periodo_inicio = 2026-01-01` e `periodo_fim = 2026-03-31` busque propostas pela data errada, gerando cálculos incorretos.
 
-## Abordagem
+Conforme a regra de negócio do projeto: **propostas usam `data` (data de envio)**, não `created_at`.
 
-Melhorar a UX com foco em clareza, contexto e guia visual, sem alterar a lógica existente.
+## Mudanças
 
-### Mudanças no `RecebiveisManager.tsx`
+### Arquivo: `src/hooks/useMetas.tsx`
 
-1. **Renomear título**: de "Recebíveis da Margem" para **"Meus Recebimentos (Lucro)"** -- linguagem mais próxima do usuário
+Substituir `created_at` por `data` em **todas** as queries de propostas dentro de `calcularProgressoReal`:
 
-2. **Adicionar texto explicativo** abaixo do título:
-   > "Aqui você define quando vai receber o seu lucro neste contrato. O valor total do seu lucro é {margemTotal}. Divida em parcelas conforme negociado com sua célula de custos."
+1. **Propostas (R$)** (linhas ~80-81): `.gte('created_at', ...)` / `.lte('created_at', ...)` → `.gte('data', ...)` / `.lte('data', ...)`
 
-3. **Simplificar o botão "Gerar automático"**: transformar em um card de ação quando a lista está vazia, tipo onboarding:
-   - Card com ícone, texto "Dividir meu lucro em parcelas iguais", input de quantidade e botão "Gerar"
-   - Mais intuitivo que botão solto no header
+2. **Propostas (#)** (linhas ~94-95): mesma correção
 
-4. **Resumo visual no topo** quando há recebíveis: mostrar uma barra de progresso com "Recebido X de Y" em verde, similar ao progresso de parcelas que já existe acima
+3. **Conversão (%)** (linhas ~107-108): mesma correção na query de propostas
 
-5. **Remover a tabela de 6 colunas em telas pequenas** -- usar cards compactos para mobile com as informações essenciais (nº, valor, vencimento, status, ação)
+4. **Novos Clientes (#)** (linhas ~140-141): clientes não têm campo de data de negócio, mantém `created_at` (exceção documentada)
 
-6. **Nota informativa**: adicionar um texto discreto no rodapé:
-   > "Estes recebimentos são independentes das parcelas do cliente acima. Alterações aqui não afetam o financeiro do contrato."
-
-### Mudanças no `ContratoDetailsDialog.tsx`
-
-- Envolver a seção de recebíveis em um `Collapsible` com título e badge mostrando status resumido ("3 parcelas · R$ 2.000 recebido"), para reduzir ruído visual quando o usuário não precisa interagir
-
-## Arquivos alterados
-
-| Arquivo | Mudança |
-|---------|---------|
-| `src/components/contratos/RecebiveisManager.tsx` | Novo título, texto guia, empty state card, barra progresso, nota informativa, layout mobile |
-| `src/components/contratos/ContratoDetailsDialog.tsx` | Envolver em Collapsible com resumo |
+Total: 3 queries corrigidas, 6 linhas alteradas (`gte` + `lte` em cada).
 
 ## O que NÃO muda
 
-- Lógica de CRUD dos recebíveis
-- Tabela `contrato_recebiveis`
-- Hook `useRecebiveis`
-- Financeiro, Forecast, Relatórios
-- Parcelas do cliente
+- MetaCard e MetaDetailsDialog já exibem `periodo_inicio` e `periodo_fim` corretamente
+- Queries de contratos já usam `data_inicio` (correto)
+- Hooks de forecast e planejamento não são afetados (usam metas apenas para buscar `valor_alvo` e período)
+- Nenhuma alteração de banco de dados
 
