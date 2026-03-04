@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Calendar, DollarSign, User, Edit, XCircle, CheckCircle, MapPin } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { FileText, Calendar, DollarSign, User, Edit, XCircle, CheckCircle, MapPin, ChevronDown, Wallet } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contrato } from "@/hooks/useContratos";
@@ -32,7 +34,11 @@ interface ContratoDetailsDialogProps {
 }
 
 export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, onCancel }: ContratoDetailsDialogProps) {
+  const [recebiveisOpen, setRecebiveisOpen] = useState(false);
+
   if (!contrato) return null;
+
+  const margemTotal = Number(contrato.valor_negociado) * (contrato.margem_pct || 0) / 100;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -235,11 +241,29 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
 
           <Separator />
 
-          {/* Gerenciador de Recebíveis da Margem */}
-          <RecebiveisManager
-            contratoId={contrato.id}
-            margemTotal={Number(contrato.valor_negociado) * (contrato.margem_pct || 0) / 100}
-          />
+          {/* Gerenciador de Recebimentos do Lucro */}
+          <Collapsible open={recebiveisOpen} onOpenChange={setRecebiveisOpen}>
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center justify-between w-full py-2 group text-left">
+                <div className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">Meus Recebimentos (Lucro)</span>
+                  {margemTotal > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      Lucro: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(margemTotal)}
+                    </Badge>
+                  )}
+                </div>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${recebiveisOpen ? "rotate-180" : ""}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <RecebiveisManager
+                contratoId={contrato.id}
+                margemTotal={margemTotal}
+              />
+            </CollapsibleContent>
+          </Collapsible>
 
           <Separator />
 
