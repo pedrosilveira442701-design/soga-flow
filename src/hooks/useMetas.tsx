@@ -77,8 +77,8 @@ export const useMetas = (filters?: MetaFilters) => {
             .select('valor_total')
             .eq('user_id', user_id)
             .eq('is_current', true)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
+            .gte('data', periodo_inicio)
+            .lte('data', periodo_fim);
           
           const total = propostas?.reduce((sum, p) => sum + Number(p.valor_total || 0), 0) || 0;
           return Math.min((total / meta.valor_alvo) * 100, 999);
@@ -91,8 +91,8 @@ export const useMetas = (filters?: MetaFilters) => {
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
             .eq('is_current', true)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
+            .gte('data', periodo_inicio)
+            .lte('data', periodo_fim);
           
           return Math.min(((count || 0) / meta.valor_alvo) * 100, 999);
         }
@@ -104,8 +104,8 @@ export const useMetas = (filters?: MetaFilters) => {
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
             .eq('is_current', true)
-            .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
+            .gte('data', periodo_inicio)
+            .lte('data', periodo_fim);
 
           const { count: totalContratos } = await supabase
             .from('contratos')
