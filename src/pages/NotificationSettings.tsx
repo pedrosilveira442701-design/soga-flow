@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, KeyboardEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +25,7 @@ import {
   Loader2,
   FileBarChart,
   BarChart3,
+  X,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -116,23 +118,57 @@ const diasMes = Array.from({ length: 31 }, (_, i) => ({
 
 export default function NotificationSettings() {
   const { preferences, isLoading, updatePreferences, resetToDefaults } = useNotificationPreferences();
-  const [customEmail, setCustomEmail] = useState(preferences?.email_customizado || "");
+  const [emailInput, setEmailInput] = useState("");
+  const [emails, setEmails] = useState<string[]>([]);
+  const [emailError, setEmailError] = useState("");
   const [isSendingReport, setIsSendingReport] = useState(false);
   const [isSendingManagementReport, setIsSendingManagementReport] = useState(false);
 
   useEffect(() => {
     if (preferences?.email_customizado) {
-      setCustomEmail(preferences.email_customizado);
+      setEmails(preferences.email_customizado.split(",").map(e => e.trim()).filter(Boolean));
+    } else {
+      setEmails([]);
     }
   }, [preferences?.email_customizado]);
+
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const addEmail = (input: string) => {
+    const newEmails = input.split(",").map(e => e.trim()).filter(Boolean);
+    const invalidEmails = newEmails.filter(e => !isValidEmail(e));
+    if (invalidEmails.length > 0) {
+      setEmailError(`E-mail inválido: ${invalidEmails[0]}`);
+      return;
+    }
+    const duplicates = newEmails.filter(e => emails.includes(e));
+    if (duplicates.length > 0) {
+      setEmailError(`E-mail já adicionado: ${duplicates[0]}`);
+      return;
+    }
+    setEmailError("");
+    const updated = [...emails, ...newEmails];
+    setEmails(updated);
+    setEmailInput("");
+    updatePreferences({ email_customizado: updated.join(", ") || null });
+  };
+
+  const removeEmail = (email: string) => {
+    const updated = emails.filter(e => e !== email);
+    setEmails(updated);
+    updatePreferences({ email_customizado: updated.length > 0 ? updated.join(", ") : null });
+  };
+
+  const handleEmailKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === "Enter" || e.key === ",") && emailInput.trim()) {
+      e.preventDefault();
+      addEmail(emailInput);
+    }
+  };
 
   const handleToggle = (type: string, channel: "inapp" | "email") => {
     const key = `${type}_${channel}` as keyof typeof preferences;
     updatePreferences({ [key]: !preferences?.[key] });
-  };
-
-  const handleSaveEmail = () => {
-    updatePreferences({ email_customizado: customEmail || null });
   };
 
   const handleResumoToggle = () => {
@@ -374,21 +410,41 @@ export default function NotificationSettings() {
           {/* Custom Email */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-medium">E-mail Customizado</h3>
+              <h3 className="font-medium">E-mails Destinatários</h3>
               <p className="text-sm text-muted-foreground">
-                Por padrão, notificações por e-mail são enviadas para o e-mail da sua conta
+                Adicione um ou mais e-mails para receber os relatórios. Por padrão, usa o e-mail da sua conta.
               </p>
             </div>
+            {emails.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {emails.map((email) => (
+                  <Badge key={email} variant="secondary" className="gap-1 pr-1">
+                    {email}
+                    <button
+                      onClick={() => removeEmail(email)}
+                      className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
             <div className="flex gap-2">
               <Input
                 type="email"
-                placeholder="email@exemplo.com"
-                value={customEmail}
-                onChange={(e) => setCustomEmail(e.target.value)}
+                placeholder="Digite um e-mail e pressione Enter"
+                value={emailInput}
+                onChange={(e) => { setEmailInput(e.target.value); setEmailError(""); }}
+                onKeyDown={handleEmailKeyDown}
                 className="max-w-md"
               />
-              <Button onClick={handleSaveEmail}>Salvar E-mail</Button>
+              <Button onClick={() => emailInput.trim() && addEmail(emailInput)}>Adicionar</Button>
             </div>
+            {emailError && (
+              <p className="text-sm text-destructive">{emailError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">Separe múltiplos e-mails com vírgula ou adicione um por vez</p>
           </div>
         </div>
       </Card>
