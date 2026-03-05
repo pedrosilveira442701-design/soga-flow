@@ -1,33 +1,48 @@
 
 
-# Corrigir Datas de Referência nas Metas
+# Suporte a Múltiplos E-mails de Destinatário nos Relatórios
 
 ## Problema
 
-Nas queries de cálculo de progresso das metas em `useMetas.tsx`, as propostas estão sendo filtradas por `created_at` (data de criação do registro) em vez de `data` (data de envio da proposta -- o campo de data de negócio). Isso faz com que uma meta com `periodo_inicio = 2026-01-01` e `periodo_fim = 2026-03-31` busque propostas pela data errada, gerando cálculos incorretos.
+Atualmente o campo `email_customizado` na tabela `notificacao_preferencias` é um `text` simples, armazenando apenas um e-mail. O usuário quer enviar os relatórios (Diário e Gestão) para mais de um destinatário.
 
-Conforme a regra de negócio do projeto: **propostas usam `data` (data de envio)**, não `created_at`.
+## Abordagem
+
+Transformar o campo `email_customizado` de texto único para texto com múltiplos e-mails separados por vírgula. Não precisa alterar o tipo da coluna no banco (continua `text`), basta armazenar como `"email1@x.com, email2@x.com"` e fazer o split nas Edge Functions.
 
 ## Mudanças
 
-### Arquivo: `src/hooks/useMetas.tsx`
+### 1. UI em `NotificationSettings.tsx`
 
-Substituir `created_at` por `data` em **todas** as queries de propostas dentro de `calcularProgressoReal`:
+- Substituir o input único por um campo que permita digitar múltiplos e-mails separados por vírgula
+- Adicionar texto explicativo: "Separe múltiplos e-mails com vírgula"
+- Validar cada e-mail antes de salvar
+- Mostrar badge/chip visual para cada e-mail adicionado (UX melhor)
 
-1. **Propostas (R$)** (linhas ~80-81): `.gte('created_at', ...)` / `.lte('created_at', ...)` → `.gte('data', ...)` / `.lte('data', ...)`
+### 2. Edge Function `send-daily-report/index.ts`
 
-2. **Propostas (#)** (linhas ~94-95): mesma correção
+- Na linha que define `userEmail`, fazer split por vírgula do `email_customizado`
+- Passar array de e-mails no campo `to` do Resend (já aceita array nativamente)
 
-3. **Conversão (%)** (linhas ~107-108): mesma correção na query de propostas
+### 3. Edge Function `send-management-report/index.ts`
 
-4. **Novos Clientes (#)** (linhas ~140-141): clientes não têm campo de data de negócio, mantém `created_at` (exceção documentada)
+- Mesma alteração: split do `email_customizado` por vírgula e enviar para múltiplos destinatários
 
-Total: 3 queries corrigidas, 6 linhas alteradas (`gte` + `lte` em cada).
+### 4. Hook `useNotificationPreferences.tsx`
 
-## O que NÃO muda
+- Sem alteração de lógica, o campo continua sendo `text`
 
-- MetaCard e MetaDetailsDialog já exibem `periodo_inicio` e `periodo_fim` corretamente
-- Queries de contratos já usam `data_inicio` (correto)
-- Hooks de forecast e planejamento não são afetados (usam metas apenas para buscar `valor_alvo` e período)
-- Nenhuma alteração de banco de dados
+## Detalhes Técnicos
+
+- Resend API aceita `to: ["email1", "email2"]` nativamente
+- O campo `email_customizado` continua `text` no banco, armazenando e-mails separados por vírgula
+- Nenhuma migration necessária
+
+## Arquivos
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/pages/NotificationSettings.tsx` | UI multi-email com chips e validação |
+| `supabase/functions/send-daily-report/index.ts` | Split e-mails e enviar para array |
+| `supabase/functions/send-management-report/index.ts` | Split e-mails e enviar para array |
 
