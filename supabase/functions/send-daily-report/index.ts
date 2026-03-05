@@ -254,17 +254,19 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", pref.user_id)
           .single();
 
-        // Get user email - prefer custom email, then profile email
-        const userEmail = pref.email_customizado || profile?.email;
+        // Get user email(s) - prefer custom email(s), then profile email
         const userName = profile?.nome || "Usuário";
+        const recipients: string[] = pref.email_customizado
+          ? pref.email_customizado.split(",").map((e: string) => e.trim()).filter(Boolean)
+          : profile?.email ? [profile.email] : [];
 
-        if (!userEmail) {
+        if (recipients.length === 0) {
           console.log(`Skipping user ${pref.user_id} - no email found`);
           results.push({ userId: pref.user_id, success: false, error: "No email found" });
           continue;
         }
 
-        console.log(`Processing report for ${userName} (${userEmail})`);
+        console.log(`Processing report for ${userName} (${recipients.join(", ")})`);
 
         // Fetch propostas for this user
         const { data: propostasAbertas } = await supabaseClient
@@ -297,7 +299,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
           body: JSON.stringify({
             from: "So Garagens Hub <onboarding@resend.dev>",
-            to: [userEmail],
+            to: recipients,
             subject: `Relatorio Diario - So Garagens Hub`,
             html: emailHtml,
           }),
@@ -305,7 +307,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!emailResponse.ok) {
           const errorData = await emailResponse.json();
-          console.error(`Error sending email to ${userEmail}:`, errorData);
+          console.error(`Error sending email to ${recipients.join(", ")}:`, errorData);
           results.push({ userId: pref.user_id, success: false, error: errorData.message || "Email send failed" });
           continue;
         }
@@ -316,7 +318,7 @@ const handler = async (req: Request): Promise<Response> => {
           .update({ relatorio_ultimo_envio: new Date().toISOString() })
           .eq("user_id", pref.user_id);
 
-        console.log(`✅ Report sent to ${userEmail}`);
+        console.log(`✅ Report sent to ${recipients.join(", ")}`);
         results.push({ userId: pref.user_id, success: true });
       } catch (userError: any) {
         console.error(`Error processing user ${pref.user_id}:`, userError);

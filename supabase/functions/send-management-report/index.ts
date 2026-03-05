@@ -366,16 +366,18 @@ const handler = async (req: Request): Promise<Response> => {
           .eq("id", pref.user_id)
           .single();
 
-        const userEmail = pref.email_customizado || profile?.email;
         const userName = profile?.nome || "Usuário";
+        const recipients: string[] = pref.email_customizado
+          ? pref.email_customizado.split(",").map((e: string) => e.trim()).filter(Boolean)
+          : profile?.email ? [profile.email] : [];
 
-        if (!userEmail) {
+        if (recipients.length === 0) {
           console.log(`Skipping user ${pref.user_id} - no email found`);
           results.push({ userId: pref.user_id, success: false, error: "No email found" });
           continue;
         }
 
-        console.log(`Processing management report for ${userName} (${userEmail})`);
+        console.log(`Processing management report for ${userName} (${recipients.join(", ")})`);
 
         // Calculate time ranges
         const now = new Date();
@@ -699,7 +701,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
           body: JSON.stringify({
             from: "So Garagens Hub <onboarding@resend.dev>",
-            to: [userEmail],
+            to: recipients,
             subject: `Relatorio de Gestao - So Garagens Hub`,
             html: emailHtml,
           }),
@@ -707,7 +709,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!emailResponse.ok) {
           const errorData = await emailResponse.json();
-          console.error(`Error sending email to ${userEmail}:`, errorData);
+          console.error(`Error sending email to ${recipients.join(", ")}:`, errorData);
           results.push({ userId: pref.user_id, success: false, error: errorData.message || "Email send failed" });
           continue;
         }
@@ -718,7 +720,7 @@ const handler = async (req: Request): Promise<Response> => {
           .update({ relatorio_gestao_ultimo_envio: new Date().toISOString() })
           .eq("user_id", pref.user_id);
 
-        console.log(`✅ Management report sent to ${userEmail}`);
+        console.log(`✅ Management report sent to ${recipients.join(", ")}`);
         results.push({ userId: pref.user_id, success: true });
       } catch (userError: any) {
         console.error(`Error processing user ${pref.user_id}:`, userError);
