@@ -562,6 +562,7 @@ export default function PropostaDetailsDialog({
           </DialogHeader>
           <ProposalForm
             onSubmit={handleEdit}
+            isSubmitting={updateProposta.isPending}
             initialData={{
               id: proposta.id,
               cliente_id: proposta.cliente_id,
