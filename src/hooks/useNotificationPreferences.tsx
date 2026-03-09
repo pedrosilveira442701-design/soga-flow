@@ -78,18 +78,31 @@ export const useNotificationPreferences = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("notificacao_preferencias")
         .update(updates)
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select()
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error("Nenhuma preferência atualizada");
+      return data;
+    },
+    onMutate: async (updates) => {
+      await queryClient.cancelQueries({ queryKey: ["notificacao_preferencias"] });
+      const previous = queryClient.getQueryData(["notificacao_preferencias"]);
+      queryClient.setQueryData(["notificacao_preferencias"], (old: any) => old ? { ...old, ...updates } : old);
+      return { previous };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notificacao_preferencias"] });
       toast.success("Preferências atualizadas com sucesso");
     },
-    onError: () => {
+    onError: (_err, _updates, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["notificacao_preferencias"], context.previous);
+      }
       toast.error("Erro ao atualizar preferências");
     },
   });
