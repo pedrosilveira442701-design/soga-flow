@@ -104,7 +104,7 @@ function calcMedian(values: number[]): number {
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export default function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
+export default function ProposalForm({ onSubmit, initialData, isSubmitting }: ProposalFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   const [autoFilledFromLead, setAutoFilledFromLead] = useState(false);
   const [leadInfo, setLeadInfo] = useState<{ id: string; name: string } | null>(null);
