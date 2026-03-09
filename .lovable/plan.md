@@ -1,33 +1,57 @@
 
 
-# Corrigir Datas de Referência nas Metas
+# Corrigir Salvamento das Preferências de Notificação
 
 ## Problema
 
-Nas queries de cálculo de progresso das metas em `useMetas.tsx`, as propostas estão sendo filtradas por `created_at` (data de criação do registro) em vez de `data` (data de envio da proposta -- o campo de data de negócio). Isso faz com que uma meta com `periodo_inicio = 2026-01-01` e `periodo_fim = 2026-03-31` busque propostas pela data errada, gerando cálculos incorretos.
-
-Conforme a regra de negócio do projeto: **propostas usam `data` (data de envio)**, não `created_at`.
+O `updatePreferences` usa `.update().eq("user_id", ...)` sem verificar se linhas foram realmente atualizadas. Quando o Supabase retorna `{ data: null, error: null }` (0 linhas afetadas por timeout ou RLS), o sistema mostra "sucesso" sem ter salvo nada. Além disso, os switches não refletem visualmente a mudança até o refetch completar.
 
 ## Mudanças
 
-### Arquivo: `src/hooks/useMetas.tsx`
+### Arquivo: `src/hooks/useNotificationPreferences.tsx`
 
-Substituir `created_at` por `data` em **todas** as queries de propostas dentro de `calcularProgressoReal`:
+1. **Adicionar `.select().single()` após o `.update()`** para confirmar que a atualização realmente persistiu e detectar falhas silenciosas
+2. **Adicionar `{ count: 'exact' }` ou verificar `data` retornado** para garantir que pelo menos 1 linha foi afetada
+3. **Adicionar `onMutate` com optimistic update** no React Query para que os switches reflitam a mudança imediatamente, com rollback automático se falhar
 
-1. **Propostas (R$)** (linhas ~80-81): `.gte('created_at', ...)` / `.lte('created_at', ...)` → `.gte('data', ...)` / `.lte('data', ...)`
+Mudança principal no `mutationFn`:
 
-2. **Propostas (#)** (linhas ~94-95): mesma correção
+```typescript
+// De:
+const { error } = await supabase
+  .from("notificacao_preferencias")
+  .update(updates)
+  .eq("user_id", user.id);
+if (error) throw error;
 
-3. **Conversão (%)** (linhas ~107-108): mesma correção na query de propostas
+// Para:
+const { data, error } = await supabase
+  .from("notificacao_preferencias")
+  .update(updates)
+  .eq("user_id", user.id)
+  .select()
+  .single();
+if (error) throw error;
+if (!data) throw new Error("Nenhuma preferência atualizada");
+```
 
-4. **Novos Clientes (#)** (linhas ~140-141): clientes não têm campo de data de negócio, mantém `created_at` (exceção documentada)
+Adicionar optimistic update:
 
-Total: 3 queries corrigidas, 6 linhas alteradas (`gte` + `lte` em cada).
+```typescript
+onMutate: async (updates) => {
+  await queryClient.cancelQueries({ queryKey: ["notificacao_preferencias"] });
+  const previous = queryClient.getQueryData(["notificacao_preferencias"]);
+  queryClient.setQueryData(["notificacao_preferencias"], (old) => ({ ...old, ...updates }));
+  return { previous };
+},
+onError: (err, updates, context) => {
+  queryClient.setQueryData(["notificacao_preferencias"], context?.previous);
+  toast.error("Erro ao atualizar preferências");
+},
+```
 
-## O que NÃO muda
-
-- MetaCard e MetaDetailsDialog já exibem `periodo_inicio` e `periodo_fim` corretamente
-- Queries de contratos já usam `data_inicio` (correto)
-- Hooks de forecast e planejamento não são afetados (usam metas apenas para buscar `valor_alvo` e período)
-- Nenhuma alteração de banco de dados
+### Arquivo único alterado
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useNotificationPreferences.tsx` | `.select().single()` + optimistic updates + rollback |
 
