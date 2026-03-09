@@ -78,6 +78,7 @@ export default function Propostas() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const handleCreate = async (data: any) => {
+    if (createProposta.isPending) return;
     await createProposta.mutateAsync(data);
     setShowCreateDialog(false);
   };
@@ -768,7 +769,7 @@ export default function Propostas() {
           <DialogHeader>
             <DialogTitle>Nova Proposta</DialogTitle>
           </DialogHeader>
-          <ProposalForm onSubmit={handleCreate} />
+          <ProposalForm onSubmit={handleCreate} isSubmitting={createProposta.isPending} />
         </DialogContent>
       </Dialog>
 

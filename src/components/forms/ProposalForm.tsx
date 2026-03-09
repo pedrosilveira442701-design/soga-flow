@@ -93,6 +93,7 @@ type ProposalFormValues = z.infer<typeof proposalSchema>;
 interface ProposalFormProps {
   onSubmit: (data: ProposalFormValues) => void;
   initialData?: Partial<ProposalFormValues> & { id?: string };
+  isSubmitting?: boolean;
 }
 
 // Helper to calculate median
@@ -103,7 +104,7 @@ function calcMedian(values: number[]): number {
   return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-export default function ProposalForm({ onSubmit, initialData }: ProposalFormProps) {
+export default function ProposalForm({ onSubmit, initialData, isSubmitting }: ProposalFormProps) {
   const { clientes = [], isLoading: isLoadingClientes } = useClientes();
   const [autoFilledFromLead, setAutoFilledFromLead] = useState(false);
   const [leadInfo, setLeadInfo] = useState<{ id: string; name: string } | null>(null);
@@ -607,8 +608,8 @@ export default function ProposalForm({ onSubmit, initialData }: ProposalFormProp
               </Card>
             )}
 
-            <Button type="submit" className="w-full">
-              Salvar Proposta
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar Proposta"}
             </Button>
           </form>
         </Form>

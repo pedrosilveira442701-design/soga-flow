@@ -159,6 +159,7 @@ export default function PropostaDetailsDialog({
   };
 
   const handleEdit = async (data: any) => {
+    if (updateProposta.isPending) return;
     await updateProposta.mutateAsync({ ...data, id: proposta.id });
     setShowEditDialog(false);
   };
@@ -561,6 +562,7 @@ export default function PropostaDetailsDialog({
           </DialogHeader>
           <ProposalForm
             onSubmit={handleEdit}
+            isSubmitting={updateProposta.isPending}
             initialData={{
               id: proposta.id,
               cliente_id: proposta.cliente_id,
