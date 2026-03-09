@@ -93,6 +93,7 @@ type ProposalFormValues = z.infer<typeof proposalSchema>;
 interface ProposalFormProps {
   onSubmit: (data: ProposalFormValues) => void;
   initialData?: Partial<ProposalFormValues> & { id?: string };
+  isSubmitting?: boolean;
 }
 
 // Helper to calculate median
