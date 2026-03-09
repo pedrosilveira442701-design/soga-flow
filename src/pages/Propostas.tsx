@@ -769,7 +769,7 @@ export default function Propostas() {
           <DialogHeader>
             <DialogTitle>Nova Proposta</DialogTitle>
           </DialogHeader>
-          <ProposalForm onSubmit={handleCreate} />
+          <ProposalForm onSubmit={handleCreate} isSubmitting={createProposta.isPending} />
         </DialogContent>
       </Dialog>
 
