@@ -608,8 +608,8 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
               </Card>
             )}
 
-            <Button type="submit" className="w-full">
-              Salvar Proposta
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Salvando..." : "Salvar Proposta"}
             </Button>
           </form>
         </Form>
