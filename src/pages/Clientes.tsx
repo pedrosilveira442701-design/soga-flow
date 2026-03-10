@@ -182,42 +182,42 @@ export default function Clientes() {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4.5 w-4.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+      return <ArrowUpDown className="h-3.5 w-3.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowUp className="h-3.5 w-3.5 ml-1 inline text-primary" />
     ) : (
-      <ArrowDown className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowDown className="h-3.5 w-3.5 ml-1 inline text-primary" />
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <Users className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <Users className="page-icon" />
             Clientes
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-caption mt-1.5">
             Gerencie seus clientes e contatos
           </p>
         </div>
 
-        <Button onClick={() => setCreateDialogOpen(true)} className="h-11 px-5">
-          <UserPlus className="icon-md mr-2" />
+        <Button onClick={() => setCreateDialogOpen(true)} size="lg">
+          <UserPlus className="h-4 w-4" strokeWidth={1.75} />
           Novo Cliente
         </Button>
       </div>
 
       {/* Filters */}
-      <Card className="shadow-sm">
+      <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Filtros</CardTitle>
+              <Filter className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <CardTitle className="text-[15px]">Filtros</CardTitle>
               {(searchTerm || statusFilter !== "todos") && (
                 <Badge variant="secondary" className="ml-2">
                   {[searchTerm, statusFilter !== "todos"].filter(Boolean).length}
@@ -413,7 +413,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.contato ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <Mail className="h-4.5 w-4.5 text-muted-foreground" />
+                              <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                               {cliente.contato}
                             </div>
                           ) : (
@@ -423,7 +423,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.telefone ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <Phone className="h-4.5 w-4.5 text-muted-foreground" />
+                              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
                               {cliente.telefone}
                             </div>
                           ) : (
@@ -433,7 +433,7 @@ export default function Clientes() {
                         <TableCell>
                           {cliente.cidade || cliente.bairro ? (
                             <div className="flex items-center gap-2 text-sm">
-                              <MapPin className="h-4.5 w-4.5 text-muted-foreground" />
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                               {cliente.cidade && cliente.bairro
                                 ? `${cliente.cidade} - ${cliente.bairro}`
                                 : cliente.cidade || cliente.bairro}

@@ -57,15 +57,15 @@ export default function Obras() {
     : 0;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <Building2 className="page-icon" />
             Obras
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-caption mt-1.5">
             Gestão operacional e acompanhamento de execução
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Obras Ativas</CardTitle>
-            <Building2 className="icon-md text-muted-foreground" />
+            <Building2 className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -95,7 +95,7 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle2 className="icon-md text-muted-foreground" />
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -114,7 +114,7 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progresso Médio</CardTitle>
-            <TrendingUp className="icon-md text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -133,7 +133,7 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Obras</CardTitle>
-            <Clock className="icon-md text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
           </CardHeader>
           <CardContent>
             {isLoading ? (

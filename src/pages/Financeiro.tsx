@@ -60,7 +60,7 @@ export default function Financeiro() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
-      pago: { variant: "default", label: "Pago", className: "bg-green-600" },
+      pago: { variant: "success" as const, label: "Pago", className: "" },
       pendente: { variant: "secondary", label: "Pendente" },
       atrasado: { variant: "destructive", label: "Atrasado" },
       cancelado: { variant: "outline", label: "Cancelado" },
@@ -138,15 +138,15 @@ export default function Financeiro() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div>
-        <h1 className="text-h1 flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
+        <h1 className="text-h1 flex items-center gap-3">
+          <DollarSign className="page-icon" />
           Financeiro
         </h1>
-        <p className="text-muted-foreground">
-          Gestão completa de recebimentos e fluxo de caixa
+        <p className="text-caption mt-1.5">
+          Gestao completa de recebimentos e fluxo de caixa
         </p>
       </div>
 

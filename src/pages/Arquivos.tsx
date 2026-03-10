@@ -68,15 +68,15 @@ export default function Arquivos() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <FileText className="page-icon" />
             Arquivos
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-caption mt-1.5">
             Gerencie documentos e arquivos vinculados ao sistema
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function Arquivos() {
             )}
           </Button>
           <Button onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="icon-md mr-2" />
+            <Upload className="h-4 w-4 mr-2" strokeWidth={1.75} />
             Upload de Arquivos
           </Button>
         </div>

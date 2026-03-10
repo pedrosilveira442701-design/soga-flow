@@ -110,7 +110,7 @@ export function VisitaDetailsDialog({
               </div>
             </div>
             <Button variant="outline" size="sm" onClick={() => onEdit(visita)}>
-              <Edit className="h-4.5 w-4.5 mr-2" />
+              <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
           </div>
@@ -190,11 +190,11 @@ export function VisitaDetailsDialog({
                   </div>
                   <div className="flex gap-2 ml-8">
                     <Button variant="outline" size="sm" onClick={handleLigar}>
-                      <Phone className="h-4.5 w-4.5 mr-2" />
+                      <Phone className="h-4 w-4 mr-2" />
                       Ligar
                     </Button>
                     <Button variant="outline" size="sm" onClick={handleWhatsApp}>
-                      <MessageSquare className="h-4.5 w-4.5 mr-2" />
+                      <MessageSquare className="h-4 w-4 mr-2" />
                       WhatsApp
                     </Button>
                   </div>

@@ -316,12 +316,12 @@ export default function Propostas() {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4.5 w-4.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+      return <ArrowUpDown className="h-3.5 w-3.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowUp className="h-3.5 w-3.5 ml-1 inline text-primary" />
     ) : (
-      <ArrowDown className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowDown className="h-3.5 w-3.5 ml-1 inline text-primary" />
     );
   };
 
@@ -350,20 +350,20 @@ export default function Propostas() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <FileText className="page-icon" />
             Propostas
           </h1>
-          <p className="text-muted-foreground">
-            Gerencie propostas comerciais com análise de margem
+          <p className="text-caption mt-1.5">
+            Gerencie propostas comerciais com analise de margem
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="h-11 px-5">
-          <Plus className="icon-md mr-2" />
+        <Button onClick={() => setShowCreateDialog(true)} size="lg">
+          <Plus className="h-4 w-4" strokeWidth={1.75} />
           Nova Proposta
         </Button>
       </div>
@@ -372,12 +372,12 @@ export default function Propostas() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Propostas</CardTitle>
-            <FileText className="icon-md text-muted-foreground" />
+            <CardTitle className="text-[13px] font-medium text-muted-foreground">Total de Propostas</CardTitle>
+            <FileText className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{kpis.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-[22px] font-semibold tracking-tight">{kpis.total}</div>
+            <p className="text-[12px] text-muted-foreground mt-1">
               {formatCurrency(kpis.valorTotal)}
             </p>
           </CardContent>
@@ -385,12 +385,12 @@ export default function Propostas() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Perdidas</CardTitle>
-            <X className="icon-md text-destructive" />
+            <CardTitle className="text-[13px] font-medium text-muted-foreground">Perdidas</CardTitle>
+            <X className="h-[18px] w-[18px] text-destructive" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{kpis.perdidas}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-[22px] font-semibold tracking-tight text-destructive">{kpis.perdidas}</div>
+            <p className="text-[12px] text-muted-foreground mt-1">
               {formatCurrency(kpis.valorPerdidas)}
             </p>
           </CardContent>
@@ -398,25 +398,25 @@ export default function Propostas() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Repouso</CardTitle>
-            <Clock className="icon-md text-muted-foreground" />
+            <CardTitle className="text-[13px] font-medium text-muted-foreground">Repouso</CardTitle>
+            <Clock className="h-[18px] w-[18px] text-warning" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-muted-foreground">{kpis.repouso}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-[22px] font-semibold tracking-tight text-warning">{kpis.repouso}</div>
+            <p className="text-[12px] text-muted-foreground mt-1">
               {formatCurrency(kpis.valorRepouso)}
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-primary/5 border-primary/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Volume Real (Fechadas)</CardTitle>
-            <TrendingUp className="icon-md text-primary" />
+            <CardTitle className="text-[13px] font-medium text-muted-foreground">Volume Real (Fechadas)</CardTitle>
+            <TrendingUp className="h-[18px] w-[18px] text-primary" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{kpis.fechadas}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <div className="text-[22px] font-semibold tracking-tight text-primary">{kpis.fechadas}</div>
+            <p className="text-[12px] text-muted-foreground mt-1">
               {formatCurrency(kpis.valorReal)}
             </p>
           </CardContent>
@@ -424,14 +424,14 @@ export default function Propostas() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Margem Média</CardTitle>
-            <Percent className="icon-md text-muted-foreground" />
+            <CardTitle className="text-[13px] font-medium text-muted-foreground">Margem Media</CardTitle>
+            <Percent className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${getMargemColor(kpis.margemMedia)}`}>
+            <div className={`text-[22px] font-semibold tracking-tight ${getMargemColor(kpis.margemMedia)}`}>
               {kpis.margemMedia.toFixed(1)}%
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-[12px] text-muted-foreground mt-1">
               Taxa: {kpis.taxaFechamento.toFixed(1)}%
             </p>
           </CardContent>
@@ -439,11 +439,11 @@ export default function Propostas() {
       </div>
 
       {/* Filters */}
-      <Card className="shadow-sm">
+      <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-muted-foreground" />
+              <Filter className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
               <CardTitle className="text-lg">Filtros</CardTitle>
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">

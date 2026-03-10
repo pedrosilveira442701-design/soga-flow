@@ -66,14 +66,14 @@ export default function Analytics() {
       : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-h1 flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
+        <h1 className="text-h1 flex items-center gap-3">
+          <BarChart3 className="page-icon" />
           Analytics
         </h1>
-        <p className="text-muted-foreground mt-1">Análise detalhada de funil, pipeline e performance</p>
+        <p className="text-caption mt-1.5">Análise detalhada de funil, pipeline e performance</p>
       </div>
 
       {/* Filtros Globais */}

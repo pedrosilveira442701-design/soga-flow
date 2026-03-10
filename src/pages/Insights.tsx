@@ -98,11 +98,14 @@ export default function Insights() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">IA de Insights</h1>
-            <p className="text-muted-foreground">Pergunte sobre seus dados em linguagem natural</p>
+            <h1 className="text-h1 flex items-center gap-3">
+              <BarChart3 className="page-icon" />
+              IA de Insights
+            </h1>
+            <p className="text-caption mt-1.5">Pergunte sobre seus dados em linguagem natural</p>
           </div>
           <Button variant="outline" size="sm" onClick={clearCache}>
             <RefreshCw className="h-4 w-4 mr-2" />

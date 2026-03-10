@@ -26,45 +26,45 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center justify-center hover:opacity-80 transition-opacity">
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-7 w-7">
             <AvatarImage src="" />
-            <AvatarFallback className="text-xs bg-primary/10 text-primary">
+            <AvatarFallback className="text-[11px] font-medium bg-primary/10 text-primary">
               {getUserInitials(user?.email)}
             </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="bottom" align="end" className="w-56">
+      <DropdownMenuContent side="bottom" align="end" className="w-52">
         <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">Conta</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <div className="flex flex-col space-y-0.5">
+            <p className="text-[13px] font-medium">Conta</p>
+            <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/conta/perfil")}>
-          <User className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => navigate("/conta/perfil")} className="text-[13px]">
+          <User className="mr-2 h-4 w-4" strokeWidth={1.5} />
           Perfil
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/conta/preferencias")}>
-          <Settings className="mr-2 h-4 w-4" />
-          Preferências
+        <DropdownMenuItem onClick={() => navigate("/conta/preferencias")} className="text-[13px]">
+          <Settings className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          Preferencias
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/configuracoes/notificacoes")}>
-          <Bell className="mr-2 h-4 w-4" />
-          Notificações
+        <DropdownMenuItem onClick={() => navigate("/configuracoes/notificacoes")} className="text-[13px]">
+          <Bell className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          Notificacoes
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/conta/ajuda")}>
-          <HelpCircle className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => navigate("/conta/ajuda")} className="text-[13px]">
+          <HelpCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />
           Ajuda
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <div className="px-2 py-2">
+        <div className="px-2 py-1.5">
           <ThemeToggle />
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()} className="text-destructive">
-          <LogOut className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => signOut()} className="text-destructive text-[13px]">
+          <LogOut className="mr-2 h-4 w-4" strokeWidth={1.5} />
           Sair
         </DropdownMenuItem>
       </DropdownMenuContent>

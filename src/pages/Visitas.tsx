@@ -108,18 +108,18 @@ const [dialogOpen, setDialogOpen] = useState(false);
   const responsaveis = Array.from(new Set(visitas.map((v) => v.responsavel).filter(Boolean))) as string[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <Calendar className="page-icon" />
             Visitas
           </h1>
-          <p className="text-muted-foreground mt-1">Agende e gerencie visitas aos clientes</p>
+          <p className="text-caption mt-1.5">Agende e gerencie visitas aos clientes</p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="icon-md mr-2" />
+        <Button onClick={() => handleOpenDialog()} size="lg">
+          <Plus className="h-4 w-4" strokeWidth={1.75} />
           Nova Visita
         </Button>
       </div>

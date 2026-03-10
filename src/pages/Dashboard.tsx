@@ -30,19 +30,19 @@ export default function Dashboard() {
     icon: any;
   }> = [
     {
-      title: "Recebido no Período",
+      title: "Recebido no Periodo",
       value: kpis.recebidoMes.value,
       delta: kpis.recebidoMes.delta,
       icon: DollarSign,
     },
     {
-      title: "Total Recebido Líquido",
+      title: "Total Recebido Liquido",
       value: kpis.totalRecebidoLiquido.value,
       variant: "success" as const,
       icon: Wallet,
     },
     {
-      title: "Margem Líquida a Receber",
+      title: "Margem Liquida a Receber",
       value: kpis.totalAReceberLiquido.value,
       variant: "liquid" as const,
       icon: TrendingUp,
@@ -70,44 +70,38 @@ export default function Dashboard() {
     },
   ];
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pt-6">
       {/* Page Header */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-h1 flex items-center gap-2">
-              <LayoutDashboard className="h-5 w-5" />
+            <h1 className="text-h1 flex items-center gap-3">
+              <LayoutDashboard className="page-icon" />
               Dashboard
             </h1>
-            <p className="text-body text-muted-foreground mt-2">
-              Visão geral do seu negócio
+            <p className="text-caption mt-1.5">
+              Visao geral do seu negocio
             </p>
           </div>
-          
-          <div className="flex gap-4">
-            <Button 
-              variant="outline" 
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
               size="lg"
               asChild
-              className="group relative overflow-hidden border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all duration-300"
             >
-              <Link to="/leads?new=true" className="flex items-center gap-3 px-6">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                  <UserPlus className="h-5 w-5 text-primary" strokeWidth={1.5} />
-                </div>
-                <span className="font-medium">Adicionar Lead</span>
+              <Link to="/leads?new=true" className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" strokeWidth={1.75} />
+                <span>Adicionar Lead</span>
               </Link>
             </Button>
-            <Button 
+            <Button
               size="lg"
               asChild
-              className="group relative overflow-hidden shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
             >
-              <Link to="/propostas?new=true" className="flex items-center gap-3 px-6">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
-                  <FileText className="h-5 w-5" strokeWidth={1.5} />
-                </div>
-                <span className="font-medium">Nova Proposta</span>
+              <Link to="/propostas?new=true" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" strokeWidth={1.75} />
+                <span>Nova Proposta</span>
               </Link>
             </Button>
           </div>
@@ -125,10 +119,10 @@ export default function Dashboard() {
       {/* Row 1: KPI Cards - Indicadores Financeiros */}
       <div>
         <h2 className="text-h3 mb-4 text-muted-foreground">Indicadores Financeiros</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
             ))
           ) : (
             kpiDataFinanceiro.map((kpi) => (
@@ -148,10 +142,10 @@ export default function Dashboard() {
       {/* Row 2: KPI Cards - Indicadores Operacionais */}
       <div>
         <h2 className="text-h3 mb-4 text-muted-foreground">Indicadores Operacionais</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {isLoading ? (
             Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
             ))
           ) : (
             kpiDataOperacional.map((kpi) => (
@@ -171,10 +165,10 @@ export default function Dashboard() {
       {/* Row 3: Pipeline de Propostas */}
       <div>
         <h2 className="text-h2 mb-4">Pipeline de Propostas</h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
             ))
           ) : (
             <>
@@ -205,10 +199,10 @@ export default function Dashboard() {
             </>
           )}
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {isLoading ? (
             Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="h-32 w-full" />
+              <Skeleton key={i} className="h-[120px] w-full rounded-xl" />
             ))
           ) : (
             <>
@@ -233,20 +227,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Row 4: Gráfico de Distribuição */}
+      {/* Row 4: Grafico de Distribuicao */}
       {!isLoading && <PipelineDistributionChart data={kpis.pipelineDistribution} />}
 
       {/* Row 5: Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <TimelineChart data={timelineData} />
         <FunnelChart data={funnelData} />
       </div>
 
-      {/* Row 6: Tendência de Recebimentos */}
+      {/* Row 6: Tendencia de Recebimentos */}
       <RecebimentosTendenciaChart data={recebimentosTendencia} />
 
       {/* Row 7: Widgets de Vencimentos e Visitas */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <ProximosVencimentos />
         <ProximasVisitas />
       </div>

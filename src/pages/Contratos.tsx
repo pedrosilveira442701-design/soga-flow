@@ -234,12 +234,12 @@ export default function Contratos() {
 
   const SortIcon = ({ column }: { column: string }) => {
     if (sortColumn !== column) {
-      return <ArrowUpDown className="h-4.5 w-4.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
+      return <ArrowUpDown className="h-3.5 w-3.5 ml-1 inline opacity-0 group-hover:opacity-50 transition-opacity" />;
     }
     return sortDirection === "asc" ? (
-      <ArrowUp className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowUp className="h-3.5 w-3.5 ml-1 inline text-primary" />
     ) : (
-      <ArrowDown className="h-4.5 w-4.5 ml-1 inline text-primary" />
+      <ArrowDown className="h-3.5 w-3.5 ml-1 inline text-primary" />
     );
   };
 
@@ -269,23 +269,23 @@ export default function Contratos() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <FileText className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <FileText className="page-icon" />
             Contratos
           </h1>
-          <p className="text-muted-foreground">Gerencie contratos, acompanhe parcelas e recebimentos</p>
+          <p className="text-caption mt-1.5">Gerencie contratos, acompanhe parcelas e recebimentos</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline" className="h-11 px-5">
-            <FileText className="icon-md mr-2" />
+          <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline" size="lg">
+            <FileText className="h-4 w-4 mr-2" strokeWidth={1.75} />
             Criar de Proposta
           </Button>
-          <Button onClick={() => setShowCreateDialog(true)} className="h-11 px-5">
-            <Plus className="icon-md mr-2" />
+          <Button onClick={() => setShowCreateDialog(true)} size="lg">
+            <Plus className="h-4 w-4 mr-2" strokeWidth={1.75} />
             Novo Contrato
           </Button>
         </div>
@@ -296,7 +296,7 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Contratos Ativos</p>
-            <FileText className="icon-md text-primary" />
+            <FileText className="h-4 w-4 text-primary" strokeWidth={1.75} />
           </div>
           <p className="text-3xl font-bold">{kpis.contratosAtivos}</p>
           <p className="text-xs text-muted-foreground mt-2">{contratos.length} total</p>
@@ -305,7 +305,7 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Valor Total Ativo</p>
-            <DollarSign className="icon-md text-primary" />
+            <DollarSign className="h-4 w-4 text-primary" strokeWidth={1.75} />
           </div>
           <p className="text-3xl font-bold">{formatCurrency(kpis.valorTotalAtivo)}</p>
           <p className="text-xs text-muted-foreground mt-2">Em contratos ativos</p>
@@ -314,7 +314,7 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Já Recebido</p>
-            <TrendingUp className="icon-md text-green-600 dark:text-green-400" />
+            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" strokeWidth={1.75} />
           </div>
           <p className="text-3xl font-bold text-green-700 dark:text-green-400">{formatCurrency(kpis.valorPago)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pagas</p>
@@ -323,7 +323,7 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Restante a Receber</p>
-            <Calendar className="icon-md text-blue-600 dark:text-blue-400" />
+            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
           </div>
           <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(kpis.valorRestante)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pendentes</p>
@@ -332,7 +332,7 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Este Mês</p>
-            <AlertCircle className="icon-md text-amber-600 dark:text-amber-400" />
+            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" strokeWidth={1.75} />
           </div>
           <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(kpis.aReceberMes)}</p>
           <p className="text-xs text-green-600 dark:text-green-400 mt-2">
@@ -413,8 +413,8 @@ export default function Contratos() {
               : "Crie seu primeiro contrato para começar"}
           </p>
           {!searchTerm && statusFilter === "all" && formaPagamentoFilter === "all" && (
-            <Button onClick={() => setShowCreateDialog(true)} className="mt-4 h-11 px-5" variant="outline">
-              <Plus className="mr-3 h-5 w-5" />
+            <Button onClick={() => setShowCreateDialog(true)} className="mt-4" size="lg" variant="outline">
+              <Plus className="mr-3 h-4 w-4" strokeWidth={1.75} />
               Criar Primeiro Contrato
             </Button>
           )}

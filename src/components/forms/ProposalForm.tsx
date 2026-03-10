@@ -552,7 +552,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                           ) : (
                             <span>Selecione uma data</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4.5 w-4.5 opacity-50" />
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>

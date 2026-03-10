@@ -197,15 +197,15 @@ export default function Forecast() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <TrendingUp className="h-7 w-7 text-primary" />
+            <TrendingUp className="page-icon text-primary" />
             <h1 className="text-h2 text-foreground">Forecast de Faturamento</h1>
           </div>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-caption mt-1.5">
             Motor de decisão comercial baseado no pipeline real e histórico de 12 meses
           </p>
         </div>

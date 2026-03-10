@@ -461,22 +461,22 @@ export default function Leads() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-h1 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
+          <h1 className="text-h1 flex items-center gap-3">
+            <TrendingUp className="page-icon" />
             Leads
           </h1>
-          <p className="text-body text-muted-foreground">Gerencie o funil de vendas com drag & drop</p>
+          <p className="text-body text-caption mt-1.5">Gerencie o funil de vendas com drag & drop</p>
         </div>
 
         <div className="flex gap-2">
           <Dialog open={contatoDialogOpen} onOpenChange={setContatoDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 h-11 px-5">
-                <UserPlus className="h-5 w-5" />
+              <Button variant="outline" className="gap-2" size="lg">
+                <UserPlus className="h-4 w-4" strokeWidth={1.75} />
                 Registrar Contato
               </Button>
             </DialogTrigger>
@@ -495,8 +495,8 @@ export default function Leads() {
 
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 h-11 px-5">
-                <Plus className="h-5 w-5" />
+              <Button className="gap-2" size="lg">
+                <Plus className="h-4 w-4" strokeWidth={1.75} />
                 Novo Lead
               </Button>
             </DialogTrigger>

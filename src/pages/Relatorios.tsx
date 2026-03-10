@@ -65,16 +65,14 @@ export default function Relatorios() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-6 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-6 space-y-6 pt-6 max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileBarChart className="h-6 w-6 text-primary" />
-            </div>
+          <h1 className="text-h1 flex items-center gap-3">
+            <FileBarChart className="page-icon" />
             Centro de Relatórios
           </h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-caption mt-1.5">
             Exporte dados do sistema em Excel ou PDF com filtros personalizados
           </p>
         </div>

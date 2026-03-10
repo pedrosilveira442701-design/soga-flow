@@ -2,131 +2,135 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Apple-inspired Design System — Só Garagens
+   All colors in HSL. Clean, precise, generous whitespace. */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    --background: 220 14% 96%;
+    --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 220 20% 10%;
 
-    --primary: 210 92% 57%;
+    --primary: 211 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 92% 48%;
+    --primary-hover: 211 100% 43%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 220 20% 10%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 199 89% 48%;
+    --accent: 211 100% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 4 90% 58%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 63% 39%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 36 96% 57%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 92% 76%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 211 100% 68%;
 
-    --radius: 16px;
+    --radius: 14px;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 210 92% 57%;
+    --sidebar-foreground: 220 20% 10%;
+    --sidebar-primary: 211 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 210 92% 76%;
-    --sidebar-hover: 210 40% 98%;
-    --sidebar-active: 210 92% 57%;
+    --sidebar-accent: 220 14% 94%;
+    --sidebar-accent-foreground: 220 20% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 211 100% 68%;
+    --sidebar-hover: 220 14% 97%;
+    --sidebar-active: 211 100% 50%;
     --sidebar-active-foreground: 0 0% 100%;
 
-    --topbar-height: 64px;
+    --topbar-height: 56px;
 
-    /* Brand Colors - Jony Ive Design System */
-    --brand-primary: 210 92% 57%;        /* #2E90FA */
-    --brand-primary-hover: 210 92% 48%;  /* #1570EF */
-    --brand-ring: 210 92% 76%;           /* #84CAFF */
-    --brand-liquid: 145 63% 39%;         /* #12B76A */
-    --brand-cost: 220 9% 66%;            /* #9CA3AF */
-    --brand-danger: 4 90% 58%;           /* #F04438 */
-    --brand-warn: 36 96% 57%;            /* #FDB022 */
-    --brand-ink: 222 47% 11%;            /* #0F172A */
-    --brand-surface: 0 0% 100%;          /* #FFFFFF */
+    /* Brand Colors */
+    --brand-primary: 211 100% 50%;
+    --brand-primary-hover: 211 100% 43%;
+    --brand-ring: 211 100% 68%;
+    --brand-liquid: 142 71% 45%;
+    --brand-cost: 220 9% 66%;
+    --brand-danger: 0 72% 51%;
+    --brand-warn: 38 92% 50%;
+    --brand-ink: 220 20% 10%;
+    --brand-surface: 0 0% 100%;
 
-    /* Shadows - Jony Ive Design System */
-    --shadow-elev1: 0 1px 2px rgba(16,24,40,.06);
-    --shadow-elev2: 0 4px 10px rgba(16,24,40,.08);
+    /* Shadows — layered Apple style */
+    --shadow-elev1: 0 0.5px 1px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.04);
+    --shadow-elev2: 0 1px 2px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.06);
+    --shadow-elev3: 0 2px 4px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.08);
 
     /* Transitions */
-    --transition-smooth: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 220 20% 10%;
+    --foreground: 220 14% 96%;
 
-    --card: 222 47% 15%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 18% 14%;
+    --card-foreground: 220 14% 96%;
 
-    --popover: 222 47% 15%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 18% 14%;
+    --popover-foreground: 220 14% 96%;
 
-    --primary: 210 92% 57%;
+    --primary: 211 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 92% 52%;
+    --primary-hover: 211 100% 48%;
 
-    --secondary: 217 33% 18%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 16% 18%;
+    --secondary-foreground: 220 14% 96%;
 
-    --muted: 217 33% 18%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 16% 18%;
+    --muted-foreground: 220 12% 58%;
 
-    --accent: 199 89% 48%;
+    --accent: 211 100% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 4 90% 58%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 63% 39%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 36 96% 57%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 217 33% 18%;
-    --input: 217 33% 18%;
-    --ring: 210 92% 76%;
+    --border: 220 16% 20%;
+    --input: 220 16% 20%;
+    --ring: 211 100% 68%;
 
-    --sidebar-background: 222 47% 15%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 92% 57%;
+    --sidebar-background: 220 18% 14%;
+    --sidebar-foreground: 220 14% 96%;
+    --sidebar-primary: 211 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 18%;
-    --sidebar-ring: 210 92% 76%;
-    --sidebar-hover: 217 33% 20%;
-    --sidebar-active: 210 92% 57%;
+    --sidebar-accent: 220 16% 18%;
+    --sidebar-accent-foreground: 220 14% 96%;
+    --sidebar-border: 220 16% 20%;
+    --sidebar-ring: 211 100% 68%;
+    --sidebar-hover: 220 16% 22%;
+    --sidebar-active: 211 100% 55%;
     --sidebar-active-foreground: 0 0% 100%;
 
-    --brand-surface: 222 47% 15%;
+    --brand-surface: 220 18% 14%;
+
+    --shadow-elev1: 0 0.5px 1px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.10);
+    --shadow-elev2: 0 1px 2px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.14);
+    --shadow-elev3: 0 2px 4px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.18);
   }
 }
 
@@ -137,6 +141,9 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   /* Smooth transitions */
@@ -144,87 +151,101 @@ All colors MUST be HSL.
     transition: var(--transition-smooth);
   }
 
-  /* Focus ring - Jony Ive Design System */
+  /* Focus ring */
   *:focus-visible {
-    outline: 2px solid hsl(var(--brand-ring));
+    outline: 2.5px solid hsl(var(--ring) / 0.5);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
-  /* Custom scrollbar */
+  /* Minimal scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    @apply bg-foreground/10 rounded-full;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground;
+    @apply bg-foreground/20;
   }
 }
 
-/* Typography - Jony Ive Design System */
+/* Typography & Utilities */
 @layer components {
   .text-h1 {
-    @apply text-[32px] leading-[38px] font-semibold;
+    @apply text-[28px] leading-[34px] font-semibold tracking-[-0.02em];
   }
-  
+
   .text-h2 {
-    @apply text-[24px] leading-[30px] font-semibold;
+    @apply text-[22px] leading-[28px] font-semibold tracking-[-0.01em];
   }
-  
+
   .text-h3 {
-    @apply text-[20px] leading-[28px] font-medium;
+    @apply text-[17px] leading-[24px] font-semibold tracking-[-0.01em];
   }
-  
+
   .text-body {
-    @apply text-[16px] leading-[24px] font-normal;
+    @apply text-[15px] leading-[22px] font-normal;
   }
-  
+
   .text-caption {
-    @apply text-[13px] leading-[18px];
+    @apply text-[13px] leading-[18px] text-muted-foreground;
   }
-  
+
   .text-kpi {
-    @apply font-[600] tabular-nums;
+    @apply font-semibold tabular-nums tracking-[-0.02em];
   }
 
   /* Icon styling */
   .icon-thin {
     stroke-width: 1.5px;
-    color: hsl(var(--brand-ink) / 0.6);
+    color: hsl(var(--brand-ink) / 0.5);
   }
 
-  /* Standard icon sizes */
+  /* Standard icon sizes — use these for consistency */
+  .icon-xs {
+    @apply h-3.5 w-3.5;
+  }
+
   .icon-sm {
     @apply h-4 w-4;
   }
 
   .icon-md {
-    @apply h-5 w-5;
+    @apply h-[18px] w-[18px];
   }
 
   .icon-lg {
-    @apply h-6 w-6;
+    @apply h-5 w-5;
   }
 
   .icon-xl {
-    @apply h-8 w-8;
+    @apply h-6 w-6;
   }
 
-  /* Icon with better visibility for both themes */
+  .icon-2xl {
+    @apply h-7 w-7;
+  }
+
+  /* Icon variants */
   .icon-visible {
-    @apply text-foreground/80;
+    @apply text-foreground/70;
   }
 
   .icon-muted {
     @apply text-muted-foreground;
+  }
+
+  /* Page header icon — pairs with text-h1 */
+  .page-icon {
+    @apply h-7 w-7 text-primary;
+    stroke-width: 1.75px;
   }
 }

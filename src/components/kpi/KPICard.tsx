@@ -17,32 +17,27 @@ interface KPICardProps {
 export function KPICard({ title, value, subValue, delta, variant = "default", icon: Icon }: KPICardProps) {
   const variantStyles = {
     default: {
-      border: "",
-      iconBg: "bg-primary/10",
+      iconBg: "bg-primary/8",
       iconColor: "text-primary",
       valueColor: "text-foreground",
     },
     liquid: {
-      border: "border-brand-liquid/20",
-      iconBg: "bg-brand-liquid/10",
-      iconColor: "text-brand-liquid",
-      valueColor: "text-brand-liquid",
+      iconBg: "bg-success/8",
+      iconColor: "text-success",
+      valueColor: "text-success",
     },
     danger: {
-      border: "border-destructive/20",
-      iconBg: "bg-destructive/10",
+      iconBg: "bg-destructive/8",
       iconColor: "text-destructive",
       valueColor: "text-destructive",
     },
     success: {
-      border: "border-success/20",
-      iconBg: "bg-success/10",
+      iconBg: "bg-success/8",
       iconColor: "text-success",
       valueColor: "text-success",
     },
     repouso: {
-      border: "border-warning/20",
-      iconBg: "bg-warning/10",
+      iconBg: "bg-warning/8",
       iconColor: "text-warning",
       valueColor: "text-warning",
     },
@@ -51,38 +46,32 @@ export function KPICard({ title, value, subValue, delta, variant = "default", ic
   const styles = variantStyles[variant];
 
   return (
-    <Card
-      className={cn(
-        "p-6 transition-shadow duration-200 hover:shadow-elev2",
-        "shadow-elev1",
-        styles.border
-      )}
-    >
+    <Card className="p-5 hover:shadow-elev2 transition-shadow duration-300">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-caption text-muted-foreground mb-2">{title}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-caption mb-2 truncate">{title}</p>
           <p
             className={cn(
-              "text-3xl text-kpi mb-1",
+              "text-[26px] leading-[32px] text-kpi",
               styles.valueColor
             )}
           >
             {value}
           </p>
           {subValue && (
-            <p className="text-sm text-muted-foreground mb-1">{subValue}</p>
+            <p className="text-[13px] text-muted-foreground mt-1">{subValue}</p>
           )}
           {delta && (
             <div
               className={cn(
-                "flex items-center gap-1 text-[12px] font-medium",
+                "flex items-center gap-1 text-[12px] font-medium mt-1.5",
                 delta.direction === "up" ? "text-success" : "text-destructive"
               )}
             >
               {delta.direction === "up" ? (
-                <TrendingUp className="h-4 w-4" />
+                <TrendingUp className="h-3.5 w-3.5" strokeWidth={2} />
               ) : (
-                <TrendingDown className="h-4 w-4" />
+                <TrendingDown className="h-3.5 w-3.5" strokeWidth={2} />
               )}
               <span>{delta.value}</span>
             </div>
@@ -91,15 +80,16 @@ export function KPICard({ title, value, subValue, delta, variant = "default", ic
         {Icon && (
           <div
             className={cn(
-              "p-3 rounded-lg",
+              "p-2.5 rounded-xl shrink-0 ml-3",
               styles.iconBg
             )}
           >
             <Icon
               className={cn(
-                "h-6 w-6",
+                "h-5 w-5",
                 styles.iconColor
               )}
+              strokeWidth={1.75}
             />
           </div>
         )}
