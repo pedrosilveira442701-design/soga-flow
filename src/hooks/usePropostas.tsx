@@ -191,6 +191,7 @@ export const usePropostas = () => {
       const totals = calculateTotals(data.servicos, Number(data.desconto) || 0);
 
       // Criar proposta como V1
+      // proposal_group_id é setado automaticamente pelo trigger BEFORE INSERT
       const { data: proposta, error } = await supabase
         .from("propostas")
         .insert({
@@ -204,7 +205,6 @@ export const usePropostas = () => {
           data: data.data || new Date().toISOString().split('T')[0],
           status: data.status || 'aberta',
           observacao: data.observacao || null,
-          // Campos de versionamento - será preenchido pelo after insert
           version_number: 1,
           is_current: true,
         })
@@ -213,15 +213,7 @@ export const usePropostas = () => {
 
       if (error) throw error;
 
-      // Atualizar proposal_group_id para o próprio id (V1)
-      const { error: updateError } = await supabase
-        .from("propostas")
-        .update({ proposal_group_id: proposta.id })
-        .eq("id", proposta.id);
-
-      if (updateError) throw updateError;
-
-      return { ...proposta, proposal_group_id: proposta.id };
+      return proposta;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["propostas"] });

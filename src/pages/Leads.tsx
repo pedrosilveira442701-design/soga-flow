@@ -252,15 +252,16 @@ export default function Leads() {
       leadData.ultima_interacao = new Date().toISOString();
     }
 
+    // Fechar dialog imediatamente para UX responsiva
+    setCreateDialogOpen(false);
+    setContatoToConvert(null);
+
     const newLead = await createLead.mutateAsync(leadData);
 
     // Se veio de um contato, marcar como convertido
     if (contatoId && newLead) {
-      await convertToLead.mutateAsync({ contatoId, leadId: newLead.id });
+      convertToLead.mutate({ contatoId, leadId: newLead.id });
     }
-
-    setCreateDialogOpen(false);
-    setContatoToConvert(null);
   };
 
   const handleContatoSubmit = async (data: any) => {

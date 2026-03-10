@@ -77,10 +77,10 @@ export default function Propostas() {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const handleCreate = async (data: any) => {
+  const handleCreate = (data: any) => {
     if (createProposta.isPending) return;
-    await createProposta.mutateAsync(data);
     setShowCreateDialog(false);
+    createProposta.mutate(data);
   };
 
   const handleDelete = async (id: string) => {
