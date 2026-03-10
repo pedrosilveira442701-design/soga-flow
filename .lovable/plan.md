@@ -1,59 +1,58 @@
 
 
-# Cron Jobs Causando Lentidão no Supabase
+# Plano: Otimizar Lentidão ao Salvar Leads e Propostas
 
 ## Diagnóstico
 
-Encontrei **5 cron jobs ativos**, dos quais **3 rodam a cada minuto** e **2 chamam funções que nem existem**:
+Identifiquei 3 causas principais da lentidão ao salvar:
 
-| Job | Schedule | Função chamada | Status |
-|-----|----------|----------------|--------|
-| #1 | `*/5 * * * *` | `anotacoes-reminders-email` | **Fantasma** - função não existe |
-| #3 | `*/5 * * * *` | `notificacoes-email` | **Fantasma** - função não existe |
-| #9 | `* * * * *` | `send-daily-report` | OK, mas roda **a cada minuto** |
-| #10 | `* * * * *` | `send-management-report` | OK, mas roda **a cada minuto** |
-| #11 | `* * * * *` | `send-anotacao-reminders` | OK, mas roda **a cada minuto** |
+### 1. Propostas: Duas chamadas sequenciais ao banco
+O `createProposta` faz INSERT + UPDATE separados (para setar `proposal_group_id = id`). São 2 round-trips ao Supabase em série.
 
-**Impacto**: A cada minuto, 3 edge functions são invocadas + 2 chamadas falham para funções inexistentes. Isso gera **5 requests HTTP/minuto** (300/hora) contra o Supabase, sobrecarregando o banco com conexões `pg_net` e acumulando registros em `cron.job_run_details`. Os logs confirmam execuções simultâneas duplicadas do `send-management-report`.
+### 2. Trigger `auto_register_contato` sem índice
+Este trigger dispara em EVERY insert de leads e propostas. Ele faz `SELECT EXISTS(... FROM contatos WHERE user_id = X AND telefone = Y)` -- mas a tabela `contatos` não tem índice em `(user_id, telefone)`, apenas a PK.
 
-## Plano de Correção
+### 3. Cascata de invalidações no frontend
+Após salvar, `invalidateQueries` dispara refetch de múltiplas queries simultaneamente, causando percepção de lentidão na UI.
 
-### 1. Remover cron jobs fantasma (jobs #1 e #3)
-Chamam funções que não existem (`anotacoes-reminders-email` e `notificacoes-email`). Geram erros a cada 5 minutos.
+## Correções
 
+### A. Migração SQL: Índice na tabela contatos
+Criar índice composto para acelerar o trigger:
 ```sql
-SELECT cron.unschedule(1);
-SELECT cron.unschedule(3);
+CREATE INDEX idx_contatos_user_telefone ON contatos(user_id, telefone);
 ```
 
-### 2. Reduzir frequência dos cron jobs restantes
-Os relatórios diário e de gestão não precisam rodar a cada minuto. A cada 15 minutos é suficiente (a lógica interna já verifica o horário do usuário):
-
+### B. Propostas: Unificar insert + update em uma só chamada
+Usar uma function SQL `SECURITY DEFINER` que faz INSERT e já seta `proposal_group_id = id` no mesmo comando, eliminando o segundo round-trip:
 ```sql
-SELECT cron.unschedule(9);
-SELECT cron.unschedule(10);
-SELECT cron.unschedule(11);
-
--- Recriar com frequência adequada
-SELECT cron.schedule('send-daily-report', '*/15 * * * *', $$...$$);
-SELECT cron.schedule('send-management-report', '*/15 * * * *', $$...$$);
-SELECT cron.schedule('send-anotacao-reminders', '*/5 * * * *', $$...$$);
+CREATE FUNCTION create_proposta_v1(...) RETURNS propostas AS $$
+  INSERT INTO propostas (...) VALUES (...) RETURNING *;
+  UPDATE propostas SET proposal_group_id = id WHERE id = lastval();
+$$
 ```
+Alternativamente (mais simples): usar `DEFAULT gen_random_uuid()` para `proposal_group_id` com um trigger `BEFORE INSERT` que seta `proposal_group_id = NEW.id` automaticamente.
 
-### 3. Limpar histórico de execuções acumuladas
-A tabela `cron.job_run_details` acumula milhares de registros que também pesam:
+### C. Frontend: Feedback imediato com optimistic updates
+- No `usePropostas.tsx`, usar `onMutate` para fechar o dialog imediatamente e mostrar toast antes do refetch completar
+- No `useLeads.tsx`, mesma abordagem -- fechar dialog no `onMutate` ao invés de esperar `mutateAsync`
 
-```sql
-DELETE FROM cron.job_run_details WHERE end_time < now() - interval '7 days';
-```
-
-## Resumo do impacto
-
-- **Antes**: ~5 requests HTTP/minuto (300/hora), 2 falhando sempre
-- **Depois**: ~1 request a cada 5 min + 2 a cada 15 min (~16/hora)
-- Redução de **~95%** na carga de cron sobre o Supabase
+### D. Frontend: Trocar `mutateAsync` por `mutate` onde possível
+Nos handlers `handleCreate`, usar `mutate` (fire-and-forget) ao invés de `await mutateAsync`, permitindo que o dialog feche instantaneamente enquanto a operação continua em background.
 
 ## Arquivos alterados
 
-Nenhum arquivo de código precisa ser alterado. Todas as mudanças são via SQL no banco.
+| Arquivo | Mudança |
+|---------|---------|
+| **Migração SQL** | Índice `contatos(user_id, telefone)` + trigger `BEFORE INSERT` em propostas para setar `proposal_group_id` |
+| `src/hooks/usePropostas.tsx` | Remover segundo update no `createProposta`, usar `mutate` em vez de `await mutateAsync` |
+| `src/hooks/useLeads.tsx` | Nenhuma mudança estrutural necessária |
+| `src/pages/Propostas.tsx` | Trocar `await mutateAsync` por `mutate` + fechar dialog imediatamente |
+| `src/pages/Leads.tsx` | Trocar `await mutateAsync` por `mutate` + fechar dialog imediatamente |
+
+## Impacto esperado
+
+- Propostas: de 2 round-trips para 1 (50% mais rápido)
+- Dialog fecha instantaneamente ao clicar "Salvar" (percepção de velocidade)
+- Trigger `auto_register_contato` mais eficiente com índice
 
