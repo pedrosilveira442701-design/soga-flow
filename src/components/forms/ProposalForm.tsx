@@ -288,10 +288,10 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">Serviços</h3>
+                  <h3 className="text-base font-semibold">Serviços</h3>
                   {leadInfo && (
                     <Badge variant="secondary" className="gap-1">
-                      <Info className="w-4 h-4" />
+                      <Info className="h-[18px] w-[18px]" />
                       Preenchido do {leadInfo.name}
                     </Badge>
                   )}
@@ -302,7 +302,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                   size="sm"
                   onClick={() => append({ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 })}
                 >
-                  <Plus className="w-5 h-5 mr-2" />
+                  <Plus className="h-[18px] w-[18px] mr-2" />
                   Adicionar Serviço
                 </Button>
               </div>
@@ -316,7 +316,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                       <h4 className="font-medium">Serviço {index + 1}</h4>
                       {fields.length > 1 && (
                         <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
-                          <X className="w-4 h-4" />
+                          <X className="h-[18px] w-[18px]" />
                         </Button>
                       )}
                     </div>
@@ -453,36 +453,16 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
               })}
             </div>
 
-            {/* Campo de Desconto */}
-            <FormField
-              control={form.control}
-              name="desconto"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Desconto (R$)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Desconto + Pagamento */}
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              <h4 className="text-sm font-semibold">Desconto e Pagamento</h4>
 
-            {/* Campos de Forma de Pagamento */}
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="valor_entrada"
+                name="desconto"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valor da Entrada (R$)</FormLabel>
+                    <FormLabel>Desconto (R$)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -498,26 +478,49 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="numero_parcelas"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número de Parcelas</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="1"
-                        min="0"
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="valor_entrada"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor da Entrada (R$)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="numero_parcelas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Parcelas</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="1"
+                          min="0"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <FormField
@@ -552,7 +555,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                           ) : (
                             <span>Selecione uma data</span>
                           )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="ml-auto h-[18px] w-[18px] opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card } from "@/components/ui/card";
 import { CalendarIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -409,7 +410,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
             />
 
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <h4 className="font-medium text-sm">Entrada</h4>
+              <h4 className="text-sm font-semibold">Entrada</h4>
 
               <FormField
                 control={form.control}
@@ -460,7 +461,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <h4 className="font-medium text-sm">Parcelas do Restante</h4>
+              <h4 className="text-sm font-semibold">Parcelas do Restante</h4>
 
               <FormField
                 control={form.control}
@@ -546,8 +547,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
           {/* Coluna Direita - Resumo e Parcelas */}
           <div className="space-y-4">
-            <div className="rounded-lg border bg-card p-4">
-              <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
+            <Card className="p-4">
+              <h3 className="text-base font-semibold mb-4">Resumo do Contrato</h3>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between pb-2 border-b">
@@ -581,13 +582,13 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
                   <AlertDescription>Entrada não pode ser maior ou igual ao valor total</AlertDescription>
                 </Alert>
               )}
-            </div>
+            </Card>
           </div>
         </div>
 
         {/* Seção de Parcelas - Full Width */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Cronograma de Parcelas</h3>
+          <h3 className="text-base font-semibold">Cronograma de Parcelas</h3>
           
           <ParcelasFormEditor
             valorTotal={valorWatch}

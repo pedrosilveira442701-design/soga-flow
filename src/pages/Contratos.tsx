@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -198,9 +199,9 @@ export default function Contratos() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "ativo":
-        return <Badge className="bg-blue-500">Ativo</Badge>;
+        return <Badge variant="info">Ativo</Badge>;
       case "concluido":
-        return <Badge className="bg-green-500">Concluído</Badge>;
+        return <Badge variant="success">Concluído</Badge>;
       case "cancelado":
         return <Badge variant="destructive">Cancelado</Badge>;
       default:
@@ -294,7 +295,7 @@ export default function Contratos() {
 
       {/* KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-lg border bg-card p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Contratos Ativos</p>
             <div className="p-2 rounded-xl bg-primary/10">
@@ -303,9 +304,9 @@ export default function Contratos() {
           </div>
           <p className="text-3xl font-bold">{kpis.contratosAtivos}</p>
           <p className="text-xs text-muted-foreground mt-2">{contratos.length} total</p>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border bg-card p-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Valor Total Ativo</p>
             <div className="p-2 rounded-xl bg-primary/10">
@@ -314,9 +315,9 @@ export default function Contratos() {
           </div>
           <p className="text-3xl font-bold">{formatCurrency(kpis.valorTotalAtivo)}</p>
           <p className="text-xs text-muted-foreground mt-2">Em contratos ativos</p>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Já Recebido</p>
             <div className="p-2 rounded-xl bg-green-600/10">
@@ -325,9 +326,9 @@ export default function Contratos() {
           </div>
           <p className="text-3xl font-bold text-green-700 dark:text-green-400">{formatCurrency(kpis.valorPago)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pagas</p>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Restante a Receber</p>
             <div className="p-2 rounded-xl bg-blue-600/10">
@@ -336,9 +337,9 @@ export default function Contratos() {
           </div>
           <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(kpis.valorRestante)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pendentes</p>
-        </div>
+        </Card>
 
-        <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
+        <Card className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Este Mês</p>
             <div className="p-2 rounded-xl bg-amber-600/10">
@@ -349,7 +350,7 @@ export default function Contratos() {
           <p className="text-xs text-green-600 dark:text-green-400 mt-2">
             ↑ {formatCurrency(kpis.recebidoMes)} recebido
           </p>
-        </div>
+        </Card>
       </div>
 
       {/* Filtros */}
@@ -431,7 +432,7 @@ export default function Contratos() {
           />
         )
       ) : (
-        <div className="rounded-lg border">
+        <Card>
           <Table>
             <TableHeader>
               <TableRow>
@@ -601,7 +602,7 @@ export default function Contratos() {
               })}
             </TableBody>
           </Table>
-        </div>
+        </Card>
       )}
 
       {/* Dialogs */}
