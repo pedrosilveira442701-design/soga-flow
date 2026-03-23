@@ -244,10 +244,10 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Coluna Esquerda - Dados do Contrato */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {mode === "fromProposta" && (
               <FormField
                 control={form.control}
