@@ -68,6 +68,7 @@ export function DashboardFilters({
   const handleApply = () => {
     if (fromDate && toDate && onCustomDateRangeChange) {
       onCustomDateRangeChange({ from: fromDate, to: toDate });
+      onPeriodChange("custom");
       setIsOpen(false);
     }
   };
