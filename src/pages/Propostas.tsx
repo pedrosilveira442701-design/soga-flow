@@ -59,6 +59,7 @@ import {
   ArrowDown,
   Clock,
 } from "lucide-react";
+import { EmptyState } from "@/components/states/EmptyState";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Proposta } from "@/hooks/usePropostas";
@@ -572,7 +573,27 @@ export default function Propostas() {
         </CardContent>
       </Card>
 
+      {/* Empty state (outside table for better styling) */}
+      {sortedPropostas.length === 0 && (
+        hasActiveFilters ? (
+          <EmptyState
+            icon={FileText}
+            title="Nenhuma proposta encontrada"
+            description="Nenhuma proposta corresponde aos filtros selecionados. Tente ajustar os critérios."
+            action={{ label: "Limpar filtros", onClick: clearFilters }}
+          />
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title="Nenhuma proposta ainda"
+            description="Crie a primeira proposta comercial com análise de margem e acompanhe o desempenho."
+            action={{ label: "Nova Proposta", onClick: () => setShowCreateDialog(true) }}
+          />
+        )
+      )}
+
       {/* Table */}
+      {sortedPropostas.length > 0 && (
       <Card>
         <Table>
           <TableHeader>
@@ -608,28 +629,7 @@ export default function Propostas() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedPropostas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center py-12">
-                  <div className="flex flex-col items-center gap-2">
-                    <FileText className="h-12 w-12 text-muted-foreground" />
-                    <p className="text-lg font-medium">Nenhuma proposta encontrada</p>
-                    <p className="text-sm text-muted-foreground">
-                      {hasActiveFilters
-                        ? "Tente ajustar os filtros"
-                        : "Crie sua primeira proposta"}
-                    </p>
-                    {!hasActiveFilters && (
-                      <Button onClick={() => setShowCreateDialog(true)} className="mt-2 h-11 px-5">
-                        <Plus className="h-5 w-5 mr-3" />
-                        Criar Primeira Proposta
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              sortedPropostas.map((proposta) => {
+            {sortedPropostas.map((proposta) => {
                 // Calcular valores da mesma forma que no resumo financeiro
                 const servicos = proposta.servicos && Array.isArray(proposta.servicos) && proposta.servicos.length > 0
                   ? proposta.servicos
@@ -757,11 +757,11 @@ export default function Propostas() {
                 ) : null;
 
                 return [...serviceRows, totalRow];
-              })
-            )}
+              })}
           </TableBody>
         </Table>
       </Card>
+      )}
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>

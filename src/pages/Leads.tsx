@@ -1,4 +1,5 @@
-import { Plus, UserPlus, TrendingUp } from "lucide-react";
+import { Plus, UserPlus, TrendingUp, Target } from "lucide-react";
+import { EmptyState } from "@/components/states/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -532,35 +533,55 @@ export default function Leads() {
         filteredCount={filteredAndSortedLeads.length}
       />
 
-      {/* Kanban Controls */}
-      <KanbanControls
-        zoom={zoom}
-        onZoomChange={setZoom}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onNavigateLeft={handleNavigateLeft}
-        onNavigateRight={handleNavigateRight}
-        canNavigateLeft={activeStageIndex > 0}
-        canNavigateRight={activeStageIndex < STAGES.length - 1}
-        stages={stagesWithCounts}
-        activeStageIndex={activeStageIndex}
-        onStageClick={handleStageClick}
-      />
+      {filteredAndSortedLeads.length === 0 && naoConvertidos.length === 0 ? (
+        filters.searchQuery ? (
+          <EmptyState
+            icon={Target}
+            title="Nenhum lead encontrado"
+            description={`Nenhum lead corresponde à busca "${filters.searchQuery}". Tente um termo diferente.`}
+            action={{ label: "Limpar busca", onClick: () => setFilters((f) => ({ ...f, searchQuery: "" })) }}
+          />
+        ) : (
+          <EmptyState
+            icon={Target}
+            title="Nenhum lead ainda"
+            description="Registre o primeiro contato ou crie um lead diretamente para começar o funil de vendas."
+            action={{ label: "Criar Primeiro Lead", onClick: () => setCreateDialogOpen(true) }}
+          />
+        )
+      ) : (
+        <>
+          {/* Kanban Controls */}
+          <KanbanControls
+            zoom={zoom}
+            onZoomChange={setZoom}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            onNavigateLeft={handleNavigateLeft}
+            onNavigateRight={handleNavigateRight}
+            canNavigateLeft={activeStageIndex > 0}
+            canNavigateRight={activeStageIndex < STAGES.length - 1}
+            stages={stagesWithCounts}
+            activeStageIndex={activeStageIndex}
+            onStageClick={handleStageClick}
+          />
 
-      {/* Kanban Board */}
-      <KanbanBoard
-        leads={filteredAndSortedLeads}
-        onStageChange={handleStageChange}
-        onCardClick={handleCardClick}
-        contatosNaoConvertidos={naoConvertidos}
-        onConvertContato={handleConvertContatoToLead}
-        onEditContato={handleEditContato}
-        onDeleteContato={handleDeleteContato}
-        onLossReasonRequired={handleLossReasonRequired}
-        zoom={zoom}
-        viewMode={viewMode}
-        onNavigateToColumn={(index) => setActiveStageIndex(index)}
-      />
+          {/* Kanban Board */}
+          <KanbanBoard
+            leads={filteredAndSortedLeads}
+            onStageChange={handleStageChange}
+            onCardClick={handleCardClick}
+            contatosNaoConvertidos={naoConvertidos}
+            onConvertContato={handleConvertContatoToLead}
+            onEditContato={handleEditContato}
+            onDeleteContato={handleDeleteContato}
+            onLossReasonRequired={handleLossReasonRequired}
+            zoom={zoom}
+            viewMode={viewMode}
+            onNavigateToColumn={(index) => setActiveStageIndex(index)}
+          />
+        </>
+      )}
 
       {/* Edit Contato Dialog */}
       <Dialog open={editContatoDialogOpen} onOpenChange={setEditContatoDialogOpen}>

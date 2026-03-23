@@ -23,6 +23,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import { EmptyState } from "@/components/states/EmptyState";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Contrato } from "@/hooks/useContratos";
@@ -414,21 +415,21 @@ export default function Contratos() {
 
       {/* Tabela */}
       {filteredContratos.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">Nenhum contrato encontrado</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {searchTerm || statusFilter !== "all" || formaPagamentoFilter !== "all"
-              ? "Tente ajustar os filtros"
-              : "Crie seu primeiro contrato para começar"}
-          </p>
-          {!searchTerm && statusFilter === "all" && formaPagamentoFilter === "all" && (
-            <Button onClick={() => setShowCreateDialog(true)} className="mt-4" size="lg" variant="outline">
-              <Plus className="mr-3 h-4 w-4" strokeWidth={1.75} />
-              Criar Primeiro Contrato
-            </Button>
-          )}
-        </div>
+        searchTerm || statusFilter !== "all" || formaPagamentoFilter !== "all" ? (
+          <EmptyState
+            icon={FileText}
+            title="Nenhum contrato encontrado"
+            description="Nenhum contrato corresponde aos filtros selecionados. Tente ajustar os critérios de busca."
+            action={{ label: "Limpar filtros", onClick: clearFilters }}
+          />
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title="Nenhum contrato ainda"
+            description="Crie o primeiro contrato diretamente ou a partir de uma proposta fechada."
+            action={{ label: "Novo Contrato", onClick: () => setShowCreateDialog(true) }}
+          />
+        )
       ) : (
         <div className="rounded-lg border">
           <Table>
