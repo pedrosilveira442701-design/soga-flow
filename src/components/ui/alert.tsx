@@ -4,12 +4,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground",
-        destructive: "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        default: "bg-background text-foreground border-border [&>svg]:text-foreground",
+        destructive: "border-destructive/30 bg-destructive/5 text-destructive [&>svg]:text-destructive",
+        success: "border-success/30 bg-success/5 text-success [&>svg]:text-success",
+        warning: "border-warning/30 bg-warning/5 text-warning [&>svg]:text-warning",
+        info: "border-primary/30 bg-primary/5 text-primary [&>svg]:text-primary",
       },
     },
     defaultVariants: {
@@ -17,6 +20,8 @@ const alertVariants = cva(
     },
   },
 );
+
+export type AlertVariant = "default" | "destructive" | "success" | "warning" | "info";
 
 const Alert = React.forwardRef<
   HTMLDivElement,
