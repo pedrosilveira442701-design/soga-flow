@@ -476,7 +476,7 @@ export default function Leads() {
           <Dialog open={contatoDialogOpen} onOpenChange={setContatoDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2" size="lg">
-                <UserPlus className="h-4 w-4" strokeWidth={1.75} />
+                <UserPlus className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 Registrar Contato
               </Button>
             </DialogTrigger>
@@ -496,7 +496,7 @@ export default function Leads() {
           <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2" size="lg">
-                <Plus className="h-4 w-4" strokeWidth={1.75} />
+                <Plus className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 Novo Lead
               </Button>
             </DialogTrigger>

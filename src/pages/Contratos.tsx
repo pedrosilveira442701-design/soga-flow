@@ -281,11 +281,11 @@ export default function Contratos() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowCreateFromPropostaDialog(true)} variant="outline" size="lg">
-            <FileText className="h-4 w-4 mr-2" strokeWidth={1.75} />
+            <FileText className="h-[18px] w-[18px] mr-2" strokeWidth={1.75} />
             Criar de Proposta
           </Button>
           <Button onClick={() => setShowCreateDialog(true)} size="lg">
-            <Plus className="h-4 w-4 mr-2" strokeWidth={1.75} />
+            <Plus className="h-[18px] w-[18px] mr-2" strokeWidth={1.75} />
             Novo Contrato
           </Button>
         </div>
@@ -398,7 +398,7 @@ export default function Contratos() {
             <Badge key={filter.key} variant="secondary" className="gap-1">
               {filter.label}
               <X
-                className="h-4 w-4 cursor-pointer"
+                className="h-[18px] w-[18px] cursor-pointer"
                 onClick={() => {
                   if (filter.key === "status") setStatusFilter("all");
                   if (filter.key === "forma") setFormaPagamentoFilter("all");

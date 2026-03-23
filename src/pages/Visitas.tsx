@@ -119,7 +119,7 @@ const [dialogOpen, setDialogOpen] = useState(false);
           <p className="text-caption mt-1.5">Agende e gerencie visitas aos clientes</p>
         </div>
         <Button onClick={() => handleOpenDialog()} size="lg">
-          <Plus className="h-4 w-4" strokeWidth={1.75} />
+          <Plus className="h-[18px] w-[18px]" strokeWidth={1.75} />
           Nova Visita
         </Button>
       </div>

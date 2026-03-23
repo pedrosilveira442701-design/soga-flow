@@ -276,7 +276,7 @@ export function ReportBuilder({
           {/* Date Range */}
           {scope === "periodo" && (
             <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg ml-7 border border-border/50">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-[18px] w-[18px] text-muted-foreground" />
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 h-9">
@@ -364,10 +364,10 @@ export function ReportBuilder({
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" className="w-full justify-between h-9">
                 <span className="flex items-center gap-2 text-sm">
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-[18px] w-[18px]" />
                   {filtersOpen ? "Ocultar filtros avançados" : "Mostrar filtros avançados"}
                 </span>
-                {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {filtersOpen ? <ChevronUp className="h-[18px] w-[18px]" /> : <ChevronDown className="h-[18px] w-[18px]" />}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-4">
@@ -500,7 +500,7 @@ export function ReportBuilder({
                       {useAllColumns ? "Todas" : `${selectedColumns.length}/${columns.length}`}
                     </Badge>
                   </span>
-                  {columnsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {columnsOpen ? <ChevronUp className="h-[18px] w-[18px]" /> : <ChevronDown className="h-[18px] w-[18px]" />}
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-4">
@@ -582,16 +582,16 @@ export function ReportBuilder({
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-2">
           <Button onClick={handlePreview} disabled={isLoading} size="lg" className="gap-2 flex-1 md:flex-none">
-            <Eye className="h-4 w-4" />
+            <Eye className="h-[18px] w-[18px]" />
             {isLoading ? "Carregando..." : "Visualizar Prévia"}
           </Button>
           <div className="flex gap-2 flex-1 md:flex-none">
             <Button onClick={handleExportExcel} disabled={isExporting} variant="outline" size="lg" className="gap-2 flex-1">
-              <FileSpreadsheet className="h-4 w-4" />
+              <FileSpreadsheet className="h-[18px] w-[18px]" />
               {isExporting ? "..." : "Excel"}
             </Button>
             <Button onClick={handleExportPDF} disabled={isExporting} variant="outline" size="lg" className="gap-2 flex-1">
-              <FileText className="h-4 w-4" />
+              <FileText className="h-[18px] w-[18px]" />
               {isExporting ? "..." : "PDF"}
             </Button>
           </div>

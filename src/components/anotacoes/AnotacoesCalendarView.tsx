@@ -83,10 +83,10 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
             Hoje
           </Button>
           <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-[18px] w-[18px]" />
           </Button>
           <Button variant="outline" size="icon" onClick={handleNextMonth}>
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-[18px] w-[18px]" />
           </Button>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
                       } hover:shadow-sm transition-shadow`}
                     >
                       <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4 flex-shrink-0" />
+                        <Clock className="h-[18px] w-[18px] flex-shrink-0" />
                         <span className="truncate">
                           {format(new Date(anotacao.reminder_datetime!), "HH:mm")} {anotacao.title}
                         </span>

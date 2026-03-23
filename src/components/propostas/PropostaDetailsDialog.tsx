@@ -257,31 +257,31 @@ export default function PropostaDetailsDialog({
                     <DropdownMenuContent align="end" className="bg-popover z-50">
                       {!isReadOnly(proposta.status) && (
                         <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                          <Edit className="h-4 w-4 mr-2" />
+                          <Edit className="h-[18px] w-[18px] mr-2" />
                           Editar
                         </DropdownMenuItem>
                       )}
                       {canCreateVersion && (
                         <DropdownMenuItem onClick={() => setShowChangeReasonDialog(true)}>
-                          <GitBranch className="h-4 w-4 mr-2" />
+                          <GitBranch className="h-[18px] w-[18px] mr-2" />
                           Criar Nova Versão (V{(proposta.version_number || 1) + 1})
                         </DropdownMenuItem>
                       )}
                       {proposta.status === "aberta" && (
                         <>
                           <DropdownMenuItem onClick={() => handleStatusChange("fechada")}>
-                            <TrendingUp className="h-4 w-4 mr-2" />
+                            <TrendingUp className="h-[18px] w-[18px] mr-2" />
                             Marcar como Fechada
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleStatusChange("perdida")}>
-                            <TrendingDown className="h-4 w-4 mr-2" />
+                            <TrendingDown className="h-[18px] w-[18px] mr-2" />
                             Marcar como Perdida
                           </DropdownMenuItem>
                         </>
                       )}
                       {proposta.status !== "aberta" && !isReadOnly(proposta.status) && (
                         <DropdownMenuItem onClick={() => handleStatusChange("aberta")}>
-                          <FileText className="h-4 w-4 mr-2" />
+                          <FileText className="h-[18px] w-[18px] mr-2" />
                           Reabrir Proposta
                         </DropdownMenuItem>
                       )}
@@ -289,7 +289,7 @@ export default function PropostaDetailsDialog({
                         onClick={() => setShowDeleteDialog(true)}
                         className="text-destructive"
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-[18px] w-[18px] mr-2" />
                         Excluir
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -433,7 +433,7 @@ export default function PropostaDetailsDialog({
                       </div>
                     </div>
                     <Button onClick={handleViewContrato} variant="outline">
-                      <ExternalLink className="h-4 w-4 mr-2" />
+                      <ExternalLink className="h-[18px] w-[18px] mr-2" />
                       Ver Contrato
                     </Button>
                   </div>
@@ -449,7 +449,7 @@ export default function PropostaDetailsDialog({
                       </div>
                     </div>
                     <Button onClick={() => setShowContratoDialog(true)}>
-                      <FileCheck className="h-4 w-4 mr-2" />
+                      <FileCheck className="h-[18px] w-[18px] mr-2" />
                       Gerar Contrato
                     </Button>
                   </div>
@@ -511,7 +511,7 @@ export default function PropostaDetailsDialog({
                   </div>
                   {margem < 20 && (
                     <div className="text-xs text-destructive mt-2 flex items-center gap-1">
-                      <TrendingDown className="h-4 w-4" />
+                      <TrendingDown className="h-[18px] w-[18px]" />
                       Atenção: margem abaixo do recomendado
                     </div>
                   )}

@@ -148,7 +148,7 @@ export function ForecastSection() {
       {/* Aviso de amostra pequena */}
       {kpis.sampleWarning && (
         <Alert className="border-yellow-500/50 bg-yellow-500/10">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertTriangle className="h-[18px] w-[18px] text-yellow-600" />
           <AlertDescription className="text-sm">
             <strong>Amostra pequena:</strong> apenas {kpis.totalFechadas} contratos fechados nos últimos 12 meses.
             A previsibilidade pode ficar distorcida.

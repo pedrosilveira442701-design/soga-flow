@@ -127,7 +127,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
           </h3>
           {recebiveis.length > 0 && (
             <Button variant="outline" size="sm" onClick={() => setShowAdd(true)}>
-              <Plus className="h-4 w-4 mr-1" />
+              <Plus className="h-[18px] w-[18px] mr-1" />
               Adicionar
             </Button>
           )}
@@ -154,7 +154,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
 
       {margemTotal <= 0 && (
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-[18px] w-[18px]" />
           <AlertDescription>
             Margem não definida neste contrato. Defina uma margem percentual para usar os recebimentos.
           </AlertDescription>
@@ -189,7 +189,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
               </Button>
               <span className="text-muted-foreground">ou</span>
               <Button variant="outline" size="sm" onClick={() => setShowAdd(true)}>
-                <Plus className="h-4 w-4 mr-1" />
+                <Plus className="h-[18px] w-[18px] mr-1" />
                 Manual
               </Button>
             </div>
@@ -350,7 +350,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
 
       {hasDiff && (
         <Alert className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertTriangle className="h-[18px] w-[18px] text-yellow-600" />
           <AlertDescription className="text-yellow-800 dark:text-yellow-200">
             A soma dos recebimentos ({formatCurrency(totalRecebiveis)}) difere do lucro total (
             {formatCurrency(margemTotal)}). Diferença: {formatCurrency(diff)}.
@@ -416,17 +416,17 @@ function RecebimentoCard({
             {r.status === "pendente" && (
               <>
                 <Button size="sm" variant="ghost" className="flex-1" onClick={() => onStartEdit(r)}>
-                  <Edit className="h-4 w-4 mr-1" /> Editar
+                  <Edit className="h-[18px] w-[18px] mr-1" /> Editar
                 </Button>
                 <Button size="sm" variant="ghost" className="flex-1 text-green-600" onClick={onMarcarRecebido}>
-                  <CheckCircle className="h-4 w-4 mr-1" /> Recebido
+                  <CheckCircle className="h-[18px] w-[18px] mr-1" /> Recebido
                 </Button>
               </>
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button size="sm" variant="ghost" className="text-destructive">
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-[18px] w-[18px]" />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>

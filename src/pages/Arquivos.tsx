@@ -94,7 +94,7 @@ export default function Arquivos() {
             )}
           </Button>
           <Button onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" strokeWidth={1.75} />
+            <Upload className="h-[18px] w-[18px] mr-2" strokeWidth={1.75} />
             Upload de Arquivos
           </Button>
         </div>

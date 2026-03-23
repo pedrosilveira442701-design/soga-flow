@@ -127,7 +127,7 @@ export function GeographicChart({ data, isLoading }: GeographicChartProps) {
           {/* Tabela de Taxa de Ganho */}
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-[18px] w-[18px]" />
               Taxa de Ganho por Cidade
             </h4>
             <div className="border rounded-lg overflow-hidden">

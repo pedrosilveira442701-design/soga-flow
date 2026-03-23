@@ -97,10 +97,10 @@ export function DashboardFilters({
           className="justify-between min-w-[200px] font-normal"
         >
           <span className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <CalendarIcon className="h-[18px] w-[18px] text-muted-foreground" />
             {getDisplayText()}
           </span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="h-[18px] w-[18px] text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

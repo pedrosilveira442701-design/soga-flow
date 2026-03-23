@@ -169,7 +169,7 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
         <div className="flex items-center justify-between p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
             <div className={cn("p-2 rounded-full", contatosIndicator.bgColor)}>
-              <contatosIndicator.icon className={cn("h-4 w-4", contatosIndicator.color)} />
+              <contatosIndicator.icon className={cn("h-[18px] w-[18px]", contatosIndicator.color)} />
             </div>
             <div>
               <p className="text-body font-medium">Contatos → Leads</p>
@@ -185,7 +185,7 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
         <div className="flex items-center justify-between p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
             <div className={cn("p-2 rounded-full", leadsIndicator.bgColor)}>
-              <leadsIndicator.icon className={cn("h-4 w-4", leadsIndicator.color)} />
+              <leadsIndicator.icon className={cn("h-[18px] w-[18px]", leadsIndicator.color)} />
             </div>
             <div>
               <p className="text-body font-medium">Leads → Propostas</p>
@@ -201,7 +201,7 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
         <div className="flex items-center justify-between p-4 rounded-lg border border-border">
           <div className="flex items-center gap-3">
             <div className={cn("p-2 rounded-full", propostasIndicator.bgColor)}>
-              <propostasIndicator.icon className={cn("h-4 w-4", propostasIndicator.color)} />
+              <propostasIndicator.icon className={cn("h-[18px] w-[18px]", propostasIndicator.color)} />
             </div>
             <div>
               <p className="text-body font-medium">Propostas → Contratos</p>

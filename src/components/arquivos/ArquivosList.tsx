@@ -81,7 +81,7 @@ export default function ArquivosList({
             size="sm"
             onClick={() => setUploadDialogOpen(true)}
           >
-            <Upload className="h-4 w-4 mr-2" />
+            <Upload className="h-[18px] w-[18px] mr-2" />
             Upload
           </Button>
         )}
@@ -120,21 +120,21 @@ export default function ArquivosList({
                     size="icon"
                     onClick={() => handlePreview(arquivo)}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-[18px] w-[18px]" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDownload(arquivo)}
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-[18px] w-[18px]" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDeleteClick(arquivo.id)}
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-[18px] w-[18px] text-destructive" />
                   </Button>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default function ArquivosList({
               size="sm"
               onClick={() => setUploadDialogOpen(true)}
             >
-              <Upload className="h-4 w-4 mr-2" />
+              <Upload className="h-[18px] w-[18px] mr-2" />
               Fazer Upload
             </Button>
           )}

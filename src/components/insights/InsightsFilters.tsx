@@ -67,7 +67,7 @@ export function InsightsFilters({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-[18px] w-[18px]" />
                 {filters.startDate
                   ? format(new Date(filters.startDate), "dd/MM/yyyy", { locale: ptBR })
                   : "Data inicial"}
@@ -91,7 +91,7 @@ export function InsightsFilters({
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
-                <Calendar className="h-4 w-4" />
+                <Calendar className="h-[18px] w-[18px]" />
                 {filters.endDate
                   ? format(new Date(filters.endDate), "dd/MM/yyyy", { locale: ptBR })
                   : "Data final"}
@@ -118,7 +118,7 @@ export function InsightsFilters({
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
-            <Filter className="h-4 w-4" />
+            <Filter className="h-[18px] w-[18px]" />
             Filtros
             {activeFiltersCount > 0 && (
               <Badge variant="secondary" className="ml-1">
@@ -213,7 +213,7 @@ export function InsightsFilters({
       {/* Limpar filtros */}
       {activeFiltersCount > 0 && (
         <Button variant="ghost" size="sm" onClick={handleClearFilters} className="gap-1">
-          <X className="h-4 w-4" />
+          <X className="h-[18px] w-[18px]" />
           Limpar
         </Button>
       )}

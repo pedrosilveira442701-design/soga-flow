@@ -247,7 +247,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
                   className="absolute top-2 right-2 h-6 w-6"
                   onClick={() => removeProduto(index)}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-[18px] w-[18px]" />
                 </Button>
               )}
 

@@ -146,7 +146,7 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
                   {TIPOS_META.map((tipo) => (
                     <SelectItem key={tipo.value} value={tipo.value}>
                       <div className="flex items-center gap-2">
-                        <tipo.icon className="h-4 w-4" />
+                        <tipo.icon className="h-[18px] w-[18px]" />
                         <div>
                           <div className="font-medium">{tipo.label}</div>
                           <div className="text-xs text-muted-foreground">{tipo.description}</div>

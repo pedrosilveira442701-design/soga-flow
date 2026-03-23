@@ -376,7 +376,7 @@ export function ParcelasFormEditor({
       {/* Alertas */}
       {datasRepetidas.length > 0 && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-[18px] w-[18px]" />
           <AlertDescription>
             Existem datas de vencimento duplicadas: {datasRepetidas.map(d => format(new Date(d + "T00:00:00"), "dd/MM/yyyy")).join(", ")}
           </AlertDescription>
@@ -385,7 +385,7 @@ export function ParcelasFormEditor({
 
       {totais.temErro && (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-[18px] w-[18px]" />
           <AlertDescription>
             A soma das parcelas ({formatCurrency(totais.somaParcelas)}) não corresponde ao saldo ({formatCurrency(saldo)}). 
             Diferença: {formatCurrency(totais.diferenca)}
@@ -395,7 +395,7 @@ export function ParcelasFormEditor({
 
       {errors.map((err, idx) => (
         <Alert key={idx} variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <AlertCircle className="h-[18px] w-[18px]" />
           <AlertDescription>{err}</AlertDescription>
         </Alert>
       ))}

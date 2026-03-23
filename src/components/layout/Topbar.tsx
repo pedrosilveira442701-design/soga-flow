@@ -155,7 +155,7 @@ export function Topbar() {
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                  <item.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2 : 1.75} />
                   <span className="hidden lg:inline">{item.title}</span>
                   {isActive && (
                     <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
@@ -195,15 +195,20 @@ export function Topbar() {
                           <NavLink
                             to={item.url}
                             className={cn(
-                              "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-colors",
+                              "flex items-center gap-3 px-2.5 py-2 rounded-lg text-[13px] transition-colors",
                               "hover:bg-foreground/[0.04]",
-                              isActive && "bg-primary/8 text-primary font-medium"
+                              isActive ? "bg-primary/8 text-primary font-medium" : "text-foreground/70"
                             )}
                           >
-                            <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                            <div className={cn(
+                              "p-1.5 rounded-md shrink-0 transition-colors",
+                              isActive ? "bg-primary/10" : "bg-foreground/[0.06]"
+                            )}>
+                              <item.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2 : 1.75} />
+                            </div>
                             <span className="flex-1">{item.title}</span>
                             {badge && (
-                              <Badge variant={badge.variant} className="h-[18px] min-w-[18px] px-1 text-[10px]">
+                              <Badge variant={badge.variant} className="h-5 min-w-[20px] px-1.5 text-[11px]">
                                 {badge.count}
                               </Badge>
                             )}
@@ -230,7 +235,7 @@ export function Topbar() {
                     isActive ? "text-primary" : "text-muted-foreground"
                   )}
                 >
-                  <item.icon className="h-4 w-4" strokeWidth={isActive ? 2 : 1.5} />
+                  <item.icon className="h-[18px] w-[18px]" strokeWidth={isActive ? 2 : 1.75} />
                   <span className="hidden lg:inline">{item.title}</span>
                   {isActive && (
                     <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />

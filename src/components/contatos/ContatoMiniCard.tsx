@@ -32,12 +32,12 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
         <div className="flex-1 space-y-1.5 min-w-0">
           {contato.nome && (
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <User className="h-[18px] w-[18px] text-amber-600 dark:text-amber-400 shrink-0" />
               <span className="text-sm font-semibold text-foreground truncate">{contato.nome}</span>
             </div>
           )}
           <div className="flex items-center gap-2 flex-wrap">
-            <Phone className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Phone className="h-[18px] w-[18px] text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium text-foreground truncate">{contato.telefone}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

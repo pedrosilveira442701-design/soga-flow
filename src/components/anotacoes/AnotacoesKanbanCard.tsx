@@ -72,14 +72,14 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
 
           {/* Type */}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Tag className="h-4 w-4" />
+            <Tag className="h-[18px] w-[18px]" />
             {typeLabels[anotacao.type]}
           </div>
 
           {/* Client */}
           {(anotacao.client_name || (anotacao as any).clientes?.nome) && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <User className="h-4 w-4" />
+              <User className="h-[18px] w-[18px]" />
               <span className="truncate">{anotacao.client_name || (anotacao as any).clientes?.nome}</span>
             </div>
           )}
@@ -87,7 +87,7 @@ export function AnotacoesKanbanCard({ anotacao, onEdit }: AnotacoesKanbanCardPro
           {/* Reminder */}
           {anotacao.reminder_datetime && (
             <div className="flex items-center gap-1 text-xs text-primary">
-              <Clock className="h-4 w-4" />
+              <Clock className="h-[18px] w-[18px]" />
               {format(new Date(anotacao.reminder_datetime), "dd/MM HH:mm", { locale: ptBR })}
             </div>
           )}

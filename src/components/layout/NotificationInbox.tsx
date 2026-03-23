@@ -22,7 +22,7 @@ export const NotificationInbox = () => {
           onClick={() => markAllAsRead()}
           className="h-8 text-xs"
         >
-          <CheckCheck className="h-4 w-4 mr-1" />
+          <CheckCheck className="h-[18px] w-[18px] mr-1" />
           Marcar todas como lidas
         </Button>
       </div>

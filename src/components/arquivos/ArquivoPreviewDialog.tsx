@@ -117,7 +117,7 @@ export function ArquivoPreviewDialog({
                 size="icon"
                 onClick={() => onOpenChange(false)}
               >
-                <X className="h-4 w-4" />
+                <X className="h-[18px] w-[18px]" />
               </Button>
             </DialogTitle>
           </DialogHeader>
@@ -148,7 +148,7 @@ export function ArquivoPreviewDialog({
                       className="mt-4"
                       onClick={() => downloadArquivo(arquivo)}
                     >
-                      <Download className="h-4 w-4 mr-2" />
+                      <Download className="h-[18px] w-[18px] mr-2" />
                       Fazer Download
                     </Button>
                   </div>
@@ -186,7 +186,7 @@ export function ArquivoPreviewDialog({
                         size="icon"
                         onClick={() => setRenameMode(true)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-[18px] w-[18px]" />
                       </Button>
                     </div>
                     {arquivo.tipo && (
@@ -241,7 +241,7 @@ export function ArquivoPreviewDialog({
                   className="w-full"
                   onClick={() => downloadArquivo(arquivo)}
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-[18px] w-[18px] mr-2" />
                   Download
                 </Button>
                 <Button
@@ -249,7 +249,7 @@ export function ArquivoPreviewDialog({
                   className="w-full"
                   onClick={() => setDeleteDialogOpen(true)}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-[18px] w-[18px] mr-2" />
                   Deletar
                 </Button>
               </div>

@@ -93,14 +93,14 @@ export function DownloadHistoryList() {
                 <TableRow key={download.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <FileText className="h-[18px] w-[18px] text-muted-foreground" />
                       <span className="font-medium">{download.nome_arquivo}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     {download.cliente_nome ? (
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-[18px] w-[18px] text-muted-foreground" />
                         <span>{download.cliente_nome}</span>
                       </div>
                     ) : (

@@ -247,19 +247,19 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                 <div className="space-y-3">
                   {cliente.contato && (
                     <div className="flex items-center gap-3 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
+                      <Mail className="h-[18px] w-[18px]" />
                       <span className="text-sm">{cliente.contato}</span>
                     </div>
                   )}
                   {cliente.telefone && (
                     <div className="flex items-center gap-3 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
+                      <Phone className="h-[18px] w-[18px]" />
                       <span className="text-sm">{cliente.telefone}</span>
                     </div>
                   )}
                   {(cliente.endereco || cliente.cidade || cliente.bairro) && (
                     <div className="flex items-start gap-3 text-muted-foreground">
-                      <MapPin className="h-4 w-4 mt-0.5" />
+                      <MapPin className="h-[18px] w-[18px] mt-0.5" />
                       <div className="text-sm">
                         {cliente.endereco && <div>{cliente.endereco}</div>}
                         {(cliente.bairro || cliente.cidade) && (
@@ -273,7 +273,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                   )}
                   {cliente.cpf_cnpj && (
                     <div className="flex items-center gap-3 text-muted-foreground">
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-[18px] w-[18px]" />
                       <span className="text-sm">CPF/CNPJ: {cliente.cpf_cnpj}</span>
                     </div>
                   )}
@@ -381,7 +381,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <div className="grid gap-4 md:grid-cols-4">
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <FileText className="h-[18px] w-[18px] text-muted-foreground" />
                           <p className="text-sm font-medium text-muted-foreground">Total Propostas</p>
                         </div>
                         <p className="text-2xl font-bold">{estatisticasPropostas.total}</p>
@@ -392,7 +392,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-[18px] w-[18px] text-green-600" />
                           <p className="text-sm font-medium text-muted-foreground">Fechadas</p>
                         </div>
                         <p className="text-2xl font-bold text-green-600">{estatisticasPropostas.fechadas}</p>
@@ -403,7 +403,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-blue-600" />
+                          <FileText className="h-[18px] w-[18px] text-blue-600" />
                           <p className="text-sm font-medium text-muted-foreground">Abertas</p>
                         </div>
                         <p className="text-2xl font-bold text-blue-600">{estatisticasPropostas.abertas}</p>
@@ -414,7 +414,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <TrendingUp className="h-[18px] w-[18px] text-muted-foreground" />
                           <p className="text-sm font-medium text-muted-foreground">Taxa Conversão</p>
                         </div>
                         <p className="text-2xl font-bold">{taxaConversao.toFixed(1)}%</p>
@@ -468,7 +468,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                                       onClick={() => handleViewProposta(proposta.id)}
                                       title="Ver detalhes"
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-[18px] w-[18px]" />
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -537,7 +537,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <div className="grid gap-4 md:grid-cols-4">
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <FileText className="h-[18px] w-[18px] text-muted-foreground" />
                           <p className="text-sm font-medium text-muted-foreground">Total Contratos</p>
                         </div>
                         <p className="text-2xl font-bold">{resumoFinanceiro.contratos}</p>
@@ -545,7 +545,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <DollarSign className="h-[18px] w-[18px] text-muted-foreground" />
                           <p className="text-sm font-medium text-muted-foreground">Total Contratado</p>
                         </div>
                         <p className="text-2xl font-bold">{formatCurrency(resumoFinanceiro.totalContratado)}</p>
@@ -553,7 +553,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-[18px] w-[18px] text-green-600" />
                           <p className="text-sm font-medium text-muted-foreground">Total Pago</p>
                         </div>
                         <p className="text-2xl font-bold text-green-600">
@@ -563,7 +563,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                       <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
                         <div className="flex items-center gap-2 mb-2">
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                          <TrendingUp className="h-[18px] w-[18px] text-blue-600" />
                           <p className="text-sm font-medium text-muted-foreground">A Receber</p>
                         </div>
                         <p className="text-2xl font-bold text-blue-600">
@@ -621,7 +621,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                                       onClick={() => handleViewContrato(contrato.id)}
                                       title="Ver detalhes"
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-[18px] w-[18px]" />
                                     </Button>
                                   </TableCell>
                                 </TableRow>

@@ -20,7 +20,7 @@ export function ErrorMessage({ message, action }: ErrorMessageProps) {
       className="animate-shake"
     >
       <Alert variant="destructive" className="border-brand-danger">
-        <AlertCircle className="h-4 w-4" />
+        <AlertCircle className="h-[18px] w-[18px]" />
         <AlertDescription className="flex items-center justify-between">
           <span>{message}</span>
           {action && (

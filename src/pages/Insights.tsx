@@ -108,7 +108,7 @@ export default function Insights() {
             <p className="text-caption mt-1.5">Pergunte sobre seus dados em linguagem natural</p>
           </div>
           <Button variant="outline" size="sm" onClick={clearCache}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-[18px] w-[18px] mr-2" />
             Limpar Cache
           </Button>
         </div>
@@ -153,7 +153,7 @@ export default function Insights() {
                       </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setShowSQL(!showSQL)}>
-                      <Code className="h-4 w-4" />
+                      <Code className="h-[18px] w-[18px]" />
                     </Button>
                   </CardHeader>
                   <CardContent className="space-y-4">

@@ -153,7 +153,7 @@ export default function Metas() {
               Recalcular Todas
             </Button>
             <Button onClick={() => setShowCreateDialog(true)}>
-              <Plus className="h-4 w-4" strokeWidth={1.75} />
+              <Plus className="h-[18px] w-[18px]" strokeWidth={1.75} />
               Nova Meta
             </Button>
           </div>

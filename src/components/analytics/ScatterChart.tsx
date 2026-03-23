@@ -221,7 +221,7 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
         <CardTitle className="flex items-center justify-between">
           <span>Preço x Margem por Tipo de Serviço</span>
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Filter className="h-[18px] w-[18px] text-muted-foreground" />
             <span className="text-sm font-normal text-muted-foreground">
               Tamanho = área (m²)
             </span>

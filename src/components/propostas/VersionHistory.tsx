@@ -131,7 +131,7 @@ export default function VersionHistory({
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <GitBranch className="h-4 w-4 text-primary" />
+                          <GitBranch className="h-[18px] w-[18px] text-primary" />
                           <span className="font-semibold">V{version.version_number}</span>
                           {getStatusBadge(version.status, isCurrent)}
                         </div>

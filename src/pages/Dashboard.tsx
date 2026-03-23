@@ -91,7 +91,7 @@ export default function Dashboard() {
               asChild
             >
               <Link to="/leads?new=true" className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" strokeWidth={1.75} />
+                <UserPlus className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 <span>Adicionar Lead</span>
               </Link>
             </Button>
@@ -100,7 +100,7 @@ export default function Dashboard() {
               asChild
             >
               <Link to="/propostas?new=true" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" strokeWidth={1.75} />
+                <FileText className="h-[18px] w-[18px]" strokeWidth={1.75} />
                 <span>Nova Proposta</span>
               </Link>
             </Button>

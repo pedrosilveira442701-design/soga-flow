@@ -97,7 +97,7 @@ export function LossReasonsChart({ data, isLoading }: LossReasonsChartProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
             <div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <TrendingDown className="h-4 w-4" />
+                <TrendingDown className="h-[18px] w-[18px]" />
                 Total Perdidas (12m)
               </p>
               <p className="text-lg font-bold">{totalPerdidas}</p>
@@ -197,7 +197,7 @@ export function LossReasonsChart({ data, isLoading }: LossReasonsChartProps) {
           {tendencia === "crescente" && Math.abs(mudancaTaxa) > 10 && (
             <div className="p-4 bg-destructive/10 rounded-lg border-l-4 border-destructive">
               <p className="text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
+                <AlertTriangle className="h-[18px] w-[18px] text-destructive" />
                 <strong>Atenção:</strong> A taxa de perda aumentou {Math.abs(mudancaTaxa).toFixed(1)}%
                 nos últimos 6 meses. Recomenda-se análise detalhada dos motivos e ações corretivas.
               </p>

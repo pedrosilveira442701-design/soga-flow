@@ -196,7 +196,7 @@ export function QuickReports({ onRunReport }: QuickReportsProps) {
                       : "bg-primary/10 text-primary"
                   }
                 `}>
-                  <report.icon className="h-4 w-4" />
+                  <report.icon className="h-[18px] w-[18px]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-sm truncate group-hover:text-primary transition-colors">

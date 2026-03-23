@@ -96,7 +96,7 @@ export function CohortChart({ data, isLoading }: CohortChartProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
             <div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Users className="h-4 w-4" />
+                <Users className="h-[18px] w-[18px]" />
                 Total de Leads (12m)
               </p>
               <p className="text-lg font-bold">{totalLeads}</p>
@@ -106,7 +106,7 @@ export function CohortChart({ data, isLoading }: CohortChartProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-4 w-4" />
+                <TrendingUp className="h-[18px] w-[18px]" />
                 Taxa Geral de Conversão
               </p>
               <p className="text-lg font-bold">{taxaGeralConversao.toFixed(1)}%</p>
@@ -116,7 +116,7 @@ export function CohortChart({ data, isLoading }: CohortChartProps) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-[18px] w-[18px]" />
                 Tempo Médio de Conversão
               </p>
               <p className="text-lg font-bold">

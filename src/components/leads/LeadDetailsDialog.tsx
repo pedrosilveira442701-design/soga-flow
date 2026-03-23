@@ -165,7 +165,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
-                        <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                        <MessageSquare className="h-[18px] w-[18px] text-destructive mt-0.5 shrink-0" />
                         <div className="space-y-1">
                           <p className="text-caption font-medium text-destructive">Motivo da Perda</p>
                           <p className="text-caption text-destructive/80">{lead.motivo_perda}</p>
@@ -298,7 +298,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               {lead.responsavel && (
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-caption text-muted-foreground">
-                    <User className="h-4 w-4" />
+                    <User className="h-[18px] w-[18px]" />
                     <span>Responsável</span>
                   </div>
                   <p className="text-body font-medium">{lead.responsavel}</p>
@@ -407,7 +407,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                       onClick={() => setShowTimelineForm(true)}
                       className="gap-2 mt-4"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-[18px] w-[18px]" />
                       Adicionar Primeira Interação
                     </Button>
                   )}

@@ -179,7 +179,7 @@ export function InconsistenciasReport() {
                     <TableHead>Cliente</TableHead>
                     <TableHead>Lead (Estágio)</TableHead>
                     <TableHead className="text-center">
-                      <ArrowRight className="h-4 w-4 mx-auto" />
+                      <ArrowRight className="h-[18px] w-[18px] mx-auto" />
                     </TableHead>
                     <TableHead>Proposta (Status)</TableHead>
                     <TableHead>Status Esperado</TableHead>
@@ -196,7 +196,7 @@ export function InconsistenciasReport() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <ArrowRight className="h-4 w-4 mx-auto text-muted-foreground" />
+                        <ArrowRight className="h-[18px] w-[18px] mx-auto text-muted-foreground" />
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">

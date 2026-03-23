@@ -206,7 +206,7 @@ export default function Clientes() {
         </div>
 
         <Button onClick={() => setCreateDialogOpen(true)} size="lg">
-          <UserPlus className="h-4 w-4" strokeWidth={1.75} />
+          <UserPlus className="h-[18px] w-[18px]" strokeWidth={1.75} />
           Novo Cliente
         </Button>
       </div>
@@ -216,7 +216,7 @@ export default function Clientes() {
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <Filter className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
               <CardTitle className="text-[15px]">Filtros</CardTitle>
               {(searchTerm || statusFilter !== "todos") && (
                 <Badge variant="secondary" className="ml-2">
@@ -251,7 +251,7 @@ export default function Clientes() {
             {/* Busca - 3 colunas */}
             <div className="md:col-span-3">
               <Label className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Search className="h-4 w-4" />
+                <Search className="h-[18px] w-[18px]" />
                 Buscar Cliente
               </Label>
               <Input
@@ -275,7 +275,7 @@ export default function Clientes() {
                 <SelectContent>
                   <SelectItem value="todos">
                     <span className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
+                      <Users className="h-[18px] w-[18px]" />
                       Todos
                     </span>
                   </SelectItem>
@@ -301,7 +301,7 @@ export default function Clientes() {
             <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t">
               {searchTerm && (
                 <Badge variant="secondary" className="gap-1 pr-1">
-                  <Search className="h-4 w-4" />
+                  <Search className="h-[18px] w-[18px]" />
                   {searchTerm}
                   <Button
                     variant="ghost"
@@ -310,7 +310,7 @@ export default function Clientes() {
                     onClick={() => setSearchTerm("")}
                     aria-label="Remover filtro de busca"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px]" />
                   </Button>
                 </Badge>
               )}
@@ -324,7 +324,7 @@ export default function Clientes() {
                     onClick={() => setStatusFilter("todos")}
                     aria-label="Remover filtro de status"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px]" />
                   </Button>
                 </Badge>
               )}

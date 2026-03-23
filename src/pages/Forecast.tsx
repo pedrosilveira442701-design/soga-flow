@@ -231,7 +231,7 @@ export default function Forecast() {
       {/* Aviso amostra pequena */}
       {bs?.amostraPequena && (
         <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-[18px] w-[18px]" />
           <AlertDescription>
             Amostra pequena: apenas {bs.numContratos12m} contratos em 12 meses. Previsões podem estar distorcidas.
           </AlertDescription>
@@ -241,7 +241,7 @@ export default function Forecast() {
       {/* Seleção mês foco */}
       {!isLoading && fm.length > 0 && (
         <div className="flex items-center gap-3">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Calendar className="h-[18px] w-[18px] text-muted-foreground" />
           <span className="text-sm text-muted-foreground">Mês foco:</span>
 
           <ToggleGroup
@@ -267,25 +267,25 @@ export default function Forecast() {
       {!isLoading && mesFocoData && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
+            icon={<TrendingUp className="h-[18px] w-[18px]" />}
             label="Receita Projetada"
             value={fmtBRL(mesFocoData.forecastTotal)}
             sub={mesFocoData.mes}
           />
           <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
+            icon={<DollarSign className="h-[18px] w-[18px]" />}
             label="Receita Real"
             value={mesFocoData.receitaReal > 0 ? fmtBRL(mesFocoData.receitaReal) : "—"}
             sub={mesFocoData.receitaReal > 0 ? `Fechado em ${mesFocoData.mes}` : "Sem fechamentos"}
           />
           <KPICard
-            icon={<Percent className="h-4 w-4" />}
+            icon={<Percent className="h-[18px] w-[18px]" />}
             label="Margem Real"
             value={mesFocoData.margemReal !== null ? `${mesFocoData.margemReal.toFixed(1)}%` : "—"}
             sub={mesFocoData.margemReal !== null ? `Custo: ${fmtBRL(mesFocoData.custoReal)}` : "Sem dados de margem"}
           />
           <KPICard
-            icon={<BarChart3 className="h-4 w-4" />}
+            icon={<BarChart3 className="h-[18px] w-[18px]" />}
             label="Delta vs Forecast"
             value={(() => {
               if (mesFocoData.receitaReal === 0) return "—";
@@ -320,39 +320,39 @@ export default function Forecast() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <KPICard
-            icon={<DollarSign className="h-4 w-4" />}
+            icon={<DollarSign className="h-[18px] w-[18px]" />}
             label="Receita s/ Esforço"
             value={fmtBRL((mesFocoData?.baseline || 0) + (mesFocoData?.pipelineAlloc || 0))}
             sub={`Base + pipeline · ${mesFocoData?.mes || ""}`}
           />
           <KPICard
-            icon={<TrendingUp className="h-4 w-4" />}
+            icon={<TrendingUp className="h-[18px] w-[18px]" />}
             label="Receita Projetada"
             value={fmtBRL(mesFocoData?.forecastTotal)}
             sub={valorAdicional > 0 ? "Com esforço adicional" : "Cenário atual"}
             variant={mesFocoData && mesFocoData.forecastTotal >= mesFocoData.meta ? "success" : undefined}
           />
           <KPICard
-            icon={<Target className="h-4 w-4" />}
+            icon={<Target className="h-[18px] w-[18px]" />}
             label="Gap vs Meta"
             value={fmtBRL(mesFocoData?.gap)}
             variant={(mesFocoData?.gap || 0) > 0 ? "destructive" : "success"}
             sub={mesFocoData?.meta ? `Meta: ${fmtBRL(mesFocoData.meta)}` : "Sem meta definida"}
           />
           <KPICard
-            icon={<FileText className="h-4 w-4" />}
+            icon={<FileText className="h-[18px] w-[18px]" />}
             label="Ação Necessária"
             value={fmtBRL(mesFocoData?.acaoNecessariaRS)}
             sub={`≈ ${mesFocoData?.propostasEquiv || 0} propostas`}
           />
           <KPICard
-            icon={<PieChart className="h-4 w-4" />}
+            icon={<PieChart className="h-[18px] w-[18px]" />}
             label="Pipeline Vivo"
             value={fmtBRL(pipeline?.valorPonderado)}
             sub={`${pipeline?.qtdPropostas || 0} propostas abertas`}
           />
           <KPICard
-            icon={<Percent className="h-4 w-4" />}
+            icon={<Percent className="h-[18px] w-[18px]" />}
             label="Conversão (12m)"
             value={fmtPctRatio(bs?.conversaoFinanceira)}
             sub={`Ticket: ${fmtBRL(bs?.ticketReal)}`}
@@ -363,7 +363,7 @@ export default function Forecast() {
       {/* CTA metas */}
       {!isLoading && metasAtivas.length === 0 && (
         <Alert>
-          <Target className="h-4 w-4" />
+          <Target className="h-[18px] w-[18px]" />
           <AlertDescription className="flex items-center gap-2">
             Nenhuma meta de vendas ativa encontrada.
             <Link to="/metas" className="text-primary font-medium hover:underline">
@@ -448,7 +448,7 @@ export default function Forecast() {
           {!isLoading && valorAdicional > 0 && (
             <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
               <div className="flex items-center gap-2 text-sm">
-                <Crosshair className="h-4 w-4 text-primary" />
+                <Crosshair className="h-[18px] w-[18px] text-primary" />
                 <span className="text-foreground">
                   Gerando <strong>{fmtBRL(valorAdicional)}</strong>/mês com{" "}
                   <strong>{(conversaoMarg * 100).toFixed(0)}%</strong> de conversão ={" "}
@@ -588,7 +588,7 @@ export default function Forecast() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <PieChart className="h-4 w-4" />
+              <PieChart className="h-[18px] w-[18px]" />
               Pipeline Atual — Receita Esperada por Estágio
             </CardTitle>
           </CardHeader>

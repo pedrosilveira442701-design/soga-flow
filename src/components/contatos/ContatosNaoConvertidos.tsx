@@ -33,7 +33,7 @@ export function ContatosNaoConvertidos({ contatos, onConvertToLead }: ContatosNa
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <Phone className="h-[18px] w-[18px] text-muted-foreground" />
                   <span className="font-medium">{contato.telefone}</span>
                   <Badge variant="secondary" className="text-xs">
                     {contato.origem}
@@ -51,7 +51,7 @@ export function ContatosNaoConvertidos({ contatos, onConvertToLead }: ContatosNa
                 className="gap-2"
               >
                 Criar Lead
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-[18px] w-[18px]" />
               </Button>
             </div>
           ))}

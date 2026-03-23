@@ -363,7 +363,7 @@ export default function Propostas() {
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} size="lg">
-          <Plus className="h-4 w-4" strokeWidth={1.75} />
+          <Plus className="h-[18px] w-[18px]" strokeWidth={1.75} />
           Nova Proposta
         </Button>
       </div>
@@ -443,7 +443,7 @@ export default function Propostas() {
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+              <Filter className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
               <CardTitle className="text-lg">Filtros</CardTitle>
               {hasActiveFilters && (
                 <Badge variant="secondary" className="ml-2">
@@ -526,7 +526,7 @@ export default function Propostas() {
             <div className="flex gap-2 flex-wrap mt-4 pt-4 border-t">
               {searchTerm && (
                 <Badge variant="secondary" className="gap-1 pr-1">
-                  <Search className="h-4 w-4" />
+                  <Search className="h-[18px] w-[18px]" />
                   {searchTerm}
                   <Button
                     variant="ghost"
@@ -535,7 +535,7 @@ export default function Propostas() {
                     onClick={() => setSearchTerm("")}
                     aria-label="Remover filtro de busca"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px]" />
                   </Button>
                 </Badge>
               )}
@@ -549,7 +549,7 @@ export default function Propostas() {
                     onClick={() => setStatusFilter("todas")}
                     aria-label="Remover filtro de status"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px]" />
                   </Button>
                 </Badge>
               )}
@@ -563,7 +563,7 @@ export default function Propostas() {
                     onClick={() => setTipoFilter("todos")}
                     aria-label="Remover filtro de tipo"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-[18px] w-[18px]" />
                   </Button>
                 </Badge>
               )}

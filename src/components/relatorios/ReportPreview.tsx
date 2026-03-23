@@ -156,7 +156,7 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
         {totals && Object.keys(totals).length > 1 && (
           <div className="flex flex-wrap gap-3 p-4 bg-muted/30 rounded-lg border border-border/50">
             <div className="flex items-center gap-2 mr-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
+              <TrendingUp className="h-[18px] w-[18px] text-primary" />
               <span className="text-sm font-medium">Totais:</span>
             </div>
             {totals.valor_bruto !== undefined && (

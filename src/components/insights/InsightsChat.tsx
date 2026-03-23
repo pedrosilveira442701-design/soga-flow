@@ -199,7 +199,7 @@ export function InsightsChat({
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-lg px-3 py-2 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-[18px] w-[18px] animate-spin" />
                   <span className="text-sm text-muted-foreground">Analisando...</span>
                 </div>
               </div>
@@ -248,9 +248,9 @@ export function InsightsChat({
             className="shrink-0"
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-[18px] w-[18px] animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-[18px] w-[18px]" />
             )}
           </Button>
         </div>

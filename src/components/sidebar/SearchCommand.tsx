@@ -69,7 +69,7 @@ export function SearchCommand() {
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
-        className="h-8 w-8"
+        className="h-9 w-9"
       >
         <Search className="h-[18px] w-[18px]" strokeWidth={1.75} />
       </Button>
@@ -85,7 +85,7 @@ export function SearchCommand() {
                 onSelect={() => handleSelect(item.url)}
                 className="flex items-center gap-2.5"
               >
-                <item.icon className="h-4 w-4" strokeWidth={1.5} />
+                <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                 <span>{item.title}</span>
               </CommandItem>
             ))}

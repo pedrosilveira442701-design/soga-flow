@@ -161,7 +161,7 @@ export function WaterfallChart({ data, isLoading }: WaterfallChartProps) {
                     className="p-3 rounded-lg bg-destructive/10 border border-destructive/20"
                   >
                     <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                      <AlertCircle className="h-[18px] w-[18px] text-destructive mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{item.name}</p>
                         <p className="text-xs text-muted-foreground">

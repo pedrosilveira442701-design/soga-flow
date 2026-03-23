@@ -140,7 +140,7 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
+              <Filter className="h-[18px] w-[18px]" />
               Canais
               {filters.canais && filters.canais.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5">
@@ -176,7 +176,7 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
+              <Filter className="h-[18px] w-[18px]" />
               Bairros
               {filters.bairros && filters.bairros.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 px-1.5">
@@ -211,7 +211,7 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
         {/* Clear Filters */}
         {activeFiltersCount > 0 && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
-            <X className="h-4 w-4" />
+            <X className="h-[18px] w-[18px]" />
             Limpar
           </Button>
         )}

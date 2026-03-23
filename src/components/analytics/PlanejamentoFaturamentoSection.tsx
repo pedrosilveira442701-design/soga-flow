@@ -53,7 +53,7 @@ export function PlanejamentoFaturamentoSection() {
       {/* Aviso de amostra pequena */}
       {kpis.amostraPequena && (
         <Alert className="border-destructive/50 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4 text-destructive" />
+          <AlertTriangle className="h-[18px] w-[18px] text-destructive" />
           <AlertDescription className="text-sm">
             <strong>Amostra pequena:</strong> apenas {kpis.totalFechadas12m} contratos fechados nos últimos 12 meses.
             A previsibilidade pode ficar distorcida.

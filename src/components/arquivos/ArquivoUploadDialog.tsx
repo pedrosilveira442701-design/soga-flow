@@ -229,13 +229,13 @@ export function ArquivoUploadDialog({
                         )
                       }
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-[18px] w-[18px]" />
                     </Button>
                   </div>
 
                   {sizeWarning && (
                     <Alert>
-                      <AlertCircle className="h-4 w-4" />
+                      <AlertCircle className="h-[18px] w-[18px]" />
                       <AlertTitle>Arquivo Grande</AlertTitle>
                       <AlertDescription>{sizeWarning}</AlertDescription>
                     </Alert>
@@ -331,7 +331,7 @@ export function ArquivoUploadDialog({
                   onClick={handleStartUpload}
                   disabled={!canProceedToUpload}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  <Upload className="h-[18px] w-[18px] mr-2" />
                   Enviar {selectedFiles.length} arquivo(s)
                 </Button>
               </div>
@@ -352,10 +352,10 @@ export function ArquivoUploadDialog({
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{file.nome}</p>
                     {file.status === "success" && (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-[18px] w-[18px] text-green-500" />
                     )}
                     {file.status === "error" && (
-                      <X className="h-4 w-4 text-destructive" />
+                      <X className="h-[18px] w-[18px] text-destructive" />
                     )}
                   </div>
                   <Progress value={file.progress} />

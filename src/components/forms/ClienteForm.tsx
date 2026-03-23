@@ -361,7 +361,7 @@ export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create",
               disabled={loadingCep}
               className="w-full md:w-auto"
             >
-              <Search className="h-4 w-4 mr-2" />
+              <Search className="h-[18px] w-[18px] mr-2" />
               {loadingCep ? "Buscando..." : "Buscar CEP"}
             </Button>
           </div>

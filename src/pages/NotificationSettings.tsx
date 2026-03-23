@@ -810,7 +810,7 @@ export default function NotificationSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                  <TrendingUp className="h-[18px] w-[18px] text-blue-500" />
                   <span className="font-medium text-sm">Leads</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -820,7 +820,7 @@ export default function NotificationSettings() {
 
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <FileText className="h-4 w-4 text-green-500" />
+                  <FileText className="h-[18px] w-[18px] text-green-500" />
                   <span className="font-medium text-sm">Propostas</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -830,7 +830,7 @@ export default function NotificationSettings() {
 
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <Building className="h-4 w-4 text-orange-500" />
+                  <Building className="h-[18px] w-[18px] text-orange-500" />
                   <span className="font-medium text-sm">Obras</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -840,7 +840,7 @@ export default function NotificationSettings() {
 
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="h-4 w-4 text-emerald-500" />
+                  <DollarSign className="h-[18px] w-[18px] text-emerald-500" />
                   <span className="font-medium text-sm">Financeiro</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -850,7 +850,7 @@ export default function NotificationSettings() {
 
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-4 w-4 text-red-500" />
+                  <Clock className="h-[18px] w-[18px] text-red-500" />
                   <span className="font-medium text-sm">Tarefas & Metas</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -860,7 +860,7 @@ export default function NotificationSettings() {
 
               <div className="p-3 rounded-lg border border-border/50 bg-muted/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="h-4 w-4 text-purple-500" />
+                  <BarChart3 className="h-[18px] w-[18px] text-purple-500" />
                   <span className="font-medium text-sm">Geográfico</span>
                 </div>
                 <p className="text-xs text-muted-foreground">

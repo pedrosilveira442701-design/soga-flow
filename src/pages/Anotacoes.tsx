@@ -59,7 +59,7 @@ export default function Anotacoes() {
           </div>
 
           <Button onClick={handleCreateNew}>
-            <Plus className="h-4 w-4 mr-1" strokeWidth={1.75} />
+            <Plus className="h-[18px] w-[18px] mr-1" strokeWidth={1.75} />
             Nova Anotação
           </Button>
         </div>

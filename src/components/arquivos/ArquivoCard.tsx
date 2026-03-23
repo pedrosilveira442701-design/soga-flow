@@ -91,14 +91,14 @@ export function ArquivoCard({
               variant="secondary"
               onClick={() => onPreview(arquivo)}
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-[18px] w-[18px]" />
             </Button>
             <Button
               size="icon"
               variant="secondary"
               onClick={() => onDownload(arquivo)}
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-[18px] w-[18px]" />
             </Button>
           </div>
 
@@ -128,22 +128,22 @@ export function ArquivoCard({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => onPreview(arquivo)}>
-                  <Eye className="h-4 w-4 mr-2" />
+                  <Eye className="h-[18px] w-[18px] mr-2" />
                   Visualizar
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onDownload(arquivo)}>
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="h-[18px] w-[18px] mr-2" />
                   Download
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onRename(arquivo)}>
-                  <Edit className="h-4 w-4 mr-2" />
+                  <Edit className="h-[18px] w-[18px] mr-2" />
                   Renomear
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => onDelete(arquivo)}
                   className="text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-[18px] w-[18px] mr-2" />
                   Deletar
                 </DropdownMenuItem>
               </DropdownMenuContent>

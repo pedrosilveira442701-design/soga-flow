@@ -66,7 +66,7 @@ export function KanbanControls({
             disabled={!canNavigateLeft}
             className="h-9 w-9"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-[18px] w-[18px]" />
           </Button>
           <Button
             variant="outline"
@@ -75,7 +75,7 @@ export function KanbanControls({
             disabled={!canNavigateRight}
             className="h-9 w-9"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-[18px] w-[18px]" />
           </Button>
           <div className="text-caption text-muted-foreground ml-2">
             Use ← → para navegar
@@ -91,19 +91,19 @@ export function KanbanControls({
             <SelectContent>
               <SelectItem value="compact">
                 <div className="flex items-center gap-2">
-                  <Minimize2 className="h-4 w-4" />
+                  <Minimize2 className="h-[18px] w-[18px]" />
                   Compacta
                 </div>
               </SelectItem>
               <SelectItem value="normal">
                 <div className="flex items-center gap-2">
-                  <Maximize2 className="h-4 w-4" />
+                  <Maximize2 className="h-[18px] w-[18px]" />
                   Normal
                 </div>
               </SelectItem>
               <SelectItem value="detailed">
                 <div className="flex items-center gap-2">
-                  <Maximize2 className="h-4 w-4" />
+                  <Maximize2 className="h-[18px] w-[18px]" />
                   Detalhada
                 </div>
               </SelectItem>
@@ -125,7 +125,7 @@ export function KanbanControls({
             disabled={zoom <= zoomLevels[0]}
             className="h-9 w-9"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="h-[18px] w-[18px]" />
           </Button>
           <div className="flex gap-1">
             {zoomLevels.map((level) => (
@@ -152,7 +152,7 @@ export function KanbanControls({
             disabled={zoom >= zoomLevels[zoomLevels.length - 1]}
             className="h-9 w-9"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="h-[18px] w-[18px]" />
           </Button>
         </div>
       </div>

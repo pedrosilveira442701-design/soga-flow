@@ -95,7 +95,7 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
                   {activeFiltersCount} {activeFiltersCount === 1 ? "filtro ativo" : "filtros ativos"}
                 </Badge>
                 <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="h-[18px] w-[18px] mr-1" />
                   Limpar
                 </Button>
               </div>

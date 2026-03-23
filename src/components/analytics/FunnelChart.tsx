@@ -76,7 +76,7 @@ export function FunnelChart({ data, isLoading }: FunnelChartProps) {
             </div>
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground flex items-center gap-1">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-[18px] w-[18px]" />
                 Tempo médio:
               </span>
               <span className="font-medium">{data.tempo_medio_dias} dias</span>

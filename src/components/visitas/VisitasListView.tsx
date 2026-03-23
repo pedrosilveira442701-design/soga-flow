@@ -100,11 +100,11 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   // Ícone de ordenação
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
+      return <ArrowUpDown className="h-[18px] w-[18px] ml-1 opacity-50" />;
     }
     return sortDirection === "asc" 
-      ? <ArrowUp className="h-4 w-4 ml-1" />
-      : <ArrowDown className="h-4 w-4 ml-1" />;
+      ? <ArrowUp className="h-[18px] w-[18px] ml-1" />
+      : <ArrowDown className="h-[18px] w-[18px] ml-1" />;
   };
 
   // Ordenar visitas
@@ -324,7 +324,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-primary hover:underline"
                         >
-                          <Phone className="h-4 w-4" />
+                          <Phone className="h-[18px] w-[18px]" />
                           {telefone}
                         </a>
                       ) : (
@@ -346,7 +346,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-primary hover:underline max-w-[200px] truncate"
                         >
-                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <MapPin className="h-[18px] w-[18px] flex-shrink-0" />
                           <span className="truncate">{endereco}</span>
                           <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </a>
@@ -359,11 +359,11 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                     <TableCell>
                       {distanciasLoading[visita.id] ? (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-[18px] w-[18px] animate-spin" />
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <Navigation className="h-4 w-4 text-muted-foreground" />
+                          <Navigation className="h-[18px] w-[18px] text-muted-foreground" />
                           <span>{distancias[visita.id] || "—"}</span>
                         </div>
                       )}
@@ -402,7 +402,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                             className="bg-green-500/15 text-green-700 border-green-500/30 cursor-pointer hover:bg-green-500/25 transition-colors"
                             onClick={() => onToggleRealizada(visita.id, false)}
                           >
-                            <Check className="h-4 w-4 mr-1" />
+                            <Check className="h-[18px] w-[18px] mr-1" />
                             Sim
                           </Badge>
                         ) : (
@@ -411,7 +411,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                             className="cursor-pointer hover:bg-muted transition-colors"
                             onClick={() => onToggleRealizada(visita.id, true)}
                           >
-                            <Clock className="h-4 w-4 mr-1" />
+                            <Clock className="h-[18px] w-[18px] mr-1" />
                             Pendente
                           </Badge>
                         )}
