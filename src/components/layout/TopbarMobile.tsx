@@ -29,7 +29,7 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
     <header className="fixed top-0 w-full z-50 h-[52px] flex items-center px-3 backdrop-blur-2xl backdrop-saturate-150 border-b bg-card/75 dark:bg-card/60 border-border/30">
       {/* Logo */}
       <NavLink to="/" className="flex items-center gap-2 mr-auto">
-        <img src={logoImage} alt="So Garagens" className="h-7 w-7 object-contain" />
+        <img src={logoImage} alt="So Garagens" className="h-9 w-9 object-contain" />
         <span className="text-[13px] font-semibold text-foreground tracking-tight">SG</span>
       </NavLink>
 
@@ -46,7 +46,7 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
           <SheetContent side="right" className="w-[280px] p-0 backdrop-blur-2xl bg-card/95 dark:bg-card/90">
             <SheetHeader className="px-4 pt-4 pb-3">
               <SheetTitle className="flex items-center gap-2">
-                <img src={logoImage} alt="So Garagens" className="h-7 w-7 object-contain" />
+                <img src={logoImage} alt="So Garagens" className="h-9 w-9 object-contain" />
                 <span className="text-[14px] font-semibold tracking-tight">So Garagens</span>
               </SheetTitle>
             </SheetHeader>

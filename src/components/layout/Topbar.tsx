@@ -135,7 +135,7 @@ export function Topbar() {
     >
       {/* Left: Logo */}
       <NavLink to="/" className="flex items-center gap-2.5 mr-6 shrink-0">
-        <img src={logoImage} alt="So Garagens" className="h-8 w-8 object-contain" />
+        <img src={logoImage} alt="So Garagens" className="h-10 w-10 object-contain" />
         <span className="text-[15px] font-semibold text-foreground hidden lg:inline tracking-tight">So Garagens</span>
       </NavLink>
 
