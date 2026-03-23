@@ -110,7 +110,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" title="Ações">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>

@@ -173,7 +173,7 @@ export function ArquivoPreviewDialog({
                         }}
                       />
                       <Button size="icon" onClick={handleRename}>
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-5 w-5" />
                       </Button>
                     </div>
                   </div>

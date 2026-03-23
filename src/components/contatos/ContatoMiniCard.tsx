@@ -57,16 +57,17 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
           {contato.observacoes && <p className="text-xs text-muted-foreground truncate mt-1">{contato.observacoes}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button size="sm" variant="ghost" onClick={() => onEdit(contato)} className="h-8 w-8 p-0">
-            <Pencil className="h-4 w-4" />
+          <Button size="icon" variant="ghost" onClick={() => onEdit(contato)} title="Editar contato">
+            <Pencil className="h-5 w-5" />
           </Button>
           <Button
-            size="sm"
+            size="icon"
             variant="ghost"
             onClick={() => onDelete(contato)}
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive"
+            title="Excluir contato"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </Button>
         </div>
       </div>

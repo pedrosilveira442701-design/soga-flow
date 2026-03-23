@@ -89,7 +89,7 @@ export function DragDropUpload({ onUpload, maxFiles = 5, accept = "*", className
                   <p className="text-caption text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => removeFile(index)} className="h-8 w-8">
+              <Button variant="ghost" size="icon" onClick={() => removeFile(index)} title="Remover arquivo">
                 <X className="h-5 w-5" />
               </Button>
             </div>

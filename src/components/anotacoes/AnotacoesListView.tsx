@@ -129,11 +129,11 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
             <div className="flex items-center gap-1">
               {anotacao.status !== "concluida" && (
                 <Button variant="ghost" size="icon" onClick={() => completeAnotacao(anotacao.id)} title="Concluir">
-                  <CheckCircle2 className="h-5 w-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" />
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => onEdit(anotacao.id)} title="Editar">
-                <Edit className="h-6 w-6" />
+                <Edit className="h-5 w-5" />
               </Button>
               <Button
                 variant="ghost"
@@ -145,7 +145,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
                 }}
                 title="Excluir"
               >
-                <Trash2 className="h-5 w-5 w-5" />
+                <Trash2 className="h-5 w-5" />
               </Button>
             </div>
           </div>

@@ -293,18 +293,18 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
                           <>
                             {r.status === "pendente" && (
                               <>
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(r)}>
-                                  <Edit className="h-4 w-4" />
+                                <Button size="icon" variant="ghost" className="h-10 w-10" onClick={() => startEdit(r)}>
+                                  <Edit className="h-5 w-5" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => marcarRecebido({ id: r.id })}>
-                                  <CheckCircle className="h-4 w-4" />
+                                <Button size="icon" variant="ghost" className="h-10 w-10 text-green-600" onClick={() => marcarRecebido({ id: r.id })}>
+                                  <CheckCircle className="h-5 w-5" />
                                 </Button>
                               </>
                             )}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive">
-                                  <Trash2 className="h-4 w-4" />
+                                <Button size="icon" variant="ghost" className="h-10 w-10 text-destructive">
+                                  <Trash2 className="h-5 w-5" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
