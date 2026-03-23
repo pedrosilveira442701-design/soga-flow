@@ -296,7 +296,9 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Contratos Ativos</p>
-            <FileText className="h-4 w-4 text-primary" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" strokeWidth={1.75} />
+            </div>
           </div>
           <p className="text-3xl font-bold">{kpis.contratosAtivos}</p>
           <p className="text-xs text-muted-foreground mt-2">{contratos.length} total</p>
@@ -305,7 +307,9 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Valor Total Ativo</p>
-            <DollarSign className="h-4 w-4 text-primary" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <DollarSign className="h-5 w-5 text-primary" strokeWidth={1.75} />
+            </div>
           </div>
           <p className="text-3xl font-bold">{formatCurrency(kpis.valorTotalAtivo)}</p>
           <p className="text-xs text-muted-foreground mt-2">Em contratos ativos</p>
@@ -314,7 +318,9 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Já Recebido</p>
-            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-green-600/10">
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" strokeWidth={1.75} />
+            </div>
           </div>
           <p className="text-3xl font-bold text-green-700 dark:text-green-400">{formatCurrency(kpis.valorPago)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pagas</p>
@@ -323,7 +329,9 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Restante a Receber</p>
-            <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-blue-600/10">
+              <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" strokeWidth={1.75} />
+            </div>
           </div>
           <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(kpis.valorRestante)}</p>
           <p className="text-xs text-muted-foreground mt-2">Parcelas pendentes</p>
@@ -332,7 +340,9 @@ export default function Contratos() {
         <div className="rounded-lg border bg-card p-6 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-muted-foreground">Este Mês</p>
-            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-amber-600/10">
+              <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" strokeWidth={1.75} />
+            </div>
           </div>
           <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{formatCurrency(kpis.aReceberMes)}</p>
           <p className="text-xs text-green-600 dark:text-green-400 mt-2">

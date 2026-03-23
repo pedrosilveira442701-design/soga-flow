@@ -76,7 +76,9 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Obras Ativas</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Building2 className="h-5 w-5 text-primary" strokeWidth={1.75} />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -95,7 +97,9 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-success/10">
+              <CheckCircle2 className="h-5 w-5 text-success" strokeWidth={1.75} />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -114,7 +118,9 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progresso Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-primary/10">
+              <TrendingUp className="h-5 w-5 text-primary" strokeWidth={1.75} />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -133,7 +139,9 @@ export default function Obras() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Obras</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+            <div className="p-2 rounded-xl bg-warning/10">
+              <Clock className="h-5 w-5 text-warning" strokeWidth={1.75} />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
