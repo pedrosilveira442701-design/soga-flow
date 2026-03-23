@@ -545,8 +545,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
           </div>
 
           {/* Coluna Direita - Resumo e Parcelas */}
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-card p-4">
+          <div className="space-y-5">
+            <div className="rounded-lg border bg-card p-5">
               <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
 
               <div className="space-y-3 text-sm">
