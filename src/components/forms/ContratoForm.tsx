@@ -244,10 +244,10 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Coluna Esquerda - Dados do Contrato */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {mode === "fromProposta" && (
               <FormField
                 control={form.control}
@@ -408,8 +408,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               )}
             />
 
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <h4 className="font-medium text-sm">Entrada</h4>
+            <div className="rounded-lg border bg-muted/30 p-5 space-y-5">
+              <h4 className="font-medium text-base">Entrada</h4>
 
               <FormField
                 control={form.control}
@@ -459,8 +459,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               )}
             </div>
 
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <h4 className="font-medium text-sm">Parcelas do Restante</h4>
+            <div className="rounded-lg border bg-muted/30 p-5 space-y-5">
+              <h4 className="font-medium text-base">Parcelas do Restante</h4>
 
               <FormField
                 control={form.control}
@@ -545,8 +545,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
           </div>
 
           {/* Coluna Direita - Resumo e Parcelas */}
-          <div className="space-y-4">
-            <div className="rounded-lg border bg-card p-4">
+          <div className="space-y-5">
+            <div className="rounded-lg border bg-card p-5">
               <h3 className="font-semibold mb-4">Resumo do Contrato</h3>
 
               <div className="space-y-3 text-sm">
