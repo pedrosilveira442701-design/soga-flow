@@ -408,8 +408,8 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
               )}
             />
 
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              <h4 className="font-medium text-sm">Entrada</h4>
+            <div className="rounded-lg border bg-muted/30 p-5 space-y-5">
+              <h4 className="font-medium text-base">Entrada</h4>
 
               <FormField
                 control={form.control}
