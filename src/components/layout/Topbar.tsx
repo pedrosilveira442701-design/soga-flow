@@ -14,6 +14,7 @@ import {
   Building2,
   StickyNote,
   FileBarChart,
+  MessageSquare,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "./NotificationBell";
@@ -59,6 +60,7 @@ const dropdownGroups = [
     label: "Comercial",
     items: [
       { title: "Leads", url: "/leads", icon: Target },
+      { title: "Gestao WhatsApp", url: "/whatsapp", icon: MessageSquare },
       { title: "Propostas", url: "/propostas", icon: FileText },
       { title: "Contratos", url: "/contratos", icon: FileCheck },
       { title: "Clientes", url: "/clientes", icon: Users },

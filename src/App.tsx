@@ -21,6 +21,7 @@ import Arquivos from "./pages/Arquivos";
 import Obras from "./pages/Obras";
 import NotificationSettings from "./pages/NotificationSettings";
 import WhatsAppConfig from "./pages/WhatsAppConfig";
+import WhatsAppGestao from "./pages/WhatsAppGestao";
 import Perfil from "./pages/conta/Perfil";
 import Preferencias from "./pages/conta/Preferencias";
 import Ajuda from "./pages/conta/Ajuda";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/forecast" element={<ProtectedRoute><DashboardLayout><Forecast /></DashboardLayout></ProtectedRoute>} />
             <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><DashboardLayout><NotificationSettings /></DashboardLayout></ProtectedRoute>} />
             <Route path="/configuracoes/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsAppConfig /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsAppGestao /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/perfil" element={<ProtectedRoute><DashboardLayout><Perfil /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/preferencias" element={<ProtectedRoute><DashboardLayout><Preferencias /></DashboardLayout></ProtectedRoute>} />
             <Route path="/conta/ajuda" element={<ProtectedRoute><DashboardLayout><Ajuda /></DashboardLayout></ProtectedRoute>} />
