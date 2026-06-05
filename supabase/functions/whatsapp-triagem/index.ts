@@ -5,6 +5,7 @@
 //   Falha de IA NUNCA quebra a captura: contato permanece 'pendente'.
 // ============================================================================
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import { corsHeaders, env, supabaseAdmin } from "../_shared/whatsapp.ts";
 
 interface TriagemResult {
@@ -28,18 +29,8 @@ function canalParaTag(canal: string | null): "anuncio" | "descoberta" | "orcamen
   return "descoberta";
 }
 
-async function classificar(conversa: string): Promise<TriagemResult> {
-  // Aceita OpenAI (gpt-4o-mini) ou Groq (llama-3.3-70b), o que estiver configurado.
-  const openaiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
-  const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
-  const useOpenAI = Boolean(openaiKey);
-  const apiKey = useOpenAI ? openaiKey : groqKey;
-  if (!apiKey) throw new Error("Nenhuma chave de IA configurada (OPENAI_API_KEY ou GROQ_API_KEY)");
-  const endpoint = useOpenAI
-    ? "https://api.openai.com/v1/chat/completions"
-    : "https://api.groq.com/openai/v1/chat/completions";
-  const model = useOpenAI ? "gpt-4o-mini" : "llama-3.3-70b-versatile";
-  const prompt = `Você analisa conversas de WhatsApp de uma empresa que vende e instala pisos (epóxi, concreto polido, etc.) para garagens e obras.
+function buildPrompt(conversa: string): string {
+  return `Você analisa conversas de WhatsApp de uma empresa que vende e instala pisos (epóxi, concreto polido, etc.) para garagens e obras.
 A empresa atende por WhatsApp e SEMPRE pergunta ao cliente como ele encontrou a empresa.
 
 Analise a conversa abaixo e responda APENAS com um JSON válido, sem markdown, no formato:
@@ -53,13 +44,61 @@ Regras:
 
 CONVERSA:
 ${conversa}`;
+}
 
+function parseJson(text: string): TriagemResult {
+  const clean = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = clean.indexOf("{");
+  const end = clean.lastIndexOf("}");
+  const parsed = JSON.parse(start >= 0 ? clean.slice(start, end + 1) : clean);
+  return {
+    e_lead_real: Boolean(parsed.e_lead_real),
+    canal: parsed.canal ?? null,
+    nome: parsed.nome ?? null,
+    motivo: String(parsed.motivo ?? "").slice(0, 200),
+  };
+}
+
+// Bedrock (Claude) via SigV4. Preferido quando há credencial AWS configurada.
+async function classificarBedrock(prompt: string): Promise<TriagemResult> {
+  const region = Deno.env.get("BEDROCK_REGION") || "sa-east-1";
+  const model = Deno.env.get("BEDROCK_MODEL_ID") || "global.anthropic.claude-haiku-4-5-20251001-v1:0";
+  const aws = new AwsClient({
+    accessKeyId: env("BEDROCK_AWS_ACCESS_KEY_ID"),
+    secretAccessKey: env("BEDROCK_AWS_SECRET_ACCESS_KEY"),
+    region,
+    service: "bedrock",
+  });
+  const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/invoke`;
+  const res = await aws.fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 300,
+      temperature: 0.1,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Bedrock ${res.status}: ${await res.text()}`);
+  const j = await res.json();
+  return parseJson(j?.content?.[0]?.text ?? "{}");
+}
+
+// OpenAI / Groq (formato OpenAI-compatível), fallback.
+async function classificarOpenAICompat(prompt: string): Promise<TriagemResult> {
+  const openaiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
+  const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
+  const useOpenAI = Boolean(openaiKey);
+  const apiKey = useOpenAI ? openaiKey : groqKey;
+  if (!apiKey) throw new Error("Nenhuma IA configurada (Bedrock, OpenAI ou Groq)");
+  const endpoint = useOpenAI
+    ? "https://api.openai.com/v1/chat/completions"
+    : "https://api.groq.com/openai/v1/chat/completions";
+  const model = useOpenAI ? "gpt-4o-mini" : "llama-3.3-70b-versatile";
   const res = await fetch(endpoint, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
       model,
       temperature: 0.1,
@@ -67,17 +106,16 @@ ${conversa}`;
       messages: [{ role: "user", content: prompt }],
     }),
   });
-
   if (!res.ok) throw new Error(`IA ${res.status}: ${await res.text()}`);
   const json = await res.json();
-  const content = json?.choices?.[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(content);
-  return {
-    e_lead_real: Boolean(parsed.e_lead_real),
-    canal: parsed.canal ?? null,
-    nome: parsed.nome ?? null,
-    motivo: String(parsed.motivo ?? "").slice(0, 200),
-  };
+  return parseJson(json?.choices?.[0]?.message?.content ?? "{}");
+}
+
+async function classificar(conversa: string): Promise<TriagemResult> {
+  const prompt = buildPrompt(conversa);
+  // Prioridade: Bedrock (AWS) > OpenAI > Groq.
+  if (Deno.env.get("BEDROCK_AWS_ACCESS_KEY_ID")) return await classificarBedrock(prompt);
+  return await classificarOpenAICompat(prompt);
 }
 
 serve(async (req) => {
