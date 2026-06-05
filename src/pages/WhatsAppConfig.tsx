@@ -50,9 +50,28 @@ export default function WhatsAppConfig() {
 
   const handleNovoQr = async () => {
     setActing(true);
-    await fetchStatus("qr");
-    setActing(false);
-    toast.success("QR atualizado");
+    try {
+      const { data: resp, error } = await supabase.functions.invoke("whatsapp-status", {
+        body: { action: "qr" },
+      });
+      if (error) throw error;
+      const r = resp as StatusResp;
+      setData(r);
+      if (r?.error) {
+        toast.error("Serviço de WhatsApp indisponível", { description: r.error });
+      } else if (r?.qr) {
+        toast.success("QR atualizado");
+      } else if (r?.status === "conectado") {
+        toast.success("WhatsApp já está conectado");
+      } else {
+        toast.error("Não foi possível gerar o QR", { description: "Tente novamente em instantes." });
+      }
+    } catch (e) {
+      setData({ status: "desconectado", error: (e as Error).message });
+      toast.error("Serviço de WhatsApp indisponível", { description: (e as Error).message });
+    } finally {
+      setActing(false);
+    }
   };
 
   const handleDesconectar = async () => {
@@ -129,6 +148,12 @@ export default function WhatsAppConfig() {
                   alt="QR Code do WhatsApp"
                   className="h-56 w-56 rounded-lg border bg-white p-2"
                 />
+              ) : data?.error ? (
+                <div className="h-56 w-56 rounded-lg border border-red-500/30 bg-red-500/5 flex flex-col items-center justify-center gap-2 text-center px-4">
+                  <QrCode className="h-9 w-9 text-red-500/70" />
+                  <span className="text-sm font-medium text-red-600">Serviço indisponível</span>
+                  <span className="text-xs text-caption">A conexão com o WhatsApp ainda não está ativa neste ambiente.</span>
+                </div>
               ) : (
                 <div className="h-56 w-56 rounded-lg border flex flex-col items-center justify-center gap-2 text-caption">
                   <QrCode className="h-10 w-10" />
