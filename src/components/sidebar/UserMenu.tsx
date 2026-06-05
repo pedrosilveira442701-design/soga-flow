@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, HelpCircle, LogOut, Bell } from "lucide-react";
+import { User, Settings, HelpCircle, LogOut, Bell, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function UserMenu() {
@@ -53,6 +53,10 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate("/configuracoes/notificacoes")} className="text-[13px]">
           <Bell className="mr-2 h-4 w-4" strokeWidth={1.5} />
           Notificacoes
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate("/configuracoes/whatsapp")} className="text-[13px]">
+          <MessageSquare className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          WhatsApp
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate("/conta/ajuda")} className="text-[13px]">
           <HelpCircle className="mr-2 h-4 w-4" strokeWidth={1.5} />
