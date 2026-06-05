@@ -1,4 +1,4 @@
-import { Plus, UserPlus, TrendingUp, Target } from "lucide-react";
+import { Plus, UserPlus, TrendingUp, Target, MessageSquare } from "lucide-react";
 import { EmptyState } from "@/components/states/EmptyState";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,9 @@ import { LossReasonDialog } from "@/components/leads/LossReasonDialog";
 import { LeadFilters, LeadFiltersState } from "@/components/leads/LeadFilters";
 import { ContatoQuickForm } from "@/components/forms/ContatoQuickForm";
 import { ContatoMiniCard } from "@/components/contatos/ContatoMiniCard";
+import { WhatsAppTriageDialog } from "@/components/leads/WhatsAppTriageDialog";
+import { useWhatsAppTriagem } from "@/hooks/useWhatsAppTriagem";
+import { Badge } from "@/components/ui/badge";
 import { useLeads } from "@/hooks/useLeads";
 import { useContatos, Contato } from "@/hooks/useContatos";
 import { usePropostas } from "@/hooks/usePropostas";
@@ -50,6 +53,8 @@ export default function Leads() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedContato, setSelectedContato] = useState<Contato | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [triageOpen, setTriageOpen] = useState(false);
+  const { potenciais: triagePotenciais } = useWhatsAppTriagem();
   const [contatoToConvert, setContatoToConvert] = useState<{
     telefone: string;
     origem: string;
@@ -474,6 +479,19 @@ export default function Leads() {
         </div>
 
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2 relative"
+            size="lg"
+            onClick={() => setTriageOpen(true)}
+          >
+            <MessageSquare className="h-4 w-4" strokeWidth={1.75} />
+            Triagem WhatsApp
+            {triagePotenciais.length > 0 && (
+              <Badge variant="secondary" className="ml-1">{triagePotenciais.length}</Badge>
+            )}
+          </Button>
+
           <Dialog open={contatoDialogOpen} onOpenChange={setContatoDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2" size="lg">
@@ -698,6 +716,12 @@ export default function Leads() {
         onConfirm={handleLossReasonConfirm}
         isLoading={updateLead.isPending}
         clienteName={getPendingLeadName()}
+      />
+
+      <WhatsAppTriageDialog
+        open={triageOpen}
+        onOpenChange={setTriageOpen}
+        onPromover={handleConvertContatoToLead}
       />
     </div>
   );
