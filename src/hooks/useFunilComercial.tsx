@@ -38,15 +38,20 @@ export function useFunilComercial(filters: Filters = { period: "month" }) {
     queryKey: ["funil-comercial", user?.id, start.getTime(), end.getTime()],
     enabled: !!user,
     queryFn: async () => {
-      const [leadsRes, propRes, contrRes] = await Promise.all([
+      const [leadsRes, propRes, contrRes, contatosRes] = await Promise.all([
         supabase.from("leads").select("id, cliente_id, created_at, estagio").eq("user_id", user!.id),
         supabase.from("propostas").select("cliente_id, created_at, status").eq("user_id", user!.id),
         supabase.from("contratos").select("cliente_id, created_at, data_inicio, status").eq("user_id", user!.id),
+        supabase.from("contatos").select("data_hora, origem, triagem_status, converteu_lead").eq("user_id", user!.id),
       ]);
       return {
         leads: leadsRes.data ?? [],
         propostas: propRes.data ?? [],
         contratos: (contrRes.data ?? []).filter((c: any) => c.status !== "cancelado"),
+        // Contatos que chegaram e ainda não viraram lead (e não são ruído) — topo do funil.
+        contatos: (contatosRes.data ?? []).filter(
+          (c: any) => !c.converteu_lead && c.triagem_status !== "ruido"
+        ),
       };
     },
   });
@@ -55,6 +60,7 @@ export function useFunilComercial(filters: Filters = { period: "month" }) {
     const leads = data?.leads ?? [];
     const propostas = data?.propostas ?? [];
     const contratos = data?.contratos ?? [];
+    const contatos = data?.contatos ?? [];
     const inPeriod = (d?: string | null) => {
       if (!d) return false;
       const t = new Date(d).getTime();
@@ -90,12 +96,15 @@ export function useFunilComercial(filters: Filters = { period: "month" }) {
         somaDiasFech += Math.max(0, Math.round((first - leadT) / 86400000));
       }
     }
+    // Contatos do WhatsApp que chegaram no período e ainda não viraram lead (topo do funil).
+    const contatosNoPeriodo = contatos.filter((c: any) => inPeriod(c.data_hora)).length;
+    const chegaram = cohort.length + contatosNoPeriodo;
     const coorte = {
-      chegaram: cohort.length,
+      chegaram,
       proposta: cProp,
       fechou: cFech,
-      taxaProposta: cohort.length ? Math.round((cProp / cohort.length) * 100) : 0,
-      taxaFechouTotal: cohort.length ? Math.round((cFech / cohort.length) * 100) : 0,
+      taxaProposta: chegaram ? Math.round((cProp / chegaram) * 100) : 0,
+      taxaFechouTotal: chegaram ? Math.round((cFech / chegaram) * 100) : 0,
       taxaFechouProposta: cProp ? Math.round((cFech / cProp) * 100) : 0,
       tempoMedioProposta: cProp ? Math.round(somaDiasProp / cProp) : null,
       tempoMedioFechar: cFech ? Math.round(somaDiasFech / cFech) : null,
@@ -103,7 +112,7 @@ export function useFunilComercial(filters: Filters = { period: "month" }) {
 
     // --- ATIVIDADE (eventos dentro do período) ---
     const atividade = {
-      leadsNovos: leads.filter((l: any) => inPeriod(l.created_at)).length,
+      leadsNovos: leads.filter((l: any) => inPeriod(l.created_at)).length + contatosNoPeriodo,
       propostasFeitas: propostas.filter((p: any) => inPeriod(p.created_at)).length,
       contratosFechados: contratos.filter((c: any) => inPeriod(c.created_at || c.data_inicio)).length,
     };
