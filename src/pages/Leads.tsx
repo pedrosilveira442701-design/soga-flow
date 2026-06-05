@@ -94,6 +94,15 @@ export default function Leads() {
 
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
+  // Funil mostra só o que vale: contatos do WhatsApp marcados como 'potencial' pela IA,
+  // e qualquer contato manual (não-WhatsApp, que não passa por triagem). Pendentes e ruído
+  // do WhatsApp ficam apenas na aba Triagem WhatsApp.
+  const contatosFunil = useMemo(
+    () => naoConvertidos.filter(
+      (c) => c.origem !== "whatsapp" || c.triagem_status === "potencial"
+    ),
+    [naoConvertidos]
+  );
   const { updatePropostasByLeadId } = usePropostas();
   const { user } = useAuth();
 
@@ -212,7 +221,7 @@ export default function Leads() {
     // Use filtered leads for counts, not all leads
     const leadsCount = filteredAndSortedLeads.filter((lead) => lead.estagio === stage.id).length;
     // Para o stage "contato", incluir também os contatos não convertidos
-    const totalCount = stage.id === "contato" ? leadsCount + naoConvertidos.length : leadsCount;
+    const totalCount = stage.id === "contato" ? leadsCount + contatosFunil.length : leadsCount;
 
     return {
       ...stage,
@@ -551,7 +560,7 @@ export default function Leads() {
         filteredCount={filteredAndSortedLeads.length}
       />
 
-      {filteredAndSortedLeads.length === 0 && naoConvertidos.length === 0 ? (
+      {filteredAndSortedLeads.length === 0 && contatosFunil.length === 0 ? (
         filters.searchQuery ? (
           <EmptyState
             icon={Target}
@@ -589,7 +598,7 @@ export default function Leads() {
             leads={filteredAndSortedLeads}
             onStageChange={handleStageChange}
             onCardClick={handleCardClick}
-            contatosNaoConvertidos={naoConvertidos}
+            contatosNaoConvertidos={contatosFunil}
             onConvertContato={handleConvertContatoToLead}
             onEditContato={handleEditContato}
             onDeleteContato={handleDeleteContato}

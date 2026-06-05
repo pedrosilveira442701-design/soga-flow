@@ -13,6 +13,8 @@ export interface Contato {
   tag?: 'anuncio' | 'descoberta' | 'orcamento' | null;
   converteu_lead: boolean;
   lead_id: string | null;
+  triagem_status?: 'pendente' | 'potencial' | 'ruido' | null;
+  texto_conversa?: string | null;
   created_at: string;
   updated_at: string;
 }
