@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Calendar, ArrowRight, Pencil, User, Trash2 } from "lucide-react";
+import { Phone, Calendar, ArrowRight, Pencil, User, Trash2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contato } from "@/hooks/useContatos";
+import { WhatsAppConversaDialog } from "@/components/leads/WhatsAppConversaDialog";
 import { cn } from "@/lib/utils";
 
 interface ContatoMiniCardProps {
@@ -26,6 +28,7 @@ const TAG_LABELS = {
 };
 
 export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: ContatoMiniCardProps) {
+  const [conversaOpen, setConversaOpen] = useState(false);
   return (
     <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2 max-w-[520px]">
       <div className="flex items-start justify-between gap-2">
@@ -71,13 +74,32 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
           </Button>
         </div>
       </div>
-      <Button
-        onClick={() => onConvertToLead(contato)}
-        className="mt-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-3 h-8 text-xs font-medium flex items-center gap-1"
-      >
-        <span className="text-base leading-none">＋</span>
-        Lead
-      </Button>
+      <div className="flex items-center gap-2 mt-2">
+        <Button
+          onClick={() => onConvertToLead(contato)}
+          className="rounded-full bg-blue-600 hover:bg-blue-700 text-white px-3 h-8 text-xs font-medium flex items-center gap-1"
+        >
+          <span className="text-base leading-none">＋</span>
+          Lead
+        </Button>
+        {contato.origem === "whatsapp" && (
+          <Button
+            variant="outline"
+            onClick={() => setConversaOpen(true)}
+            className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5"
+          >
+            <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+            Ver conversa
+          </Button>
+        )}
+      </div>
+
+      <WhatsAppConversaDialog
+        open={conversaOpen}
+        onOpenChange={setConversaOpen}
+        telefone={contato.telefone}
+        nome={contato.nome}
+      />
     </div>
   );
 }
