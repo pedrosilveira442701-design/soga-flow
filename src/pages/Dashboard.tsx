@@ -11,6 +11,7 @@ import { ProximasVisitas } from "@/components/visitas/ProximasVisitas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard, FilterPeriod } from "@/hooks/useDashboard";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
+import { FunilComercialCard } from "@/components/dashboard/FunilComercialCard";
 import { useState } from "react";
 
 export default function Dashboard() {
@@ -161,6 +162,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Funil Comercial: chegou -> proposta -> fechou (com lag de tempo) */}
+      <FunilComercialCard period={period} customDateRange={customDateRange} />
 
       {/* Row 3: Pipeline de Propostas */}
       <div>
