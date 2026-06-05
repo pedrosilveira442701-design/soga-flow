@@ -85,9 +85,9 @@ export function useFunilComercial(filters: Filters = { period: "all" }) {
     type Arr = { date: string; clienteId: string | null };
     const arrivals: Arr[] = [];
 
-    // 1. Contatos do WhatsApp não-ruído = leads que chegaram.
+    // 1. Cada contato (não-ruído) = um lead que chegou. Ruído (triagem WhatsApp) não conta.
     for (const c of contatos) {
-      if (c.origem !== "whatsapp" || c.triagem_status === "ruido") continue;
+      if (c.triagem_status === "ruido") continue;
       const lead = c.converteu_lead && c.lead_id ? leadById.get(c.lead_id) : null;
       arrivals.push({ date: c.data_hora, clienteId: lead?.cliente_id ?? null });
     }
