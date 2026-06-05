@@ -30,6 +30,7 @@ export function useWhatsAppTriagem() {
         .eq("user_id", user.id)
         .eq("origem", "whatsapp")
         .eq("converteu_lead", false)
+        .is("deleted_at", null)
         .order("data_hora", { ascending: false });
 
       if (error) throw error;

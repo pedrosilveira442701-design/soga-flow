@@ -45,6 +45,7 @@ export function useContatos() {
         .from("contatos")
         .select("*")
         .eq("user_id", user.id)
+        .is("deleted_at", null) // esconde os soft-deletados (mas continuam contando no dashboard)
         .order("data_hora", { ascending: false });
 
       if (error) throw error;
@@ -137,9 +138,10 @@ export function useContatos() {
 
   const deleteContato = useMutation({
     mutationFn: async (contatoId: string) => {
+      // Soft-delete: some da tela mas o registro permanece (não derruba a contagem de leads).
       const { error } = await supabase
         .from("contatos")
-        .delete()
+        .update({ deleted_at: new Date().toISOString() } as never)
         .eq("id", contatoId);
 
       if (error) throw error;
