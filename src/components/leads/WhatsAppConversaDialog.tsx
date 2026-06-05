@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageSquare, AlertCircle } from "lucide-react";
@@ -20,6 +19,7 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, nome }: P
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open || !telefone) return;
@@ -35,21 +35,30 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, nome }: P
       .finally(() => setLoading(false));
   }, [open, telefone]);
 
+  // Rola para a mensagem mais recente (final) ao carregar.
+  useEffect(() => {
+    if (!loading && msgs.length && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [loading, msgs]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0">
-        <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
+      <DialogContent className="max-w-lg h-[80vh] max-h-[80vh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-3 shrink-0 border-b">
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-green-600" />
             {nome || telefone || "Conversa"}
           </DialogTitle>
-          <DialogDescription>Histórico de mensagens trocadas no WhatsApp</DialogDescription>
+          <DialogDescription>
+            Histórico de mensagens no WhatsApp{msgs.length ? ` · ${msgs.length} mensagens (mais recente embaixo)` : ""}
+          </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-4 py-3 bg-muted/20">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 bg-muted/20">
           {loading ? (
             <div className="space-y-3 p-2">
-              {[...Array(4)].map((_, i) => (
+              {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className={`h-12 ${i % 2 ? "w-2/3 ml-auto" : "w-3/4"}`} />
               ))}
             </div>
@@ -66,7 +75,7 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, nome }: P
               {msgs.map((m, i) => (
                 <div key={i} className={`flex ${m.from_me ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${
+                    className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words shadow-sm ${
                       m.from_me
                         ? "bg-green-600 text-white rounded-br-sm"
                         : "bg-white border rounded-bl-sm"
@@ -75,7 +84,7 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, nome }: P
                     {m.texto}
                     {m.ts && (
                       <span className={`block text-[10px] mt-1 ${m.from_me ? "text-green-100" : "text-muted-foreground"}`}>
-                        {format(new Date(m.ts), "dd/MM HH:mm", { locale: ptBR })}
+                        {format(new Date(m.ts), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       </span>
                     )}
                   </div>
@@ -83,7 +92,7 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, nome }: P
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
