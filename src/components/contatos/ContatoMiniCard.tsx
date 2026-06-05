@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Calendar, ArrowRight, Pencil, User, Trash2, MessageSquare, Sparkles } from "lucide-react";
+import { Phone, Calendar, ArrowRight, Pencil, User, Trash2, MessageSquare, Sparkles, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contato } from "@/hooks/useContatos";
@@ -100,14 +100,25 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
           Lead
         </Button>
         {contato.origem === "whatsapp" && (
-          <Button
-            variant="outline"
-            onClick={() => setConversaOpen(true)}
-            className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5"
-          >
-            <MessageSquare className="h-3.5 w-3.5 text-green-600" />
-            Ver conversa
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setConversaOpen(true)}
+              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5"
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+              Ver conversa
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => window.open(`https://wa.me/${(contato.telefone || "").replace(/\D/g, "")}`, "_blank")}
+              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5 border-green-600/40 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+              title="Abrir conversa no WhatsApp"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Abrir no WhatsApp
+            </Button>
+          </>
         )}
       </div>
 
