@@ -29,7 +29,16 @@ function canalParaTag(canal: string | null): "anuncio" | "descoberta" | "orcamen
 }
 
 async function classificar(conversa: string): Promise<TriagemResult> {
-  const apiKey = env("GROQ_API_KEY");
+  // Aceita OpenAI (gpt-4o-mini) ou Groq (llama-3.3-70b), o que estiver configurado.
+  const openaiKey = Deno.env.get("OPENAI_API_KEY") ?? "";
+  const groqKey = Deno.env.get("GROQ_API_KEY") ?? "";
+  const useOpenAI = Boolean(openaiKey);
+  const apiKey = useOpenAI ? openaiKey : groqKey;
+  if (!apiKey) throw new Error("Nenhuma chave de IA configurada (OPENAI_API_KEY ou GROQ_API_KEY)");
+  const endpoint = useOpenAI
+    ? "https://api.openai.com/v1/chat/completions"
+    : "https://api.groq.com/openai/v1/chat/completions";
+  const model = useOpenAI ? "gpt-4o-mini" : "llama-3.3-70b-versatile";
   const prompt = `Você analisa conversas de WhatsApp de uma empresa que vende e instala pisos (epóxi, concreto polido, etc.) para garagens e obras.
 A empresa atende por WhatsApp e SEMPRE pergunta ao cliente como ele encontrou a empresa.
 
@@ -45,21 +54,21 @@ Regras:
 CONVERSA:
 ${conversa}`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model,
       temperature: 0.1,
       response_format: { type: "json_object" },
       messages: [{ role: "user", content: prompt }],
     }),
   });
 
-  if (!res.ok) throw new Error(`Groq ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`IA ${res.status}: ${await res.text()}`);
   const json = await res.json();
   const content = json?.choices?.[0]?.message?.content ?? "{}";
   const parsed = JSON.parse(content);
@@ -83,7 +92,7 @@ serve(async (req) => {
 
     const { data: contato, error } = await db
       .from("contatos")
-      .select("id, user_id, telefone, nome")
+      .select("id, user_id, telefone, nome, texto_conversa, observacoes")
       .eq("id", contatoId)
       .single();
     if (error || !contato) throw new Error("contato não encontrado");
@@ -97,12 +106,17 @@ serve(async (req) => {
       .order("message_ts", { ascending: true })
       .limit(20);
 
-    const conversa = (msgs ?? [])
+    let conversa = (msgs ?? [])
       .filter((m: { texto?: string | null }) => m.texto)
       .map((m: { from_me: boolean; texto: string | null }) =>
         `${m.from_me ? "EMPRESA" : "CLIENTE"}: ${m.texto}`
       )
       .join("\n");
+
+    // Fallback: se o log de mensagens estiver vazio (ex.: backfill), usa o texto salvo no contato.
+    if (!conversa.trim()) {
+      conversa = (contato.texto_conversa || contato.observacoes || "").toString();
+    }
 
     if (!conversa.trim()) {
       // Sem texto ainda — mantém pendente para re-triagem quando chegar conteúdo.

@@ -47,6 +47,15 @@ export function isGroupJid(jid: string): boolean {
   return (jid ?? "").includes("@g.us");
 }
 
+// Só números reais do WhatsApp viram lead. Descarta @lid (ID de privacidade,
+// sem telefone recuperável), @g.us (grupo), @broadcast, @newsletter.
+export function isRealNumberJid(jid: string): boolean {
+  if (!jid) return false;
+  if (jid.includes("@") && !jid.endsWith("@s.whatsapp.net")) return false;
+  const ph = jidToPhone(jid);
+  return ph.startsWith("55") && (ph.length === 12 || ph.length === 13);
+}
+
 // --- Evolution API -----------------------------------------------------------
 export function evolutionBase(): { url: string; key: string; instance: string } {
   return {
@@ -99,7 +108,7 @@ export function extractTexto(message: Record<string, unknown> | null): string | 
 export function parseEvolutionMessage(data: Record<string, any>): InboundMessage | null {
   const key = data?.key ?? {};
   const jid: string = key.remoteJid ?? "";
-  if (!jid || isGroupJid(jid)) return null;
+  if (!isRealNumberJid(jid)) return null; // descarta grupo, @lid, broadcast, lixo
   const tsRaw = data?.messageTimestamp;
   const tsSec = typeof tsRaw === "number" ? tsRaw : parseInt(tsRaw ?? "0", 10);
   const ts = tsSec > 0 ? new Date(tsSec * 1000).toISOString() : new Date().toISOString();
