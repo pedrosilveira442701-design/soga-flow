@@ -72,6 +72,31 @@ a varredura histórica (`whatsapp-backfill`) uma única vez.
 - Evolution: `DELETE {BASE}/instance/delete/sogaragens`
 - Schema: as colunas/tabelas são aditivas e não afetam o ERP existente; podem ficar.
 
+## Estado real do deploy (2026-06-04)
+
+- ✅ **Código no GitHub `main`** (commit `aa78ade`) — push feito com o `GITHUB_TOKEN` do `crm-so-garagens.env` (tem push+admin).
+- ❌ **Migration NÃO aplicada** — `SUPABASE_DB_PASSWORD` está **vazia** no env; host direto é IPv6-only; nenhum token `sbp_` disponível tem acesso a este projeto (todos 403 — projeto é de outra conta, provavelmente gerida pelo Lovable).
+- ❌ **Edge functions NÃO deployadas** — idem (precisa `sbp_` desta conta ou Lovable).
+- `SUPABASE_SECRET_KEY` é `sb_secret_…` (API key nova), **não** serve para Management API (401).
+
+**OWNER_USER_ID descoberto:** `5ae5a3a1-08a6-4ae6-8769-aa78924eccab` (falecompedrosilveira@gmail.com, login ativo).
+
+### Para concluir o go-live, escolher UM caminho:
+
+**A) Via Lovable (recomendado, sem token novo):** abrir o projeto Lovable
+(`fc513cdd-1622-4274-a36a-ce657e6d200a`), que sincroniza do GitHub. Pedir ao
+Lovable para aplicar a migration pendente e deployar as 3 functions, e setar os
+secrets no painel do Supabase gerido por ele.
+
+**B) Me dar um Personal Access Token (`sbp_`) DESTA conta Supabase** (painel →
+Account → Access Tokens). Com ele eu rodo tudo: aplico a migration via
+Management API (`POST /v1/projects/{ref}/database/query`) e
+`supabase functions deploy`. (A DB password continua vazia, então uso a
+Management API em vez de `db push`.)
+
+Depois de qualquer um, faltam só os **secrets** (Evolution + Groq + OWNER_USER_ID)
+e **ler o QR** no celular.
+
 ## Observações de risco
 
 - **Fase 1 não envia mensagens** — só lê. Risco de bloqueio do número ~nulo.
