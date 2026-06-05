@@ -10,7 +10,7 @@ import { ptBR } from "date-fns/locale";
 import type { FilterPeriod } from "@/hooks/useDashboard";
 
 interface Filters {
-  period: FilterPeriod;
+  period: FilterPeriod | "all";
   customDateRange?: { from: Date; to: Date };
 }
 
@@ -24,6 +24,7 @@ export function useFunilComercial(filters: Filters = { period: "month" }) {
   const { start, end } = useMemo(() => {
     const now = new Date();
     switch (filters.period) {
+      case "all": return { start: new Date(0), end: new Date(9999, 0, 1) };
       case "week": return { start: startOfWeek(now, { locale: ptBR }), end: endOfWeek(now, { locale: ptBR }) };
       case "year": return { start: startOfYear(now), end: endOfYear(now) };
       case "custom": return {

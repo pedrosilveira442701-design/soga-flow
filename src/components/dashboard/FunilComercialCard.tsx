@@ -12,6 +12,9 @@ interface Props {
 }
 
 type Modo = "coorte" | "atividade";
+type Periodo = "all" | "year" | "month";
+
+const PERIODO_LABEL: Record<Periodo, string> = { all: "Tudo", year: "Este ano", month: "Este mês" };
 
 function Etapa({ icon: Icon, label, valor, sub, cor }: {
   icon: any; label: string; valor: number | string; sub?: string; cor: string;
@@ -37,13 +40,14 @@ function Seta({ taxa }: { taxa?: string }) {
   );
 }
 
-export function FunilComercialCard({ period, customDateRange }: Props) {
+export function FunilComercialCard(_props: Props) {
   const [modo, setModo] = useState<Modo>("coorte");
-  const { coorte, atividade, isLoading } = useFunilComercial({ period, customDateRange });
+  const [periodo, setPeriodo] = useState<Periodo>("all");
+  const { coorte, atividade, isLoading } = useFunilComercial({ period: periodo });
 
   return (
     <Card className="p-6 space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-h3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" /> Funil Comercial
@@ -54,23 +58,25 @@ export function FunilComercialCard({ period, customDateRange }: Props) {
               : "Eventos que aconteceram dentro do período"}
           </p>
         </div>
-        <div className="flex rounded-lg border p-0.5">
-          <Button
-            size="sm"
-            variant={modo === "coorte" ? "default" : "ghost"}
-            className="h-7 text-xs"
-            onClick={() => setModo("coorte")}
-          >
-            Por chegada
-          </Button>
-          <Button
-            size="sm"
-            variant={modo === "atividade" ? "default" : "ghost"}
-            className="h-7 text-xs"
-            onClick={() => setModo("atividade")}
-          >
-            Por atividade
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex rounded-lg border p-0.5">
+            {(["all", "year", "month"] as Periodo[]).map((p) => (
+              <Button key={p} size="sm" variant={periodo === p ? "default" : "ghost"}
+                className="h-7 text-xs" onClick={() => setPeriodo(p)}>
+                {PERIODO_LABEL[p]}
+              </Button>
+            ))}
+          </div>
+          <div className="flex rounded-lg border p-0.5">
+            <Button size="sm" variant={modo === "coorte" ? "default" : "ghost"}
+              className="h-7 text-xs" onClick={() => setModo("coorte")}>
+              Por chegada
+            </Button>
+            <Button size="sm" variant={modo === "atividade" ? "default" : "ghost"}
+              className="h-7 text-xs" onClick={() => setModo("atividade")}>
+              Por atividade
+            </Button>
+          </div>
         </div>
       </div>
 
