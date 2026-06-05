@@ -17,6 +17,7 @@ export interface Contato {
   triagem_motivo?: string | null;
   canal_detectado?: string | null;
   texto_conversa?: string | null;
+  whatsapp_jid?: string | null;
   created_at: string;
   updated_at: string;
 }

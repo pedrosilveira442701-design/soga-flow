@@ -80,8 +80,9 @@ export async function evolutionPost(path: string, body: unknown) {
 
 // --- Tipos -------------------------------------------------------------------
 export interface InboundMessage {
-  jid: string; // jid cru do Evolution
-  phone: string; // só dígitos
+  jid: string; // jid efetivo (número real)
+  convJid: string; // jid original p/ buscar a conversa no Evolution (pode ser @lid)
+  phone: string; // só dígitos do número real
   pushName: string | null;
   fromMe: boolean;
   texto: string | null;
@@ -105,15 +106,20 @@ export function extractTexto(message: Record<string, unknown> | null): string | 
 }
 
 // Normaliza um item "messages.upsert" do Evolution em InboundMessage.
+// LID: quando remoteJid é @lid (ID de privacidade), o número real vem em remoteJidAlt.
 export function parseEvolutionMessage(data: Record<string, any>): InboundMessage | null {
   const key = data?.key ?? {};
-  const jid: string = key.remoteJid ?? "";
-  if (!isRealNumberJid(jid)) return null; // descarta grupo, @lid, broadcast, lixo
+  const remoteJid: string = key.remoteJid ?? "";
+  const altJid: string = key.remoteJidAlt ?? "";
+  // jid efetivo = o que tiver número real (remoteJid normal, ou remoteJidAlt no caso @lid).
+  const jid = isRealNumberJid(remoteJid) ? remoteJid : (isRealNumberJid(altJid) ? altJid : "");
+  if (!jid) return null; // sem número real em lugar nenhum (grupo/broadcast/lixo)
   const tsRaw = data?.messageTimestamp;
   const tsSec = typeof tsRaw === "number" ? tsRaw : parseInt(tsRaw ?? "0", 10);
   const ts = tsSec > 0 ? new Date(tsSec * 1000).toISOString() : new Date().toISOString();
   return {
     jid,
+    convJid: remoteJid || jid, // original (pode ser @lid) p/ buscar a conversa
     phone: jidToPhone(jid),
     pushName: data?.pushName ?? null,
     fromMe: Boolean(key.fromMe),
@@ -189,7 +195,7 @@ export async function garantirContato(
       origem: "whatsapp",
       observacoes: msg.texto,
       texto_conversa: msg.texto,
-      whatsapp_jid: msg.phone,
+      whatsapp_jid: msg.convJid,
       whatsapp_msg_id: msg.messageId,
       triagem_status: "pendente",
     })

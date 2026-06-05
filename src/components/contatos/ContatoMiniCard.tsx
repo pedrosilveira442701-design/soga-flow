@@ -114,7 +114,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
       <WhatsAppConversaDialog
         open={conversaOpen}
         onOpenChange={setConversaOpen}
-        telefone={contato.telefone}
+        telefone={contato.whatsapp_jid || contato.telefone}
         nome={contato.nome}
       />
     </div>

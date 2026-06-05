@@ -17,8 +17,10 @@ function env(n: string): string {
   return v;
 }
 
-function toJid(telefone: string): string {
-  let d = (telefone ?? "").replace(/\D/g, "");
+function toJid(input: string): string {
+  // Já é um jid completo (ex.: "2040...@lid" salvo de contatos @lid)? usa direto.
+  if ((input ?? "").includes("@")) return input;
+  let d = (input ?? "").replace(/\D/g, "");
   if (!d.startsWith("55") && d.length >= 10 && d.length <= 11) d = "55" + d;
   return `${d}@s.whatsapp.net`;
 }
