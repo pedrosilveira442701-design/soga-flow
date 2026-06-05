@@ -4,10 +4,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Trash2, RotateCcw, Phone, Clock, Radio, MessageCircle } from "lucide-react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useWhatsAppTriagem, type WhatsAppContato } from "@/hooks/useWhatsAppTriagem";
 import { useWhatsAppConexao } from "@/hooks/useWhatsAppConexao";
+import { WhatsAppConversaDialog } from "@/components/leads/WhatsAppConversaDialog";
 import type { Contato } from "@/hooks/useContatos";
 
 interface Props {
@@ -36,11 +38,13 @@ function ContatoCard({
   onPromover,
   onDescartar,
   onRestaurar,
+  onVerConversa,
 }: {
   contato: WhatsAppContato;
   onPromover?: (c: WhatsAppContato) => void;
   onDescartar?: (id: string) => void;
   onRestaurar?: (id: string) => void;
+  onVerConversa?: (c: WhatsAppContato) => void;
 }) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-2">
@@ -71,10 +75,15 @@ function ContatoCard({
         </div>
       )}
 
-      <div className="flex gap-2 pt-1">
+      <div className="flex flex-wrap gap-2 pt-1">
         {onPromover && (
           <Button size="sm" className="gap-1" onClick={() => onPromover(contato)}>
             Promover a Lead <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {onVerConversa && (
+          <Button size="sm" variant="outline" className="gap-1" onClick={() => onVerConversa(contato)}>
+            <MessageCircle className="h-3.5 w-3.5" /> Ver conversa
           </Button>
         )}
         {onRestaurar && (
@@ -101,6 +110,7 @@ function Lista({ contatos, empty, children }: { contatos: WhatsAppContato[]; emp
 
 export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) {
   const { potenciais, pendentes, ruido, descartar, restaurar, isLoading } = useWhatsAppTriagem();
+  const [conversaContato, setConversaContato] = useState<WhatsAppContato | null>(null);
 
   const handlePromover = (c: WhatsAppContato) => {
     onPromover(c);
@@ -140,17 +150,17 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
               <>
                 <TabsContent value="potenciais" className="mt-0">
                   <Lista contatos={potenciais} empty="Nenhum lead potencial na fila.">
-                    {(c) => <ContatoCard contato={c} onPromover={handlePromover} onDescartar={descartar} />}
+                    {(c) => <ContatoCard contato={c} onPromover={handlePromover} onDescartar={descartar} onVerConversa={setConversaContato} />}
                   </Lista>
                 </TabsContent>
                 <TabsContent value="pendentes" className="mt-0">
                   <Lista contatos={pendentes} empty="Nada pendente de triagem.">
-                    {(c) => <ContatoCard contato={c} onPromover={handlePromover} onDescartar={descartar} />}
+                    {(c) => <ContatoCard contato={c} onPromover={handlePromover} onDescartar={descartar} onVerConversa={setConversaContato} />}
                   </Lista>
                 </TabsContent>
                 <TabsContent value="ruido" className="mt-0">
                   <Lista contatos={ruido} empty="Nenhum contato descartado.">
-                    {(c) => <ContatoCard contato={c} onRestaurar={restaurar} />}
+                    {(c) => <ContatoCard contato={c} onRestaurar={restaurar} onVerConversa={setConversaContato} />}
                   </Lista>
                 </TabsContent>
               </>
@@ -158,6 +168,13 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
           </ScrollArea>
         </Tabs>
       </DialogContent>
+
+      <WhatsAppConversaDialog
+        open={!!conversaContato}
+        onOpenChange={(o) => !o && setConversaContato(null)}
+        telefone={conversaContato?.telefone ?? null}
+        nome={conversaContato?.nome}
+      />
     </Dialog>
   );
 }

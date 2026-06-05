@@ -36,6 +36,7 @@ import { useVisitas } from "@/hooks/useVisitas";
 import { useLeadInteracoes } from "@/hooks/useLeadInteracoes";
 import { LeadTimeline } from "./LeadTimeline";
 import { LeadTimelineForm } from "./LeadTimelineForm";
+import { WhatsAppConversaDialog } from "./WhatsAppConversaDialog";
 import { toast } from "sonner";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"] & {
@@ -88,6 +89,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [visitaDialogOpen, setVisitaDialogOpen] = useState(false);
   const [showTimelineForm, setShowTimelineForm] = useState(false);
+  const [conversaOpen, setConversaOpen] = useState(false);
   const { createVisita } = useVisitas();
   const { interacoes, isLoading: isLoadingInteracoes, createInteracao, deleteInteracao } = useLeadInteracoes(lead?.id);
 
@@ -314,6 +316,14 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                   <Button variant="link" className="h-auto p-0 text-body font-medium" onClick={handleWhatsApp}>
                     {lead.clientes.telefone}
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 mt-1"
+                    onClick={() => setConversaOpen(true)}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5 text-green-600" /> Ver conversa do WhatsApp
+                  </Button>
                 </div>
               )}
 
@@ -500,6 +510,13 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
           />
         </DialogContent>
       </Dialog>
+
+      <WhatsAppConversaDialog
+        open={conversaOpen}
+        onOpenChange={setConversaOpen}
+        telefone={lead.clientes?.telefone ?? null}
+        nome={lead.clientes?.nome}
+      />
     </>
   );
 }
