@@ -404,7 +404,7 @@ export function KanbanBoard({
                         </span>
                         <div className="h-px flex-1 bg-border/50" />
                       </div>
-                      {contatosNaoConvertidos.slice(0, 5).map((contato) => (
+                      {contatosNaoConvertidos.map((contato) => (
                         <ContatoMiniCard
                           key={contato.id}
                           contato={contato}
@@ -413,11 +413,6 @@ export function KanbanBoard({
                           onDelete={onDeleteContato}
                         />
                       ))}
-                      {contatosNaoConvertidos.length > 5 && (
-                        <p className="text-xs text-muted-foreground text-center py-1">
-                          + {contatosNaoConvertidos.length - 5} contatos não exibidos
-                        </p>
-                      )}
                     </div>
                   ) : undefined
                 }
