@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Calendar, ArrowRight, Pencil, User, Trash2, MessageSquare } from "lucide-react";
+import { Phone, Calendar, ArrowRight, Pencil, User, Trash2, MessageSquare, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Contato } from "@/hooks/useContatos";
@@ -27,6 +27,12 @@ const TAG_LABELS = {
   orcamento: "Orçamento",
 };
 
+const TRIAGEM = {
+  potencial: { label: "Potencial", cls: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30" },
+  pendente: { label: "A revisar", cls: "bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30" },
+  ruido: { label: "Ruído", cls: "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30" },
+} as const;
+
 export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: ContatoMiniCardProps) {
   const [conversaOpen, setConversaOpen] = useState(false);
   return (
@@ -44,6 +50,11 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             <span className="text-sm font-medium text-foreground truncate">{contato.telefone}</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
+            {contato.origem === "whatsapp" && contato.triagem_status && TRIAGEM[contato.triagem_status] && (
+              <Badge variant="outline" className={cn("text-xs font-semibold", TRIAGEM[contato.triagem_status].cls)}>
+                {TRIAGEM[contato.triagem_status].label}
+              </Badge>
+            )}
             {contato.tag && (
               <Badge variant="outline" className={cn("text-xs", TAG_STYLES[contato.tag])}>
                 {TAG_LABELS[contato.tag]}
@@ -57,7 +68,13 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>
-          {contato.observacoes && <p className="text-xs text-muted-foreground truncate mt-1">{contato.observacoes}</p>}
+          {contato.triagem_motivo && (
+            <p className="text-xs text-muted-foreground italic mt-1 flex items-start gap-1">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 mt-0.5 text-violet-500" />
+              {contato.triagem_motivo}
+            </p>
+          )}
+          {contato.observacoes && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{contato.observacoes}</p>}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button size="icon" variant="ghost" onClick={() => onEdit(contato)} title="Editar contato">

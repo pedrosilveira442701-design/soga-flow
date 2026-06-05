@@ -94,15 +94,18 @@ export default function Leads() {
 
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
-  // Funil mostra só o que vale: contatos do WhatsApp marcados como 'potencial' pela IA,
-  // e qualquer contato manual (não-WhatsApp, que não passa por triagem). Pendentes e ruído
-  // do WhatsApp ficam apenas na aba Triagem WhatsApp.
-  const contatosFunil = useMemo(
-    () => naoConvertidos.filter(
-      (c) => c.origem !== "whatsapp" || c.triagem_status === "potencial"
-    ),
-    [naoConvertidos]
-  );
+  // Todos os contatos não convertidos aparecem em "Entrou em Contato"; a triagem
+  // (classificação da IA + promover/descartar) é feita direto no card do Kanban.
+  // Ordena para facilitar: Potencial > A revisar (pendente/sem status) > Ruído.
+  const contatosFunil = useMemo(() => {
+    const rank = (c: Contato) =>
+      c.triagem_status === "potencial" ? 0 : c.triagem_status === "ruido" ? 2 : 1;
+    return [...naoConvertidos].sort((a, b) => {
+      const r = rank(a) - rank(b);
+      if (r !== 0) return r;
+      return new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime();
+    });
+  }, [naoConvertidos]);
   const { updatePropostasByLeadId } = usePropostas();
   const { user } = useAuth();
 

@@ -14,6 +14,8 @@ export interface Contato {
   converteu_lead: boolean;
   lead_id: string | null;
   triagem_status?: 'pendente' | 'potencial' | 'ruido' | null;
+  triagem_motivo?: string | null;
+  canal_detectado?: string | null;
   texto_conversa?: string | null;
   created_at: string;
   updated_at: string;
