@@ -1,6 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Trash2, RotateCcw, Phone, Clock, Radio, MessageCircle } from "lucide-react";
@@ -119,7 +118,7 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+      <DialogContent className="max-w-2xl h-[85vh] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <div className="flex items-center justify-between gap-3">
             <DialogTitle>Triagem WhatsApp</DialogTitle>
@@ -143,7 +142,7 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="flex-1 px-6 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
             {isLoading ? (
               <p className="text-center text-caption text-sm py-10">Carregando…</p>
             ) : (
@@ -165,7 +164,7 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
                 </TabsContent>
               </>
             )}
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
 
