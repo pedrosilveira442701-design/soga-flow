@@ -26,7 +26,8 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, jid, nome
   const [resposta, setResposta] = useState("");
   const [enviando, setEnviando] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fonte = jid || telefone;
+  // Busca pelo telefone real (nosso banco indexa por número, não pelo @lid).
+  const fonte = telefone || jid;
 
   useEffect(() => {
     if (!open || !fonte) return;
