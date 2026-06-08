@@ -1,7 +1,7 @@
 // ============================================================================
 // whatsapp-chat-ia — chat com IA (Claude Sonnet via Bedrock) sobre os dados do
-// WhatsApp. A IA recebe um resumo dos contatos/conversas e responde perguntas
-// de análise (estratificação, padrões, leads por canal, etc.). Requer login.
+// WhatsApp. A IA analisa contatos/conversas E PODE ENVIAR mensagens (tool use),
+// quando o usuário pedir explicitamente. Requer login.
 // ============================================================================
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
@@ -31,13 +31,59 @@ function montarContexto(contatos: any[]): string {
     const conv = (c.texto_conversa || c.observacoes || "").replace(/\s+/g, " ").slice(0, 700);
     return `#${i + 1} | ${c.nome || "sem nome"} | tel ${c.telefone} | ${data} | triagem: ${c.triagem_status || "pendente"} | canal: ${c.canal_detectado || "?"} | motivo IA: ${c.triagem_motivo || "-"}\n   conversa: ${conv}`;
   }).join("\n");
-  return `ESTATÍSTICAS:
-- Total de contatos/conversas: ${total}
-- Por triagem: ${JSON.stringify(porStatus)}
-- Por canal detectado: ${JSON.stringify(porCanal)}
+  return `ESTATÍSTICAS:\n- Total: ${total} | Por triagem: ${JSON.stringify(porStatus)} | Por canal: ${JSON.stringify(porCanal)}\n\nCONVERSAS (até 120 mais recentes):\n${linhas}`;
+}
 
-CONVERSAS (até 120 mais recentes):
-${linhas}`;
+function normalizaNumero(input: string): string {
+  let d = (input ?? "").split("@")[0].replace(/\D/g, "");
+  if (!d.startsWith("55") && d.length >= 10 && d.length <= 11) d = "55" + d;
+  return d;
+}
+
+async function enviarWhatsApp(telefone: string, mensagem: string): Promise<string> {
+  const numero = normalizaNumero(telefone);
+  if (!numero || numero.length < 12) return "ERRO: número inválido (" + telefone + ")";
+  if (!mensagem || !mensagem.trim()) return "ERRO: mensagem vazia";
+  const url = env("EVOLUTION_API_URL").replace(/\/+$/, "");
+  const instance = Deno.env.get("EVOLUTION_INSTANCE") || "sogaragens";
+  try {
+    const r = await fetch(`${url}/message/sendText/${instance}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: env("EVOLUTION_API_KEY") },
+      body: JSON.stringify({ number: numero, text: mensagem }),
+    });
+    if (!r.ok) return `ERRO ao enviar (${r.status}): ${(await r.text()).slice(0, 200)}`;
+    return `SUCESSO: mensagem enviada para ${numero}`;
+  } catch (e) {
+    return `ERRO de rede ao enviar: ${e}`;
+  }
+}
+
+const TOOLS = [{
+  name: "enviar_mensagem_whatsapp",
+  description: "Envia uma mensagem de TEXTO pelo WhatsApp da empresa para UM contato. Use somente quando o usuário pedir explicitamente para enviar/responder. Confirme destinatário e texto antes. Nunca envie em massa.",
+  input_schema: {
+    type: "object",
+    properties: {
+      telefone: { type: "string", description: "Número do destinatário com DDD (ex: 553184756879). Use o telefone exato do contato nos dados." },
+      mensagem: { type: "string", description: "Texto exato a enviar." },
+    },
+    required: ["telefone", "mensagem"],
+  },
+}];
+
+async function bedrock(aws: AwsClient, region: string, model: string, system: string, messages: any[]) {
+  const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/invoke`;
+  const res = await aws.fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 1500, temperature: 0.3, system, tools: TOOLS, messages,
+    }),
+  });
+  if (!res.ok) throw new Error(`Bedrock ${res.status}: ${await res.text()}`);
+  return await res.json();
 }
 
 serve(async (req) => {
@@ -54,30 +100,27 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const messages: { role: string; content: string }[] = Array.isArray(body?.messages) ? body.messages : [];
-    if (!messages.length) throw new Error("messages vazio");
+    const incoming: { role: string; content: string }[] = Array.isArray(body?.messages) ? body.messages : [];
+    if (!incoming.length) throw new Error("messages vazio");
 
-    // Dados do WhatsApp do usuário (RLS garante que são dele).
     const { data: contatos } = await supa
       .from("contatos")
       .select("nome, telefone, data_hora, triagem_status, canal_detectado, triagem_motivo, texto_conversa, observacoes")
-      .eq("origem", "whatsapp")
-      .is("deleted_at", null)
-      .order("data_hora", { ascending: false })
-      .limit(400);
+      .eq("origem", "whatsapp").is("deleted_at", null)
+      .order("data_hora", { ascending: false }).limit(400);
 
-    const contexto = montarContexto(contatos ?? []);
-    const system = `Você é um analista comercial da empresa "Só Garagens" (vende e instala pisos para garagens/obras: epóxi, concreto polido, etc.). Você ajuda o dono a analisar os contatos e conversas capturados do WhatsApp.
+    const system = `Você é o assistente comercial da "Só Garagens" (pisos para garagens/obras: epóxi, concreto polido). Ajuda o dono a analisar os contatos/conversas do WhatsApp E pode ENVIAR mensagens.
 
-CAPACIDADES E LIMITES (importante):
-- Você é SOMENTE um assistente de análise e redação. Você NÃO tem nenhuma ferramenta para enviar, responder ou disparar mensagens no WhatsApp.
-- NUNCA diga que enviou, mandou ou respondeu uma mensagem — você é incapaz disso e isso seria mentira.
-- Se o usuário pedir para enviar/responder uma mensagem, você pode REDIGIR um rascunho e dizer claramente: "Aqui está o rascunho — copie e envie pelo WhatsApp, pois o envio ainda não está disponível neste sistema."
+ENVIO (ferramenta enviar_mensagem_whatsapp):
+- Você PODE enviar mensagens pelo WhatsApp usando a ferramenta, mas SOMENTE quando o usuário pedir claramente para enviar/responder.
+- Use o telefone EXATO do contato que está nos dados. Envie para UM contato por vez. Nunca dispare em massa nem mensagens idênticas para vários.
+- Se houver qualquer ambiguidade (qual contato? qual texto?), PERGUNTE antes de enviar.
+- Depois de enviar, confirme ao usuário com o resultado real da ferramenta. Se a ferramenta retornar ERRO, diga que NÃO foi enviado.
 
-Use SOMENTE os dados fornecidos abaixo. Seja direto, objetivo e prático. Quando fizer contagens ou listas, baseie-se nos dados. Responda em português do Brasil. Se a pergunta não puder ser respondida com os dados, diga o que falta.
+Use SOMENTE os dados abaixo para análise. Português do Brasil. Seja direto.
 
-DADOS DISPONÍVEIS:
-${contexto}`;
+DADOS:
+${montarContexto(contatos ?? [])}`;
 
     const region = Deno.env.get("BEDROCK_REGION") || "sa-east-1";
     const model = Deno.env.get("BEDROCK_CHAT_MODEL_ID") || "global.anthropic.claude-sonnet-4-5-20250929-v1:0";
@@ -86,22 +129,37 @@ ${contexto}`;
       secretAccessKey: env("BEDROCK_AWS_SECRET_ACCESS_KEY"),
       region, service: "bedrock",
     });
-    const url = `https://bedrock-runtime.${region}.amazonaws.com/model/${encodeURIComponent(model)}/invoke`;
-    const res = await aws.fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 1500,
-        temperature: 0.3,
-        system,
-        messages: messages.slice(-12).map((m) => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })),
-      }),
-    });
-    if (!res.ok) throw new Error(`Bedrock ${res.status}: ${await res.text()}`);
-    const j = await res.json();
-    const resposta = j?.content?.[0]?.text ?? "(sem resposta)";
-    return new Response(JSON.stringify({ ok: true, resposta }), {
+
+    // Histórico: só texto (rodadas anteriores). A IA recompõe o contexto a cada turno.
+    const messages: any[] = incoming.slice(-12).map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+    }));
+
+    let enviou = false;
+    // Loop de tool use (máx 4 iterações).
+    for (let i = 0; i < 4; i++) {
+      const resp = await bedrock(aws, region, model, system, messages);
+      const content = resp?.content ?? [];
+      if (resp?.stop_reason === "tool_use") {
+        messages.push({ role: "assistant", content });
+        const results = [];
+        for (const block of content) {
+          if (block.type === "tool_use" && block.name === "enviar_mensagem_whatsapp") {
+            const r = await enviarWhatsApp(block.input?.telefone, block.input?.mensagem);
+            if (r.startsWith("SUCESSO")) enviou = true;
+            results.push({ type: "tool_result", tool_use_id: block.id, content: r });
+          }
+        }
+        messages.push({ role: "user", content: results });
+        continue;
+      }
+      const texto = content.filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n") || "(sem resposta)";
+      return new Response(JSON.stringify({ ok: true, resposta: texto, enviou }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ ok: true, resposta: "(limite de processamento atingido)", enviou }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
