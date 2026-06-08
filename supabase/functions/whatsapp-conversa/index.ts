@@ -53,10 +53,10 @@ serve(async (req) => {
       .order("message_ts", { ascending: true })
       .limit(300);
 
-    let mensagens = (msgs ?? [])
+    let mensagens: { from_me: boolean; texto: string | null; ts: string | null }[] = (msgs ?? [])
       .filter((m: { texto?: string | null }) => m.texto)
       .map((m: { from_me: boolean; texto: string | null; message_ts: string }) => ({
-        from_me: m.from_me, texto: m.texto, ts: m.message_ts,
+        from_me: m.from_me, texto: m.texto, ts: m.message_ts as string | null,
       }));
 
     // 2. Fallback: texto_conversa salvo no contato (ex.: backfill sem log).
