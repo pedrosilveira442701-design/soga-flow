@@ -38,8 +38,9 @@ export function useWhatsAppTriagem() {
       if (error) throw error;
       return (data ?? []) as unknown as WhatsAppContato[];
     },
-    // Atualiza sozinho enquanto a fila está aberta (novos leads chegam do webhook).
-    refetchInterval: 30_000,
+    // Atualiza sozinho (novos leads chegam do webhook em tempo real).
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 
   const setStatus = useMutation({

@@ -23,6 +23,8 @@ export function useWhatsAppGestao() {
   const { data: contatos = [], isLoading } = useQuery({
     queryKey: ["whatsapp-gestao", user?.id],
     enabled: !!user,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contatos")

@@ -9,7 +9,9 @@ import { WhatsAppTriagemKanban } from "@/components/whatsapp/WhatsAppTriagemKanb
 import { WhatsAppTriagemLista } from "@/components/whatsapp/WhatsAppTriagemLista";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { LayoutGrid, List } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { LayoutGrid, List, RefreshCw } from "lucide-react";
 import { MessageSquare, Users, Sparkles, TrendingUp, Radio } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
@@ -35,6 +37,23 @@ export default function WhatsAppGestao() {
   const g = useWhatsAppGestao();
   const { status } = useWhatsAppConexao();
   const [vista, setVista] = useState<"kanban" | "lista">("lista");
+  const [atualizando, setAtualizando] = useState(false);
+  const queryClient = useQueryClient();
+
+  const atualizar = async () => {
+    setAtualizando(true);
+    try {
+      await queryClient.invalidateQueries({
+        predicate: (q) => {
+          const k = String(q.queryKey?.[0] ?? "");
+          return k.startsWith("whatsapp") || k === "contatos";
+        },
+      });
+      toast.success("Atualizado");
+    } finally {
+      setTimeout(() => setAtualizando(false), 600);
+    }
+  };
   const conexao = {
     conectado: { label: "Conectado", cls: "bg-green-500/15 text-green-600 border-green-500/30" },
     conectando: { label: "Conectando…", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
@@ -54,9 +73,15 @@ export default function WhatsAppGestao() {
             Estratifique e analise as conversas capturadas do WhatsApp
           </p>
         </div>
-        <Badge variant="outline" className={`gap-1.5 ${conexao.cls}`}>
-          <Radio className="h-3 w-3" /> {conexao.label}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className={`gap-1.5 ${conexao.cls}`}>
+            <Radio className="h-3 w-3" /> {conexao.label}
+          </Badge>
+          <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={atualizar} disabled={atualizando}>
+            <RefreshCw className={`h-4 w-4 ${atualizando ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Volume real no WhatsApp */}
