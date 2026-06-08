@@ -6,17 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useWhatsAppTriagem, type WhatsAppContato, type TriagemStatus } from "@/hooks/useWhatsAppTriagem";
 import { useContatos } from "@/hooks/useContatos";
 import { WhatsAppConversaDialog } from "@/components/leads/WhatsAppConversaDialog";
-import { Search, MessageSquare, ExternalLink, ArrowRightCircle, Trash2, Phone } from "lucide-react";
+import { Search, MessageSquare, ExternalLink, ArrowRightCircle, Trash2, Phone, MoreVertical, User } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const STATUS_LABEL: Record<TriagemStatus, string> = { potencial: "Potencial", pendente: "A revisar", ruido: "Ruído" };
-const STATUS_CLS: Record<TriagemStatus, string> = {
-  potencial: "text-green-600", pendente: "text-slate-600", ruido: "text-red-600",
-};
+const STATUS_DOT: Record<TriagemStatus, string> = { potencial: "bg-green-500", pendente: "bg-slate-400", ruido: "bg-red-500" };
 const PRIO: Record<string, { label: string; cls: string }> = {
   alta: { label: "Alta", cls: "bg-red-500/15 text-red-600 border-red-500/30" },
   media: { label: "Média", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
@@ -45,12 +46,12 @@ export function WhatsAppTriagemLista() {
     <>
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome, telefone ou texto…" className="pl-8 h-9" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome, telefone ou texto…" className="pl-9 h-10" />
         </div>
         <div className="flex rounded-lg border p-0.5">
           {(["todos", "potencial", "pendente", "ruido"] as const).map((f) => (
-            <Button key={f} size="sm" variant={filtro === f ? "default" : "ghost"} className="h-7 text-xs"
+            <Button key={f} size="sm" variant={filtro === f ? "default" : "ghost"} className="h-8 text-xs px-3"
               onClick={() => setFiltro(f)}>
               {f === "todos" ? "Todos" : STATUS_LABEL[f]}
             </Button>
@@ -58,38 +59,50 @@ export function WhatsAppTriagemLista() {
         </div>
       </div>
 
-      <Card className="divide-y">
+      <Card className="divide-y overflow-hidden">
         {isLoading ? (
-          <div className="p-4 space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          <div className="p-4 space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
         ) : filtrada.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground py-10">Nenhuma conversa encontrada.</p>
+          <p className="text-center text-sm text-muted-foreground py-12">Nenhuma conversa encontrada.</p>
         ) : (
           filtrada.map((c) => {
             const prio = c.prioridade ? PRIO[c.prioridade] : null;
+            const iniciais = (c.nome || "?").trim().slice(0, 2).toUpperCase();
             return (
-              <div key={c.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm truncate">{c.nome || "Sem nome"}</span>
-                    {prio && <Badge variant="outline" className={`text-[10px] ${prio.cls}`}>{prio.label}</Badge>}
-                    {c.canal_detectado && <Badge variant="secondary" className="text-[10px]">{c.canal_detectado}</Badge>}
+              <div key={c.id} className="p-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-start gap-3">
+                  {/* Avatar */}
+                  <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold">
+                    {c.nome ? iniciais : <User className="h-5 w-5" />}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{c.telefone}</span>
-                    <span>{c.data_hora ? format(new Date(c.data_hora), "dd/MM HH:mm", { locale: ptBR }) : ""}</span>
+
+                  {/* Info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm truncate">{c.nome || "Sem nome"}</span>
+                      {prio && <Badge variant="outline" className={`text-[10px] h-5 ${prio.cls}`}>{prio.label}</Badge>}
+                      {c.canal_detectado && <Badge variant="secondary" className="text-[10px] h-5">{c.canal_detectado}</Badge>}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1 tabular-nums"><Phone className="h-3.5 w-3.5" />{c.telefone}</span>
+                      <span className="tabular-nums">{c.data_hora ? format(new Date(c.data_hora), "dd/MM HH:mm", { locale: ptBR }) : ""}</span>
+                    </div>
+                    {(c.triagem_motivo || c.texto_conversa) && (
+                      <p className="text-xs text-foreground/70 mt-1.5 line-clamp-2">
+                        {c.triagem_motivo || (c.texto_conversa || "").replace(/\s+/g, " ")}
+                      </p>
+                    )}
                   </div>
-                  {(c.triagem_motivo || c.texto_conversa) && (
-                    <p className="text-xs text-foreground/70 mt-1 line-clamp-1">
-                      {c.triagem_motivo || (c.texto_conversa || "").replace(/\s+/g, " ")}
-                    </p>
-                  )}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {/* Classificação editável */}
+                {/* Ações */}
+                <div className="flex items-center gap-2 mt-3 sm:pl-[52px] flex-wrap">
                   <Select value={c.triagem_status} onValueChange={(v) => mover(c.id, v as TriagemStatus)}>
-                    <SelectTrigger className={`h-8 w-[120px] text-xs font-medium ${STATUS_CLS[c.triagem_status]}`}>
-                      <SelectValue />
+                    <SelectTrigger className="h-9 w-[140px] text-xs font-medium" aria-label="Classificação">
+                      <span className="flex items-center gap-2">
+                        <span className={`h-2 w-2 rounded-full ${STATUS_DOT[c.triagem_status]}`} />
+                        <SelectValue />
+                      </span>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="potencial">Potencial</SelectItem>
@@ -97,21 +110,35 @@ export function WhatsAppTriagemLista() {
                       <SelectItem value="ruido">Ruído</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Ver conversa" onClick={() => setConversa(c)}>
-                    <MessageSquare className="h-4 w-4 text-green-600" />
+
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setConversa(c)}>
+                    <MessageSquare className="h-[18px] w-[18px] text-green-600" /> Conversa
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Abrir no WhatsApp"
-                    onClick={() => window.open(`https://wa.me/${(c.telefone || "").replace(/\D/g, "")}`, "_blank")}>
-                    <ExternalLink className="h-4 w-4 text-green-600" />
+
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => navigate(`/leads?contato=${c.id}`)}>
+                    <ArrowRightCircle className="h-[18px] w-[18px] text-blue-600" />
+                    <span className="hidden sm:inline">Funil</span>
                   </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Enviar para o funil"
-                    onClick={() => navigate(`/leads?contato=${c.id}`)}>
-                    <ArrowRightCircle className="h-4 w-4 text-blue-600" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" title="Excluir"
-                    onClick={() => deleteContato.mutate(c.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações">
+                        <MoreVertical className="h-[18px] w-[18px]" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="text-[13px]">
+                      <DropdownMenuItem onClick={() => window.open(`https://wa.me/${(c.telefone || "").replace(/\D/g, "")}`, "_blank")}>
+                        <ExternalLink className="mr-2 h-4 w-4 text-green-600" /> Abrir no WhatsApp
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/leads?contato=${c.id}`)}>
+                        <ArrowRightCircle className="mr-2 h-4 w-4 text-blue-600" /> Enviar para o funil
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onClick={() => deleteContato.mutate(c.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             );

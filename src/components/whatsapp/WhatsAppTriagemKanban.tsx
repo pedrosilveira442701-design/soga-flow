@@ -57,12 +57,12 @@ function Card({ c, onVerConversa, onMover, onFunil, onDescartar }: {
       {c.canal_detectado && <Badge variant="secondary" className="text-[10px]">{c.canal_detectado}</Badge>}
 
       <div className="flex items-center gap-1.5 pt-1">
-        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs flex-1" onClick={() => onVerConversa(c)}>
-          <MessageSquare className="h-3.5 w-3.5 text-green-600" /> Conversa
+        <Button size="sm" variant="outline" className="h-9 gap-1.5 text-xs flex-1" onClick={() => onVerConversa(c)}>
+          <MessageSquare className="h-[18px] w-[18px] text-green-600" /> Conversa
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="ghost" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
+            <Button size="icon" variant="ghost" className="h-9 w-9" aria-label="Mais ações"><MoreVertical className="h-[18px] w-[18px]" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="text-[13px]">
             <DropdownMenuItem onClick={() => onFunil(c)}>
