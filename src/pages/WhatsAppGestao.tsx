@@ -5,6 +5,7 @@ import { useWhatsAppGestao } from "@/hooks/useWhatsAppGestao";
 import { useWhatsAppConexao } from "@/hooks/useWhatsAppConexao";
 import { WhatsAppChatIA } from "@/components/whatsapp/WhatsAppChatIA";
 import { WhatsAppVolumeCard } from "@/components/whatsapp/WhatsAppVolumeCard";
+import { WhatsAppTriagemKanban } from "@/components/whatsapp/WhatsAppTriagemKanban";
 import { MessageSquare, Users, Sparkles, TrendingUp, Radio } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
@@ -68,6 +69,16 @@ export default function WhatsAppGestao() {
             <Kpi icon={Sparkles} label="Ruído (descartados)" valor={g.ruido} cor="bg-red-500/15 text-red-600" />
           </>
         )}
+      </div>
+
+      {/* Triagem (peneira): Potencial / A revisar / Ruído */}
+      <div>
+        <h2 className="text-h3 mb-1">Triagem das conversas</h2>
+        <p className="text-sm text-muted-foreground mb-3">
+          Peneira inteligente antes do funil. A IA classifica cada conversa, define prioridade e sugere o próximo passo.
+          Promova as boas com "Enviar para o funil".
+        </p>
+        <WhatsAppTriagemKanban />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

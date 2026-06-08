@@ -94,18 +94,9 @@ export default function Leads() {
 
   const { leads, isLoading, createLead, updateLeadStage, updateLead, deleteLead } = useLeads();
   const { naoConvertidos, createContato, updateContato, convertToLead, deleteContato } = useContatos();
-  // Todos os contatos não convertidos aparecem em "Entrou em Contato"; a triagem
-  // (classificação da IA + promover/descartar) é feita direto no card do Kanban.
-  // Ordena para facilitar: Potencial > A revisar (pendente/sem status) > Ruído.
-  const contatosFunil = useMemo(() => {
-    const rank = (c: Contato) =>
-      c.triagem_status === "potencial" ? 0 : c.triagem_status === "ruido" ? 2 : 1;
-    return [...naoConvertidos].sort((a, b) => {
-      const r = rank(a) - rank(b);
-      if (r !== 0) return r;
-      return new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime();
-    });
-  }, [naoConvertidos]);
+  // A triagem dos contatos do WhatsApp é feita na página Gestão WhatsApp (peneira).
+  // O Kanban de Leads mostra só o funil do CRM (leads promovidos), sem os contatos crus.
+  const contatosFunil: Contato[] = [];
   const { updatePropostasByLeadId } = usePropostas();
   const { user } = useAuth();
 
@@ -320,6 +311,19 @@ export default function Leads() {
     });
     setCreateDialogOpen(true);
   };
+
+  // "Enviar para o funil" vindo da Gestão WhatsApp (?contato=<id>): abre a conversão.
+  useEffect(() => {
+    const cid = searchParams.get("contato");
+    if (!cid || !naoConvertidos.length) return;
+    const c = naoConvertidos.find((x) => x.id === cid);
+    if (c) {
+      handleConvertContatoToLead(c);
+      const p = new URLSearchParams(searchParams);
+      p.delete("contato");
+      setSearchParams(p, { replace: true });
+    }
+  }, [searchParams, naoConvertidos]);
 
   const handleEditContato = (contato: Contato) => {
     setSelectedContato(contato);

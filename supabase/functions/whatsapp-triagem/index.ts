@@ -9,10 +9,12 @@ import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import { corsHeaders, env, supabaseAdmin } from "../_shared/whatsapp.ts";
 
 interface TriagemResult {
-  e_lead_real: boolean;
+  triagem: "potencial" | "revisar" | "ruido";
+  prioridade: "alta" | "media" | "baixa";
+  proximo_passo: string;
+  resumo: string;
   canal: string | null;
   nome: string | null;
-  motivo: string;
 }
 
 // Mapeia o canal livre para a tag canônica do sistema (anuncio/descoberta/orcamento).
@@ -30,17 +32,27 @@ function canalParaTag(canal: string | null): "anuncio" | "descoberta" | "orcamen
 }
 
 function buildPrompt(conversa: string): string {
-  return `Você analisa conversas de WhatsApp de uma empresa que vende e instala pisos (epóxi, concreto polido, etc.) para garagens e obras.
-A empresa atende por WhatsApp e SEMPRE pergunta ao cliente como ele encontrou a empresa.
+  return `Você é a peneira de triagem do WhatsApp da "Só Garagens" (vende e instala pisos: epóxi, PU, uretano, concreto polido, demarcação e revitalização de garagens/obras). Você NÃO cria etapas de funil — só faz a triagem inicial das conversas.
 
-Analise a conversa abaixo e responda APENAS com um JSON válido, sem markdown, no formato:
-{"e_lead_real": boolean, "canal": string|null, "nome": string|null, "motivo": string}
+Analise a conversa e responda APENAS com JSON válido, sem markdown:
+{"triagem": "potencial"|"revisar"|"ruido", "prioridade": "alta"|"media"|"baixa", "proximo_passo": string, "resumo": string, "canal": string|null, "nome": string|null}
 
-Regras:
-- "e_lead_real": true se for um potencial cliente (pede orçamento, preço, informação sobre piso/serviço). false se for ruído (entregador, fornecedor, número errado, spam, cobrança, mensagem automática).
-- "canal": onde o cliente disse que encontrou a empresa (ex: "Google", "Instagram", "indicação de amigo", "placa na obra"). null se não souber.
-- "nome": nome próprio do cliente se ele se identificou. null se não.
-- "motivo": frase curta (max 12 palavras) explicando a classificação.
+1) "triagem":
+- "potencial": sinal claro de interesse em serviço (pede orçamento/visita/preço/prazo; dúvida sobre piso epóxi/PU/uretano/demarcação/revitalização; envia metragem, fotos ou endereço).
+- "revisar": pouco contexto, sem segurança para decidir (ex: "Bom dia, tudo bem?", "Pode me chamar?", "Segue a descrição", mensagens curtas sem histórico).
+- "ruido": não é oportunidade comercial (fornecedor oferecendo, conversa interna, mensagem automática da própria empresa, spam, cobrança, candidato a vaga, assunto sem relação com pisos/garagens).
+
+2) "prioridade":
+- "alta": pediu orçamento/visita, informou metragem, enviou fotos/endereço, ou demonstra urgência.
+- "media": parece interessado mas falta informação importante.
+- "baixa": conversa vaga, sem intenção clara ou baixo potencial.
+
+3) "proximo_passo": uma ação prática curta. Ex: "Solicitar metragem", "Solicitar fotos do piso", "Solicitar endereço", "Perguntar se deseja visita técnica", "Preparar orçamento", "Retomar contato", "Marcar como ruído", "Enviar para o funil comercial".
+
+4) "resumo": UMA frase curta resumindo a conversa. Ex: "Cliente solicitou orçamento de epóxi para garagem, mas ainda não informou metragem nem fotos."
+
+5) "canal": onde encontrou a empresa (Google, Instagram, indicação, placa na obra...), null se não souber.
+6) "nome": nome próprio do cliente, null se não.
 
 CONVERSA:
 ${conversa}`;
@@ -51,11 +63,15 @@ function parseJson(text: string): TriagemResult {
   const start = clean.indexOf("{");
   const end = clean.lastIndexOf("}");
   const parsed = JSON.parse(start >= 0 ? clean.slice(start, end + 1) : clean);
+  const tri = ["potencial", "revisar", "ruido"].includes(parsed.triagem) ? parsed.triagem : "revisar";
+  const pri = ["alta", "media", "baixa"].includes(parsed.prioridade) ? parsed.prioridade : "media";
   return {
-    e_lead_real: Boolean(parsed.e_lead_real),
+    triagem: tri,
+    prioridade: pri,
+    proximo_passo: String(parsed.proximo_passo ?? "").slice(0, 120),
+    resumo: String(parsed.resumo ?? "").slice(0, 300),
     canal: parsed.canal ?? null,
     nome: parsed.nome ?? null,
-    motivo: String(parsed.motivo ?? "").slice(0, 200),
   };
 }
 
@@ -164,12 +180,16 @@ serve(async (req) => {
     }
 
     const r = await classificar(conversa);
+    // "revisar" => triagem_status 'pendente' (coluna A revisar).
+    const status = r.triagem === "potencial" ? "potencial" : r.triagem === "ruido" ? "ruido" : "pendente";
 
     await db
       .from("contatos")
       .update({
-        triagem_status: r.e_lead_real ? "potencial" : "ruido",
-        triagem_motivo: r.motivo,
+        triagem_status: status,
+        triagem_motivo: r.resumo,
+        prioridade: r.prioridade,
+        proximo_passo: r.proximo_passo,
         canal_detectado: r.canal,
         tag: canalParaTag(r.canal),
         nome: r.nome ?? contato.nome,
@@ -178,7 +198,7 @@ serve(async (req) => {
       .eq("id", contatoId);
 
     return new Response(
-      JSON.stringify({ ok: true, status: r.e_lead_real ? "potencial" : "ruido" }),
+      JSON.stringify({ ok: true, status }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

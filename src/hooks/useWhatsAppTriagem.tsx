@@ -10,6 +10,8 @@ export interface WhatsAppContato extends Contato {
   canal_detectado?: string | null;
   texto_conversa?: string | null;
   whatsapp_jid?: string | null;
+  prioridade?: "alta" | "media" | "baixa" | null;
+  proximo_passo?: string | null;
 }
 
 export type TriagemStatus = "pendente" | "potencial" | "ruido";
@@ -61,15 +63,13 @@ export function useWhatsAppTriagem() {
     },
   });
 
-  const descartar = (id: string) =>
-    setStatus.mutateAsync({ id, status: "ruido" }).then(() =>
-      toast({ title: "Contato descartado", description: "Movido para Ruído." })
+  const LABEL: Record<TriagemStatus, string> = { potencial: "Potencial", pendente: "A revisar", ruido: "Ruído" };
+  const mover = (id: string, status: TriagemStatus) =>
+    setStatus.mutateAsync({ id, status }).then(() =>
+      toast({ title: "Movido", description: `Para ${LABEL[status]}.` })
     );
-
-  const restaurar = (id: string) =>
-    setStatus.mutateAsync({ id, status: "potencial" }).then(() =>
-      toast({ title: "Contato restaurado", description: "Movido para Potenciais." })
-    );
+  const descartar = (id: string) => mover(id, "ruido");
+  const restaurar = (id: string) => mover(id, "potencial");
 
   const lista = contatos ?? [];
   const potenciais = lista.filter((c) => c.triagem_status === "potencial");
@@ -78,9 +78,11 @@ export function useWhatsAppTriagem() {
 
   return {
     isLoading,
+    lista,
     potenciais,
     pendentes,
     ruido,
+    mover,
     descartar,
     restaurar,
     isMutating: setStatus.isPending,
