@@ -171,7 +171,8 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
       <WhatsAppConversaDialog
         open={!!conversaContato}
         onOpenChange={(o) => !o && setConversaContato(null)}
-        telefone={conversaContato?.whatsapp_jid || conversaContato?.telefone || null}
+        telefone={conversaContato?.telefone || null}
+        jid={conversaContato?.whatsapp_jid}
         nome={conversaContato?.nome}
       />
     </Dialog>
