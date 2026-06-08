@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard, FilterPeriod } from "@/hooks/useDashboard";
 import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
 import { FunilComercialCard } from "@/components/dashboard/FunilComercialCard";
+import { WhatsAppVolumeCard } from "@/components/whatsapp/WhatsAppVolumeCard";
 import { useState } from "react";
 
 export default function Dashboard() {
@@ -163,7 +164,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Funil Comercial: chegou -> proposta -> fechou (com lag de tempo) */}
+      {/* Volume no WhatsApp + Funil Comercial */}
+      <WhatsAppVolumeCard />
       <FunilComercialCard period={period} customDateRange={customDateRange} />
 
       {/* Row 3: Pipeline de Propostas */}
