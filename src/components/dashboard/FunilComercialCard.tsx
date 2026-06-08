@@ -20,13 +20,13 @@ function Etapa({ icon: Icon, label, valor, sub, cor }: {
   icon: any; label: string; valor: number | string; sub?: string; cor: string;
 }) {
   return (
-    <div className="flex-1 min-w-[120px] text-center">
-      <div className={`mx-auto mb-2 h-10 w-10 rounded-full flex items-center justify-center ${cor}`}>
-        <Icon className="h-5 w-5" />
+    <div className="flex-1 min-w-0 text-center px-1">
+      <div className={`mx-auto mb-2 h-9 w-9 sm:h-10 sm:w-10 rounded-full flex items-center justify-center ${cor}`}>
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <div className="text-2xl font-semibold tabular-nums">{valor}</div>
-      <div className="text-sm font-medium">{label}</div>
-      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
+      <div className="text-xl sm:text-2xl font-semibold tabular-nums">{valor}</div>
+      <div className="text-xs sm:text-sm font-medium leading-tight">{label}</div>
+      {sub && <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 leading-tight">{sub}</div>}
     </div>
   );
 }
