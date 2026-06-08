@@ -76,6 +76,9 @@ export default function WhatsAppGestao() {
         )}
       </div>
 
+      {/* Chat de análise com IA (largura total) */}
+      <WhatsAppChatIA />
+
       {/* Triagem (peneira): Potencial / A revisar / Ruído */}
       <div>
         <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
@@ -97,10 +100,9 @@ export default function WhatsAppGestao() {
         {vista === "lista" ? <WhatsAppTriagemLista /> : <WhatsAppTriagemKanban />}
       </div>
 
+      {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* Coluna esquerda: gráficos */}
-        <div className="space-y-5">
-          <Card className="p-5">
+          <Card className="p-5 lg:col-span-2">
             <h3 className="text-sm font-semibold mb-4">Volume de contatos (últimos 30 dias)</h3>
             {g.isLoading ? <Skeleton className="h-48 w-full" /> : (
               <ResponsiveContainer width="100%" height={200}>
@@ -146,10 +148,6 @@ export default function WhatsAppGestao() {
               ))}
             </div>
           </Card>
-        </div>
-
-        {/* Coluna direita: chat IA */}
-        <WhatsAppChatIA />
       </div>
     </div>
   );
