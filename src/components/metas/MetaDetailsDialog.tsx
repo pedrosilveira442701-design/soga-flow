@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MetaContribuicoes } from "./MetaContribuicoes";
 
 interface MetaDetailsDialogProps {
   meta: MetaComInsights | null;
@@ -176,6 +177,8 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
                 </div>
               </div>
             </div>
+
+            <MetaContribuicoes meta={meta} />
           </TabsContent>
 
           <TabsContent value="insights" className="space-y-6 mt-6">
