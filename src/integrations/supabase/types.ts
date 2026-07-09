@@ -294,46 +294,73 @@ export type Database = {
       }
       contatos: {
         Row: {
+          canal_detectado: string | null
           converteu_lead: boolean | null
           created_at: string
           data_hora: string
+          deleted_at: string | null
           id: string
           lead_id: string | null
           nome: string | null
           observacoes: string | null
           origem: string
+          prioridade: string | null
+          proximo_passo: string | null
           tag: Database["public"]["Enums"]["contato_tag"] | null
           telefone: string
+          texto_conversa: string | null
+          triagem_motivo: string | null
+          triagem_status: string
           updated_at: string
           user_id: string
+          whatsapp_jid: string | null
+          whatsapp_msg_id: string | null
         }
         Insert: {
+          canal_detectado?: string | null
           converteu_lead?: boolean | null
           created_at?: string
           data_hora?: string
+          deleted_at?: string | null
           id?: string
           lead_id?: string | null
           nome?: string | null
           observacoes?: string | null
           origem: string
+          prioridade?: string | null
+          proximo_passo?: string | null
           tag?: Database["public"]["Enums"]["contato_tag"] | null
           telefone: string
+          texto_conversa?: string | null
+          triagem_motivo?: string | null
+          triagem_status?: string
           updated_at?: string
           user_id: string
+          whatsapp_jid?: string | null
+          whatsapp_msg_id?: string | null
         }
         Update: {
+          canal_detectado?: string | null
           converteu_lead?: boolean | null
           created_at?: string
           data_hora?: string
+          deleted_at?: string | null
           id?: string
           lead_id?: string | null
           nome?: string | null
           observacoes?: string | null
           origem?: string
+          prioridade?: string | null
+          proximo_passo?: string | null
           tag?: Database["public"]["Enums"]["contato_tag"] | null
           telefone?: string
+          texto_conversa?: string | null
+          triagem_motivo?: string | null
+          triagem_status?: string
           updated_at?: string
           user_id?: string
+          whatsapp_jid?: string | null
+          whatsapp_msg_id?: string | null
         }
         Relationships: [
           {
@@ -1510,6 +1537,89 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "vw_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_conexao: {
+        Row: {
+          backfill_done: boolean
+          created_at: string
+          id: string
+          instancia: string
+          last_event_at: string | null
+          numero: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          backfill_done?: boolean
+          created_at?: string
+          id?: string
+          instancia: string
+          last_event_at?: string | null
+          numero?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          backfill_done?: boolean
+          created_at?: string
+          id?: string
+          instancia?: string
+          last_event_at?: string | null
+          numero?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      whatsapp_mensagens: {
+        Row: {
+          contato_id: string | null
+          created_at: string
+          from_me: boolean
+          id: string
+          jid: string
+          message_id: string
+          message_ts: string
+          push_name: string | null
+          texto: string | null
+          user_id: string
+        }
+        Insert: {
+          contato_id?: string | null
+          created_at?: string
+          from_me?: boolean
+          id?: string
+          jid: string
+          message_id: string
+          message_ts: string
+          push_name?: string | null
+          texto?: string | null
+          user_id: string
+        }
+        Update: {
+          contato_id?: string | null
+          created_at?: string
+          from_me?: boolean
+          id?: string
+          jid?: string
+          message_id?: string
+          message_ts?: string
+          push_name?: string | null
+          texto?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_mensagens_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
             referencedColumns: ["id"]
           },
         ]

@@ -35,7 +35,7 @@ function Kpi({ icon: Icon, label, valor, cor }: { icon: any; label: string; valo
 
 export default function WhatsAppGestao() {
   const g = useWhatsAppGestao();
-  const { status } = useWhatsAppConexao();
+  const { status, isStale } = useWhatsAppConexao();
   const [vista, setVista] = useState<"kanban" | "lista">("lista");
   const [atualizando, setAtualizando] = useState(false);
   const queryClient = useQueryClient();
@@ -54,11 +54,14 @@ export default function WhatsAppGestao() {
       setTimeout(() => setAtualizando(false), 600);
     }
   };
-  const conexao = {
-    conectado: { label: "Conectado", cls: "bg-green-500/15 text-green-600 border-green-500/30" },
-    conectando: { label: "Conectando…", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-    desconectado: { label: "Desconectado", cls: "bg-red-500/15 text-red-600 border-red-500/30" },
-  }[status];
+  const conexao = isStale
+    ? // "conectado" sem eventos há 24h+ não é confiável — sinaliza a dúvida
+      { label: "Conectado (sem eventos há 24h+)", cls: "bg-warning/15 text-warning border-warning/30" }
+    : {
+        conectado: { label: "Conectado", cls: "bg-success/15 text-success border-success/30" },
+        conectando: { label: "Conectando…", cls: "bg-warning/15 text-warning border-warning/30" },
+        desconectado: { label: "Desconectado", cls: "bg-destructive/15 text-destructive border-destructive/30" },
+      }[status];
 
   const canalData = g.porCanal.slice(0, 8);
 

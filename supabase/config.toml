@@ -14,3 +14,32 @@ verify_jwt = true
 
 [functions.export-report]
 verify_jwt = true
+
+# ─── WhatsApp (Evolution API) ───────────────────────────────────────
+# O webhook é chamado pelo Evolution sem JWT; a autenticação é feita
+# pelo header x-webhook-secret (env WEBHOOK_SECRET) dentro da função.
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+# Chamadas internas service-role (webhook → backfill/triagem).
+[functions.whatsapp-backfill]
+verify_jwt = false
+
+[functions.whatsapp-triagem]
+verify_jwt = false
+
+# Chamadas do app com sessão de usuário.
+[functions.whatsapp-status]
+verify_jwt = true
+
+[functions.whatsapp-send]
+verify_jwt = true
+
+[functions.whatsapp-conversa]
+verify_jwt = true
+
+[functions.whatsapp-volume]
+verify_jwt = true
+
+[functions.whatsapp-chat-ia]
+verify_jwt = true

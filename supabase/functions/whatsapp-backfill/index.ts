@@ -19,7 +19,8 @@ import {
   garantirContato,
   gravarMensagem,
   type InboundMessage,
-  isGroupJid,
+  extractTexto,
+  isRealNumberJid,
   jaEhCliente,
   jidToPhone,
   supabaseAdmin,
@@ -47,8 +48,9 @@ async function mensagensDoChat(instance: string, jid: string): Promise<InboundMe
     const tsSec = typeof tsRaw === "number" ? tsRaw : parseInt(tsRaw ?? "0", 10);
     const tsMs = tsSec * 1000;
     if (!tsMs || tsMs < CUTOFF_MS) continue;
-    const texto = data?.message?.conversation ??
-      data?.message?.extendedTextMessage?.text ?? null;
+    // extractTexto cobre também legendas de foto/vídeo e respostas de botão,
+    // que clientes de piso mandam o tempo todo
+    const texto = extractTexto(data?.message ?? null);
     out.push({
       jid,
       phone: jidToPhone(jid),
@@ -99,8 +101,12 @@ serve(async (req) => {
     let puladosVazio = 0;
 
     for (const chat of chats) {
-      const jid: string = chat?.id ?? chat?.remoteJid ?? chat?.jid ?? "";
-      if (!jid || isGroupJid(jid)) continue;
+      const jidRaw: string = chat?.id ?? chat?.remoteJid ?? chat?.jid ?? "";
+      const jidAlt: string = chat?.remoteJidAlt ?? "";
+      // Mesmo filtro do webhook: só números reais (@lid/@newsletter geravam
+      // contatos com telefone falso extraído do ID de privacidade)
+      const jid = isRealNumberJid(jidRaw) ? jidRaw : (isRealNumberJid(jidAlt) ? jidAlt : "");
+      if (!jid) continue;
       const phone = jidToPhone(jid);
       if (!phone) continue;
 

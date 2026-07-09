@@ -66,8 +66,23 @@ async function handleConnectionUpdate(
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Endpoint é público (Evolution não manda JWT) — exigir segredo compartilhado.
+  // Configure WEBHOOK_SECRET nos secrets da função e o header x-webhook-secret
+  // no webhook do Evolution. Sem o env setado, mantém o comportamento antigo.
+  const expected = Deno.env.get("WEBHOOK_SECRET") ?? "";
+  if (expected && req.headers.get("x-webhook-secret") !== expected) {
+    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  let parseFailed = false;
   try {
-    const body = await req.json();
+    const body = await req.json().catch(() => {
+      parseFailed = true;
+      throw new Error("payload inválido");
+    });
     const event = normalizeEvent(body?.event ?? "");
     const instancia = body?.instance ?? Deno.env.get("EVOLUTION_INSTANCE") ?? "sogaragens";
     const userId = ownerUserId();
@@ -141,8 +156,10 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("whatsapp-webhook erro:", e);
+    // Payload inválido → 200 (reentregar não ajuda). Falha de persistência →
+    // 5xx para o Evolution reentregar; sem isso a mensagem se perdia para sempre.
     return new Response(JSON.stringify({ ok: false, error: String(e) }), {
-      status: 200, // 200 evita reentrega agressiva do Evolution
+      status: parseFailed ? 200 : 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

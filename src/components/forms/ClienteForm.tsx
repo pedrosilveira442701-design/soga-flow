@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { CalendarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,7 +78,7 @@ const clienteFormSchema = z.object({
 type ClienteFormValues = z.infer<typeof clienteFormSchema>;
 
 interface ClienteFormProps {
-  initialData?: Cliente;
+  initialData?: Partial<Cliente>;
   onSubmit: (data: ClienteFormValues) => void;
   isLoading?: boolean;
   mode?: "create" | "edit";
@@ -86,7 +86,6 @@ interface ClienteFormProps {
 }
 
 export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create", onCancel }: ClienteFormProps) {
-  const { toast } = useToast();
   const [loadingCep, setLoadingCep] = useState(false);
 
   // Parse endereço legado para campos estruturados
@@ -102,7 +101,7 @@ export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create",
     resolver: zodResolver(clienteFormSchema),
     defaultValues: initialData
       ? {
-          nome: initialData.nome,
+          nome: initialData.nome || "",
           contato: initialData.contato || "",
           telefone: initialData.telefone || "",
           cpf_cnpj: initialData.cpf_cnpj || "",
@@ -188,11 +187,7 @@ export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create",
     const cep = form.getValues("cep")?.replace(/\D/g, "");
 
     if (!cep || cep.length !== 8) {
-      toast({
-        title: "CEP inválido",
-        description: "Por favor, digite um CEP válido com 8 dígitos",
-        variant: "destructive",
-      });
+      toast.error("CEP inválido", { description: "Por favor, digite um CEP válido com 8 dígitos" });
       return;
     }
 
@@ -203,11 +198,7 @@ export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create",
       const data = await response.json();
 
       if (data.erro) {
-        toast({
-          title: "CEP não encontrado",
-          description: "O CEP informado não foi encontrado",
-          variant: "destructive",
-        });
+        toast.error("CEP não encontrado", { description: "O CEP informado não foi encontrado" });
         return;
       }
 
@@ -217,21 +208,14 @@ export function ClienteForm({ initialData, onSubmit, isLoading, mode = "create",
       form.setValue("cidade", data.localidade || "");
       form.setValue("uf", data.uf || "");
 
-      toast({
-        title: "CEP encontrado",
-        description: "Endereço preenchido automaticamente",
-      });
+      toast.success("CEP encontrado", { description: "Endereço preenchido automaticamente" });
 
       // Focar no campo número
       setTimeout(() => {
         document.getElementById("numero")?.focus();
       }, 100);
     } catch (error) {
-      toast({
-        title: "Erro ao buscar CEP",
-        description: "Não foi possível buscar o CEP. Tente novamente.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao buscar CEP", { description: "Não foi possível buscar o CEP. Tente novamente." });
     } finally {
       setLoadingCep(false);
     }

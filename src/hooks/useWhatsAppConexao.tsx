@@ -10,7 +10,12 @@ export interface WhatsAppConexao {
   last_event_at?: string | null;
 }
 
-// Estado da conexão Evolation/WhatsApp para o indicador no topo da fila.
+// Sem evento do Evolution há mais de 24h, o "conectado" da tabela não é
+// confiável (o webhook só grava em CONNECTION_UPDATE; se o Evolution cair
+// sem emitir o evento, o status congela).
+const STALE_MS = 24 * 60 * 60 * 1000;
+
+// Estado da conexão Evolution/WhatsApp para o indicador no topo da fila.
 export function useWhatsAppConexao() {
   const { data, isLoading } = useQuery({
     queryKey: ["whatsapp-conexao"],
@@ -26,16 +31,24 @@ export function useWhatsAppConexao() {
         .limit(1)
         .maybeSingle();
 
-      // Tabela pode ainda não existir antes do deploy da migration: trata como desconectado.
-      if (error) return null;
-      return (data as unknown as WhatsAppConexao) ?? null;
+      if (error) {
+        console.error("whatsapp_conexao:", error.message);
+        return null;
+      }
+      return (data as WhatsAppConexao | null) ?? null;
     },
     refetchInterval: 30_000,
   });
+
+  const lastEventMs = data?.last_event_at ? new Date(data.last_event_at).getTime() : 0;
+  const isStale = data?.status === "conectado" && lastEventMs > 0 && Date.now() - lastEventMs > STALE_MS;
 
   return {
     conexao: data ?? null,
     isLoading,
     status: data?.status ?? "desconectado",
+    /** true quando o "conectado" pode estar desatualizado (sem eventos há 24h+) */
+    isStale,
+    lastEventAt: data?.last_event_at ?? null,
   };
 }

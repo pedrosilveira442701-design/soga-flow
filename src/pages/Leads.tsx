@@ -59,6 +59,8 @@ export default function Leads() {
     telefone: string;
     origem: string;
     contatoId?: string;
+    nome?: string | null;
+    leadInitial?: { origem?: string; origem_descricao?: string; observacoes?: string };
   } | null>(null);
   const [lossReasonDialogOpen, setLossReasonDialogOpen] = useState(false);
   const [pendingLossData, setPendingLossData] = useState<{
@@ -303,11 +305,63 @@ export default function Leads() {
     setCreateDialogOpen(true);
   };
 
+  // Mapeia o canal detectado pela IA da triagem para as origens do funil
+  const mapearOrigemDoCanal = (canal: string | null | undefined, fallback: string) => {
+    const c = (canal || "").toLowerCase();
+    if (c.includes("insta")) return { origem: "Instagram" };
+    if (c.includes("google")) return { origem: "Google" };
+    if (c.includes("indica")) return { origem: "Indicação", origem_descricao: canal || "" };
+    if (c.includes("síndico") || c.includes("sindico")) return { origem: "Sindico Profissional" };
+    if (c.includes("site") || c.includes("orgânico") || c.includes("organico")) return { origem: "Orgânico" };
+    if (canal) return { origem: "Outro", origem_descricao: canal };
+    return { origem: fallback };
+  };
+
   const handleConvertContatoToLead = (contato: Contato) => {
+    // Leva os dados extraídos pela IA da triagem para o formulário do lead,
+    // em vez de obrigar o vendedor a redigitar tudo
+    const TIPO_IMOVEL_LABEL: Record<string, string> = {
+      garagem_residencial: "garagem residencial",
+      condominio: "condomínio",
+      comercial: "comercial",
+      industrial: "industrial",
+      outro: "outro",
+    };
+    const URGENCIA_LABEL: Record<string, string> = {
+      imediata: "imediata",
+      ate_30_dias: "até 30 dias",
+      sem_prazo: "sem prazo",
+    };
+    const dadosObra = [
+      contato.tipo_servico ? `Serviço: ${contato.tipo_servico}` : null,
+      contato.metragem_m2 ? `~${contato.metragem_m2} m²` : null,
+      contato.tipo_imovel ? TIPO_IMOVEL_LABEL[contato.tipo_imovel] : null,
+      contato.local_obra ? `Local: ${contato.local_obra}` : null,
+      contato.urgencia ? `Urgência: ${URGENCIA_LABEL[contato.urgencia]}` : null,
+    ]
+      .filter(Boolean)
+      .join(" • ");
+
+    const observacoes = [
+      contato.triagem_motivo ? `Resumo IA: ${contato.triagem_motivo}` : null,
+      dadosObra || null,
+      contato.proximo_passo ? `Próximo passo: ${contato.proximo_passo}` : null,
+      contato.telefone_alternativo ? `Tel. alternativo: ${contato.telefone_alternativo}` : null,
+      contato.observacoes,
+    ]
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 500);
+
     setContatoToConvert({
       telefone: contato.telefone,
       origem: contato.origem,
       contatoId: contato.id,
+      nome: contato.nome,
+      leadInitial: {
+        ...mapearOrigemDoCanal(contato.canal_detectado, contato.origem),
+        observacoes: observacoes || undefined,
+      },
     });
     setCreateDialogOpen(true);
   };
@@ -549,7 +603,13 @@ export default function Leads() {
                     contatoToConvert
                       ? {
                           origem: contatoToConvert.origem,
+                          ...contatoToConvert.leadInitial,
                         }
+                      : undefined
+                  }
+                  clientePrefill={
+                    contatoToConvert
+                      ? { nome: contatoToConvert.nome || "", telefone: contatoToConvert.telefone }
                       : undefined
                   }
                 />

@@ -101,9 +101,11 @@ interface LeadFormProps {
   isLoading?: boolean;
   initialData?: Partial<LeadFormValues>;
   mode?: "create" | "edit";
+  /** Pré-preenche o cadastro rápido de cliente (usado na conversão de contato WhatsApp) */
+  clientePrefill?: { nome?: string; telefone?: string };
 }
 
-export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: LeadFormProps) {
+export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", clientePrefill }: LeadFormProps) {
   const [isClienteDialogOpen, setIsClienteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { clientes = [], isLoading: isLoadingClientes, createCliente } = useClientes();
@@ -618,6 +620,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create" }: 
               onSubmit={handleCreateCliente}
               isLoading={createCliente.isPending}
               mode="create"
+              initialData={clientePrefill}
               onCancel={() => setIsClienteDialogOpen(false)}
             />
           </div>

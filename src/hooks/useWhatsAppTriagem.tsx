@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import type { Contato } from "@/hooks/useContatos";
 
 // Contato vindo do WhatsApp com os campos de triagem (Fase 1).
@@ -17,7 +17,6 @@ export interface WhatsAppContato extends Contato {
 export type TriagemStatus = "pendente" | "potencial" | "ruido";
 
 export function useWhatsAppTriagem() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: contatos, isLoading } = useQuery({
@@ -56,18 +55,14 @@ export function useWhatsAppTriagem() {
       queryClient.invalidateQueries({ queryKey: ["whatsapp-triagem"] });
     },
     onError: (error) => {
-      toast({
-        title: "Erro ao atualizar triagem",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
+      toast.error("Erro ao atualizar triagem", { description: (error as Error).message });
     },
   });
 
   const LABEL: Record<TriagemStatus, string> = { potencial: "Potencial", pendente: "A revisar", ruido: "Ruído" };
   const mover = (id: string, status: TriagemStatus) =>
     setStatus.mutateAsync({ id, status }).then(() =>
-      toast({ title: "Movido", description: `Para ${LABEL[status]}.` })
+      toast.success("Movido", { description: `Para ${LABEL[status]}.` })
     );
   const descartar = (id: string) => mover(id, "ruido");
   const restaurar = (id: string) => mover(id, "potencial");
