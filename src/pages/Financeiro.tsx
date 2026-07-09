@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { DollarSign, Search, Filter, CheckCircle2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { FluxoCaixaChart } from "@/components/financeiro/FluxoCaixaChart";
 import { MarcarPagoDialog } from "@/components/financeiro/MarcarPagoDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,6 +43,7 @@ export default function Financeiro() {
     formaPagamento: "",
   });
   const [apenasEmAberto, setApenasEmAberto] = useState(false);
+  const [filtroRapido, setFiltroRapido] = useState<"todos" | "hoje" | "semana" | "atrasadas" | "mes">("todos");
   const [parcelasSelecionadas, setParcelasSelecionadas] = useState<string[]>([]);
   const [marcarPagoOpen, setMarcarPagoOpen] = useState(false);
 
@@ -104,6 +107,7 @@ export default function Financeiro() {
 
   const aplicarFiltroRapido = (tipo: string) => {
     const hoje = format(new Date(), "yyyy-MM-dd");
+    setFiltroRapido(tipo as typeof filtroRapido);
 
     switch (tipo) {
       case "hoje":
@@ -217,70 +221,76 @@ export default function Financeiro() {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {/* Filtros Rápidos */}
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aplicarFiltroRapido("todos")}
-              >
-                Todos
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aplicarFiltroRapido("hoje")}
-              >
-                Vence Hoje
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aplicarFiltroRapido("semana")}
-              >
-                Vence Esta Semana
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aplicarFiltroRapido("atrasadas")}
-                className={
-                  filters.status === "atrasado" ? "bg-destructive/10" : ""
-                }
-              >
-                Atrasadas
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aplicarFiltroRapido("mes")}
-              >
-                Este Mês
-              </Button>
-              <Button
-                variant={apenasEmAberto ? "default" : "outline"}
-                size="sm"
+            {/* Filtros Rápidos — pills com estado ativo visível */}
+            <div className="flex gap-1.5 flex-wrap items-center">
+              {([
+                { id: "todos", label: "Todos" },
+                { id: "hoje", label: "Vence hoje" },
+                { id: "semana", label: "Vence esta semana" },
+                { id: "atrasadas", label: "Atrasadas" },
+                { id: "mes", label: "Este mês" },
+              ] as const).map((chip) => {
+                const ativo = filtroRapido === chip.id;
+                const destrutivo = chip.id === "atrasadas";
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => aplicarFiltroRapido(chip.id)}
+                    aria-pressed={ativo}
+                    className={cn(
+                      "inline-flex h-8 items-center rounded-full border px-3.5 text-[13px] font-medium transition-colors",
+                      ativo
+                        ? destrutivo
+                          ? "border-transparent bg-destructive text-destructive-foreground"
+                          : "border-transparent bg-primary text-primary-foreground"
+                        : destrutivo
+                          ? "border-border bg-card text-destructive hover:bg-destructive/10"
+                          : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    )}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
+
+              <div className="mx-1 h-5 w-px bg-border" />
+
+              <button
+                type="button"
                 onClick={() => setApenasEmAberto(!apenasEmAberto)}
+                aria-pressed={apenasEmAberto}
+                className={cn(
+                  "inline-flex h-8 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-medium transition-colors",
+                  apenasEmAberto
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground",
+                )}
               >
-                <Filter className="mr-2 icon-md" />
-                Apenas em Aberto
-              </Button>
+                <Filter className="h-3.5 w-3.5" />
+                Apenas em aberto
+              </button>
             </div>
 
             {/* Filtros Avançados */}
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 icon-md text-muted-foreground" />
-                <Input
-                  placeholder="Buscar cliente ou CPF/CNPJ..."
-                  className="pl-10"
-                  value={filters.search}
-                  onChange={(e) =>
-                    setFilters({ ...filters, search: e.target.value })
-                  }
-                />
+            <div className="grid gap-4 md:grid-cols-4 items-end">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Buscar</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
+                  <Input
+                    placeholder="Cliente ou CPF/CNPJ..."
+                    className="pl-10"
+                    value={filters.search}
+                    onChange={(e) =>
+                      setFilters({ ...filters, search: e.target.value })
+                    }
+                  />
+                </div>
               </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Status</Label>
               <Select
                 value={filters.status || "todos"}
                 onValueChange={(value) =>
@@ -297,7 +307,10 @@ export default function Financeiro() {
                   <SelectItem value="atrasado">Atrasado</SelectItem>
                 </SelectContent>
               </Select>
+              </div>
 
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Forma de pagamento</Label>
               <Select
                 value={filters.formaPagamento || "todas"}
                 onValueChange={(value) =>
@@ -314,6 +327,7 @@ export default function Financeiro() {
                   <SelectItem value="Financiado">Financiado</SelectItem>
                 </SelectContent>
               </Select>
+              </div>
 
               {parcelasSelecionadas.length > 0 && (
                 <Button

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear } from "date-fns";
+import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,12 +16,11 @@ interface DashboardFiltersProps {
   onCustomDateRangeChange?: (range: { from: Date; to: Date }) => void;
 }
 
+// "Esta semana/Este mês/Este ano" são atalhos fixos próprios — aqui só janelas móveis
 const presets = [
   { label: "Últimos 7 dias", getValue: () => ({ from: subDays(new Date(), 7), to: new Date() }) },
   { label: "Últimos 30 dias", getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
-  { label: "Esta semana", getValue: () => ({ from: startOfWeek(new Date(), { locale: ptBR }), to: endOfWeek(new Date(), { locale: ptBR }) }) },
-  { label: "Este mês", getValue: () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }) },
-  { label: "Este ano", getValue: () => ({ from: startOfYear(new Date()), to: new Date() }) },
+  { label: "Últimos 90 dias", getValue: () => ({ from: subDays(new Date(), 90), to: new Date() }) },
 ];
 
 export function DashboardFilters({
@@ -106,7 +105,7 @@ export function DashboardFilters({
       <PopoverContent className="w-auto p-0" align="start">
         <div className="flex">
           {/* Presets Sidebar */}
-          <div className="border-r p-3 space-y-1 min-w-[140px] bg-muted/30">
+          <div className="border-r p-3 space-y-1 w-44 shrink-0 bg-muted/30">
             <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Atalhos</p>
             <Button
               variant={period === "week" ? "secondary" : "ghost"}
@@ -206,16 +205,19 @@ export function DashboardFilters({
 
             {/* Actions */}
             <div className="flex justify-between items-center mt-3 pt-3 border-t">
-              <Button variant="ghost" size="sm" onClick={handleClear}>
+              <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground">
                 Limpar
               </Button>
-              <Button 
-                size="sm" 
-                onClick={handleApply}
-                disabled={!fromDate || !toDate}
-              >
-                Aplicar
-              </Button>
+              <div className="flex items-center gap-2">
+                {(!fromDate || !toDate) && (
+                  <span className="text-[11px] text-muted-foreground">
+                    {!fromDate ? "Escolha a data inicial" : "Escolha a data final"}
+                  </span>
+                )}
+                <Button size="sm" onClick={handleApply} disabled={!fromDate || !toDate} className="px-4">
+                  Aplicar
+                </Button>
+              </div>
             </div>
           </div>
         </div>

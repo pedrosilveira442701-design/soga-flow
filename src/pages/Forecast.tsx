@@ -470,67 +470,164 @@ export default function Forecast() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Forecast vs Meta — Mês a Mês</CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Cada barra é a previsão de faturamento do mês, montada em camadas. As linhas comparam
+            a previsão com a meta cadastrada e com o que já entrou de verdade.
+          </p>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <Skeleton className="h-[320px]" />
           ) : (
-            <ResponsiveContainer width="100%" height={320}>
-              <ComposedChart data={fmChart}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} />
-                <Tooltip content={forecastTooltip} />
-                <Legend />
-
-                <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--primary))" stackId="forecast" />
-                <Bar dataKey="pipelineAlloc" name="Pipeline" fill="hsl(var(--chart-2))" stackId="forecast" />
-                {valorAdicional > 0 && (
-                  <Bar
-                    dataKey="incrementalAlloc"
-                    name="Esforço Adicional"
-                    fill="hsl(var(--chart-3))"
-                    stackId="forecast"
+            <>
+              <ResponsiveContainer width="100%" height={320}>
+                <ComposedChart data={fmChart}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" vertical={false} />
+                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                )}
+                  <Tooltip content={forecastTooltip} />
 
-                {/* Linha do total do Forecast (pra “ver” o número do tooltip no gráfico) */}
-                <Line
-                  dataKey="forecastLine"
-                  name="Forecast (Total)"
-                  type="monotone"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                />
+                  <Bar dataKey="baseline" name="Baseline" fill="hsl(var(--chart-1))" stackId="forecast" maxBarSize={64} />
+                  <Bar
+                    dataKey="pipelineAlloc"
+                    name="Pipeline"
+                    fill="hsl(var(--chart-2))"
+                    stackId="forecast"
+                    maxBarSize={64}
+                    radius={valorAdicional > 0 ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                  />
+                  {valorAdicional > 0 && (
+                    <Bar
+                      dataKey="incrementalAlloc"
+                      name="Esforço Adicional"
+                      fill="hsl(var(--chart-3))"
+                      stackId="forecast"
+                      maxBarSize={64}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  )}
 
-                <Line
-                  dataKey="meta"
-                  name="Meta"
-                  type="monotone"
-                  stroke="hsl(var(--destructive))"
-                  strokeWidth={2}
-                  strokeDasharray="6 3"
-                  dot={false}
-                />
+                  <Line
+                    dataKey="meta"
+                    name="Meta"
+                    type="monotone"
+                    stroke="hsl(var(--destructive))"
+                    strokeWidth={2}
+                    strokeDasharray="6 3"
+                    dot={false}
+                  />
 
-                {/* ✅ Faturado: aparece mesmo com 0 (linha na base + dots visíveis) */}
-                <Line
-                  dataKey="faturadoPlot"
-                  name="Faturado"
-                  type="monotone"
-                  stroke="hsl(var(--chart-4))"
-                  strokeWidth={3}
-                  dot={{
-                    r: 5,
-                    fill: "hsl(var(--chart-4))",
-                    stroke: "hsl(var(--background))",
-                    strokeWidth: 2,
-                  }}
-                  activeDot={{ r: 7 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+                  {/* Faturado: aparece mesmo com 0 (linha na base + dots visíveis) */}
+                  <Line
+                    dataKey="faturadoPlot"
+                    name="Faturado"
+                    type="monotone"
+                    stroke="hsl(var(--chart-4))"
+                    strokeWidth={2.5}
+                    dot={{
+                      r: 4,
+                      fill: "hsl(var(--chart-4))",
+                      stroke: "hsl(var(--background))",
+                      strokeWidth: 2,
+                    }}
+                    activeDot={{ r: 6 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+
+              {/* Legenda didática: cada série com o que significa */}
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  {
+                    swatch: "h-3 w-3 rounded-sm bg-[hsl(var(--chart-1))]",
+                    nome: "Baseline",
+                    desc: "O que a empresa já fatura em média por mês (histórico 12m). É o piso da previsão.",
+                  },
+                  {
+                    swatch: "h-3 w-3 rounded-sm bg-[hsl(var(--chart-2))]",
+                    nome: "Pipeline",
+                    desc: "Propostas abertas hoje, ponderadas pela chance de fechar e distribuídas no mês provável.",
+                  },
+                  ...(valorAdicional > 0
+                    ? [{
+                        swatch: "h-3 w-3 rounded-sm bg-[hsl(var(--chart-3))]",
+                        nome: "Esforço Adicional",
+                        desc: "O que o simulador acima projeta se você gerar as propostas extras configuradas.",
+                      }]
+                    : []),
+                  {
+                    swatch: "h-0 w-4 self-center border-t-2 border-dashed border-destructive",
+                    nome: "Meta",
+                    desc: "Meta de vendas cadastrada em Metas, dividida pelos meses que ela cobre.",
+                  },
+                  {
+                    swatch: "h-3 w-3 rounded-full bg-[hsl(var(--chart-4))]",
+                    nome: "Faturado",
+                    desc: "O que realmente virou contrato em cada mês. Meses futuros ficam em zero.",
+                  },
+                ].map((s) => (
+                  <div key={s.nome} className="flex items-start gap-2.5 rounded-lg border bg-muted/30 p-2.5">
+                    <span className={cn("mt-1 shrink-0", s.swatch)} />
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-foreground">{s.nome}</div>
+                      <div className="text-[11px] leading-snug text-muted-foreground">{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Assistente de leitura: veredito do 1º mês do horizonte */}
+              {fmChart.length > 0 && (() => {
+                const m: any = fmChart[0];
+                const temMeta = Number(m.meta || 0) > 0;
+                const cobre = temMeta ? (Number(m.forecastTotal || 0) / Number(m.meta)) * 100 : null;
+                return (
+                  <div
+                    className={cn(
+                      "mt-3 flex items-start gap-2.5 rounded-lg border p-3 text-sm",
+                      !temMeta
+                        ? "bg-muted border-border"
+                        : cobre! >= 100
+                          ? "bg-success/10 border-success/20"
+                          : "bg-warning/10 border-warning/20",
+                    )}
+                  >
+                    <Lightbulb
+                      className={cn(
+                        "h-[18px] w-[18px] shrink-0 mt-0.5",
+                        !temMeta ? "text-muted-foreground" : cobre! >= 100 ? "text-success" : "text-warning",
+                      )}
+                    />
+                    <span className="text-foreground">
+                      {!temMeta ? (
+                        <>
+                          Em <strong>{m.mes}</strong> a previsão é de <strong>{fmtBRL(m.forecastTotal)}</strong>.
+                          Não há meta cadastrada cobrindo este mês — cadastre em{" "}
+                          <Link to="/metas" className="underline text-primary">Metas</Link> para o gráfico comparar.
+                        </>
+                      ) : cobre! >= 100 ? (
+                        <>
+                          Em <strong>{m.mes}</strong>, a previsão de <strong>{fmtBRL(m.forecastTotal)}</strong> cobre{" "}
+                          <strong>{cobre!.toFixed(0)}%</strong> da meta ({fmtBRL(m.meta)}). Ritmo suficiente —
+                          acompanhe os pontos verdes do Faturado confirmando mês a mês.
+                        </>
+                      ) : (
+                        <>
+                          Em <strong>{m.mes}</strong>, a previsão de <strong>{fmtBRL(m.forecastTotal)}</strong> cobre
+                          só <strong>{cobre!.toFixed(0)}%</strong> da meta ({fmtBRL(m.meta)}). Use o simulador acima
+                          para ver quanto esforço extra fecha esse gap — e passe o mouse nas barras para o detalhe.
+                        </>
+                      )}
+                    </span>
+                  </div>
+                );
+              })()}
+            </>
           )}
         </CardContent>
       </Card>

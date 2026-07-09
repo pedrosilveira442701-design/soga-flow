@@ -9,10 +9,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  MoreVertical, 
-  User, 
+import {
+  MoreVertical,
+  User,
   Calendar,
+  ChevronRight,
   TrendingUp,
   TrendingDown,
   Activity,
@@ -212,8 +213,14 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
           </span>
         </div>
         
-        <Button variant="outline" size="sm" onClick={onViewDetails}>
-          Ver Detalhes
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onViewDetails}
+          className="h-8 gap-1 pr-2 text-[13px] font-medium text-primary hover:bg-primary/10 hover:text-primary"
+        >
+          Ver detalhes
+          <ChevronRight className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>
