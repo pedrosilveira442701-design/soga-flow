@@ -106,6 +106,7 @@ async function fetchPropostas(filters: MapaFilters): Promise<MapaDataPoint[]> {
       )
     `
     )
+    .eq("is_current", true)
     .not("clientes.cep", "is", null)
     .not("clientes.numero", "is", null);
 

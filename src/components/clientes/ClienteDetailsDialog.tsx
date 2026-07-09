@@ -96,6 +96,8 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
         .select("*")
         .eq("cliente_id", cliente.id)
         .eq("user_id", user.id)
+        // versões substituídas contariam a mesma proposta 2-3×
+        .eq("is_current", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

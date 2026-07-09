@@ -216,7 +216,7 @@ export function useForecast(filters: ForecastFilters = { outlierLimit: 180 }) {
 
       abertas.forEach((p) => {
         const dataBase = new Date(p.data);
-        const valor = Number(p.liquido || p.valor_total || 0);
+        const valor = Number(p.valor_total || 0);
 
         [
           { dias: p25, key: "p25" },
@@ -238,7 +238,7 @@ export function useForecast(filters: ForecastFilters = { outlierLimit: 180 }) {
       const forecastData: ForecastMonthData[] = Array.from(monthMap.entries())
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([mes, d]) => ({
-          mes: format(new Date(mes + "-01"), "MMM/yy"),
+          mes: format(new Date(mes + "-01T12:00:00"), "MMM/yy"),
           p25: Math.round(d.p25),
           p50: Math.round(d.p50),
           p75: Math.round(d.p75),

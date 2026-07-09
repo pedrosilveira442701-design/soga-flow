@@ -60,15 +60,19 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
   };
 
   const handleStartDateChange = (date: Date | undefined) => {
-    setStartDate(date);
+    const start = date ? startOfDay(date) : undefined;
+    setStartDate(start);
     setSelectedPreset("custom");
-    onChange({ ...filters, startDate: date });
+    onChange({ ...filters, startDate: start });
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
-    setEndDate(date);
+    // O calendário devolve meia-noite; sem endOfDay o próprio dia final
+    // ficava fora do filtro (.lte contra created_at)
+    const end = date ? endOfDay(date) : undefined;
+    setEndDate(end);
     setSelectedPreset("custom");
-    onChange({ ...filters, endDate: date });
+    onChange({ ...filters, endDate: end });
   };
 
   const handleClearFilters = () => {

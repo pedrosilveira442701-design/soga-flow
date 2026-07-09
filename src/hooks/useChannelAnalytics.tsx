@@ -139,7 +139,8 @@ export function useChannelAnalytics(filters: ChannelFilters) {
       const { data: propostas, error } = await supabase
         .from("propostas")
         .select("id, lead_id")
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("is_current", true);
 
       if (error) throw error;
       return propostas || [];
@@ -193,6 +194,7 @@ export function useChannelAnalytics(filters: ChannelFilters) {
           clientes(bairro, cidade)
         `)
         .eq("user_id", user.id)
+        .eq("is_current", true)
         .gte("created_at", startISO)
         .lte("created_at", endISO);
 

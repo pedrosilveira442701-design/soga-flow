@@ -118,6 +118,8 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         .from("contratos")
         .select("*")
         .eq("user_id", user!.id)
+        // padrão do app: contrato cancelado não é venda
+        .neq("status", "cancelado")
         .gte("data_inicio", startDateStr)
         .lte("data_inicio", endDateStr);
 
@@ -221,6 +223,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
         .from("contratos")
         .select("*")
         .eq("user_id", user!.id)
+        .neq("status", "cancelado")
         .gte("data_inicio", prevStartDateStr)
         .lte("data_inicio", prevEndDateStr);
 
@@ -500,7 +503,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
 
     // Agrupar propostas por mês (usando data da proposta)
     timelinePropostas.forEach((p) => {
-      const month = format(new Date(p.data), "MMM", { locale: ptBR });
+      const month = format(new Date(p.data + "T12:00:00"), "MMM", { locale: ptBR });
       const existing = monthsMap.get(month);
       if (existing) {
         const bruto = Number(p.valor_total || 0);
@@ -566,7 +569,7 @@ export function useDashboard(filters: DashboardFilters = { period: "month" }) {
     const mesAtual = format(now, "yyyy-MM");
 
     return Array.from(mesesMap.entries()).map(([key, valor]) => ({
-      mes: format(new Date(key + "-01"), "MMM/yy", { locale: ptBR }),
+      mes: format(new Date(key + "-01T12:00:00"), "MMM/yy", { locale: ptBR }),
       valor,
       isAtual: key === mesAtual,
     }));

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format, addDays, startOfMonth, endOfMonth } from "date-fns";
 import { DollarSign, Search, Filter, CheckCircle2, AlertCircle } from "lucide-react";
 import { useFinanceiro } from "@/hooks/useFinanceiro";
 import { FluxoCaixaChart } from "@/components/financeiro/FluxoCaixaChart";
@@ -24,7 +25,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
@@ -32,8 +32,9 @@ export default function Financeiro() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<{
     search: string;
-    status: "" | "pendente" | "pago" | "vencido" | "cancelado" | "atrasado";
+    status: "" | "pendente" | "pago" | "atrasado";
     formaPagamento: string;
+    periodo?: { inicio: string; fim: string };
   }>({
     search: "",
     status: "",
@@ -102,25 +103,36 @@ export default function Financeiro() {
   };
 
   const aplicarFiltroRapido = (tipo: string) => {
-    const hoje = new Date().toISOString().split("T")[0];
-    const fimSemana = new Date();
-    fimSemana.setDate(fimSemana.getDate() + 7);
+    const hoje = format(new Date(), "yyyy-MM-dd");
 
     switch (tipo) {
       case "hoje":
-        setFilters({ ...filters, status: "", search: "" });
+        setFilters({ ...filters, status: "", search: "", periodo: { inicio: hoje, fim: hoje } });
         break;
       case "semana":
-        setFilters({ ...filters, status: "", search: "" });
+        setFilters({
+          ...filters,
+          status: "",
+          search: "",
+          periodo: { inicio: hoje, fim: format(addDays(new Date(), 7), "yyyy-MM-dd") },
+        });
         break;
       case "atrasadas":
-        setFilters({ ...filters, status: "atrasado", search: "" });
+        setFilters({ ...filters, status: "atrasado", search: "", periodo: undefined });
         break;
       case "mes":
-        setFilters({ ...filters, status: "", search: "" });
+        setFilters({
+          ...filters,
+          status: "",
+          search: "",
+          periodo: {
+            inicio: format(startOfMonth(new Date()), "yyyy-MM-dd"),
+            fim: format(endOfMonth(new Date()), "yyyy-MM-dd"),
+          },
+        });
         break;
       default:
-        setFilters({ search: "", status: "", formaPagamento: "" });
+        setFilters({ search: "", status: "", formaPagamento: "", periodo: undefined });
     }
   };
 
@@ -283,7 +295,6 @@ export default function Financeiro() {
                   <SelectItem value="pendente">Pendente</SelectItem>
                   <SelectItem value="pago">Pago</SelectItem>
                   <SelectItem value="atrasado">Atrasado</SelectItem>
-                  <SelectItem value="cancelado">Cancelado</SelectItem>
                 </SelectContent>
               </Select>
 

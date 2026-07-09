@@ -278,6 +278,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         `)
         .eq("user_id", user.id)
         .eq("is_current", true)
+        .eq("is_current", true)
         .not("margem_pct", "is", null)
         .not("servicos", "is", null);
 
@@ -441,22 +442,28 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
     queryFn: async () => {
       if (!user) return [];
 
-      // Buscar metas ativas
-      const { data: metas, error: metasError } = await supabase
+      const { data: metasRaw, error: metasError } = await supabase
         .from("metas")
         .select("*")
         .eq("user_id", user.id)
-        .eq("tipo", "receita")
         .order("periodo_inicio", { ascending: true });
 
       if (metasError) throw metasError;
 
+      // Metas de receita: o app cadastra como "Vendas (R$)" — comparar sem case
+      const metas = (metasRaw || []).filter((m) => {
+        const t = (m.tipo || "").toLowerCase();
+        return t === "receita" || t.startsWith("vendas");
+      });
+
       // Buscar contratos para calcular realizado
+      // "realizado" precisa incluir contratos concluídos — um contrato quitado
+      // não pode sumir do histórico do burndown
       const { data: contratos, error: contratosError } = await supabase
         .from("contratos")
         .select("valor_negociado, data_inicio")
         .eq("user_id", user.id)
-        .eq("status", "ativo");
+        .neq("status", "cancelado");
 
       if (contratosError) throw contratosError;
 
@@ -464,10 +471,13 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       const monthlyData = new Map<string, { meta: number; realizado: number }>();
 
       metas.forEach((meta) => {
-        const inicio = new Date(meta.periodo_inicio);
-        const fim = new Date(meta.periodo_fim);
-        const meses = Math.ceil(
-          (fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30)
+        const inicio = new Date(meta.periodo_inicio + "T12:00:00");
+        const fim = new Date(meta.periodo_fim + "T12:00:00");
+        // Meses de calendário cobertos, inclusivo — ceil(dias/30) dava 13 para
+        // uma meta anual e diluía a meta mensal
+        const meses = Math.max(
+          1,
+          (fim.getFullYear() - inicio.getFullYear()) * 12 + (fim.getMonth() - inicio.getMonth()) + 1
         );
         const metaMensal = parseFloat(String(meta.valor_alvo || 0)) / meses;
 
@@ -497,10 +507,10 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         data.realizado += parseFloat(String(contrato.valor_negociado || 0));
       });
 
-      // Converter para array e calcular acumulados
+      // Converter para array e calcular acumulados (os 12 meses mais RECENTES)
       const sortedData = Array.from(monthlyData.entries())
         .sort((a, b) => a[0].localeCompare(b[0]))
-        .slice(0, 12); // últimos 12 meses
+        .slice(-12);
 
       let acumuladoMeta = 0;
       let acumuladoRealizado = 0;
@@ -510,7 +520,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         acumuladoRealizado += data.realizado;
 
         return {
-          mes: new Date(mes + "-01").toLocaleDateString("pt-BR", {
+          mes: new Date(mes + "-01T12:00:00").toLocaleDateString("pt-BR", {
             month: "short",
             year: "2-digit",
           }),
@@ -535,7 +545,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       // Buscar leads com responsável
       let leadsQuery = supabase
         .from("leads")
-        .select("responsavel, estagio, created_at, ultima_interacao, valor_potencial")
+        .select("id, responsavel, estagio, created_at, ultima_interacao, valor_potencial")
         .eq("user_id", user.id)
         .not("responsavel", "is", null);
 
@@ -558,6 +568,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
           margem_pct,
           data,
           cliente_id,
+          lead_id,
           clientes!inner(nome)
         `)
         .eq("user_id", user.id)
@@ -597,23 +608,24 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
           data.ciclos.push(ciclo);
         }
 
-        if (lead.valor_potencial) {
-          data.valores.push(parseFloat(String(lead.valor_potencial)));
-        }
       });
 
-      // Adicionar dados de propostas (simplificado - associar por índice)
+      // Atribuir cada proposta ao responsável do lead de origem.
+      // Ticket médio e margem média vêm SÓ de propostas — valor_potencial de
+      // lead é estimativa e não entra na média.
+      const respPorLead = new Map<string, string>();
+      leads.forEach((lead) => {
+        respPorLead.set(lead.id, lead.responsavel || "Sem responsável");
+      });
+
       propostas.forEach((prop: any) => {
-        const valor = parseFloat(String(prop.valor_total || 0));
-        const margem = parseFloat(String(prop.margem_pct || 0));
-        
-        // Tentar associar ao primeiro responsável (simplificação)
-        const firstResp = Array.from(responsaveis.keys())[0];
-        if (firstResp && responsaveis.has(firstResp)) {
-          const data = responsaveis.get(firstResp)!;
-          data.valores.push(valor);
-          data.margens.push(margem);
-        }
+        if (!prop.lead_id) return;
+        const resp = respPorLead.get(prop.lead_id);
+        if (!resp || !responsaveis.has(resp)) return;
+
+        const data = responsaveis.get(resp)!;
+        data.valores.push(parseFloat(String(prop.valor_total || 0)));
+        data.margens.push(parseFloat(String(prop.margem_pct || 0)));
       });
 
       const result: PerformanceByResponsibleData[] = Array.from(responsaveis.entries()).map(
@@ -726,6 +738,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         .from("propostas")
         .select("tipo_piso, m2, valor_total, margem_pct")
         .eq("user_id", user.id)
+        .eq("is_current", true)
         .not("tipo_piso", "is", null);
 
       if (filters.startDate) {
@@ -845,7 +858,7 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
 
       const { data: cohortsRaw, error } = await supabase
         .from('leads')
-        .select('created_at, estagio')
+        .select('created_at, estagio, status_changed_at')
         .eq("user_id", user.id)
         .order('created_at', { ascending: true });
 
@@ -863,7 +876,18 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         
         if (["contrato", "execucao", "finalizado"].includes(lead.estagio)) {
           cohort.convertidos += 1;
-          cohort.dias.push(15);
+          // Tempo real até a última mudança de estágio; sem status_changed_at
+          // não há como saber — melhor omitir do que inventar
+          if (lead.status_changed_at) {
+            const dias = Math.max(
+              0,
+              Math.floor(
+                (new Date(lead.status_changed_at).getTime() - new Date(lead.created_at).getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            );
+            cohort.dias.push(dias);
+          }
         }
       });
 
@@ -905,12 +929,10 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
         }
         const loss = lossMap.get(mes)!;
         loss.total += 1;
-        
-        // Nota: Não existe estágio "perdido" no sistema atual.
-        // Para análise de perdas, considerar propostas com status "perdida"
-        // if (lead.estagio === 'perdido') {
-        //   loss.perdidas += 1;
-        // }
+
+        if (lead.estagio === 'perdido') {
+          loss.perdidas += 1;
+        }
       });
 
       const result: LossReasonData[] = Array.from(lossMap.entries()).map(([mes, data]) => ({
@@ -974,7 +996,8 @@ export function useAnalytics(filters: AnalyticsFilters = {}) {
       let propostasQuery = supabase
         .from("propostas")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .eq("is_current", true);
 
       if (filters.startDate) {
         propostasQuery = propostasQuery.gte("created_at", filters.startDate.toISOString());

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export interface Meta {
   id: string;
@@ -111,9 +111,10 @@ export const useMetas = (filters?: MetaFilters) => {
             .from('contratos')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
+            .in('status', ['ativo', 'concluido'])
             .gte('data_inicio', periodo_inicio)
             .lte('data_inicio', periodo_fim);
-          
+
           if (!totalPropostas) return 0;
           const taxaConversao = ((totalContratos || 0) / totalPropostas) * 100;
           return Math.min((taxaConversao / meta.valor_alvo) * 100, 999);
@@ -125,6 +126,7 @@ export const useMetas = (filters?: MetaFilters) => {
             .from('contratos')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
+            .in('status', ['ativo', 'concluido'])
             .gte('data_inicio', periodo_inicio)
             .lte('data_inicio', periodo_fim);
           
@@ -133,12 +135,14 @@ export const useMetas = (filters?: MetaFilters) => {
 
         case 'novos clientes':
         case 'novos clientes (#)': {
+          // created_at é timestamp; periodo_fim é data pura — sem a hora final,
+          // clientes cadastrados no último dia do período ficariam de fora
           const { count } = await supabase
             .from('clientes')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user_id)
             .gte('created_at', periodo_inicio)
-            .lte('created_at', periodo_fim);
+            .lte('created_at', periodo_fim + 'T23:59:59.999');
           
           return Math.min(((count || 0) / meta.valor_alvo) * 100, 999);
         }
@@ -295,8 +299,8 @@ export const useMetas = (filters?: MetaFilters) => {
     metasAtivas: metas.filter(m => m.status === 'ativa').length,
     metasConcluidas: metas.filter(m => m.status === 'concluida').length,
     metasCanceladas: metas.filter(m => m.status === 'cancelada').length,
-    performanceGeral: metas.length > 0 
-      ? metas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + m.progresso, 0) / metas.filter(m => m.status === 'ativa').length 
+    performanceGeral: metas.filter(m => m.status === 'ativa').length > 0
+      ? metas.filter(m => m.status === 'ativa').reduce((sum, m) => sum + m.progresso, 0) / metas.filter(m => m.status === 'ativa').length
       : 0,
     metasNoAlvo: metasComInsights.filter(m => m.progresso >= 100).length,
     metasEmAlerta: metasComInsights.filter(m => m.alertas.length > 0).length,
@@ -320,14 +324,10 @@ export const useMetas = (filters?: MetaFilters) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
-      toast({ title: "Meta criada com sucesso!" });
+      toast.success("Meta criada com sucesso!");
     },
     onError: (error) => {
-      toast({ 
-        title: "Erro ao criar meta",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error("Erro ao criar meta", { description: error.message });
     },
   });
 
@@ -346,14 +346,10 @@ export const useMetas = (filters?: MetaFilters) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
-      toast({ title: "Meta atualizada com sucesso!" });
+      toast.success("Meta atualizada com sucesso!");
     },
     onError: (error) => {
-      toast({ 
-        title: "Erro ao atualizar meta",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error("Erro ao atualizar meta", { description: error.message });
     },
   });
 
@@ -369,14 +365,10 @@ export const useMetas = (filters?: MetaFilters) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
-      toast({ title: "Meta cancelada com sucesso!" });
+      toast.success("Meta cancelada com sucesso!");
     },
     onError: (error) => {
-      toast({ 
-        title: "Erro ao cancelar meta",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error("Erro ao cancelar meta", { description: error.message });
     },
   });
 
@@ -401,7 +393,7 @@ export const useMetas = (filters?: MetaFilters) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
-      toast({ title: "Progresso recalculado!" });
+      toast.success("Progresso recalculado!");
     },
   });
 
@@ -423,7 +415,7 @@ export const useMetas = (filters?: MetaFilters) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
-      toast({ title: "Todas as metas foram recalculadas!" });
+      toast.success("Todas as metas foram recalculadas!");
     },
   });
 
@@ -448,11 +440,7 @@ export const useMetas = (filters?: MetaFilters) => {
       queryClient.invalidateQueries({ queryKey: ['metas'] });
     },
     onError: (error) => {
-      toast({ 
-        title: "Erro ao reordenar metas",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast.error("Erro ao reordenar metas", { description: error.message });
     },
   });
 

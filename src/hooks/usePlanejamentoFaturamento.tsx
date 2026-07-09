@@ -163,7 +163,7 @@ export function usePlanejamentoFaturamento(
 
       // Valor total em aberto
       const valorTotalAberto = abertas.reduce(
-        (s, p) => s + Number(p.liquido || p.valor_total || 0),
+        (s, p) => s + Number(p.valor_total || 0),
         0
       );
 
@@ -177,7 +177,7 @@ export function usePlanejamentoFaturamento(
         const dataBase = new Date(p.data);
         const previsao = addDays(dataBase, Math.round(p50));
         const mesKey = format(previsao, "yyyy-MM");
-        const valor = Number(p.liquido || p.valor_total || 0);
+        const valor = Number(p.valor_total || 0);
         const entry = projecaoMap.get(mesKey) || { volume: 0, valorBruto: 0 };
         entry.volume++;
         entry.valorBruto += valor;
@@ -189,7 +189,7 @@ export function usePlanejamentoFaturamento(
       )
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([mesKey, d]) => ({
-          mes: format(new Date(mesKey + "-01"), "MMM/yy"),
+          mes: format(new Date(mesKey + "-01T12:00:00"), "MMM/yy"),
           mesKey,
           volumePropostas: d.volume,
           conversaoEsperada: Math.round(d.volume * taxaConversao),
@@ -236,7 +236,7 @@ export function usePlanejamentoFaturamento(
         const mesKey = format(mesDate, "yyyy-MM");
         const mesLabel = format(mesDate, "MMM/yy");
         const enviadasMes = enviadas12m.filter(
-          (p) => format(new Date(p.data), "yyyy-MM") === mesKey
+          (p) => format(new Date(p.data + "T12:00:00"), "yyyy-MM") === mesKey
         ).length;
         const fechadasMes = fechamentos12m.filter(
           (f) => f.mesKey === mesKey

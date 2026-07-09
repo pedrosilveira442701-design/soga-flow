@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export type DatasetType = "clientes" | "propostas" | "contratos" | "financeiro" | "vendas" | "leads" | "visitas" | "obras";
@@ -179,7 +179,6 @@ export const VIEW_MAP: Record<DatasetType, string> = {
 
 export function useRelatorios() {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isExporting, setIsExporting] = useState(false);
   const [previewData, setPreviewData] = useState<any[] | null>(null);
@@ -197,7 +196,12 @@ export function useRelatorios() {
     try {
       const viewName = VIEW_MAP[config.dataset];
       let query = supabase.from(viewName as any).select("*");
-      
+
+      // Propostas: só a versão corrente conta — versões substituídas duplicariam linhas
+      if (config.dataset === "propostas") {
+        query = query.eq("is_current", true);
+      }
+
       // Apply date range filter if periodo
       if (config.scope === "periodo" && config.dateRange) {
         if (config.dateRange.start) {
@@ -272,11 +276,7 @@ export function useRelatorios() {
 
     } catch (error: any) {
       console.error("Preview error:", error);
-      toast({
-        title: "Erro ao carregar prévia",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erro ao carregar prévia", { description: error.message });
     } finally {
       setPreviewLoading(false);
     }
@@ -301,10 +301,7 @@ export function useRelatorios() {
       if (data?.downloadUrl) {
         // Open download link
         window.open(data.downloadUrl, "_blank");
-        toast({
-          title: "Exportação concluída",
-          description: `Relatório ${format.toUpperCase()} gerado com sucesso.`,
-        });
+        toast.success("Exportação concluída", { description: `Relatório ${format.toUpperCase()} gerado com sucesso.` });
       } else if (data?.csv) {
         // For CSV/Excel fallback
         const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
@@ -315,20 +312,13 @@ export function useRelatorios() {
         link.download = `relatorio_${config.dataset}_${new Date().toISOString().split("T")[0]}.${extension}`;
         link.click();
         URL.revokeObjectURL(url);
-        toast({
-          title: "Exportação concluída",
-          description: `Relatório ${format === "excel" ? "Excel" : "PDF"} gerado com sucesso.`,
-        });
+        toast.success("Exportação concluída", { description: `Relatório ${format === "excel" ? "Excel" : "PDF"} gerado com sucesso.` });
       }
 
       return data;
     } catch (error: any) {
       console.error("Export error:", error);
-      toast({
-        title: "Erro na exportação",
-        description: error.message || "Falha ao gerar relatório",
-        variant: "destructive",
-      });
+      toast.error("Erro na exportação", { description: error.message || "Falha ao gerar relatório" });
     } finally {
       setIsExporting(false);
     }

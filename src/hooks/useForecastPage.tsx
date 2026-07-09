@@ -354,7 +354,7 @@ export function useForecastPage(params: ForecastPageParams) {
       // ─── Meta mensal (prorrateada) ──────────────────────────
       function getMetaMensal(mesKey: string): number {
         let total = 0;
-        const mesStart = startOfMonth(new Date(mesKey + "-01"));
+        const mesStart = startOfMonth(new Date(mesKey + "-01T12:00:00"));
         const mesEnd = endOfMonth(mesStart);
 
         for (const m of metasAtivas) {
@@ -380,8 +380,8 @@ export function useForecastPage(params: ForecastPageParams) {
         estimada.setDate(estimada.getDate() + diasRestantes);
 
         const mesEstimado = format(estimada, "yyyy-MM");
-        const mesAnterior = format(addMonths(new Date(mesEstimado + "-01"), -1), "yyyy-MM");
-        const mesSeguinte = format(addMonths(new Date(mesEstimado + "-01"), 1), "yyyy-MM");
+        const mesAnterior = format(addMonths(new Date(mesEstimado + "-01T12:00:00"), -1), "yyyy-MM");
+        const mesSeguinte = format(addMonths(new Date(mesEstimado + "-01T12:00:00"), 1), "yyyy-MM");
 
         const v = p.valorPonderado;
         pipelinePorMes.set(mesAnterior, (pipelinePorMes.get(mesAnterior) || 0) + v * 0.3);
@@ -489,7 +489,7 @@ export function useForecastPage(params: ForecastPageParams) {
         const envMesValor = (enviadas12m as any[])
           .filter((p) => {
             if (!p?.data) return false;
-            return format(new Date(p.data), "yyyy-MM") === mesKey;
+            return format(new Date(p.data + "T12:00:00"), "yyyy-MM") === mesKey;
           })
           .reduce((s, p) => s + toNum(p.valor_total), 0);
 

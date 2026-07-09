@@ -82,7 +82,7 @@ async function buscarClientes(meta: Meta): Promise<ContribuicaoItem[]> {
     .select("id, nome, created_at")
     .eq("user_id", meta.user_id)
     .gte("created_at", meta.periodo_inicio)
-    .lte("created_at", meta.periodo_fim)
+    .lte("created_at", meta.periodo_fim + "T23:59:59.999")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -124,14 +124,14 @@ async function buscarContribuicoes(meta: Meta): Promise<MetaContribuicoes> {
       return {
         suportado: true,
         grupos: [
-          { label: "Contratos", agregacao: "contagem", itens: await buscarContratos(meta, false) },
+          { label: "Contratos", agregacao: "contagem", itens: await buscarContratos(meta, true) },
         ],
       };
 
     case "conversão":
     case "conversão (%)": {
       const [contratos, propostas] = await Promise.all([
-        buscarContratos(meta, false),
+        buscarContratos(meta, true),
         buscarPropostas(meta),
       ]);
       return {

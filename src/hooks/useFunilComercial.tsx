@@ -41,7 +41,7 @@ export function useFunilComercial(filters: Filters = { period: "all" }) {
     queryFn: async () => {
       const [leadsRes, propRes, contrRes, contatosRes] = await Promise.all([
         supabase.from("leads").select("id, cliente_id, created_at").eq("user_id", user!.id),
-        supabase.from("propostas").select("cliente_id, created_at, status").eq("user_id", user!.id),
+        supabase.from("propostas").select("cliente_id, created_at, status").eq("user_id", user!.id).eq("is_current", true),
         supabase.from("contratos").select("cliente_id, created_at, data_inicio, status").eq("user_id", user!.id),
         supabase.from("contatos").select("data_hora, origem, triagem_status, converteu_lead, lead_id").eq("user_id", user!.id),
       ]);

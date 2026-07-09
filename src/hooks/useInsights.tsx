@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,16 +129,16 @@ export function useInsights() {
       const now = new Date();
 
       if (filtros.period === "today") {
-        processedFilters.startDate = now.toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(now, "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       } else if (filtros.period === "this_month") {
-        processedFilters.startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       } else if (filtros.period === "last_90") {
         const past = new Date(now);
         past.setDate(past.getDate() - 90);
-        processedFilters.startDate = past.toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(past, "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       }
 
       const { data, error: fnError } = await supabase.functions.invoke("insights-query", {
@@ -208,16 +209,16 @@ export function useInsights() {
       const now = new Date();
 
       if (filtros.period === "today") {
-        processedFilters.startDate = now.toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(now, "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       } else if (filtros.period === "this_month") {
-        processedFilters.startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(new Date(now.getFullYear(), now.getMonth(), 1), "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       } else if (filtros.period === "last_90") {
         const past = new Date(now);
         past.setDate(past.getDate() - 90);
-        processedFilters.startDate = past.toISOString().split("T")[0];
-        processedFilters.endDate = now.toISOString().split("T")[0];
+        processedFilters.startDate = format(past, "yyyy-MM-dd");
+        processedFilters.endDate = format(now, "yyyy-MM-dd");
       }
 
       const { data, error: fnError } = await supabase.functions.invoke("insights-query", {

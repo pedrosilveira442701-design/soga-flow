@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +10,8 @@ export interface ParcelaFinanceira {
   numero_parcela: number;
   valor_liquido_parcela: number;
   vencimento: string;
-  status: "pendente" | "pago" | "vencido" | "cancelado" | "atrasado";
+  // Enum real do banco (payment_status): pendente | pago | atrasado
+  status: "pendente" | "pago" | "atrasado";
   data_pagamento?: string;
   forma?: string;
   contrato?: {
@@ -90,7 +92,7 @@ export function calcularInsightsTendencia(dados: FluxoCaixa[]) {
 
 export interface FinanceiroFilters {
   search?: string;
-  status?: "pendente" | "pago" | "vencido" | "cancelado" | "atrasado" | "";
+  status?: "pendente" | "pago" | "atrasado" | "";
   periodo?: { inicio: string; fim: string };
   formaPagamento?: string;
   vencimentoAte?: string;
@@ -128,9 +130,11 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
       // Aplicar filtros
       if (filters?.status) {
         if (filters.status === "atrasado") {
+          // Inclui tanto o status persistido "atrasado" quanto pendentes vencidas.
+          // Data local (não UTC): após as 21h BRT o dia UTC já virou.
           query = query
-            .eq("status", "pendente")
-            .lt("vencimento", new Date().toISOString().split("T")[0]);
+            .in("status", ["pendente", "atrasado"])
+            .lt("vencimento", format(new Date(), "yyyy-MM-dd"));
         } else if (filters.status) {
           query = query.eq("status", filters.status as any);
         }
@@ -151,7 +155,7 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
       if (error) throw error;
 
       // Processar parcelas e calcular status atrasado
-      const hoje = new Date().toISOString().split("T")[0];
+      const hoje = format(new Date(), "yyyy-MM-dd");
       return (data || []).map((p) => {
         const statusCalculado =
           p.status === "pendente" && p.vencimento < hoje ? "atrasado" : p.status;
@@ -200,7 +204,8 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
     recebidoMes: parcelasFinais
       .filter((p) => {
         if (p.status !== "pago" || !p.data_pagamento) return false;
-        const dataPgto = new Date(p.data_pagamento);
+        // T12:00:00 evita o shift UTC→BRT que joga o dia 1º para o mês anterior
+        const dataPgto = new Date(p.data_pagamento + "T12:00:00");
         const hoje = new Date();
         return (
           dataPgto.getMonth() === hoje.getMonth() &&
@@ -211,8 +216,8 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
 
     aReceberMes: parcelasFinais
       .filter((p) => {
-        if (p.status === "pago" || p.status === "cancelado") return false;
-        const venc = new Date(p.vencimento);
+        if (p.status === "pago") return false;
+        const venc = new Date(p.vencimento + "T12:00:00");
         const hoje = new Date();
         return (
           venc.getMonth() === hoje.getMonth() &&
@@ -262,7 +267,7 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
       }
 
       // Processar parcelas
-      const hojStr = hoje.toISOString().split("T")[0];
+      const hojStr = format(hoje, "yyyy-MM-dd");
       (data || []).forEach((p) => {
         const valor = Number(p.valor_liquido_parcela);
         const margemPct = Number((p.contrato as any)?.margem_pct || 0);
@@ -276,11 +281,11 @@ export const useFinanceiro = (filters?: FinanceiroFilters) => {
             mesData.recebido += valor;
             mesData.margemRecebida += margemValor;
           }
-        } else if (p.status === "pendente") {
+        } else if (p.status === "pendente" || p.status === "atrasado") {
           const vencMes = p.vencimento.slice(0, 7);
           if (meses.has(vencMes)) {
             const mesData = meses.get(vencMes)!;
-            if (p.vencimento < hojStr) {
+            if (p.status === "atrasado" || p.vencimento < hojStr) {
               mesData.atrasado += valor;
             } else {
               mesData.previsto += valor;

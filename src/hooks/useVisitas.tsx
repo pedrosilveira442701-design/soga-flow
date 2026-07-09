@@ -80,12 +80,8 @@ export function useVisitas(filters?: VisitaFilters) {
         .order("data", { ascending: false, nullsFirst: false })
         .order("hora", { ascending: false, nullsFirst: false });
 
-      // Busca
-      if (filters?.search) {
-        query = query.or(
-          `assunto.ilike.%${filters.search}%,marcacao_tipo.ilike.%${filters.search}%,responsavel.ilike.%${filters.search}%`,
-        );
-      }
+      // Busca é feita no cliente (Visitas.tsx) porque inclui nome do cliente e
+      // endereço — pré-filtrar aqui por assunto eliminava resultados válidos
 
       // Realizada / pendente
       if (filters?.realizada === "pendentes") {
@@ -286,7 +282,24 @@ export function useVisitas(filters?: VisitaFilters) {
   // MARCAR COMO REALIZADA
   const marcarComoRealizada = useMutation({
     mutationFn: async ({ id, realizada }: { id: string; realizada: boolean }) => {
-      const { data, error } = await supabase.from("visitas").update({ realizada }).eq("id", id).select().single();
+      // O status precisa acompanhar o checkbox — senão badges e kanban divergem
+      let status: VisitaStatus = "concluida";
+      if (!realizada) {
+        const { data: v } = await supabase.from("visitas").select("data, hora").eq("id", id).single();
+        if (v?.data) {
+          const dataHora = new Date(`${v.data}T${v.hora || "23:59"}`);
+          status = dataHora < new Date() ? "atrasada" : "marcada";
+        } else {
+          status = "agendar";
+        }
+      }
+
+      const { data, error } = await supabase
+        .from("visitas")
+        .update({ realizada, status })
+        .eq("id", id)
+        .select()
+        .single();
 
       if (error) throw error;
       return data;

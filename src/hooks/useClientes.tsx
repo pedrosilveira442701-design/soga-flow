@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Cliente {
@@ -60,7 +60,6 @@ export interface UpdateClienteData extends CreateClienteData {
 }
 
 export function useClientes() {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -80,6 +79,8 @@ export function useClientes() {
         `,
         )
         .eq("user_id", user.id)
+        // conta só a versão corrente de cada proposta
+        .eq("propostas.is_current", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -110,17 +111,10 @@ export function useClientes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
-      toast({
-        title: "Cliente criado",
-        description: "Cliente cadastrado com sucesso",
-      });
+      toast.success("Cliente criado", { description: "Cliente cadastrado com sucesso" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Erro ao criar cliente",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erro ao criar cliente", { description: error.message });
     },
   });
 
@@ -142,17 +136,10 @@ export function useClientes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
-      toast({
-        title: "Cliente atualizado",
-        description: "Cliente atualizado com sucesso",
-      });
+      toast.success("Cliente atualizado", { description: "Cliente atualizado com sucesso" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Erro ao atualizar cliente",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erro ao atualizar cliente", { description: error.message });
     },
   });
 
@@ -167,17 +154,10 @@ export function useClientes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes", user?.id] });
-      toast({
-        title: "Cliente excluído",
-        description: "Cliente excluído com sucesso",
-      });
+      toast.success("Cliente excluído", { description: "Cliente excluído com sucesso" });
     },
     onError: (error: Error) => {
-      toast({
-        title: "Erro ao excluir cliente",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Erro ao excluir cliente", { description: error.message });
     },
   });
 
