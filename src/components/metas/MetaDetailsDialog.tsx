@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { META_STATUS, statusConfig } from "@/lib/status";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,8 +63,8 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DialogTitle className="text-2xl">{meta.tipo}</DialogTitle>
-              <Badge variant={meta.status === 'ativa' ? 'default' : 'secondary'}>
-                {meta.status}
+              <Badge variant={statusConfig(META_STATUS, meta.status).variant}>
+                {statusConfig(META_STATUS, meta.status).label}
               </Badge>
             </div>
             <Button variant="outline" onClick={onEdit}>
@@ -167,13 +168,13 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
               <Progress value={Math.min(meta.tempoDecorrido, 100)} className="h-3 mb-2" />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Calendar className="h-5 w-5" />
+                  <Calendar className="h-3.5 w-3.5" />
                   {format(new Date(meta.periodo_inicio), "dd/MM/yy")}
                 </div>
                 <div>Hoje</div>
                 <div className="flex items-center gap-1">
                   {format(new Date(meta.periodo_fim), "dd/MM/yy")}
-                  <Calendar className="h-5 w-5" />
+                  <Calendar className="h-3.5 w-3.5" />
                 </div>
               </div>
             </div>

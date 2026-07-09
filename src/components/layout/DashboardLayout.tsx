@@ -11,7 +11,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Topbar />
-      <main className={isMobile ? "pt-[52px] px-4 pb-6" : "pt-[60px] px-6 pb-8 max-w-[1440px] mx-auto"}>
+      <main className={isMobile ? "pt-[calc(110px_+_env(safe-area-inset-top))] px-3 pb-[max(24px,env(safe-area-inset-bottom))]" : "pt-[64px] px-6 pb-8 max-w-[1440px] mx-auto"}>
         {children}
       </main>
     </div>

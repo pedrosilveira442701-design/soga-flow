@@ -60,18 +60,18 @@ const dropdownGroups = [
     label: "Comercial",
     items: [
       { title: "Leads", url: "/leads", icon: Target },
-      { title: "Gestao WhatsApp", url: "/whatsapp", icon: MessageSquare },
+      { title: "Gestão WhatsApp", url: "/whatsapp", icon: MessageSquare },
       { title: "Propostas", url: "/propostas", icon: FileText },
       { title: "Contratos", url: "/contratos", icon: FileCheck },
       { title: "Clientes", url: "/clientes", icon: Users },
     ],
   },
   {
-    label: "Operacao",
+    label: "Operação",
     items: [
       { title: "Obras", url: "/obras", icon: Building2 },
       { title: "Visitas", url: "/visitas", icon: Calendar },
-      { title: "Anotacoes", url: "/anotacoes", icon: StickyNote },
+      { title: "Anotações", url: "/anotacoes", icon: StickyNote },
     ],
   },
   {
@@ -82,11 +82,11 @@ const dropdownGroups = [
     ],
   },
   {
-    label: "Analise",
+    label: "Análise",
     items: [
       { title: "Analytics", url: "/analytics", icon: BarChart3 },
       { title: "Forecast", url: "/forecast", icon: TrendingUp },
-      { title: "Relatorios", url: "/relatorios", icon: FileBarChart },
+      { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
     ],
   },
 ];
@@ -137,8 +137,8 @@ export function Topbar() {
     >
       {/* Left: Logo */}
       <NavLink to="/" className="flex items-center gap-2.5 mr-6 shrink-0">
-        <img src={logoImage} alt="So Garagens" className="h-10 w-10 object-contain" />
-        <span className="text-[15px] font-semibold text-foreground hidden lg:inline tracking-tight">So Garagens</span>
+        <img src={logoImage} alt="Só Garagens" className="h-10 w-10 object-contain" />
+        <span className="text-[15px] font-semibold text-foreground hidden lg:inline tracking-tight">Só Garagens</span>
       </NavLink>
 
       {/* Center: Navigation */}

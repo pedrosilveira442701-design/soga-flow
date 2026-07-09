@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
 
 export default function Auth() {
@@ -16,7 +16,6 @@ export default function Auth() {
   const [nome, setNome] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, resetPassword, user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,16 +33,9 @@ export default function Auth() {
         const { error } = await resetPassword(email);
         
         if (error) {
-          toast({
-            title: 'Erro',
-            description: 'Erro ao enviar email de recuperação',
-            variant: 'destructive',
-          });
+          toast.error('Erro', { description: 'Erro ao enviar email de recuperação' });
         } else {
-          toast({
-            title: 'Email enviado!',
-            description: 'Verifique sua caixa de entrada para redefinir sua senha.',
-          });
+          toast.success('Email enviado!', { description: 'Verifique sua caixa de entrada para redefinir sua senha.' });
           setIsForgotPassword(false);
         }
       } else {
@@ -62,31 +54,17 @@ export default function Auth() {
             errorMessage = 'Por favor, confirme seu email antes de fazer login';
           }
           
-          toast({
-            title: 'Erro',
-            description: errorMessage,
-            variant: 'destructive',
-          });
+          toast.error('Erro', { description: errorMessage });
         } else {
           if (!isLogin) {
-            toast({
-              title: 'Cadastro realizado!',
-              description: 'Verifique seu email para confirmar o cadastro.',
-            });
+            toast.success('Cadastro realizado!', { description: 'Verifique seu email para confirmar o cadastro.' });
           } else {
-            toast({
-              title: 'Login realizado!',
-              description: 'Bem-vindo ao Só Garagens Hub.',
-            });
+            toast.success('Login realizado!', { description: 'Bem-vindo ao Só Garagens Hub.' });
           }
         }
       }
     } catch (error) {
-      toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro inesperado',
-        variant: 'destructive',
-      });
+      toast.error('Erro', { description: 'Ocorreu um erro inesperado' });
     } finally {
       setIsLoading(false);
     }

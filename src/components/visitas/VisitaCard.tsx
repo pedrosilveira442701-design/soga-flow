@@ -1,3 +1,4 @@
+import { whatsappLink } from "@/lib/utils";
 import { Visita } from "@/hooks/useVisitas";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +21,10 @@ const statusLabel: Record<Visita["status"], string> = {
 };
 
 const statusColor: Record<Visita["status"], string> = {
-  agendar: "bg-slate-100 text-slate-700 border-slate-200",
-  marcada: "bg-blue-50 text-blue-700 border-blue-200",
-  atrasada: "bg-red-50 text-red-700 border-red-200",
-  concluida: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  agendar: "bg-muted text-muted-foreground border-border",
+  marcada: "bg-primary/10 text-primary border-primary/20",
+  atrasada: "bg-destructive/10 text-destructive border-destructive/20",
+  concluida: "bg-success/10 text-success border-success/20",
 };
 
 export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onViewDetails }: VisitaCardProps) {
@@ -33,7 +34,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
   const endereco = visita.endereco || visita.clientes?.endereco || "";
 
   const whatsappUrl = telefone
-    ? `https://wa.me/55${telefone.replace(/\D/g, "")}?text=${encodeURIComponent(
+    ? `${whatsappLink(telefone)}?text=${encodeURIComponent(
         `Olá ${nomeCliente}, tudo bem? Aqui é da Só Garagens, sobre a visita: ${visita.assunto}.`,
       )}`
     : null;
@@ -53,41 +54,41 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
 
   return (
     <Card 
-      className="w-full rounded-2xl border border-slate-200 shadow-sm bg-white cursor-pointer hover:shadow-md transition-shadow"
+      className="w-full rounded-2xl border border-border shadow-sm bg-card cursor-pointer hover:shadow-md transition-shadow"
       onClick={handleCardClick}
     >
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-3 pb-2">
         {/* ===== ORDEM DO CONTEÚDO ===== */}
-        <div className="flex flex-col gap-1 text-slate-900">
+        <div className="flex flex-col gap-1 text-foreground">
           {/* 1) Nome do cliente */}
           <h3 className="text-sm font-semibold leading-snug">{nomeCliente}</h3>
 
           {/* 2) Endereço */}
           {endereco && (
-            <div className="flex items-start gap-2 text-xs text-slate-600">
-              <MapPin className="h-5 w-5 mt-[1px] text-slate-400 shrink-0" />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 mt-[1px] text-muted-foreground/70 shrink-0" />
               <span>{endereco}</span>
             </div>
           )}
 
           {/* 3) Telefone */}
           {telefone && (
-            <div className="flex items-center gap-2 text-xs text-slate-600">
-              <Phone className="h-5 w-5 text-slate-400 shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
               <span>{telefone}</span>
             </div>
           )}
 
           {/* 4) Tipo de visita */}
           {visita.marcacao_tipo && (
-            <span className="text-[11px] font-semibold tracking-[0.08em] text-slate-500 uppercase">
+            <span className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
               {visita.marcacao_tipo}
             </span>
           )}
 
           {/* 5) Assunto */}
-          <p className="text-xs text-slate-500">{visita.assunto}</p>
+          <p className="text-xs text-muted-foreground">{visita.assunto}</p>
         </div>
 
         {/* Status + ações */}
@@ -103,35 +104,35 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full hover:bg-slate-100"
+              className="h-9 w-9 rounded-full" aria-label="Editar visita"
               onClick={() => onEdit(visita)}
             >
-              <Edit2 className="h-5 w-5" />
+              <Edit2 className="h-4 w-4" />
             </Button>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-full hover:bg-red-50 text-red-600"
+              className="h-9 w-9 rounded-full text-destructive hover:bg-destructive/10" aria-label="Excluir visita"
               onClick={() => onDelete(visita.id)}
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </div>
 
       {/* Infos extras: data / hora */}
-      <div className="px-4 pb-3 space-y-1.5 text-xs text-slate-600">
+      <div className="px-4 pb-3 space-y-1.5 text-xs text-muted-foreground">
         <div className="flex flex-wrap gap-3 mt-1">
           {dataFormatada && (
-            <div className="flex items-center gap-1 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
               <span>{dataFormatada}</span>
             </div>
           )}
           {visita.hora && (
-            <div className="flex items-center gap-1 text-[11px] text-slate-500">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Clock className="h-3.5 w-3.5" />
               <span>{visita.hora}</span>
             </div>
@@ -186,7 +187,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
       <div className="border-t px-4 py-2.5 flex items-center justify-between text-[11px]">
         <button
           type="button"
-          className="flex items-center gap-1 text-slate-600 hover:text-emerald-600 transition-colors"
+          className="flex items-center gap-1 text-muted-foreground hover:text-success transition-colors"
           onClick={() => onToggleRealizada(visita.id, !visita.realizada)}
         >
           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -195,7 +196,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
 
         <button
           type="button"
-          className="text-slate-600 hover:text-blue-600 font-medium transition-colors"
+          className="text-muted-foreground hover:text-primary font-medium transition-colors"
           onClick={() => onViewDetails(visita)}
         >
           Ver detalhes

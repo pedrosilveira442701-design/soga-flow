@@ -1,3 +1,4 @@
+import { whatsappLink } from "@/lib/utils";
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
   DndContext,
@@ -103,7 +104,7 @@ function SortableCard({
         }}
         onWhatsApp={() => {
           if (lead.clientes?.telefone) {
-            window.open(`https://wa.me/${lead.clientes.telefone.replace(/\D/g, "")}`, "_blank");
+            window.open(whatsappLink(lead.clientes.telefone), "_blank");
           }
         }}
         onClick={onClick}

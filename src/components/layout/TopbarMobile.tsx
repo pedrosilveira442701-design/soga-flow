@@ -13,6 +13,7 @@ import {
 import { NotificationBell } from "./NotificationBell";
 import { SearchCommand } from "@/components/sidebar/SearchCommand";
 import { UserMenu } from "@/components/sidebar/UserMenu";
+import { MobileTopNav } from "./MobileTopNav";
 import { allMenuItems } from "./Topbar";
 import { cn } from "@/lib/utils";
 import logoImage from "@/assets/logo.png";
@@ -26,10 +27,12 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
   const location = useLocation();
 
   return (
-    <header className="fixed top-0 w-full z-50 h-[52px] flex items-center px-3 backdrop-blur-2xl backdrop-saturate-150 border-b bg-card/75 dark:bg-card/60 border-border/30">
+    <header className="fixed top-0 left-0 right-0 z-50 pt-[env(safe-area-inset-top)] backdrop-blur-2xl backdrop-saturate-150 border-b bg-card/80 dark:bg-card/65 border-border/30">
+      {/* Top row */}
+      <div className="h-[56px] flex items-center px-3">
       {/* Logo */}
       <NavLink to="/" className="flex items-center gap-2 mr-auto">
-        <img src={logoImage} alt="So Garagens" className="h-9 w-9 object-contain" />
+        <img src={logoImage} alt="Só Garagens" className="h-9 w-9 object-contain" />
         <span className="text-[13px] font-semibold text-foreground tracking-tight">SG</span>
       </NavLink>
 
@@ -43,11 +46,11 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
               <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] p-0 backdrop-blur-2xl bg-card/95 dark:bg-card/90">
+          <SheetContent side="right" className="w-[85vw] max-w-[320px] p-0 backdrop-blur-2xl bg-card/95 dark:bg-card/90 overflow-y-auto">
             <SheetHeader className="px-4 pt-4 pb-3">
               <SheetTitle className="flex items-center gap-2">
-                <img src={logoImage} alt="So Garagens" className="h-9 w-9 object-contain" />
-                <span className="text-[14px] font-semibold tracking-tight">So Garagens</span>
+                <img src={logoImage} alt="Só Garagens" className="h-9 w-9 object-contain" />
+                <span className="text-[14px] font-semibold tracking-tight">Só Garagens</span>
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col px-2 py-1 gap-0.5 flex-1 overflow-y-auto">
@@ -60,7 +63,7 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
                     to={item.url}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[14px] transition-colors",
+                      "flex items-center gap-2.5 px-3 py-3 rounded-lg text-[15px] min-h-[48px] transition-colors",
                       "hover:bg-foreground/[0.04]",
                       isActive && "bg-primary/8 text-primary font-medium"
                     )}
@@ -76,12 +79,16 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
                 );
               })}
             </nav>
-            <div className="border-t border-border/40 px-3 py-3">
+            <div className="border-t border-border/40 px-3 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
               <UserMenu />
             </div>
           </SheetContent>
         </Sheet>
       </div>
+      </div>
+
+      {/* Persistent always-visible page navigation */}
+      <MobileTopNav getBadge={getBadge} />
     </header>
   );
 }

@@ -179,6 +179,15 @@
 
 /* Typography & Utilities */
 @layer components {
+  /* Hide scrollbar but keep scroll (used by the mobile top nav strip) */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .text-h1 {
     @apply text-[28px] leading-[34px] font-semibold tracking-[-0.02em];
   }
@@ -247,5 +256,36 @@
   .page-icon {
     @apply h-7 w-7 text-primary;
     stroke-width: 1.75px;
+  }
+}
+
+/* ===== MOBILE FIXES ===== */
+@layer base {
+  /* Prevent horizontal overflow on mobile */
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+}
+
+@layer components {
+  /* Mobile viewport fixes */
+  @media (max-width: 767px) {
+    /* Popovers/dropdowns acima do header fixo */
+    [data-radix-popper-content-wrapper] {
+      z-index: 9999 !important;
+    }
+
+    /* Evita estouro horizontal por palavras longas (nomes, e-mails, URLs) */
+    h1, h2, h3, p, td, th {
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* KPI cards responsive */
+    .text-kpi {
+      font-size: 20px !important;
+    }
   }
 }

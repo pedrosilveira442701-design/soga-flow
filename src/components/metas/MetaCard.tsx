@@ -1,5 +1,6 @@
 import { MetaComInsights } from "@/hooks/useMetas";
 import { Badge } from "@/components/ui/badge";
+import { META_STATUS, statusConfig } from "@/lib/status";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -39,11 +40,7 @@ const TIPO_COLORS: Record<string, string> = {
   "Novos Clientes (#)": "bg-pink-500/10 text-pink-500 border-pink-500/20",
 };
 
-const STATUS_CONFIG = {
-  ativa: { label: "Ativa", variant: "default" as const },
-  concluida: { label: "Concluída", variant: "secondary" as const },
-  cancelada: { label: "Cancelada", variant: "destructive" as const },
-};
+
 
 export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }: MetaCardProps) {
   const getProgressColor = (progresso: number) => {
@@ -103,8 +100,8 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
           <Badge className={TIPO_COLORS[meta.tipo] || "bg-muted"}>
             {meta.tipo}
           </Badge>
-          <Badge variant={STATUS_CONFIG[meta.status as keyof typeof STATUS_CONFIG]?.variant || "default"}>
-            {STATUS_CONFIG[meta.status as keyof typeof STATUS_CONFIG]?.label || meta.status}
+          <Badge variant={statusConfig(META_STATUS, meta.status).variant}>
+            {statusConfig(META_STATUS, meta.status).label}
           </Badge>
         </div>
         
@@ -198,8 +195,8 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       {meta.alertas.length > 0 && (
         <div className="space-y-1 mb-4">
           {meta.alertas.map((alerta, index) => (
-            <div key={index} className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-500">
-              <AlertTriangle className="h-5 w-5" />
+            <div key={index} className="flex items-center gap-2 text-sm text-warning">
+              <AlertTriangle className="h-4 w-4" />
               <span>{alerta}</span>
             </div>
           ))}
@@ -209,7 +206,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-5 w-5" />
+          <Calendar className="h-3.5 w-3.5" />
           <span>
           {format(new Date(meta.periodo_inicio + 'T12:00:00'), "dd/MM/yy")} → {format(new Date(meta.periodo_fim + 'T12:00:00'), "dd/MM/yy")}
           </span>

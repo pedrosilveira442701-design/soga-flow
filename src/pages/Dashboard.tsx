@@ -32,19 +32,19 @@ export default function Dashboard() {
     icon: any;
   }> = [
     {
-      title: "Recebido no Periodo",
+      title: "Recebido no Período",
       value: kpis.recebidoMes.value,
       delta: kpis.recebidoMes.delta,
       icon: DollarSign,
     },
     {
-      title: "Total Recebido Liquido",
+      title: "Total Recebido Líquido",
       value: kpis.totalRecebidoLiquido.value,
       variant: "success" as const,
       icon: Wallet,
     },
     {
-      title: "Margem Liquida a Receber",
+      title: "Margem Líquida a Receber",
       value: kpis.totalAReceberLiquido.value,
       variant: "liquid" as const,
       icon: TrendingUp,
@@ -75,21 +75,22 @@ export default function Dashboard() {
     <div className="space-y-8 pt-6">
       {/* Page Header */}
       <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-h1 flex items-center gap-3">
               <LayoutDashboard className="page-icon" />
               Dashboard
             </h1>
             <p className="text-caption mt-1.5">
-              Visao geral do seu negocio
+              Visão geral do seu negócio
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
-              size="lg"
+              size="default"
+              className="flex-1 sm:flex-none text-[13px] sm:text-sm"
               asChild
             >
               <Link to="/leads?new=true" className="flex items-center gap-2">
@@ -98,7 +99,8 @@ export default function Dashboard() {
               </Link>
             </Button>
             <Button
-              size="lg"
+              size="default"
+              className="flex-1 sm:flex-none text-[13px] sm:text-sm"
               asChild
             >
               <Link to="/propostas?new=true" className="flex items-center gap-2">
