@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { CONTRATO_STATUS, statusConfig } from "@/lib/status";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,7 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Contratos() {
-  const { contratos, isLoading, createContrato, updateContrato, deleteContrato } = useContratos();
+  const { contratos, isLoading, createContrato, updateContrato, deleteContrato, cancelContrato } = useContratos();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreateFromPropostaDialog, setShowCreateFromPropostaDialog] = useState(false);
@@ -66,6 +67,12 @@ export default function Contratos() {
 
   const handleDelete = async (id: string) => {
     await deleteContrato(id);
+  };
+
+  const handleCancel = async (id: string) => {
+    await cancelContrato(id);
+    setShowDetailsDialog(false);
+    setSelectedContrato(null);
   };
 
   const handleView = (contrato: Contrato) => {
@@ -167,17 +174,8 @@ export default function Contratos() {
 
       valorPago += contrato.parcelas.valor_pago || 0;
       valorRestante += contrato.parcelas.valor_restante || 0;
-
-      // Estimativa simplificada / placeholder
-      const valorParcela = Number(contrato.valor_negociado) / (contrato.parcelas.total || 1);
-      const parcelasPagas = contrato.parcelas.pagas || 0;
-
-      if (parcelasPagas > 0) {
-        recebidoMes += valorParcela * 0.3;
-      }
-      if (contrato.parcelas.total > parcelasPagas) {
-        aReceberMes += valorParcela * 0.3;
-      }
+      recebidoMes += contrato.parcelas.recebido_mes || 0;
+      aReceberMes += contrato.parcelas.a_receber_mes || 0;
     });
 
     return {
@@ -197,16 +195,8 @@ export default function Contratos() {
     }).format(value);
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "ativo":
-        return <Badge variant="info">Ativo</Badge>;
-      case "concluido":
-        return <Badge variant="success">Concluído</Badge>;
-      case "cancelado":
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+    const cfg = statusConfig(CONTRATO_STATUS, status);
+    return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
   };
 
   const activeFilters = [
@@ -632,10 +622,14 @@ export default function Contratos() {
           {selectedContrato && (
             <ContratoForm
               onSubmit={handleUpdate}
-              mode="create"
+              mode="edit"
               initialData={{
                 cliente_id: selectedContrato.cliente_id,
+                proposta_id: selectedContrato.proposta_id || undefined,
                 valor_negociado: Number(selectedContrato.valor_negociado),
+                margem_pct: Number(selectedContrato.margem_pct ?? 0),
+                valor_entrada: Number(selectedContrato.valor_entrada ?? 0),
+                forma_pagamento_entrada: selectedContrato.forma_pagamento_entrada || "",
                 forma_pagamento: selectedContrato.forma_pagamento,
                 data_inicio: selectedContrato.data_inicio,
                 observacoes: selectedContrato.observacoes || "",
@@ -650,7 +644,7 @@ export default function Contratos() {
         contrato={selectedContrato}
         open={showDetailsDialog}
         onOpenChange={setShowDetailsDialog}
-        onCancel={handleDelete}
+        onCancel={handleCancel}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +50,8 @@ export interface Contrato {
     pagas: number;
     valor_pago: number;
     valor_restante: number;
+    recebido_mes: number;
+    a_receber_mes: number;
   };
 }
 
@@ -150,6 +153,7 @@ export const useContratos = () => {
             .select("*")
             .eq("contrato_id", contrato.id);
 
+          const mesAtual = format(new Date(), "yyyy-MM");
           const parcelasInfo = {
             total: parcelas?.length || 0,
             pagas: parcelas?.filter((p) => p.status === "pago").length || 0,
@@ -160,6 +164,14 @@ export const useContratos = () => {
             valor_restante:
               parcelas
                 ?.filter((p) => p.status !== "pago")
+                .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0) || 0,
+            recebido_mes:
+              parcelas
+                ?.filter((p) => p.status === "pago" && p.data_pagamento?.slice(0, 7) === mesAtual)
+                .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0) || 0,
+            a_receber_mes:
+              parcelas
+                ?.filter((p) => p.status !== "pago" && p.vencimento?.slice(0, 7) === mesAtual)
                 .reduce((sum, p) => sum + Number(p.valor_liquido_parcela), 0) || 0,
           };
 
@@ -260,11 +272,22 @@ export const useContratos = () => {
 
       if (parcelasError) throw parcelasError;
 
+      // Abre a obra correspondente (o módulo Obras promete criação automática ao
+      // fechar contrato). Falha aqui não pode derrubar a criação do contrato.
+      const { error: obraError } = await supabase.from("obras").insert({
+        user_id: user.id,
+        contrato_id: contrato.id,
+        status: "mobilizacao",
+        progresso_pct: 0,
+      });
+      if (obraError) console.error("Contrato criado, mas falhou ao abrir a obra:", obraError);
+
       return contrato as Contrato;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["parcelas"] });
+      queryClient.invalidateQueries({ queryKey: ["obras"] });
       toast.success("Contrato criado com sucesso!");
     },
     onError: (error: any) => {
@@ -279,9 +302,15 @@ export const useContratos = () => {
 
       const { parcelas, ...contratoData } = data;
 
+      // uuid vazio ("") vem do default do form e faria o Postgres rejeitar o
+      // update inteiro; omitir preserva o vínculo existente
+      const sanitized: Record<string, unknown> = { ...contratoData };
+      if (!sanitized.proposta_id) delete sanitized.proposta_id;
+      if (!sanitized.cliente_id) delete sanitized.cliente_id;
+
       const { data: updated, error } = await supabase
         .from("contratos")
-        .update(contratoData as any)
+        .update(sanitized as any)
         .eq("id", id)
         .eq("user_id", user.id)
         .select()
@@ -348,11 +377,43 @@ export const useContratos = () => {
     },
   });
 
+  // Cancela preservando o histórico: contrato vira status "cancelado" e as
+  // parcelas pagas permanecem; só as não pagas são removidas
+  const cancelMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) throw new Error("Usuário não autenticado");
+
+      const { error: parcelasError } = await supabase
+        .from("financeiro_parcelas")
+        .delete()
+        .eq("contrato_id", id)
+        .neq("status", "pago");
+      if (parcelasError) throw parcelasError;
+
+      const { error } = await supabase
+        .from("contratos")
+        .update({ status: "cancelado" })
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contratos", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["parcelas"] });
+      toast.success("Contrato cancelado. As parcelas pendentes foram removidas.");
+    },
+    onError: (error: any) => {
+      console.error(error);
+      toast.error(error.message || "Erro ao cancelar contrato");
+    },
+  });
+
   return {
     contratos,
     isLoading,
     createContrato: createMutation.mutateAsync,
     updateContrato: updateMutation.mutateAsync,
     deleteContrato: deleteMutation.mutateAsync,
+    cancelContrato: cancelMutation.mutateAsync,
   };
 };

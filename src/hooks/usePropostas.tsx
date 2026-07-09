@@ -63,6 +63,8 @@ export interface PropostaInsert {
   }>;
   desconto?: number;
   forma_pagamento?: string;
+  valor_entrada?: number;
+  numero_parcelas?: number;
   data?: string;
   status?: string;
   observacao?: string;
@@ -201,6 +203,8 @@ export const usePropostas = () => {
           servicos: data.servicos || [],
           desconto: Number(data.desconto) || 0,
           forma_pagamento: data.forma_pagamento || null,
+          valor_entrada: Number(data.valor_entrada) || 0,
+          numero_parcelas: Number(data.numero_parcelas) || 0,
           ...totals,
           data: data.data || new Date().toISOString().split('T')[0],
           status: data.status || 'aberta',
@@ -257,6 +261,8 @@ export const usePropostas = () => {
           servicos: data.servicos || [],
           desconto: Number(data.desconto) || 0,
           forma_pagamento: data.forma_pagamento || previous.forma_pagamento,
+          valor_entrada: data.valor_entrada ?? (previous as any).valor_entrada ?? 0,
+          numero_parcelas: data.numero_parcelas ?? (previous as any).numero_parcelas ?? 0,
           ...totals,
           data: data.data || new Date().toISOString().split('T')[0],
           status: data.status || 'aberta',
@@ -307,10 +313,14 @@ export const usePropostas = () => {
         .from("propostas")
         .update({
           cliente_id: data.cliente_id,
-          lead_id: data.lead_id || null,
+          // Só mexe no vínculo com o lead se ele veio explicitamente no payload;
+          // edições que não passam lead_id não podem desconectar proposta↔lead
+          ...(data.lead_id !== undefined ? { lead_id: data.lead_id || null } : {}),
           servicos: data.servicos || [],
           desconto: Number(data.desconto) || 0,
           forma_pagamento: data.forma_pagamento || null,
+          valor_entrada: Number(data.valor_entrada) || 0,
+          numero_parcelas: Number(data.numero_parcelas) || 0,
           ...totals,
           data: data.data,
           status: data.status,

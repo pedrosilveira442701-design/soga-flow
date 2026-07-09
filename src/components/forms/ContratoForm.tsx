@@ -231,7 +231,9 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
   };
 
   const handleSubmit = async (data: ContratoFormValues) => {
-    if (!validateParcelas()) {
+    // Na edição, deixar as parcelas vazias significa "manter o cronograma atual";
+    // só validamos se o usuário gerou um cronograma novo
+    if ((mode !== "edit" || parcelas.length > 0) && !validateParcelas()) {
       return;
     }
 

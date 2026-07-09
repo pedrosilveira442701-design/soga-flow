@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { CONTRATO_STATUS, statusConfig } from "@/lib/status";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
@@ -48,16 +49,8 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "ativo":
-        return <Badge className="bg-blue-500">Ativo</Badge>;
-      case "concluido":
-        return <Badge className="bg-green-500">Concluído</Badge>;
-      case "cancelado":
-        return <Badge variant="destructive">Cancelado</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+    const cfg = statusConfig(CONTRATO_STATUS, status);
+    return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
   };
 
   const progressoPagamento = contrato.parcelas ? (contrato.parcelas.pagas / contrato.parcelas.total) * 100 : 0;

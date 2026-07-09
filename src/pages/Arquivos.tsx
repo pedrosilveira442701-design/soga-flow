@@ -51,7 +51,7 @@ export default function Arquivos() {
     tipo: "todos",
   });
 
-  const { arquivos, isLoading, kpis, downloadArquivo, deleteArquivo } = useArquivos(filters);
+  const { arquivos, isLoading, kpis, downloadArquivo, deleteArquivo, renameArquivo } = useArquivos(filters);
 
   const handleDeleteWithConfirm = (arquivo: ArquivoWithRelations) => {
     if (confirm(`Tem certeza que deseja deletar "${arquivo.nome}"?`)) {
@@ -168,7 +168,7 @@ export default function Arquivos() {
             </Select>
 
             <Select
-              value={filters.tipo}
+              value={filters.tipo || "todos"}
               onValueChange={(value) =>
                 setFilters((prev) => ({ ...prev, tipo: value === "todos" ? "" : value }))
               }
@@ -322,8 +322,8 @@ export default function Arquivos() {
               onDelete={handleDeleteWithConfirm}
               onRename={(arquivo) => {
                 const newName = prompt("Novo nome:", arquivo.nome);
-                if (newName) {
-                  // renameArquivo mutation já está no hook
+                if (newName && newName.trim() && newName.trim() !== arquivo.nome) {
+                  renameArquivo.mutate({ id: arquivo.id, nome: newName.trim() });
                 }
               }}
             />

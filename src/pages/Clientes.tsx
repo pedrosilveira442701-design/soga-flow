@@ -51,6 +51,17 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { whatsappLink } from "@/lib/utils";
 import { useClientes, Cliente } from "@/hooks/useClientes";
 import { ClienteForm } from "@/components/forms/ClienteForm";
 import { ClienteDetailsDialog } from "@/components/clientes/ClienteDetailsDialog";
@@ -149,6 +160,16 @@ export default function Clientes() {
     await deleteCliente.mutateAsync(id);
   };
 
+  // Confirmação obrigatória: excluir cliente apaga em cascata leads,
+  // propostas, contratos e parcelas vinculados
+  const [clienteToDelete, setClienteToDelete] = useState<Cliente | null>(null);
+
+  const confirmDeleteCliente = async () => {
+    if (!clienteToDelete) return;
+    await handleDeleteCliente(clienteToDelete.id);
+    setClienteToDelete(null);
+  };
+
   const handleEditCliente = (cliente: Cliente) => {
     setSelectedCliente(cliente);
     setEditDialogOpen(true);
@@ -162,7 +183,7 @@ export default function Clientes() {
   const handleWhatsApp = (telefone: string | null) => {
     if (telefone) {
       const phone = telefone.replace(/\D/g, "");
-      window.open(`https://wa.me/55${phone}`, "_blank");
+      window.open(whatsappLink(phone), "_blank");
     }
   };
 
@@ -491,8 +512,8 @@ export default function Clientes() {
                             <Button
                               variant="outline"
                               size="icon"
-                              onClick={() => handleDeleteCliente(cliente.id)}
-                              title="Deletar cliente"
+                              onClick={() => setClienteToDelete(cliente)}
+                              title="Excluir cliente"
                               className="h-10 w-10 border-2 border-destructive text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-5 w-5" />
@@ -548,6 +569,28 @@ export default function Clientes() {
         onEdit={handleEditCliente}
         onDelete={handleDeleteCliente}
       />
+
+      {/* Confirmação de exclusão (tabela) */}
+      <AlertDialog open={!!clienteToDelete} onOpenChange={(open) => !open && setClienteToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {clienteToDelete?.nome}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente e apaga também todos os leads, propostas, contratos e
+              parcelas vinculados a este cliente. Não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCliente}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir cliente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
