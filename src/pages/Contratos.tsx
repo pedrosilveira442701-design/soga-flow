@@ -632,6 +632,7 @@ export default function Contratos() {
                 forma_pagamento_entrada: selectedContrato.forma_pagamento_entrada || "",
                 forma_pagamento: selectedContrato.forma_pagamento,
                 data_inicio: selectedContrato.data_inicio,
+                data_fechamento: selectedContrato.data_fechamento || selectedContrato.data_inicio,
                 observacoes: selectedContrato.observacoes || "",
                 cpf_cnpj: selectedContrato.cpf_cnpj,
               }}

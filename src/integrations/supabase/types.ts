@@ -438,6 +438,7 @@ export type Database = {
           cliente_id: string
           cpf_cnpj: string
           created_at: string
+          data_fechamento: string | null
           data_inicio: string
           dia_vencimento: number | null
           forma_pagamento: string
@@ -457,6 +458,7 @@ export type Database = {
           cliente_id: string
           cpf_cnpj: string
           created_at?: string
+          data_fechamento?: string | null
           data_inicio: string
           dia_vencimento?: number | null
           forma_pagamento: string
@@ -476,6 +478,7 @@ export type Database = {
           cliente_id?: string
           cpf_cnpj?: string
           created_at?: string
+          data_fechamento?: string | null
           data_inicio?: string
           dia_vencimento?: number | null
           forma_pagamento?: string

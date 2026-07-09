@@ -172,7 +172,7 @@ export function useForecastPage(params: ForecastPageParams) {
       const [contratosRes, enviadasRes, abertasRes, metasRes, leadsRes] = await Promise.all([
         supabase
           .from("contratos")
-          .select("proposta_id, created_at, data_inicio, valor_negociado, margem_pct")
+          .select("proposta_id, created_at, data_inicio, data_fechamento, valor_negociado, margem_pct")
           .eq("user_id", user.id)
           .not("proposta_id", "is", null),
 
@@ -257,7 +257,8 @@ export function useForecastPage(params: ForecastPageParams) {
           const prop = propostasMap.get(c.proposta_id);
           if (!prop) return null;
 
-          const closeDateStr = prop.data_fechamento || c.created_at || c.data_inicio;
+          // Ordem: data informada no contrato > fechamento da proposta > digitação
+          const closeDateStr = c.data_fechamento || prop.data_fechamento || c.created_at || c.data_inicio;
           if (!closeDateStr) return null;
 
           const closeDate = new Date(closeDateStr);

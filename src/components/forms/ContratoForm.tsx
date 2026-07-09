@@ -31,6 +31,7 @@ const contratoSchema = z
     forma_pagamento_entrada: z.string().optional(),
     forma_pagamento: z.string().min(1, "Forma de pagamento é obrigatória"),
     data_inicio: z.string().min(1, "Data de início é obrigatória"),
+    data_fechamento: z.string().min(1, "Data do fechamento é obrigatória"),
     observacoes: z.string().optional(),
   })
   .refine(
@@ -91,6 +92,7 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
       forma_pagamento_entrada: initialData?.forma_pagamento_entrada || "",
       forma_pagamento: initialData?.forma_pagamento || "",
       data_inicio: initialData?.data_inicio || formatDateToLocal(new Date()),
+      data_fechamento: initialData?.data_fechamento || formatDateToLocal(new Date()),
       observacoes: initialData?.observacoes || "",
     },
   });
@@ -493,10 +495,50 @@ export function ContratoForm({ onSubmit, initialData, mode = "create" }: Contrat
 
             <FormField
               control={form.control}
+              name="data_fechamento"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Data do Fechamento *</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                        >
+                          {field.value ? (
+                            format(new Date(field.value + "T00:00:00"), "PPP", { locale: ptBR })
+                          ) : (
+                            <span>Quando a venda foi fechada</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value ? new Date(field.value + "T00:00:00") : undefined}
+                        onSelect={(date) => field.onChange(date ? formatDateToLocal(date) : undefined)}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[11px] text-muted-foreground">
+                    É esta data que conta como venda do mês no Forecast — não a data de digitação.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="data_inicio"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Data de Início *</FormLabel>
+                  <FormLabel>Data de Início da Obra *</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>

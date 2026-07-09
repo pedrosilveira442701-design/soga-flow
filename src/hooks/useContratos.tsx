@@ -15,6 +15,7 @@ export interface Contrato {
   cpf_cnpj: string;
   forma_pagamento: string;
   data_inicio: string;
+  data_fechamento?: string | null;
   observacoes?: string;
   margem_pct?: number | null;
 
@@ -67,6 +68,7 @@ export interface ContratoInsert {
   forma_pagamento: string;
 
   data_inicio: string;
+  data_fechamento?: string;
   observacoes?: string;
 
   // Parcelas personalizadas
@@ -80,6 +82,7 @@ export interface ContratoUpdate {
   cpf_cnpj?: string;
   forma_pagamento?: string;
   data_inicio?: string;
+  data_fechamento?: string;
   observacoes?: string;
   status?: "ativo" | "concluido" | "cancelado";
 
@@ -228,6 +231,7 @@ export const useContratos = () => {
           cpf_cnpj: data.cpf_cnpj,
           forma_pagamento: data.forma_pagamento,
           data_inicio: data.data_inicio,
+          data_fechamento: data.data_fechamento || data.data_inicio,
           observacoes: data.observacoes,
           margem_pct: margemPct,
           status: "ativo",
