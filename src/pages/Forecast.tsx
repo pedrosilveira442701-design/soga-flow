@@ -171,12 +171,12 @@ export default function Forecast() {
 
         <div className="flex justify-between">
           <span className="text-muted-foreground">Meta:</span>
-          <span className="text-success">{fmtBRL(item.meta)}</span>
+          <span className="text-destructive">{fmtBRL(item.meta)}</span>
         </div>
 
         <div className="flex justify-between">
           <span className="text-muted-foreground">Faturado:</span>
-          <span className={faturado > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
+          <span className={faturado > 0 ? "text-success font-medium" : "text-muted-foreground"}>
             {faturado > 0 ? fmtBRL(faturado) : "—"}
           </span>
         </div>
@@ -220,7 +220,7 @@ export default function Forecast() {
             <ToggleGroupItem
               key={h}
               value={String(h)}
-              className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
+              className="text-xs px-3 data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:font-semibold data-[state=on]:shadow-sm rounded-md"
             >
               {h}m
             </ToggleGroupItem>
@@ -254,7 +254,7 @@ export default function Forecast() {
               <ToggleGroupItem
                 key={i}
                 value={String(i)}
-                className="text-xs px-2.5 py-1 data-[state=on]:bg-card data-[state=on]:shadow-sm rounded-md"
+                className="text-xs px-2.5 py-1 data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:font-semibold data-[state=on]:shadow-sm rounded-md"
               >
                 {m.mes}
               </ToggleGroupItem>
@@ -568,7 +568,7 @@ export default function Forecast() {
                   {
                     swatch: "h-3 w-3 rounded-full bg-[hsl(var(--chart-4))]",
                     nome: "Faturado",
-                    desc: "O que realmente virou contrato em cada mês. Meses futuros ficam em zero.",
+                    desc: "Valor dos contratos fechados no mês (data do fechamento, não do recebimento — caixa é no Financeiro).",
                   },
                 ].map((s) => (
                   <div key={s.nome} className="flex items-start gap-2.5 rounded-lg border bg-muted/30 p-2.5">
