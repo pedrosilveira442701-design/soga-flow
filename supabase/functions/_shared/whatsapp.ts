@@ -179,11 +179,17 @@ export async function garantirContato(
   // Já existe contato?
   const { data: existente } = await db
     .from("contatos")
-    .select("id")
+    .select("id, nome")
     .eq("user_id", userId)
     .eq("telefone", msg.phone)
     .maybeSingle();
-  if (existente?.id) return { contatoId: existente.id, novo: false };
+  if (existente?.id) {
+    // pushName pode chegar só em mensagens posteriores — preenche se ainda não há nome
+    if (!existente.nome && msg.pushName) {
+      await db.from("contatos").update({ nome: msg.pushName }).eq("id", existente.id);
+    }
+    return { contatoId: existente.id, novo: false };
+  }
 
   const { data: inserido, error } = await db
     .from("contatos")

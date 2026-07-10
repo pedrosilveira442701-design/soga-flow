@@ -87,7 +87,7 @@ REGRAS DE CADA CAMPO:
 - "media": interessado, mas ainda falta informação importante (sem metragem, sem local) ou serviço pequeno sem pressa.
 - "baixa": interesse vago, curiosidade de preço sem contexto, ou conversa que esfriou.
 
-3) "nome": primeiro nome + sobrenome do CLIENTE se aparecer na conversa (ex.: assinatura, "aqui é o Fulano"). null se não houver. Não invente a partir do apelido do WhatsApp.
+3) "nome": primeiro nome + sobrenome do CLIENTE, apenas quando (a) o cliente se identifica ("aqui é o Fulano", assinatura) ou (b) a EMPRESA chama o cliente pelo nome. CUIDADO: quando o CLIENTE chama alguém pelo nome ("Sr. Pedro", "Oi Pedro", "obrigado, Pedro"), esse é o nome do ATENDENTE da Só Garagens — NUNCA use como nome do cliente. null se não houver identificação clara.
 
 4) "telefone_alternativo": outro telefone citado NA CONVERSA (ex.: "liga no fixo", "fala com meu esposo no número X"), só dígitos com DDD. null se não houver.
 
@@ -243,11 +243,17 @@ serve(async (req) => {
     // Últimas mensagens da conversa (contexto para a IA).
     const { data: msgs } = await db
       .from("whatsapp_mensagens")
-      .select("from_me, texto, message_ts")
+      .select("from_me, texto, message_ts, push_name")
       .eq("user_id", contato.user_id)
       .eq("jid", contato.telefone)
       .order("message_ts", { ascending: true })
       .limit(20);
+
+    // Nome do perfil do WhatsApp: fonte mais confiável que a extração da IA
+    const pushName = [...(msgs ?? [])]
+      .reverse()
+      .find((m: { from_me: boolean; push_name?: string | null }) => !m.from_me && m.push_name)
+      ?.push_name ?? null;
 
     let conversa = (msgs ?? [])
       .filter((m: { texto?: string | null }) => m.texto)
@@ -279,7 +285,7 @@ serve(async (req) => {
       proximo_passo: r.proximo_passo,
       canal_detectado: r.canal,
       tag: canalParaTag(r.canal),
-      nome: r.nome ?? contato.nome,
+      nome: contato.nome ?? pushName ?? r.nome,
       texto_conversa: conversa.slice(0, 2000),
     };
     const camposV2 = {
