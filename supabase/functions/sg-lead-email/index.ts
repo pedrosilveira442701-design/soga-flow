@@ -40,6 +40,22 @@ interface Lead {
   nome: string; telefone: string; email: string; bairro: string;
   servico: string; tipo: string; qualificacao: string; rotuloQualif: string;
   area: string; prazo: string; ticket: string; origem: string;
+  fotos: string[];
+}
+
+// Só aceita URLs do próprio bucket público de fotos do projeto.
+function fotosValidas(v: unknown): string[] {
+  const prefixo = `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/lead-fotos/`;
+  if (!Array.isArray(v)) return [];
+  return v.filter((u): u is string => typeof u === "string" && u.startsWith(prefixo)).slice(0, 5);
+}
+
+function blocoFotos(l: Lead): string {
+  if (!l.fotos.length) return "";
+  const imgs = l.fotos.map((u, i) =>
+    `<a href="${u}" style="display:inline-block;margin:0 8px 8px 0;"><img src="${u}" alt="Foto ${i + 1}" width="160" style="width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ECEEF3;"></a>`
+  ).join("");
+  return `<h3 style="color:${NAVY};font-size:14px;margin:20px 0 10px;">Fotos do piso (${l.fotos.length})</h3>${imgs}`;
 }
 
 function tabelaDados(l: Lead): string {
@@ -50,6 +66,7 @@ function tabelaDados(l: Lead): string {
     ${linha("Área estimada", l.area)}
     ${linha("Prazo", l.prazo)}
     ${linha("Bairro / Cidade", l.bairro)}
+    ${linha("Fotos do piso", l.fotos.length ? `${l.fotos.length} recebida(s)` : "")}
   </table>`;
 }
 
@@ -106,6 +123,7 @@ function htmlInterno(l: Lead): string {
       ${linha("E-mail", esc(l.email))}
       ${tabelaDados(l).replace(/<\/?table[^>]*>/g, "")}
     </table>
+    ${blocoFotos(l)}
   </div>`;
 }
 
@@ -132,6 +150,7 @@ serve(async (req) => {
       bairro: esc(b.bairro), servico: esc(b.servico), tipo: esc(b.tipo),
       qualificacao: esc(b.qualificacao), rotuloQualif: esc(b._rotuloQualif ?? b.rotuloQualif),
       area: esc(b.area), prazo: esc(b.prazo), ticket: esc(b.ticket), origem: esc(b.origem),
+      fotos: fotosValidas(b.fotos),
     };
 
     const envios: Promise<void>[] = [];
