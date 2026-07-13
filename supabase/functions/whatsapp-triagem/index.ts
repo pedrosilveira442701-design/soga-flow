@@ -5,7 +5,6 @@
 //     proximo_passo, canal_detectado, nome, tag
 //   Saída no banco (v2, migration 20260709120000): tipo_servico, tipo_imovel,
 //     local_obra, metragem_m2, urgencia, etapa_negociacao, telefone_alternativo
-//   Saída no banco (v3, migration 20260713120000): segmento (roteiro comercial)
 //   Retrocompatível: se as colunas v2 ainda não existirem, grava só as v1.
 //   Falha de IA NUNCA quebra a captura: contato permanece 'pendente'.
 // ============================================================================
@@ -14,7 +13,6 @@ import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 import { corsHeaders, env, supabaseAdmin } from "../_shared/whatsapp.ts";
 
 const TIPOS_IMOVEL = ["garagem_residencial", "condominio", "comercial", "industrial", "outro"];
-const SEGMENTOS = ["condominio", "industria", "alimenticio", "comercio_auto", "obra_nova", "residencial"];
 const URGENCIAS = ["imediata", "ate_30_dias", "sem_prazo"];
 const ETAPAS = [
   "primeiro_contato",
@@ -36,7 +34,6 @@ interface TriagemResult {
   // v2 — dados comerciais estruturados
   tipo_servico: string | null;
   tipo_imovel: string | null;
-  segmento: string | null;
   local_obra: string | null;
   metragem_m2: number | null;
   urgencia: string | null;
@@ -70,7 +67,6 @@ Analise a conversa e responda APENAS com JSON válido, sem markdown, exatamente 
   "canal": string | null,
   "tipo_servico": string | null,
   "tipo_imovel": "garagem_residencial" | "condominio" | "comercial" | "industrial" | "outro" | null,
-  "segmento": "condominio" | "industria" | "alimenticio" | "comercio_auto" | "obra_nova" | "residencial" | null,
   "local_obra": string | null,
   "metragem_m2": number | null,
   "urgencia": "imediata" | "ate_30_dias" | "sem_prazo" | null,
@@ -106,25 +102,16 @@ REGRAS DE CADA CAMPO:
 - "industrial": fábrica, indústria, galpão logístico.
 - "outro": qualquer outro (área externa, quadra...). null se não der para saber.
 
-8) "segmento" (eixo COMERCIAL — define quais perguntas de qualificação se aplicam; não confundir com tipo_imovel):
-- "condominio": garagem/área comum de condomínio — síndico, conselho, administradora, "nosso prédio".
-- "alimenticio": padaria, laticínio, cozinha industrial, fábrica de alimentos/bebidas, restaurante. PREVALECE sobre "industria" e "comercio_auto" quando o negócio envolve alimento (vigilância sanitária e choque térmico mudam o sistema).
-- "obra_nova": quem contrata é construtora/incorporadora, ou é obra em andamento com contrapiso novo. PREVALECE sobre os demais quando o cliente é construtora.
-- "industria": fábrica, galpão industrial ou logístico (empilhadeira, produção, estoque).
-- "comercio_auto": loja, showroom, auto center, oficina, lava-jato, estacionamento rotativo.
-- "residencial": casa ou apartamento de pessoa física (garagem própria, área gourmet, quintal).
-null se não der para saber.
+8) "local_obra": bairro e/ou cidade da obra se citados (ex.: "Buritis, BH", "Nova Lima"). Endereço completo se fornecido. null se não houver.
 
-9) "local_obra": bairro e/ou cidade da obra se citados (ex.: "Buritis, BH", "Nova Lima"). Endereço completo se fornecido. null se não houver.
+9) "metragem_m2": metragem aproximada em m², APENAS o número (ex.: 45, 200, 1500). Se der faixa ("uns 40 a 50m"), use a média. Se citar vagas de garagem sem metragem, estime 12 m² por vaga. null se não houver nenhuma pista.
 
-10) "metragem_m2": metragem aproximada em m², APENAS o número (ex.: 45, 200, 1500). Se der faixa ("uns 40 a 50m"), use a média. Se citar vagas de garagem sem metragem, estime 12 m² por vaga. null se não houver nenhuma pista.
-
-11) "urgencia":
+10) "urgencia":
 - "imediata": quer resolver já ("essa semana", "obra parada esperando", "antes da mudança").
 - "ate_30_dias": tem prazo próximo definido ou obra em andamento.
 - "sem_prazo": só pesquisando, sem data. null se impossível inferir.
 
-12) "etapa_negociacao" (olhe a conversa INTEIRA, inclusive as mensagens da EMPRESA):
+11) "etapa_negociacao" (olhe a conversa INTEIRA, inclusive as mensagens da EMPRESA):
 - "primeiro_contato": cliente acabou de chamar, empresa ainda não qualificou.
 - "coletando_informacoes": empresa já pediu metragem/fotos/endereço e aguarda.
 - "aguardando_orcamento": cliente já deu as informações e espera o orçamento da empresa.
@@ -133,16 +120,9 @@ null se não der para saber.
 - "visita_agendada": visita técnica combinada ou realizada.
 - "esfriou": cliente parou de responder após interesse real. null se for ruído.
 
-13) "proximo_passo": UMA ação prática e específica para o vendedor, citando o que falta. Ex.: "Solicitar metragem da garagem", "Enviar orçamento de epóxi para 200m² no Buritis", "Cobrar resposta do orçamento enviado", "Agendar visita técnica no condomínio", "Marcar como ruído".
-Quando faltar qualificação e o segmento for conhecido, sugira a PERGUNTA DISCRIMINANTE daquele segmento:
-- condominio: perguntar se a decisão é do síndico ou vai a assembleia (e quando é a próxima) + nº de vagas/subsolos.
-- industria: perguntar se há tráfego de empilhadeira e contato com químicos + se existe janela de parada.
-- alimenticio: perguntar se a área tem forno/câmara fria (choque térmico) e se há inspeção sanitária prevista.
-- comercio_auto: perguntar se a obra pode ser por etapas/madrugada sem fechar a operação.
-- obra_nova: perguntar quantos dias de cura tem o contrapiso (mínimo 28) e a data de entrega da obra.
-- residencial: perguntar o que mais incomoda (poeira/aparência) e se há referência visual de piso desejado.
+12) "proximo_passo": UMA ação prática e específica para o vendedor, citando o que falta. Ex.: "Solicitar metragem da garagem", "Enviar orçamento de epóxi para 200m² no Buritis", "Cobrar resposta do orçamento enviado", "Agendar visita técnica no condomínio", "Marcar como ruído".
 
-14) "resumo": UMA frase (máx. 200 caracteres) com o essencial: quem, o quê, onde, quanto. Ex.: "Síndico pede orçamento de epóxi para garagem de condomínio de ~800m² no Sion; aguarda visita técnica."
+13) "resumo": UMA frase (máx. 200 caracteres) com o essencial: quem, o quê, onde, quanto. Ex.: "Síndico pede orçamento de epóxi para garagem de condomínio de ~800m² no Sion; aguarda visita técnica."
 
 REGRAS GERAIS:
 - Extraia SOMENTE o que estiver na conversa. NUNCA invente valores; na dúvida, use null.
@@ -167,13 +147,12 @@ function parseJson(text: string): TriagemResult {
   return {
     triagem: tri,
     prioridade: pri,
-    proximo_passo: String(parsed.proximo_passo ?? "").slice(0, 200),
+    proximo_passo: String(parsed.proximo_passo ?? "").slice(0, 120),
     resumo: String(parsed.resumo ?? "").slice(0, 300),
     canal: parsed.canal ?? null,
     nome: parsed.nome ?? null,
     tipo_servico: parsed.tipo_servico ? String(parsed.tipo_servico).slice(0, 120) : null,
     tipo_imovel: TIPOS_IMOVEL.includes(parsed.tipo_imovel) ? parsed.tipo_imovel : null,
-    segmento: SEGMENTOS.includes(parsed.segmento) ? parsed.segmento : null,
     local_obra: parsed.local_obra ? String(parsed.local_obra).slice(0, 200) : null,
     metragem_m2: Number.isFinite(metragem) && metragem > 0 ? metragem : null,
     urgencia: URGENCIAS.includes(parsed.urgencia) ? parsed.urgencia : null,
@@ -312,7 +291,6 @@ serve(async (req) => {
     const camposV2 = {
       tipo_servico: r.tipo_servico,
       tipo_imovel: r.tipo_imovel,
-      segmento: r.segmento,
       local_obra: r.local_obra,
       metragem_m2: r.metragem_m2,
       urgencia: r.urgencia,

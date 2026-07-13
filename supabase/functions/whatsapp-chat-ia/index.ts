@@ -29,7 +29,7 @@ function montarContexto(contatos: any[]): string {
   const linhas = contatos.slice(0, 120).map((c, i) => {
     const data = (c.data_hora || "").slice(0, 16).replace("T", " ");
     const conv = (c.texto_conversa || c.observacoes || "").replace(/\s+/g, " ").slice(0, 700);
-    return `#${i + 1} | ${c.nome || "sem nome"} | tel ${c.telefone} | ${data} | triagem: ${c.triagem_status || "pendente"} | segmento: ${c.segmento || "?"} | canal: ${c.canal_detectado || "?"} | motivo IA: ${c.triagem_motivo || "-"}\n   conversa: ${conv}`;
+    return `#${i + 1} | ${c.nome || "sem nome"} | tel ${c.telefone} | ${data} | triagem: ${c.triagem_status || "pendente"} | canal: ${c.canal_detectado || "?"} | motivo IA: ${c.triagem_motivo || "-"}\n   conversa: ${conv}`;
   }).join("\n");
   return `ESTATÍSTICAS:\n- Total: ${total} | Por triagem: ${JSON.stringify(porStatus)} | Por canal: ${JSON.stringify(porCanal)}\n\nCONVERSAS (até 120 mais recentes):\n${linhas}`;
 }
@@ -105,7 +105,7 @@ serve(async (req) => {
 
     const { data: contatos } = await supa
       .from("contatos")
-      .select("nome, telefone, data_hora, triagem_status, segmento, canal_detectado, triagem_motivo, texto_conversa, observacoes")
+      .select("nome, telefone, data_hora, triagem_status, canal_detectado, triagem_motivo, texto_conversa, observacoes")
       .eq("origem", "whatsapp").is("deleted_at", null)
       .order("data_hora", { ascending: false }).limit(400);
 
@@ -116,13 +116,6 @@ ENVIO (ferramenta enviar_mensagem_whatsapp):
 - Use o telefone EXATO do contato que está nos dados. Envie para UM contato por vez. Nunca dispare em massa nem mensagens idênticas para vários.
 - Se houver qualquer ambiguidade (qual contato? qual texto?), PERGUNTE antes de enviar.
 - Depois de enviar, confirme ao usuário com o resultado real da ferramenta. Se a ferramenta retornar ERRO, diga que NÃO foi enviado.
-
-ROTEIRO DE DIAGNÓSTICO (siga ao redigir respostas/rascunhos para clientes — o diagnóstico NÃO é orçamento, é qualificação):
-- No WhatsApp, no MÁXIMO 5-7 perguntas, uma por mensagem, em ordem: (1) segmento se desconhecido ("é condomínio, empresa/indústria, comércio, obra ou residência?"), (2) metragem + cidade, (3) substrato atual (concreto/cerâmica/pintura antiga), (4) a dor principal ("o que mais incomoda no piso hoje?"), (5) o gatilho ("o que fez procurar uma solução agora?"), (6) UMA pergunta discriminante do segmento, (7) fechar para visita técnica.
-- Pergunta discriminante por segmento — condominio: "a decisão é do síndico ou vai a assembleia? quando é a próxima?"; industria: "tem tráfego de empilhadeira ou contato com químicos?"; alimenticio: "a área tem forno ou câmara fria?"; comercio_auto: "a obra pode ser por etapas ou de madrugada, sem fechar a operação?"; obra_nova: "quantos dias de cura tem o contrapiso?" (mínimo 28 — menos que isso, agendar para depois); residencial: "o que mais incomoda: poeira ou aparência?".
-- NUNCA perguntar fora do segmento (empilhadeira/ANVISA para síndico, assembleia para indústria, quantificação de prejuízo para residencial).
-- Fechamento consultivo, nunca "vou fazer um orçamento": "Pelo que você descreveu, conseguimos resolver de forma definitiva. O próximo passo é um levantamento técnico no local para definir o sistema adequado — epóxi, uretano ou acrílico — e montar uma proposta considerando durabilidade, operação e custo-benefício."
-- Alimentício: NUNCA prometer piso "aprovado pela ANVISA" (a ANVISA não certifica pisos; atendemos requisitos de superfície — dizer isso posiciona como especialista).
 
 Use SOMENTE os dados abaixo para análise. Português do Brasil. Seja direto.
 

@@ -21,8 +21,6 @@ export interface Contato {
   // Triagem v2 (migration 20260709120000) — dados comerciais extraídos pela IA
   tipo_servico?: string | null;
   tipo_imovel?: 'garagem_residencial' | 'condominio' | 'comercial' | 'industrial' | 'outro' | null;
-  // Triagem v3 (migration 20260713120000) — segmento comercial p/ roteiro de diagnóstico
-  segmento?: 'condominio' | 'industria' | 'alimenticio' | 'comercio_auto' | 'obra_nova' | 'residencial' | null;
   local_obra?: string | null;
   metragem_m2?: number | null;
   urgencia?: 'imediata' | 'ate_30_dias' | 'sem_prazo' | null;
