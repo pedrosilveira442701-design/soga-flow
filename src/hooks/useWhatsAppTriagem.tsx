@@ -12,6 +12,7 @@ export interface WhatsAppContato extends Contato {
   whatsapp_jid?: string | null;
   prioridade?: "alta" | "media" | "baixa" | null;
   proximo_passo?: string | null;
+  segmento?: "condominio" | "industria" | "alimenticio" | "comercio_auto" | "obra_nova" | "residencial" | null;
 }
 
 export type TriagemStatus = "pendente" | "potencial" | "ruido";

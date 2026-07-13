@@ -25,6 +25,14 @@ const PRIO: Record<string, { label: string; cls: string }> = {
   media: { label: "Média", cls: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
   baixa: { label: "Baixa", cls: "bg-slate-500/15 text-slate-600 border-slate-500/30" },
 };
+const SEGMENTO: Record<string, { label: string; cls: string }> = {
+  condominio: { label: "Condomínio", cls: "bg-blue-500/15 text-blue-700 border-blue-500/30" },
+  industria: { label: "Indústria", cls: "bg-orange-500/15 text-orange-700 border-orange-500/30" },
+  alimenticio: { label: "Alimentício", cls: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30" },
+  comercio_auto: { label: "Comércio/Auto", cls: "bg-purple-500/15 text-purple-700 border-purple-500/30" },
+  obra_nova: { label: "Obra nova", cls: "bg-yellow-500/15 text-yellow-700 border-yellow-500/30" },
+  residencial: { label: "Residencial", cls: "bg-slate-500/15 text-slate-700 border-slate-500/30" },
+};
 
 function Card({ c, onVerConversa, onMover, onFunil, onDescartar }: {
   c: WhatsAppContato;
@@ -34,6 +42,7 @@ function Card({ c, onVerConversa, onMover, onFunil, onDescartar }: {
   onDescartar: (id: string) => void;
 }) {
   const prio = c.prioridade ? PRIO[c.prioridade] : null;
+  const seg = c.segmento ? SEGMENTO[c.segmento] : null;
   return (
     <div className="rounded-lg border bg-card p-3 space-y-2 shadow-sm">
       <div className="flex items-start justify-between gap-2">
@@ -54,7 +63,12 @@ function Card({ c, onVerConversa, onMover, onFunil, onDescartar }: {
           <ArrowRight className="h-3.5 w-3.5 shrink-0 mt-0.5" /> {c.proximo_passo}
         </p>
       )}
-      {c.canal_detectado && <Badge variant="secondary" className="text-[10px]">{c.canal_detectado}</Badge>}
+      {(seg || c.canal_detectado) && (
+        <div className="flex flex-wrap gap-1">
+          {seg && <Badge variant="outline" className={`text-[10px] ${seg.cls}`}>{seg.label}</Badge>}
+          {c.canal_detectado && <Badge variant="secondary" className="text-[10px]">{c.canal_detectado}</Badge>}
+        </div>
+      )}
 
       <div className="flex items-center gap-1.5 pt-1">
         <Button size="sm" variant="outline" className="h-9 gap-1.5 text-xs flex-1" onClick={() => onVerConversa(c)}>

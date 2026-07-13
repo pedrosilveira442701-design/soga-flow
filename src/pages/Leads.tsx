@@ -332,7 +332,16 @@ export default function Leads() {
       ate_30_dias: "até 30 dias",
       sem_prazo: "sem prazo",
     };
+    const SEGMENTO_LABEL: Record<string, string> = {
+      condominio: "Condomínio",
+      industria: "Indústria/Galpão",
+      alimenticio: "Alimentício",
+      comercio_auto: "Comércio/Auto",
+      obra_nova: "Obra nova/Construtora",
+      residencial: "Residencial PF",
+    };
     const dadosObra = [
+      contato.segmento ? `Segmento: ${SEGMENTO_LABEL[contato.segmento]}` : null,
       contato.tipo_servico ? `Serviço: ${contato.tipo_servico}` : null,
       contato.metragem_m2 ? `~${contato.metragem_m2} m²` : null,
       contato.tipo_imovel ? TIPO_IMOVEL_LABEL[contato.tipo_imovel] : null,
