@@ -31,8 +31,8 @@ function esc(v: unknown): string {
 function linha(rotulo: string, valor: string): string {
   if (!valor || valor === "-") return "";
   return `<tr>
-    <td style="padding:10px 0;border-bottom:1px solid #ECEEF3;color:#8A93A6;font-size:13px;">${rotulo}</td>
-    <td style="padding:10px 0;border-bottom:1px solid #ECEEF3;color:${NAVY};font-size:14px;font-weight:bold;text-align:right;">${valor}</td>
+    <td style="padding:10px 0;border-bottom:1px solid #ECEEF3;color:#8A93A6;font-family:Arial,Helvetica,sans-serif;font-size:13px;">${rotulo}</td>
+    <td align="right" style="padding:10px 0;border-bottom:1px solid #ECEEF3;color:${NAVY};font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;text-align:right;">${valor}</td>
   </tr>`;
 }
 
@@ -59,7 +59,7 @@ function blocoFotos(l: Lead): string {
 }
 
 function tabelaDados(l: Lead): string {
-  return `<table style="width:100%;border-collapse:collapse;margin:0;">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:0;">
     ${linha("Serviço", l.servico)}
     ${linha("Local do piso", l.tipo)}
     ${linha(l.rotuloQualif || "Qualificação", l.qualificacao)}
@@ -71,44 +71,79 @@ function tabelaDados(l: Lead): string {
 }
 
 // Confirmação ao lead — visual da marca (navy + dourado, mesmo padrão do site).
+// Layout 100% em tabelas com atributos HTML (bgcolor/width/align) além do CSS
+// inline: é o formato que sobrevive a Gmail, Outlook e apps mobile.
 function htmlConfirmacao(l: Lead): string {
   return `<!doctype html>
-<html lang="pt-BR"><body style="margin:0;padding:0;background:#F2F4F8;">
-<div style="max-width:560px;margin:0 auto;padding:24px 16px;font-family:Arial,Helvetica,sans-serif;">
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+</head>
+<body style="margin:0;padding:0;background-color:#F2F4F8;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F2F4F8" style="background-color:#F2F4F8;">
+<tr><td align="center" style="padding:24px 12px;">
 
-  <div style="background:${NAVY};border-radius:14px 14px 0 0;padding:32px 24px;text-align:center;">
-    <div style="color:#ffffff;font-size:20px;font-weight:bold;letter-spacing:6px;">S&Oacute; GARAGENS</div>
-    <div style="width:40px;height:3px;background:${GOLD};border-radius:3px;margin:14px auto 10px;"></div>
-    <div style="color:${GOLD};font-size:11px;letter-spacing:3px;text-transform:uppercase;">Or&ccedil;amento R&aacute;pido</div>
-  </div>
+  <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:100%;font-family:Arial,Helvetica,sans-serif;">
 
-  <div style="background:#ffffff;border-radius:0 0 14px 14px;padding:32px 28px;">
-    <div style="text-align:center;margin-bottom:6px;">
-      <span style="display:inline-block;background:#F6F7FA;border:1px solid #ECEEF3;border-radius:20px;padding:6px 16px;color:#8A93A6;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Ticket ${esc(l.ticket)}</span>
-    </div>
-    <h1 style="color:${NAVY};font-size:21px;text-align:center;margin:14px 0 8px;">Recebemos sua solicita&ccedil;&atilde;o!</h1>
-    <p style="color:#475467;font-size:14px;line-height:1.7;text-align:center;margin:0 0 24px;">
-      Ol&aacute;, <strong>${esc(l.nome) || "cliente"}</strong>! Sua solicita&ccedil;&atilde;o de or&ccedil;amento foi registrada.
-      Nossa equipe entrar&aacute; em contato em at&eacute; <strong>24 horas &uacute;teis</strong> para agendar sua
-      <strong>vistoria t&eacute;cnica gratuita</strong>.
-    </p>
+    <!-- Cabeçalho navy -->
+    <tr><td bgcolor="${NAVY}" align="center" style="background-color:${NAVY};padding:32px 24px;border-radius:14px 14px 0 0;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center" style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;letter-spacing:6px;">S&Oacute; GARAGENS</td></tr>
+        <tr><td align="center" style="padding:14px 0 10px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${GOLD}" width="40" height="3" style="background-color:${GOLD};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>
+        <tr><td align="center" style="color:${GOLD};font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;">Or&ccedil;amento R&aacute;pido</td></tr>
+      </table>
+    </td></tr>
 
-    <div style="background:#F9FAFB;border:1px solid #ECEEF3;border-radius:12px;padding:8px 20px;margin-bottom:28px;">
-      ${tabelaDados(l)}
-    </div>
+    <!-- Corpo branco -->
+    <tr><td bgcolor="#ffffff" style="background-color:#ffffff;padding:32px 28px;border-radius:0 0 14px 14px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
-    <div style="text-align:center;margin-bottom:8px;">
-      <a href="${WHATS_LINK}" style="display:inline-block;background:${NAVY};color:#ffffff;text-decoration:none;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;padding:14px 32px;border-radius:10px;">Falar no WhatsApp</a>
-    </div>
-    <p style="color:#98A2B3;font-size:12px;text-align:center;margin:12px 0 0;">Se preferir, chame direto: ${WHATS_HUMANO}</p>
-  </div>
+        <tr><td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td bgcolor="#F6F7FA" style="background-color:#F6F7FA;border:1px solid #ECEEF3;border-radius:20px;padding:6px 16px;color:#8A93A6;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">Ticket ${esc(l.ticket)}</td>
+          </tr></table>
+        </td></tr>
 
-  <p style="color:#98A2B3;font-size:11px;text-align:center;line-height:1.7;margin:20px 0 0;">
-    S&oacute; Garagens &mdash; Pisos de alta performance em Belo Horizonte<br>
-    Ep&oacute;xi &middot; Uretano/PU &middot; Autonivelante &middot; Demarca&ccedil;&atilde;o de vagas<br>
-    <a href="https://sogaragens.com.br" style="color:#8A93A6;">sogaragens.com.br</a>
-  </p>
-</div>
+        <tr><td align="center" style="color:${NAVY};font-family:Arial,Helvetica,sans-serif;font-size:21px;font-weight:bold;padding:16px 0 8px;">Recebemos sua solicita&ccedil;&atilde;o!</td></tr>
+
+        <tr><td align="center" style="color:#475467;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:24px;padding:0 8px 24px;">
+          Ol&aacute;, <strong>${esc(l.nome) || "cliente"}</strong>! Sua solicita&ccedil;&atilde;o de or&ccedil;amento foi registrada.
+          Nossa equipe entrar&aacute; em contato em at&eacute; <strong>24 horas &uacute;teis</strong> para agendar sua
+          <strong>vistoria t&eacute;cnica gratuita</strong>.
+        </td></tr>
+
+        <!-- Resumo do pedido -->
+        <tr><td bgcolor="#F9FAFB" style="background-color:#F9FAFB;border:1px solid #ECEEF3;border-radius:12px;padding:8px 20px;">
+          ${tabelaDados(l)}
+        </td></tr>
+
+        <!-- CTA -->
+        <tr><td align="center" style="padding:28px 0 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td bgcolor="${NAVY}" align="center" style="background-color:${NAVY};border-radius:10px;">
+              <a href="${WHATS_LINK}" style="display:inline-block;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 32px;">Falar no WhatsApp</a>
+            </td>
+          </tr></table>
+        </td></tr>
+        <tr><td align="center" style="color:#98A2B3;font-family:Arial,Helvetica,sans-serif;font-size:12px;padding:12px 0 0;">Se preferir, chame direto: ${WHATS_HUMANO}</td></tr>
+
+      </table>
+    </td></tr>
+
+    <!-- Rodapé -->
+    <tr><td align="center" style="color:#98A2B3;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:19px;padding:20px 0 0;">
+      S&oacute; Garagens &mdash; Pisos de alta performance em Belo Horizonte<br>
+      Ep&oacute;xi &middot; Uretano/PU &middot; Autonivelante &middot; Demarca&ccedil;&atilde;o de vagas<br>
+      <a href="https://sogaragens.com.br" style="color:#8A93A6;">sogaragens.com.br</a>
+    </td></tr>
+
+  </table>
+
+</td></tr>
+</table>
 </body></html>`;
 }
 
