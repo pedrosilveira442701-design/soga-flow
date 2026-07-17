@@ -94,10 +94,10 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
   const valorAtual = (meta.valor_alvo * meta.progresso) / 100;
 
   return (
-    <div className="group relative bg-card border rounded-lg p-6 hover:shadow-lg transition-all">
+    <div className="group relative bg-card border rounded-lg p-4 sm:p-6 hover:shadow-lg transition-all">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex gap-2">
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 min-w-0">
           <Badge className={TIPO_COLORS[meta.tipo] || "bg-muted"}>
             {meta.tipo}
           </Badge>
@@ -108,7 +108,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" title="Ações">
+            <Button variant="ghost" size="icon" title="Ações" className="shrink-0">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -130,7 +130,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       </div>
 
       {/* Título */}
-      <h3 className="text-lg font-semibold mb-2">
+      <h3 className="text-lg font-semibold mb-2 break-words">
         {meta.nome || `${meta.tipo} - ${format(new Date(meta.periodo_inicio), "MMM/yy", { locale: ptBR })}`}
       </h3>
 
@@ -205,7 +205,7 @@ export function MetaCard({ meta, onEdit, onDelete, onViewDetails, onRecalcular }
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           <span>

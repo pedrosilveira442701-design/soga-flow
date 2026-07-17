@@ -43,7 +43,7 @@ export function PipelineDistributionChart({ data }: PipelineDistributionChartPro
     if (active && payload && payload.length) {
       const item = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg max-w-[calc(100vw-2rem)]">
           <p className="font-semibold text-sm mb-1">{item.name}</p>
           <p className="text-xs text-muted-foreground">
             {item.count} proposta{item.count !== 1 ? 's' : ''}
@@ -82,9 +82,10 @@ export function PipelineDistributionChart({ data }: PipelineDistributionChartPro
   );
 
   return (
-    <Card className="p-6 shadow-elev1">
-      <h3 className="text-h3 mb-6">Distribuição do Pipeline de Propostas</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <Card className="p-4 sm:p-6 shadow-elev1">
+      <h3 className="text-h3 mb-4 sm:mb-6">Distribuição do Pipeline de Propostas</h3>
+      <div className="h-[220px] sm:h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={visibleData}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
           <XAxis
@@ -107,6 +108,7 @@ export function PipelineDistributionChart({ data }: PipelineDistributionChartPro
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
       <CustomLegend />
     </Card>
   );

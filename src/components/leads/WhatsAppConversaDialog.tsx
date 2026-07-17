@@ -69,10 +69,10 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, jid, nome
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg h-[80vh] max-h-[80vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-3 shrink-0 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-green-600" />
+      <DialogContent className="max-w-lg h-[80dvh] max-h-[80dvh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="px-4 sm:px-6 pt-6 pb-3 shrink-0 border-b">
+          <DialogTitle className="flex items-center gap-2 min-w-0 break-words">
+            <MessageSquare className="h-5 w-5 shrink-0 text-green-600" />
             {nome || telefone || "Conversa"}
           </DialogTitle>
           <DialogDescription>
@@ -80,7 +80,7 @@ export function WhatsAppConversaDialog({ open, onOpenChange, telefone, jid, nome
           </DialogDescription>
         </DialogHeader>
 
-        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 bg-muted/20">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-4 py-3 bg-muted/20">
           {loading ? (
             <div className="space-y-3 p-2">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className={`h-12 ${i % 2 ? "w-2/3 ml-auto" : "w-3/4"}`} />)}

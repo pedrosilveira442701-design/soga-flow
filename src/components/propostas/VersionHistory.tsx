@@ -85,9 +85,9 @@ export default function VersionHistory({
     <div className="rounded-lg border bg-muted/30 overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+        className="w-full flex items-center justify-between gap-2 p-4 hover:bg-muted/50 transition-colors"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <History className="h-5 w-5 text-primary" />
           <span className="font-semibold">Histórico de Versões</span>
           <Badge variant="outline" className="ml-2">
@@ -95,7 +95,7 @@ export default function VersionHistory({
           </Badge>
         </div>
         <ChevronRight
-          className={`h-5 w-5 text-muted-foreground transition-transform ${
+          className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${
             expanded ? "rotate-90" : ""
           }`}
         />
@@ -129,8 +129,8 @@ export default function VersionHistory({
                           : "bg-background hover:bg-muted/50 cursor-pointer"
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2 min-w-0">
                           <GitBranch className="h-[18px] w-[18px] text-primary" />
                           <span className="font-semibold">V{version.version_number}</span>
                           {getStatusBadge(version.status, isCurrent)}

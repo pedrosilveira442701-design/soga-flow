@@ -36,7 +36,7 @@ const TRIAGEM = {
 export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: ContatoMiniCardProps) {
   const [conversaOpen, setConversaOpen] = useState(false);
   return (
-    <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2 max-w-[520px]">
+    <div className="p-3 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors space-y-2 w-full max-w-full sm:max-w-[520px]">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 space-y-1.5 min-w-0">
           {contato.nome && (
@@ -45,7 +45,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
               <span className="text-sm font-semibold text-foreground truncate">{contato.nome}</span>
             </div>
           )}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex min-w-0 items-center gap-2">
             <Phone className="h-[18px] w-[18px] text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium text-foreground truncate">{contato.telefone}</span>
           </div>
@@ -63,8 +63,8 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             <Badge variant="secondary" className="text-xs">
               {contato.origem}
             </Badge>
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Calendar className="h-5 w-5" />
+            <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
               {format(new Date(contato.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
             </span>
           </div>
@@ -91,10 +91,10 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
           </Button>
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex flex-wrap items-center gap-2 mt-2">
         <Button
           onClick={() => onConvertToLead(contato)}
-          className="rounded-full bg-blue-600 hover:bg-blue-700 text-white px-3 h-8 text-xs font-medium flex items-center gap-1"
+          className="rounded-full bg-blue-600 hover:bg-blue-700 text-white px-3 h-8 text-xs font-medium flex items-center gap-1 shrink-0"
         >
           <span className="text-base leading-none">＋</span>
           Lead
@@ -104,7 +104,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             <Button
               variant="outline"
               onClick={() => setConversaOpen(true)}
-              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5"
+              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5 shrink-0"
             >
               <MessageSquare className="h-3.5 w-3.5 text-green-600" />
               Ver conversa
@@ -112,7 +112,7 @@ export function ContatoMiniCard({ contato, onConvertToLead, onEdit, onDelete }: 
             <Button
               variant="outline"
               onClick={() => window.open(`https://wa.me/${(contato.telefone || "").replace(/\D/g, "")}`, "_blank")}
-              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5 border-green-600/40 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
+              className="rounded-full px-3 h-8 text-xs font-medium flex items-center gap-1.5 shrink-0 border-green-600/40 text-green-700 hover:bg-green-50 dark:hover:bg-green-950/30"
               title="Abrir conversa no WhatsApp"
             >
               <ExternalLink className="h-3.5 w-3.5" />

@@ -39,17 +39,17 @@ export function InsightsFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-border rounded-lg">
+    <div className="flex flex-col gap-2 p-3 sm:p-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 bg-card border border-border rounded-lg">
       {/* Período */}
-      <div className="flex items-center gap-2">
-        <Label className="text-sm text-muted-foreground">Período:</Label>
+      <div className="flex w-full items-center gap-2 sm:w-auto">
+        <Label className="text-sm text-muted-foreground shrink-0">Período:</Label>
         <Select
           value={filters.period}
           onValueChange={(value) =>
             onFiltersChange({ ...filters, period: value as InsightFilters["period"] })
           }
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -63,10 +63,10 @@ export function InsightsFilters({
 
       {/* Datas customizadas */}
       {filters.period === "custom" && (
-        <div className="flex items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 h-10 w-full justify-start sm:h-9 sm:w-auto sm:justify-center">
                 <Calendar className="h-[18px] w-[18px]" />
                 {filters.startDate
                   ? format(new Date(filters.startDate), "dd/MM/yyyy", { locale: ptBR })
@@ -87,10 +87,10 @@ export function InsightsFilters({
               />
             </PopoverContent>
           </Popover>
-          <span className="text-muted-foreground">até</span>
+          <span className="text-muted-foreground text-center sm:text-left">até</span>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 h-10 w-full justify-start sm:h-9 sm:w-auto sm:justify-center">
                 <Calendar className="h-[18px] w-[18px]" />
                 {filters.endDate
                   ? format(new Date(filters.endDate), "dd/MM/yyyy", { locale: ptBR })
@@ -117,7 +117,7 @@ export function InsightsFilters({
       {/* Filtros adicionais */}
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button variant="outline" size="sm" className="gap-2 h-10 w-full sm:h-9 sm:w-auto">
             <Filter className="h-[18px] w-[18px]" />
             Filtros
             {activeFiltersCount > 0 && (
@@ -127,7 +127,7 @@ export function InsightsFilters({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80" align="start">
+        <PopoverContent className="w-[calc(100vw-2rem)] max-w-80" align="start">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Canal</Label>
@@ -212,7 +212,7 @@ export function InsightsFilters({
 
       {/* Limpar filtros */}
       {activeFiltersCount > 0 && (
-        <Button variant="ghost" size="sm" onClick={handleClearFilters} className="gap-1">
+        <Button variant="ghost" size="sm" onClick={handleClearFilters} className="gap-1 h-10 w-full sm:h-9 sm:w-auto">
           <X className="h-[18px] w-[18px]" />
           Limpar
         </Button>

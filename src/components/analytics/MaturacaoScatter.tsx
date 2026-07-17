@@ -114,7 +114,8 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={500}>
+        <div className="h-[360px] sm:h-[500px]">
+        <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 20, right: 30, bottom: 80, left: 70 }}>
             {/* Quadrante ideal (verde claro) */}
             <ReferenceArea x1={0} x2={7} y1={0} y2={14} fill="#D1FAE5" fillOpacity={0.3} strokeOpacity={0} />
@@ -241,6 +242,7 @@ export const MaturacaoScatter = ({ data, isLoading }: MaturacaoScatterProps) => 
             <Scatter name="Contratos" data={chartData} fill="#8884d8" fillOpacity={0.75} />
           </ScatterChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

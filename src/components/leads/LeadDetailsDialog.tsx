@@ -151,12 +151,12 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
+            <div className="flex items-start justify-between gap-2 pr-8">
+              <div className="flex-1 min-w-0">
                 <DialogTitle className="text-h3 mb-2">{lead.clientes?.nome || "Lead sem cliente"}</DialogTitle>
-                <DialogDescription className="flex items-center gap-2">
+                <DialogDescription className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className={STAGE_COLORS[lead.estagio] || ""}>
                     {STAGE_LABELS[lead.estagio] || lead.estagio}
                   </Badge>
@@ -195,7 +195,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                   </motion.div>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex shrink-0 gap-2">
                 <Button
                   variant="outline"
                   size="icon"
@@ -217,7 +217,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="grid grid-cols-2 gap-4"
+              className="grid grid-cols-1 gap-4 sm:grid-cols-2"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-caption text-muted-foreground">
@@ -229,7 +229,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                 </p>
               </div>
 
-              <div className="space-y-1 col-span-2">
+              <div className="space-y-1 sm:col-span-2">
                 <div className="flex items-center gap-2 text-caption text-muted-foreground">
                   <TrendingUp className="h-5 w-5" />
                   <span>Serviços</span>
@@ -333,7 +333,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               )}
 
               {lead.clientes?.endereco && (
-                <div className="space-y-1 col-span-2">
+                <div className="space-y-1 sm:col-span-2">
                   <div className="flex items-center gap-2 text-caption text-muted-foreground">
                     <MapPin className="h-5 w-5" />
                     <span>Endereço</span>
@@ -352,7 +352,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               transition={{ delay: 0.2 }}
               className="space-y-4 rounded-lg bg-muted/50 p-4 border border-border/50"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h4 className="text-body font-semibold flex items-center gap-2">
                   <Clock className="h-5 w-5" />
                   Timeline de Interações
@@ -363,7 +363,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
                   )}
                 </h4>
                 {!showTimelineForm && (
-                  <Button variant="default" size="default" onClick={() => setShowTimelineForm(true)} className="gap-2">
+                  <Button variant="default" size="default" onClick={() => setShowTimelineForm(true)} className="gap-2 w-full sm:w-auto">
                     <Plus className="h-5 w-5" />
                     Nova Interação
                   </Button>
@@ -439,10 +439,10 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-wrap gap-3"
+              className="flex flex-col gap-3 sm:flex-row sm:flex-wrap"
             >
               {lead.cliente_id && (
-                <Button onClick={() => setVisitaDialogOpen(true)} className="flex-1 gap-2">
+                <Button onClick={() => setVisitaDialogOpen(true)} className="w-full gap-2 sm:flex-1">
                   <CalendarIcon className="h-5 w-5" />
                   Agendar Visita
                 </Button>
@@ -450,14 +450,14 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
               {lead.clientes?.telefone && (
                 <Button
                   onClick={handleWhatsApp}
-                  className="flex-1 gap-2"
+                  className="w-full gap-2 sm:flex-1"
                   variant={lead.cliente_id ? "outline" : "default"}
                 >
                   <MessageSquare className="h-5 w-5" />
                   WhatsApp
                 </Button>
               )}
-              <Button variant="outline" onClick={() => onEdit(lead)} className="flex-1 gap-2">
+              <Button variant="outline" onClick={() => onEdit(lead)} className="w-full gap-2 sm:flex-1">
                 <Pencil className="h-5 w-5" />
                 Editar
               </Button>
@@ -503,7 +503,7 @@ export function LeadDetailsDialog({ lead, open, onOpenChange, onEdit, onDelete }
 
       {/* Agendar Visita Dialog */}
       <Dialog open={visitaDialogOpen} onOpenChange={setVisitaDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Agendar Visita</DialogTitle>
             <DialogDescription>Agende uma visita para o lead {lead?.clientes?.nome}</DialogDescription>

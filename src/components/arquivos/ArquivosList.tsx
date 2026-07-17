@@ -70,15 +70,16 @@ export default function ArquivosList({
   return (
     <div className="space-y-4">
       {/* Header com botão de upload */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-          <h4 className="font-medium">Arquivos ({arquivos?.length || 0})</h4>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+          <h4 className="font-medium truncate">Arquivos ({arquivos?.length || 0})</h4>
         </div>
         {showUpload && (
           <Button
             variant="outline"
             size="sm"
+            className="shrink-0"
             onClick={() => setUploadDialogOpen(true)}
           >
             <Upload className="h-[18px] w-[18px] mr-2" />
@@ -114,7 +115,7 @@ export default function ArquivosList({
                     })}
                   </p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                   <Button
                     variant="ghost"
                     size="icon"

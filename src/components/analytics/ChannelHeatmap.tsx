@@ -128,9 +128,9 @@ export function ChannelHeatmap({ data, isLoading }: ChannelHeatmapProps) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle>Heat Zone - Leads por Dia/Hora</CardTitle>
-        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)} className="justify-start">
           <ToggleGroupItem value="leads" size="sm">Leads</ToggleGroupItem>
           <ToggleGroupItem value="fechados" size="sm">Fechados</ToggleGroupItem>
           <ToggleGroupItem value="valor" size="sm">Valor</ToggleGroupItem>

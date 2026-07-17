@@ -595,7 +595,7 @@ export default function Propostas() {
       {/* Table */}
       {sortedPropostas.length > 0 && (
       <Card>
-        <Table>
+        <Table className="min-w-[980px]">
           <TableHeader>
             <TableRow>
               <TableHead onClick={() => handleSort("cliente")} className="group">
@@ -765,7 +765,7 @@ export default function Propostas() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Nova Proposta</DialogTitle>
           </DialogHeader>

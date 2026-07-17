@@ -101,9 +101,9 @@ export function WhatsAppTriagemKanban() {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0">
         {COLUNAS.map((col) => (
-          <div key={col.status} className={`rounded-xl border-2 ${col.borda} p-3 flex flex-col min-h-[200px]`}>
+          <div key={col.status} className={`rounded-xl border-2 ${col.borda} p-3 flex flex-col min-h-[200px] w-[280px] shrink-0 md:w-auto`}>
             <div className="flex items-center justify-between mb-3 px-1">
               <span className={`text-sm font-semibold ${col.cor}`}>{col.titulo}</span>
               <Badge variant="secondary">{grupos[col.status].length}</Badge>

@@ -403,7 +403,7 @@ export function ParcelasFormEditor({
       {/* Tabela de parcelas */}
       {parcelas.length > 0 && (
         <div className="rounded-lg border bg-card overflow-hidden">
-          <Table>
+          <Table className="min-w-[560px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-14 text-center">#</TableHead>
@@ -455,7 +455,7 @@ export function ParcelasFormEditor({
                         type="number"
                         step="0.01"
                         min="0"
-                        className="h-9 w-44"
+                        className="h-9 w-full max-w-[11rem]"
                         value={parcela.valor}
                         onChange={(e) => handleValorChange(parcela.numero, parseFloat(e.target.value) || 0)}
                       />
@@ -512,7 +512,7 @@ export function ParcelasFormEditor({
       )}
 
       {parcelas.length === 0 && saldo > 0 && (
-        <div className="text-center p-10 border rounded-lg bg-muted/30 space-y-4">
+        <div className="text-center p-6 sm:p-10 border rounded-lg bg-muted/30 space-y-4">
           <div className="flex justify-center">
             <div className="rounded-full bg-muted p-4">
               <CalendarIcon className="h-8 w-8 text-muted-foreground" />

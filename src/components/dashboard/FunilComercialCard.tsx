@@ -46,9 +46,9 @@ export function FunilComercialCard(_props: Props) {
   const { coorte, atividade, isLoading } = useFunilComercial({ period: periodo });
 
   return (
-    <Card className="p-6 space-y-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
+    <Card className="p-4 sm:p-6 space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:flex-wrap">
+        <div className="min-w-0">
           <h3 className="text-h3 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" /> Funil Comercial
           </h3>
@@ -58,7 +58,7 @@ export function FunilComercialCard(_props: Props) {
               : "Eventos que aconteceram dentro do período"}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-start gap-2 sm:items-end shrink-0">
           <div className="flex rounded-lg border p-0.5">
             {(["all", "year", "month"] as Periodo[]).map((p) => (
               <Button key={p} size="sm" variant={periodo === p ? "default" : "ghost"}

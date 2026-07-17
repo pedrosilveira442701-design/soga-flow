@@ -215,7 +215,7 @@ export default function Clientes() {
   return (
     <div className="space-y-6 pt-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-h1 flex items-center gap-3">
             <Users className="page-icon" />
@@ -378,7 +378,7 @@ export default function Clientes() {
             />
           ) : (
             <div className="rounded-md border">
-              <Table>
+              <Table className="min-w-[860px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead onClick={() => handleSort("nome")} className="group">
@@ -532,7 +532,7 @@ export default function Clientes() {
 
       {/* Create Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Cliente</DialogTitle>
           </DialogHeader>
@@ -546,7 +546,7 @@ export default function Clientes() {
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Cliente</DialogTitle>
           </DialogHeader>

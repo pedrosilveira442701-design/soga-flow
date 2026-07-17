@@ -58,9 +58,9 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
       onClick={handleCardClick}
     >
       {/* Header */}
-      <div className="flex items-start justify-between px-4 pt-3 pb-2">
+      <div className="flex items-start justify-between gap-2 px-4 pt-3 pb-2">
         {/* ===== ORDEM DO CONTEÚDO ===== */}
-        <div className="flex flex-col gap-1 text-foreground">
+        <div className="flex flex-col gap-1 text-foreground min-w-0 flex-1">
           {/* 1) Nome do cliente */}
           <h3 className="text-sm font-semibold leading-snug">{nomeCliente}</h3>
 
@@ -68,7 +68,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
           {endereco && (
             <div className="flex items-start gap-2 text-xs text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 mt-[1px] text-muted-foreground/70 shrink-0" />
-              <span>{endereco}</span>
+              <span className="min-w-0 break-words">{endereco}</span>
             </div>
           )}
 
@@ -92,7 +92,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
         </div>
 
         {/* Status + ações */}
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-end gap-2 shrink-0">
           {/* Status pill */}
           <Badge className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${statusColor[visita.status]}`}>
             {statusLabel[visita.status]}
@@ -184,7 +184,7 @@ export function VisitaCard({ visita, onEdit, onToggleRealizada, onDelete, onView
       </div>
 
       {/* Rodapé: marcar como realizada / ver detalhes */}
-      <div className="border-t px-4 py-2.5 flex items-center justify-between text-[11px]">
+      <div className="border-t px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
         <button
           type="button"
           className="flex items-center gap-1 text-muted-foreground hover:text-success transition-colors"

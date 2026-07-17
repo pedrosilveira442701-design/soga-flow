@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     if (!data) return null;
     
     return (
-      <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[200px]">
+      <div className="bg-card border border-border rounded-lg p-3 sm:p-4 shadow-xl min-w-[180px] sm:min-w-[200px] max-w-[calc(100vw-2rem)]">
         <p className="font-semibold text-base mb-3 text-foreground">{label}</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
@@ -125,7 +125,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
           <CardTitle>Desempenho por Canal</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[280px] w-full sm:h-[400px]" />
         </CardContent>
       </Card>
     );
@@ -276,7 +276,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Gráfico */}
-        <div className="h-[350px]">
+        <div className="h-[260px] sm:h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 30, right: 30, left: 20, bottom: 40 }}>
               <defs>
@@ -353,7 +353,7 @@ export function ChannelPerformanceTable({ data, isLoading }: ChannelPerformanceT
 
         {/* Tabela */}
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[860px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Canal</TableHead>

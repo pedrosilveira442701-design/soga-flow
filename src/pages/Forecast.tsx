@@ -144,7 +144,7 @@ export default function Forecast() {
     const faturado = Number(item.faturadoPlot || 0);
 
     return (
-      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[250px]">
+      <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm space-y-1 min-w-[250px] max-w-[calc(100vw-2rem)]">
         <p className="font-semibold text-foreground border-b border-border pb-1 mb-1">{label}</p>
 
         <div className="flex justify-between">
@@ -376,8 +376,8 @@ export default function Forecast() {
       {/* Simulador */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <CardTitle className="text-base">Simulador de Esforço Comercial</CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
                 Ajuste quanto pretende investir em novas propostas e veja o impacto no faturamento

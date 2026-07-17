@@ -21,14 +21,14 @@ export function ErrorMessage({ message, action }: ErrorMessageProps) {
     >
       <Alert variant="destructive" className="border-brand-danger">
         <AlertCircle className="h-[18px] w-[18px]" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>{message}</span>
+        <AlertDescription className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="min-w-0 break-words">{message}</span>
           {action && (
             <Button
               variant="outline"
               size="sm"
               onClick={action.onClick}
-              className="ml-4"
+              className="w-full sm:w-auto sm:ml-4 shrink-0"
             >
               {action.label}
             </Button>

@@ -286,8 +286,8 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
             />
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-base font-semibold">Serviços</h3>
                   {leadInfo && (
                     <Badge variant="secondary" className="gap-1">
@@ -301,6 +301,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                   variant="outline"
                   size="sm"
                   onClick={() => append({ tipo: "", tipo_outro: "", m2: 0, valor_m2: 0, custo_m2: 0 })}
+                  className="w-full sm:w-auto"
                 >
                   <Plus className="h-[18px] w-[18px] mr-2" />
                   Adicionar Serviço
@@ -362,7 +363,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                       />
                     )}
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       <FormField
                         control={form.control}
                         name={`servicos.${index}.m2`}
@@ -416,7 +417,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                           const unidadeInfo = getUnidadeInfo(tipoSelecionado);
                           return (
                             <FormItem>
-                              <FormLabel className="flex items-center gap-1.5">
+                              <FormLabel className="flex flex-wrap items-center gap-1.5">
                                 {unidadeInfo.labelCusto} *
                                 {suggestedCostTypes.has(`${form.watch(`servicos.${index}.tipo`)}-${form.watch(`servicos.${index}.tipo_outro`) || ""}`) && (
                                   <span className="text-xs font-normal text-muted-foreground">(sugestão)</span>
@@ -478,7 +479,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="valor_entrada"
@@ -619,7 +620,7 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
       </div>
 
       <div className="space-y-4">
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h3 className="text-lg font-semibold mb-4">Resumo Financeiro</h3>
           {selectedCliente && (
             <div className="mb-4 pb-4 border-b">
@@ -629,29 +630,29 @@ export default function ProposalForm({ onSubmit, initialData, isSubmitting }: Pr
             </div>
           )}
           <div className="space-y-3">
-            <div className="flex justify-between items-center pb-2 border-b">
+            <div className="flex justify-between items-center gap-2 pb-2 border-b">
               <span className="text-sm text-muted-foreground">Total Bruto</span>
               <span className="font-semibold text-primary">{formatCurrency(totalBruto)}</span>
             </div>
             {desconto > 0 && (
-              <div className="flex justify-between items-center pb-2 border-b">
+              <div className="flex justify-between items-center gap-2 pb-2 border-b">
                 <span className="text-sm text-muted-foreground">Desconto</span>
                 <span className="font-semibold text-destructive">-{formatCurrency(desconto)}</span>
               </div>
             )}
-            <div className="flex justify-between items-center pb-2 border-b">
+            <div className="flex justify-between items-center gap-2 pb-2 border-b">
               <span className="text-sm text-muted-foreground">Total com Desconto</span>
               <span className="font-semibold text-primary">{formatCurrency(totalComDesconto)}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b">
+            <div className="flex justify-between items-center gap-2 pb-2 border-b">
               <span className="text-sm text-muted-foreground">Total Custo</span>
               <span className="font-semibold text-muted-foreground">{formatCurrency(totalCusto)}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b">
+            <div className="flex justify-between items-center gap-2 pb-2 border-b">
               <span className="text-sm font-medium">Valor Líquido</span>
               <span className="text-xl font-bold text-success">{formatCurrency(valorLiquido)}</span>
             </div>
-            <div className="flex justify-between items-center pt-2">
+            <div className="flex justify-between items-center gap-2 pt-2">
               <span className="text-sm font-medium">Margem</span>
               <span
                 className={`text-xl font-bold ${margem < 20 ? "text-destructive" : margem < 35 ? "text-yellow-600" : "text-success"}`}

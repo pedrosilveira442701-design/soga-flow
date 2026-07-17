@@ -86,7 +86,7 @@ export function AnotacoesFilters({ filters, onFiltersChange, onClose }: Anotacoe
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {/* Status Filter */}
         <div className="space-y-3">
           <Label className="font-medium">Status</Label>

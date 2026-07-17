@@ -118,9 +118,9 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[85vh] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
-          <div className="flex items-center justify-between gap-3">
+      <DialogContent className="max-w-2xl h-[85dvh] max-h-[85dvh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="px-4 sm:px-6 pt-6 pb-3 shrink-0">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <DialogTitle>Triagem WhatsApp</DialogTitle>
             <ConexaoBadge />
           </div>
@@ -130,7 +130,7 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
         </DialogHeader>
 
         <Tabs defaultValue="potenciais" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="mx-6">
+          <TabsList className="mx-4 sm:mx-6 max-w-[calc(100%-2rem)] justify-start overflow-x-auto sm:max-w-none">
             <TabsTrigger value="potenciais" className="gap-1.5">
               Potenciais {potenciais.length > 0 && <Badge variant="secondary">{potenciais.length}</Badge>}
             </TabsTrigger>
@@ -142,7 +142,7 @@ export function WhatsAppTriageDialog({ open, onOpenChange, onPromover }: Props) 
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
             {isLoading ? (
               <p className="text-center text-caption text-sm py-10">Carregando…</p>
             ) : (

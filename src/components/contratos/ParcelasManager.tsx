@@ -224,13 +224,13 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
   return (
     <div className="space-y-4">
       {/* Cabeçalho com Margem Editável */}
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <h3 className="text-lg font-semibold">Parcelas do Contrato</h3>
 
           {/* Campo de Margem Editável */}
-          <div className="flex items-center gap-2 rounded-lg border px-3 py-1.5 bg-primary/5">
-            <Percent className="h-5 w-5 text-primary" />
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border px-3 py-1.5 bg-primary/5">
+            <Percent className="h-5 w-5 shrink-0 text-primary" />
             <Label className="text-sm font-medium text-muted-foreground">Margem:</Label>
             {isEditingMargem ? (
               <div className="flex items-center gap-2">
@@ -273,7 +273,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
 
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="h-11 px-5">
+            <Button size="sm" variant="outline" className="h-11 w-full px-5 sm:w-auto">
               <Plus className="h-6 w-6 mr-3" />
               Adicionar Parcela
             </Button>
@@ -347,7 +347,7 @@ export function ParcelasManager({ contratoId, valorNegociado, margem_pct, propos
 
       {/* Tabela de Parcelas */}
       <div className="rounded-lg border">
-        <Table>
+        <Table className="min-w-[1000px]">
           <TableHeader>
             <TableRow>
               <TableHead>Nº</TableHead>

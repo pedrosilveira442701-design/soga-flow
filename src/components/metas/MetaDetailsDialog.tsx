@@ -58,16 +58,16 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DialogTitle className="text-2xl">{meta.tipo}</DialogTitle>
+          <div className="flex flex-col items-start gap-3 pr-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <DialogTitle className="text-xl sm:text-2xl">{meta.tipo}</DialogTitle>
               <Badge variant={statusConfig(META_STATUS, meta.status).variant}>
                 {statusConfig(META_STATUS, meta.status).label}
               </Badge>
             </div>
-            <Button variant="outline" onClick={onEdit}>
+            <Button variant="outline" onClick={onEdit} className="w-full sm:w-auto">
               Editar
             </Button>
           </div>
@@ -84,9 +84,9 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
 
           <TabsContent value="visao-geral" className="space-y-6 mt-6">
             {/* Progresso Visual Grande */}
-            <div className="bg-muted/30 rounded-lg p-6">
+            <div className="bg-muted/30 rounded-lg p-4 sm:p-6">
               <div className="text-center mb-4">
-                <div className="text-5xl font-bold mb-2">
+                <div className="text-4xl font-bold mb-2 sm:text-5xl">
                   {meta.progresso.toFixed(1)}%
                 </div>
                 <div className="text-muted-foreground">
@@ -119,7 +119,7 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
             </div>
 
             {/* Informações Básicas */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="bg-card border rounded-lg p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                   <Target className="h-5 w-5" />
@@ -159,7 +159,7 @@ export function MetaDetailsDialog({ meta, open, onOpenChange, onEdit }: MetaDeta
 
             {/* Timeline de Tempo */}
             <div className="bg-card border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="text-sm font-medium">Linha do Tempo</span>
                 <span className="text-sm text-muted-foreground">
                   {meta.tempoDecorrido.toFixed(0)}% do tempo consumido

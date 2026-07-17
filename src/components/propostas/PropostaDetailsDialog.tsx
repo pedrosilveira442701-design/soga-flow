@@ -222,7 +222,7 @@ export default function PropostaDetailsDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-3">
@@ -309,8 +309,8 @@ export default function PropostaDetailsDialog({
                   <div className="font-semibold truncate">{proposta.clientes?.nome}</div>
                   {(proposta.clientes?.logradouro || proposta.clientes?.bairro || proposta.clientes?.cidade) && (
                     <>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <p className="text-sm text-muted-foreground min-w-0 break-words">
                           {[
                             proposta.clientes?.logradouro,
                             proposta.clientes?.numero,
@@ -330,7 +330,7 @@ export default function PropostaDetailsDialog({
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
+                          className="inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
                           title="Abrir no Google Maps"
                         >
                           <MapPin className="h-5 w-5" />
@@ -422,33 +422,33 @@ export default function PropostaDetailsDialog({
             {proposta.status === "fechada" && (
               <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
                 {contratoExistente ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileCheck className="h-5 w-5 text-primary" />
-                      <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileCheck className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0">
                         <p className="font-semibold">Contrato Gerado</p>
                         <p className="text-sm text-muted-foreground">
                           Esta proposta já possui um contrato associado
                         </p>
                       </div>
                     </div>
-                    <Button onClick={handleViewContrato} variant="outline">
+                    <Button onClick={handleViewContrato} variant="outline" className="w-full sm:w-auto shrink-0">
                       <ExternalLink className="h-[18px] w-[18px] mr-2" />
                       Ver Contrato
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0">
                         <p className="font-semibold">Proposta Fechada</p>
                         <p className="text-sm text-muted-foreground">
                           Gere um contrato para formalizar esta venda
                         </p>
                       </div>
                     </div>
-                    <Button onClick={() => setShowContratoDialog(true)}>
+                    <Button onClick={() => setShowContratoDialog(true)} className="w-full sm:w-auto shrink-0">
                       <FileCheck className="h-[18px] w-[18px] mr-2" />
                       Gerar Contrato
                     </Button>
@@ -458,7 +458,7 @@ export default function PropostaDetailsDialog({
             )}
 
             {/* Resumo Financeiro */}
-            <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-6 space-y-4">
+            <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 p-4 sm:p-6 space-y-4">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-primary" />
                 Resumo Financeiro
@@ -556,7 +556,7 @@ export default function PropostaDetailsDialog({
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Proposta</DialogTitle>
           </DialogHeader>
@@ -604,7 +604,7 @@ export default function PropostaDetailsDialog({
 
       {/* Gerar Contrato Dialog */}
       <Dialog open={showContratoDialog} onOpenChange={setShowContratoDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gerar Contrato da Proposta</DialogTitle>
           </DialogHeader>

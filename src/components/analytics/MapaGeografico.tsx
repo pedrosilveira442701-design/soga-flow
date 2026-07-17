@@ -20,10 +20,7 @@ const clearCacheForAddress = (cep: string, numero: string) => {
   console.log(`🧹 Cache limpo para: ${cacheKey}`);
 };
 
-const mapContainerStyle = {
-  width: "100%",
-  height: "600px",
-};
+const mapContainerClassName = "w-full h-[380px] sm:h-[500px] lg:h-[600px] rounded-lg";
 
 const center = {
   lat: -19.9167,
@@ -416,7 +413,7 @@ export function MapaGeografico() {
             )}
 
             <GoogleMap
-              mapContainerStyle={mapContainerStyle}
+              mapContainerClassName={mapContainerClassName}
               center={center}
               zoom={12}
               options={mapOptions}
@@ -451,7 +448,7 @@ export function MapaGeografico() {
                     disableAutoPan: true,
                   }}
                 >
-                  <div className="p-2 min-w-[200px]">
+                  <div className="p-2 min-w-[160px] sm:min-w-[200px] max-w-[calc(100vw-6rem)]">
                     <h4 className="font-semibold text-sm mb-1">
                       {hoveredMarker.cliente_nome}
                     </h4>
@@ -474,7 +471,7 @@ export function MapaGeografico() {
                   position={selectedMarker.position}
                   onCloseClick={() => setSelectedMarker(null)}
                 >
-                  <div className="p-2 max-w-sm">
+                  <div className="p-2 max-w-[calc(100vw-6rem)] sm:max-w-sm">
                     <h3 className="font-semibold text-base mb-2">
                       {selectedMarker.cliente_nome}
                     </h3>

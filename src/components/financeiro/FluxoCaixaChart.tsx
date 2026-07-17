@@ -67,7 +67,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
     if (active && payload && payload.length) {
       const total = payload.reduce((sum: number, entry: any) => sum + (entry.value || 0), 0);
       return (
-        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[200px]">
+        <div className="bg-card border border-border rounded-lg p-3 sm:p-4 shadow-xl min-w-[180px] sm:min-w-[200px] max-w-[calc(100vw-2rem)]">
           <p className="font-semibold text-base mb-3 border-b pb-2">{formatMonth(label)}</p>
           <div className="space-y-2 text-sm">
             {payload.map((entry: any, index: number) => (
@@ -103,7 +103,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[350px] w-full" />
+          <Skeleton className="h-[240px] w-full sm:h-[350px]" />
         </CardContent>
       </Card>
     );
@@ -145,7 +145,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
             <Activity className="h-5 w-5" />
             Fluxo de Caixa (12 meses)
           </span>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
               <Switch
                 id="tendencia-toggle"
@@ -163,7 +163,8 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
+        <div className="h-[240px] sm:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={normalizedData}>
             <defs>
               <linearGradient id="gradient-recebido" x1="0" y1="0" x2="0" y2="1">
@@ -249,30 +250,31 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
             )}
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Cards de totais */}
-        <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Recebido</p>
-            <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)` }}>
+            <p className="text-base sm:text-lg font-bold break-words" style={{ color: `hsl(${FLUXO_COLORS.recebido.hue}, ${FLUXO_COLORS.recebido.sat}%, ${FLUXO_COLORS.recebido.light}%)` }}>
               {formatCurrency(totalRecebido)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Margem Líquida</p>
-            <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.margemRecebida.hue}, ${FLUXO_COLORS.margemRecebida.sat}%, ${FLUXO_COLORS.margemRecebida.light}%)` }}>
+            <p className="text-base sm:text-lg font-bold break-words" style={{ color: `hsl(${FLUXO_COLORS.margemRecebida.hue}, ${FLUXO_COLORS.margemRecebida.sat}%, ${FLUXO_COLORS.margemRecebida.light}%)` }}>
               {formatCurrency(totalMargemRecebida)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Previsto</p>
-            <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.previsto.hue}, ${FLUXO_COLORS.previsto.sat}%, ${FLUXO_COLORS.previsto.light}%)` }}>
+            <p className="text-base sm:text-lg font-bold break-words" style={{ color: `hsl(${FLUXO_COLORS.previsto.hue}, ${FLUXO_COLORS.previsto.sat}%, ${FLUXO_COLORS.previsto.light}%)` }}>
               {formatCurrency(totalPrevisto)}
             </p>
           </div>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Total Atrasado</p>
-            <p className="text-lg font-bold" style={{ color: `hsl(${FLUXO_COLORS.atrasado.hue}, ${FLUXO_COLORS.atrasado.sat}%, ${FLUXO_COLORS.atrasado.light}%)` }}>
+            <p className="text-base sm:text-lg font-bold break-words" style={{ color: `hsl(${FLUXO_COLORS.atrasado.hue}, ${FLUXO_COLORS.atrasado.sat}%, ${FLUXO_COLORS.atrasado.light}%)` }}>
               {formatCurrency(totalAtrasado)}
             </p>
           </div>
@@ -280,7 +282,7 @@ export function FluxoCaixaChart({ data, isLoading }: FluxoCaixaChartProps) {
 
         {/* Card de Insights da Tendência */}
         {mostrarTendencia && (
-          <div className="mt-4 p-4 rounded-lg border bg-muted/30">
+          <div className="mt-4 p-3 sm:p-4 rounded-lg border bg-muted/30">
             <div className="flex items-center gap-2 mb-3">
               <TrendIcon className={`h-5 w-5 ${trendColor}`} />
               <span className="font-semibold">Análise de Tendência (EMA)</span>

@@ -49,7 +49,7 @@ export default function Anotacoes() {
     <>
       <div className="space-y-6 pt-6 max-w-[1800px] mx-auto">
         {/* Cabeçalho da página */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-h1 flex items-center gap-3">
               <StickyNote className="page-icon" />
@@ -90,17 +90,17 @@ export default function Anotacoes() {
           </div>
 
           {/* Seletor de visualização */}
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-            <TabsList>
-              <TabsTrigger value="list" className="gap-2">
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="w-full sm:w-auto">
+            <TabsList className="w-full justify-start overflow-x-auto no-scrollbar sm:w-auto">
+              <TabsTrigger value="list" className="gap-2 shrink-0">
                 <List className="icon-md" />
                 Lista
               </TabsTrigger>
-              <TabsTrigger value="kanban" className="gap-2">
+              <TabsTrigger value="kanban" className="gap-2 shrink-0">
                 <LayoutGrid className="icon-md" />
                 Kanban
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="gap-2">
+              <TabsTrigger value="calendar" className="gap-2 shrink-0">
                 <Calendar className="icon-md" />
                 Calendário
               </TabsTrigger>

@@ -69,8 +69,8 @@ export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
             {/* Content */}
             <div className={`rounded-lg p-4 space-y-2 ${interacao.automatica ? 'bg-muted/20 border border-border/30' : 'bg-muted/30'}`}>
               <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <Badge variant={interacao.automatica ? "outline" : "secondary"} className="text-xs">
                       {interacao.tipo_interacao}
                     </Badge>
@@ -79,7 +79,7 @@ export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
                     </span>
                   </div>
                   {interacao.observacao && (
-                    <p className={`text-sm whitespace-pre-wrap ${interacao.automatica ? 'text-muted-foreground italic' : ''}`}>
+                    <p className={`text-sm whitespace-pre-wrap break-words ${interacao.automatica ? 'text-muted-foreground italic' : ''}`}>
                       {interacao.observacao}
                     </p>
                   )}
@@ -91,7 +91,7 @@ export function LeadTimeline({ interacoes, onDelete }: LeadTimelineProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-10 w-10 text-muted-foreground hover:text-destructive"
+                        className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="h-5 w-5" />
                       </Button>

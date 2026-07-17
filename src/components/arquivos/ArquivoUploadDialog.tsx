@@ -173,7 +173,7 @@ export function ArquivoUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Upload de Arquivos</DialogTitle>
           <DialogDescription>
@@ -213,9 +213,9 @@ export function ArquivoUploadDialog({
                 const sizeWarning = getFileSizeWarning(file.file.size);
                 return (
                   <div key={index} className="p-4 border rounded-lg space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{file.file.name}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium break-all">{file.file.name}</p>
                         <p className="text-sm text-muted-foreground">
                           {(file.file.size / 1024 / 1024).toFixed(2)} MB
                         </p>
@@ -223,6 +223,7 @@ export function ArquivoUploadDialog({
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="shrink-0"
                       onClick={() =>
                         setSelectedFiles((prev) =>
                           prev.filter((_, i) => i !== index)
@@ -241,7 +242,7 @@ export function ArquivoUploadDialog({
                     </Alert>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Entidade</Label>
                       <Select
@@ -323,13 +324,14 @@ export function ArquivoUploadDialog({
                 );
               })}
 
-              <div className="flex gap-3 justify-end">
-                <Button variant="outline" onClick={() => setStep(1)}>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Button variant="outline" onClick={() => setStep(1)} className="w-full sm:w-auto">
                   Voltar
                 </Button>
                 <Button
                   onClick={handleStartUpload}
                   disabled={!canProceedToUpload}
+                  className="w-full sm:w-auto"
                 >
                   <Upload className="h-[18px] w-[18px] mr-2" />
                   Enviar {selectedFiles.length} arquivo(s)
@@ -349,13 +351,13 @@ export function ArquivoUploadDialog({
             >
               {selectedFiles.map((file, index) => (
                 <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">{file.nome}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium min-w-0 break-all">{file.nome}</p>
                     {file.status === "success" && (
-                      <Check className="h-[18px] w-[18px] text-green-500" />
+                      <Check className="h-[18px] w-[18px] shrink-0 text-green-500" />
                     )}
                     {file.status === "error" && (
-                      <X className="h-[18px] w-[18px] text-destructive" />
+                      <X className="h-[18px] w-[18px] shrink-0 text-destructive" />
                     )}
                   </div>
                   <Progress value={file.progress} />

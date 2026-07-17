@@ -146,8 +146,8 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
                   {TIPOS_META.map((tipo) => (
                     <SelectItem key={tipo.value} value={tipo.value}>
                       <div className="flex items-center gap-2">
-                        <tipo.icon className="h-[18px] w-[18px]" />
-                        <div>
+                        <tipo.icon className="h-[18px] w-[18px] shrink-0" />
+                        <div className="min-w-0">
                           <div className="font-medium">{tipo.label}</div>
                           <div className="text-xs text-muted-foreground">{tipo.description}</div>
                         </div>
@@ -197,7 +197,7 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
             <span className="text-sm font-medium">Período</span>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => setPeriodo('mes')}>
               Este Mês
             </Button>
@@ -209,7 +209,7 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="periodo_inicio"
@@ -272,11 +272,11 @@ export function MetaForm({ meta, onSubmit, onCancel }: MetaFormProps) {
           )}
         />
 
-        <div className="flex gap-3 pt-4">
-          <Button type="submit" className="flex-1">
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+          <Button type="submit" className="w-full sm:flex-1">
             {meta ? "Atualizar Meta" : "Criar Meta"}
           </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
             Cancelar
           </Button>
         </div>

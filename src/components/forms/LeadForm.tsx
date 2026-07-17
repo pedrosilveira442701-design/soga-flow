@@ -205,7 +205,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
             <FormItem>
               <FormLabel>Cliente</FormLabel>
               <div className="flex gap-2">
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <FormControl>
                     <ClienteCombobox
                       clientes={clientes}
@@ -231,7 +231,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
         />
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <FormLabel>Produtos</FormLabel>
             <Button type="button" variant="outline" size="sm" onClick={addProduto} className="gap-2">
               <Plus className="h-5 w-5" />
@@ -294,7 +294,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
                 />
               )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
                   name={`produtos.${index}.medida`}
@@ -461,7 +461,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
         {/* Data de Criação do Lead */}
         <div className="space-y-2">
           <FormLabel>Data de Criação do Lead</FormLabel>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="created_at"
@@ -530,7 +530,7 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
         {/* Última Interação */}
         <div className="space-y-2">
           <FormLabel>Última Interação</FormLabel>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="ultima_interacao"
@@ -595,8 +595,8 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
             />
           </div>
         </div>
-        <div className="flex gap-3 justify-end pt-4">
-          <Button type="submit" disabled={isLoading}>
+        <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
+          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
             {isLoading
               ? mode === "edit"
                 ? "Salvando..."
@@ -610,12 +610,12 @@ export function LeadForm({ onSubmit, isLoading, initialData, mode = "create", cl
 
       {/* Dialog para criar novo cliente */}
       <Dialog open={isClienteDialogOpen} onOpenChange={setIsClienteDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+        <DialogContent className="max-w-2xl max-h-[85dvh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-4 pt-4 pb-4 shrink-0 sm:px-6 sm:pt-6">
             <DialogTitle>Criar Novo Cliente</DialogTitle>
             <DialogDescription>Preencha os dados do cliente para adicioná-lo rapidamente</DialogDescription>
           </DialogHeader>
-          <div className="overflow-y-auto px-6 pb-6">
+          <div className="overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6">
             <ClienteForm
               onSubmit={handleCreateCliente}
               isLoading={createCliente.isPending}

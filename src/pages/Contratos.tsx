@@ -263,7 +263,7 @@ export default function Contratos() {
   return (
     <div className="space-y-6 pt-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-h1 flex items-center gap-3">
             <FileText className="page-icon" />
@@ -423,7 +423,7 @@ export default function Contratos() {
         )
       ) : (
         <Card>
-          <Table>
+          <Table className="min-w-[1040px]">
             <TableHeader>
               <TableRow>
                 <TableHead onClick={() => handleSort("cliente")} className="group">
@@ -597,7 +597,7 @@ export default function Contratos() {
 
       {/* Dialogs */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Contrato</DialogTitle>
           </DialogHeader>
@@ -606,7 +606,7 @@ export default function Contratos() {
       </Dialog>
 
       <Dialog open={showCreateFromPropostaDialog} onOpenChange={setShowCreateFromPropostaDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Criar Contrato a partir de Proposta</DialogTitle>
           </DialogHeader>
@@ -615,7 +615,7 @@ export default function Contratos() {
       </Dialog>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Contrato</DialogTitle>
           </DialogHeader>

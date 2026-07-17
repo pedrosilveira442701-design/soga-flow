@@ -528,7 +528,7 @@ export default function Leads() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex items-center justify-center min-h-[60dvh]">
         <div className="text-center">
           <p className="text-muted-foreground">Carregando leads...</p>
         </div>
@@ -539,7 +539,7 @@ export default function Leads() {
   return (
     <div className="space-y-6 pt-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-h1 flex items-center gap-3">
             <TrendingUp className="page-icon" />
@@ -589,7 +589,7 @@ export default function Leads() {
                 Novo Lead
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+            <DialogContent className="max-w-2xl max-h-[85dvh] flex flex-col gap-0 p-0">
               <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
                 <DialogTitle>Criar Novo Lead</DialogTitle>
                 <DialogDescription>Adicione um novo lead ao funil de vendas</DialogDescription>
@@ -709,7 +709,7 @@ export default function Leads() {
 
       {/* Edit Lead Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogContent className="max-w-2xl max-h-[85dvh] flex flex-col gap-0 p-0">
           <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
             <DialogTitle>Editar Lead</DialogTitle>
             <DialogDescription>Atualize as informações do lead</DialogDescription>

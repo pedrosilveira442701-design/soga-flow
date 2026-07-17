@@ -46,7 +46,7 @@ const VisitasKanbanColumn = ({
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
-    <Card className="flex flex-col h-full min-h-[480px] border-0 bg-transparent shadow-none">
+    <Card className="flex flex-col h-full min-h-[480px] w-[280px] shrink-0 md:w-auto border-0 bg-transparent shadow-none">
       {/* Cabeçalho da coluna */}
       <div className="px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">

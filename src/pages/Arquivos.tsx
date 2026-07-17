@@ -70,7 +70,7 @@ export default function Arquivos() {
   return (
     <div className="space-y-6 pt-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-h1 flex items-center gap-3">
             <FileText className="page-icon" />
@@ -228,7 +228,7 @@ export default function Arquivos() {
         <Card>
           <CardContent className="p-0">
             <div className="rounded-md border">
-              <Table>
+              <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome do Arquivo</TableHead>

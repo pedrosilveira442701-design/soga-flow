@@ -46,8 +46,11 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
               <Menu className="h-[18px] w-[18px]" strokeWidth={1.75} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[85vw] max-w-[320px] p-0 backdrop-blur-2xl bg-card/95 dark:bg-card/90 overflow-y-auto">
-            <SheetHeader className="px-4 pt-4 pb-3">
+          <SheetContent
+            side="right"
+            className="flex w-[85vw] max-w-[320px] flex-col p-0 backdrop-blur-2xl bg-card/95 dark:bg-card/90"
+          >
+            <SheetHeader className="shrink-0 px-4 pt-4 pb-3">
               <SheetTitle className="flex items-center gap-2">
                 <img src={logoImage} alt="Só Garagens" className="h-9 w-9 object-contain" />
                 <span className="text-[14px] font-semibold tracking-tight">Só Garagens</span>
@@ -79,7 +82,7 @@ export function TopbarMobile({ getBadge }: TopbarMobileProps) {
                 );
               })}
             </nav>
-            <div className="border-t border-border/40 px-3 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+            <div className="shrink-0 border-t border-border/40 px-3 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">
               <UserMenu />
             </div>
           </SheetContent>

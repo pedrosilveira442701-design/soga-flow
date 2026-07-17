@@ -88,13 +88,13 @@ export function AnalyticsFilters({ filters, onChange }: AnalyticsFiltersProps) {
     <Card>
       <CardContent className="pt-6">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-semibold">Filtros de Análise</h3>
             </div>
             {activeFiltersCount > 0 && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="secondary">
                   {activeFiltersCount} {activeFiltersCount === 1 ? "filtro ativo" : "filtros ativos"}
                 </Badge>

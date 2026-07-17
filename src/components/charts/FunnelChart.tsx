@@ -16,7 +16,7 @@ export function FunnelChart({ data, title = "Funil de Vendas" }: FunnelChartProp
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-elev2">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-elev2 max-w-[calc(100vw-2rem)]">
           <p className="text-caption font-medium">{payload[0].payload.stage}</p>
           <p className="text-body text-primary font-semibold">
             {payload[0].value} leads
@@ -33,9 +33,10 @@ export function FunnelChart({ data, title = "Funil de Vendas" }: FunnelChartProp
   };
 
   return (
-    <Card className="p-6">
-      <h3 className="text-h3 mb-6">{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <Card className="p-4 sm:p-6">
+      <h3 className="text-h3 mb-4 sm:mb-6">{title}</h3>
+      <div className="h-[220px] sm:h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
           <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={13} tickLine={false} />
@@ -55,6 +56,7 @@ export function FunnelChart({ data, title = "Funil de Vendas" }: FunnelChartProp
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </Card>
   );
 }

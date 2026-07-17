@@ -94,11 +94,11 @@ export function VisitaDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1">
-              <DialogTitle className="text-2xl">{visita.assunto}</DialogTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="space-y-2 flex-1 min-w-0">
+              <DialogTitle className="text-xl sm:text-2xl break-words">{visita.assunto}</DialogTitle>
               <div className="flex items-center gap-2 flex-wrap">
                 {tipo && (
                   <Badge className={tipo.color}>
@@ -109,7 +109,7 @@ export function VisitaDetailsDialog({
                 {isHoje && <Badge className="bg-blue-500/10 text-blue-700 border-blue-500/20">HOJE</Badge>}
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => onEdit(visita)}>
+            <Button variant="outline" size="sm" onClick={() => onEdit(visita)} className="self-start sm:self-auto shrink-0">
               <Edit className="h-[18px] w-[18px] mr-2" />
               Editar
             </Button>
@@ -167,12 +167,12 @@ export function VisitaDetailsDialog({
                 <div className="mb-4">
                   <div className="flex items-start gap-3 mb-2">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm text-muted-foreground">Endereço</p>
-                      <p className="font-medium">{visita.endereco}</p>
+                      <p className="font-medium break-words">{visita.endereco}</p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleMaps} className="ml-8">
+                  <Button variant="outline" size="sm" onClick={handleMaps} className="ml-0 sm:ml-8">
                     <ExternalLink className="h-4.2 w-4.2 mr-2" />
                     Abrir no Google Maps
                   </Button>
@@ -188,7 +188,7 @@ export function VisitaDetailsDialog({
                       <p className="font-medium">{visita.telefone}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-8">
+                  <div className="flex flex-wrap gap-2 ml-0 sm:ml-8">
                     <Button variant="outline" size="sm" onClick={handleLigar}>
                       <Phone className="h-[18px] w-[18px] mr-2" />
                       Ligar
@@ -235,15 +235,15 @@ export function VisitaDetailsDialog({
 
         <Separator />
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           {!visita.realizada && (
-            <Button onClick={() => onToggleRealizada(visita.id, true)}>
+            <Button onClick={() => onToggleRealizada(visita.id, true)} className="w-full sm:w-auto">
               <Check className="h-[18px] w-[18px] mr-2" />
               Marcar como Realizada
             </Button>
           )}
           {visita.realizada && (
-            <Button variant="outline" onClick={() => onToggleRealizada(visita.id, false)}>
+            <Button variant="outline" onClick={() => onToggleRealizada(visita.id, false)} className="w-full sm:w-auto">
               Marcar como Pendente
             </Button>
           )}

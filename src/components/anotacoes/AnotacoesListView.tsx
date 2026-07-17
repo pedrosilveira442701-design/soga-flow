@@ -72,12 +72,12 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
     <div className="space-y-3">
       {anotacoes.map((anotacao) => (
         <Card key={anotacao.id} className="p-4 hover:shadow-md transition-shadow">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-2">
+          <div className="flex items-start justify-between gap-2 sm:gap-4">
+            <div className="flex-1 min-w-0 space-y-2">
               {/* Title and Status */}
               <div className="flex items-start gap-3">
-                <h3 className="font-semibold text-base flex-1">{anotacao.title}</h3>
-                <Badge variant="outline">{statusLabels[anotacao.status]}</Badge>
+                <h3 className="font-semibold text-base flex-1 min-w-0 break-words">{anotacao.title}</h3>
+                <Badge variant="outline" className="shrink-0">{statusLabels[anotacao.status]}</Badge>
               </div>
 
               {/* Note Preview */}
@@ -126,7 +126,7 @@ export function AnotacoesListView({ anotacoes, isLoading, onEdit }: AnotacoesLis
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1">
+            <div className="flex flex-col items-center gap-1 shrink-0 sm:flex-row">
               {anotacao.status !== "concluida" && (
                 <Button variant="ghost" size="icon" onClick={() => completeAnotacao(anotacao.id)} title="Concluir">
                   <CheckCircle2 className="h-5 w-5" />

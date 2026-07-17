@@ -16,27 +16,27 @@ export function WhatsAppVolumeCard() {
   });
 
   return (
-    <Card className="p-5">
+    <Card className="p-4 sm:p-5">
       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
         <MessagesSquare className="h-4 w-4 text-primary" /> Volume no WhatsApp
       </h3>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="text-center">
-          <div className="text-2xl font-semibold tabular-nums">{vol?.conversas ?? "—"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
-            <MessageSquare className="h-3 w-3" /> Conversas totais
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums">{vol?.conversas ?? "—"}</div>
+          <div className="text-[10px] sm:text-xs leading-tight text-muted-foreground mt-0.5 flex flex-wrap items-center justify-center gap-1">
+            <MessageSquare className="h-3 w-3 shrink-0" /> Conversas totais
           </div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-semibold tabular-nums text-green-600">{vol?.identificaveis ?? "—"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Identificadas
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-green-600">{vol?.identificaveis ?? "—"}</div>
+          <div className="text-[10px] sm:text-xs leading-tight text-muted-foreground mt-0.5 flex flex-wrap items-center justify-center gap-1">
+            <CheckCircle2 className="h-3 w-3 shrink-0" /> Identificadas
           </div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-semibold tabular-nums text-amber-600">{vol?.semIdentificacao ?? "—"}</div>
-          <div className="text-xs text-muted-foreground mt-0.5 flex items-center justify-center gap-1">
-            <EyeOff className="h-3 w-3" /> Sem identificação
+          <div className="text-xl sm:text-2xl font-semibold tabular-nums text-amber-600">{vol?.semIdentificacao ?? "—"}</div>
+          <div className="text-[10px] sm:text-xs leading-tight text-muted-foreground mt-0.5 flex flex-wrap items-center justify-center gap-1">
+            <EyeOff className="h-3 w-3 shrink-0" /> Sem identificação
           </div>
         </div>
       </div>

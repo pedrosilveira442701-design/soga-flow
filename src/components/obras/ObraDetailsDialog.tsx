@@ -108,16 +108,16 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl">{obra.contratos?.clientes?.nome || "Obra"}</DialogTitle>
+          <div className="flex flex-col items-start gap-2 pr-8 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <DialogTitle className="text-xl sm:text-2xl">{obra.contratos?.clientes?.nome || "Obra"}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {obra.contratos?.clientes?.endereco || "Endereço não informado"}
               </p>
             </div>
-            <Badge variant="secondary" className="text-sm">
+            <Badge variant="secondary" className="text-sm shrink-0">
               {STATUS_LABELS[obra.status]}
             </Badge>
           </div>
@@ -140,7 +140,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
         </div>
 
         <Tabs defaultValue="geral" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 h-auto sm:grid-cols-4">
             <TabsTrigger value="geral">Geral</TabsTrigger>
             <TabsTrigger value="progresso">Progresso</TabsTrigger>
             <TabsTrigger value="ocorrencias">Ocorrências</TabsTrigger>
@@ -153,7 +153,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                 <CardTitle>Informações do Contrato</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label className="text-muted-foreground">Valor Negociado</Label>
                     <p className="text-lg font-semibold">{formatCurrency(obra.contratos?.valor_negociado || 0)}</p>
@@ -216,7 +216,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                   <Progress value={obra.progresso_pct} className="h-3" />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <div className="flex-1">
                     <Label htmlFor="progresso">Atualizar Progresso (%)</Label>
                     <Input
@@ -229,7 +229,7 @@ export function ObraDetailsDialog({ obra, open, onOpenChange }: ObraDetailsDialo
                       placeholder="0-100"
                     />
                   </div>
-                  <Button onClick={handleUpdateProgresso} className="mt-auto">
+                  <Button onClick={handleUpdateProgresso} className="mt-auto w-full sm:w-auto">
                     Atualizar
                   </Button>
                 </div>

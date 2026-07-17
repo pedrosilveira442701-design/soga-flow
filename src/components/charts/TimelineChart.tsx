@@ -36,9 +36,10 @@ export function TimelineChart({ data, title = "Linha do Tempo Financeira" }: Tim
   };
 
   return (
-    <Card className="p-6">
-      <h3 className="text-h3 mb-6">{title}</h3>
-      <ResponsiveContainer width="100%" height={300}>
+    <Card className="p-4 sm:p-6">
+      <h3 className="text-h3 mb-4 sm:mb-6">{title}</h3>
+      <div className="h-[220px] sm:h-[300px]">
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
           <XAxis
@@ -59,6 +60,7 @@ export function TimelineChart({ data, title = "Linha do Tempo Financeira" }: Tim
               border: "1px solid hsl(var(--border))",
               borderRadius: "8px",
               padding: "12px",
+              maxWidth: "calc(100vw - 2rem)",
             }}
             formatter={(value: number) => formatCurrency(value)}
           />
@@ -98,6 +100,7 @@ export function TimelineChart({ data, title = "Linha do Tempo Financeira" }: Tim
           )}
         </LineChart>
       </ResponsiveContainer>
+      </div>
     </Card>
   );
 }

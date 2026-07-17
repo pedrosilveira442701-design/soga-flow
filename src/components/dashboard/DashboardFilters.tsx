@@ -93,19 +93,22 @@ export function DashboardFilters({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="justify-between min-w-[200px] font-normal"
+          className="w-full justify-between font-normal sm:w-auto sm:min-w-[200px]"
         >
-          <span className="flex items-center gap-2">
-            <CalendarIcon className="h-[18px] w-[18px] text-muted-foreground" />
-            {getDisplayText()}
+          <span className="flex min-w-0 items-center gap-2">
+            <CalendarIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+            <span className="truncate">{getDisplayText()}</span>
           </span>
-          <ChevronDown className="h-[18px] w-[18px] text-muted-foreground" />
+          <ChevronDown className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <div className="flex">
+      <PopoverContent
+        className="w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] max-h-[calc(100dvh-8rem)] overflow-y-auto p-0 sm:w-auto sm:max-w-none sm:max-h-none sm:overflow-visible"
+        align="start"
+      >
+        <div className="flex flex-col sm:flex-row">
           {/* Presets Sidebar */}
-          <div className="border-r p-3 space-y-1 w-44 shrink-0 bg-muted/30">
+          <div className="border-b p-3 space-y-1 w-full bg-muted/30 sm:w-44 sm:shrink-0 sm:border-b-0 sm:border-r">
             <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Atalhos</p>
             <Button
               variant={period === "week" ? "secondary" : "ghost"}
@@ -204,11 +207,11 @@ export function DashboardFilters({
             />
 
             {/* Actions */}
-            <div className="flex justify-between items-center mt-3 pt-3 border-t">
+            <div className="flex flex-wrap justify-between items-center gap-2 mt-3 pt-3 border-t">
               <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground">
                 Limpar
               </Button>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-1 items-center justify-end gap-2">
                 {(!fromDate || !toDate) && (
                   <span className="text-[11px] text-muted-foreground">
                     {!fromDate ? "Escolha a data inicial" : "Escolha a data final"}

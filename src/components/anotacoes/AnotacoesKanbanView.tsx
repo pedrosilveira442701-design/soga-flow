@@ -277,9 +277,9 @@ export function AnotacoesKanbanView({ anotacoes, isLoading, onEdit }: AnotacoesK
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:pb-0">
         {columns.map((col) => (
-          <div key={col.status} className="space-y-3">
+          <div key={col.status} className="space-y-3 w-[280px] shrink-0 md:w-auto">
             <Skeleton className="h-8 w-32" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
@@ -311,7 +311,7 @@ export function AnotacoesKanbanView({ anotacoes, isLoading, onEdit }: AnotacoesK
         droppable: { strategy: MeasuringStrategy.Always },
       }}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-2 lg:grid-cols-4 md:overflow-x-visible md:pb-0">
         {columns.map((column) => (
           <AnotacoesKanbanColumn
             key={column.status}

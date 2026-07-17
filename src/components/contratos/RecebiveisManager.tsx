@@ -120,13 +120,13 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="font-semibold flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
+            <Wallet className="h-5 w-5 shrink-0 text-primary" />
             Meus Recebimentos (Lucro)
           </h3>
           {recebiveis.length > 0 && (
-            <Button variant="outline" size="sm" onClick={() => setShowAdd(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowAdd(true)} className="shrink-0">
               <Plus className="h-[18px] w-[18px] mr-1" />
               Adicionar
             </Button>
@@ -164,7 +164,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
       {/* Empty state — onboarding card */}
       {recebiveis.length === 0 && margemTotal > 0 && (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col sm:flex-row items-center gap-4 p-6">
+          <CardContent className="flex flex-col sm:flex-row items-center gap-4 p-4 sm:p-6">
             <div className="p-3 rounded-full bg-primary/10">
               <Wand2 className="h-6 w-6 text-primary" />
             </div>
@@ -174,7 +174,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
                 Gere automaticamente as parcelas ou adicione manualmente.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <Input
                 type="number"
                 min="1"
@@ -199,7 +199,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
 
       {/* Formulário de adição */}
       {showAdd && (
-        <div className="flex items-end gap-3 p-3 rounded-lg border bg-muted/30">
+        <div className="flex flex-col gap-3 p-3 rounded-lg border bg-muted/30 sm:flex-row sm:items-end">
           <div className="flex-1">
             <label className="text-xs text-muted-foreground">Valor (R$)</label>
             <Input
@@ -214,8 +214,8 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
             <label className="text-xs text-muted-foreground">Vencimento</label>
             <Input type="date" value={newVencimento} onChange={(e) => setNewVencimento(e.target.value)} />
           </div>
-          <Button size="sm" onClick={handleAdd}>Salvar</Button>
-          <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancelar</Button>
+          <Button size="sm" onClick={handleAdd} className="w-full sm:w-auto">Salvar</Button>
+          <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)} className="w-full sm:w-auto">Cancelar</Button>
         </div>
       )}
 
@@ -243,7 +243,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
           </div>
         ) : (
           <div className="rounded-lg border overflow-hidden">
-            <Table>
+            <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12">Nº</TableHead>
@@ -332,7 +332,7 @@ export function RecebiveisManager({ contratoId, margemTotal }: RecebiveisManager
 
       {/* Footer totalizador */}
       {recebiveis.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Total Recebimentos</p>
             <p className="text-lg font-bold">{formatCurrency(totalRecebiveis)}</p>

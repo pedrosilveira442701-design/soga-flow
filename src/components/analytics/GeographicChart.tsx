@@ -100,7 +100,9 @@ export function GeographicChart({ data, isLoading }: GeographicChartProps) {
           {/* Gráfico de Barras - Valor Líquido */}
           <div>
             <h4 className="text-sm font-semibold mb-2">Valor Líquido por Cidade</h4>
-            <ResponsiveContainer width="100%" height={300}>
+            <div className="overflow-x-auto">
+            <div className="min-w-[420px] h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={top10} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                 <XAxis type="number" />
@@ -122,6 +124,8 @@ export function GeographicChart({ data, isLoading }: GeographicChartProps) {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
+            </div>
           </div>
 
           {/* Tabela de Taxa de Ganho */}
@@ -130,8 +134,8 @@ export function GeographicChart({ data, isLoading }: GeographicChartProps) {
               <TrendingUp className="h-[18px] w-[18px]" />
               Taxa de Ganho por Cidade
             </h4>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full">
+            <div className="border rounded-lg overflow-x-auto">
+              <table className="w-full min-w-[440px]">
                 <thead className="bg-muted">
                   <tr>
                     <th className="text-left p-2 text-sm font-medium">Cidade</th>

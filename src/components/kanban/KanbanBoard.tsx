@@ -346,7 +346,7 @@ export function KanbanBoard({
     >
       <div
         ref={containerRef}
-        className="flex gap-6 overflow-x-auto pb-6 min-h-[calc(100vh-12rem)] scroll-smooth"
+        className="flex gap-4 sm:gap-6 overflow-x-auto overscroll-x-contain pb-6 min-h-[calc(100vh-12rem)] scroll-smooth [-webkit-overflow-scrolling:touch]"
         style={{
           transform: `scale(${zoom / 100})`,
           transformOrigin: "top left",
@@ -361,7 +361,7 @@ export function KanbanBoard({
             stage.section === "perdido" && (index === 0 || STAGES[index - 1].section !== "perdido");
 
           return (
-            <div key={stage.id} className="flex gap-6">
+            <div key={stage.id} className="flex gap-4 sm:gap-6 shrink-0">
               {isFirstOperacional && (
                 <div className="flex items-center">
                   <div className="h-full w-px bg-border" />

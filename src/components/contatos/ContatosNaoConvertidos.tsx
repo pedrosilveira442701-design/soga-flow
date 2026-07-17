@@ -29,11 +29,11 @@ export function ContatosNaoConvertidos({ contatos, onConvertToLead }: ContatosNa
           {contatos.slice(0, 5).map((contato) => (
             <div
               key={contato.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors"
+              className="flex flex-col gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Phone className="h-[18px] w-[18px] text-muted-foreground" />
+              <div className="space-y-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Phone className="h-[18px] w-[18px] text-muted-foreground shrink-0" />
                   <span className="font-medium">{contato.telefone}</span>
                   <Badge variant="secondary" className="text-xs">
                     {contato.origem}
@@ -48,7 +48,7 @@ export function ContatosNaoConvertidos({ contatos, onConvertToLead }: ContatosNa
                 size="sm"
                 variant="outline"
                 onClick={() => onConvertToLead(contato)}
-                className="gap-2"
+                className="gap-2 w-full sm:w-auto shrink-0"
               >
                 Criar Lead
                 <ArrowRight className="h-[18px] w-[18px]" />

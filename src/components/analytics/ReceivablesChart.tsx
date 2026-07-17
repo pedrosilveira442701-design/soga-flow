@@ -117,9 +117,9 @@ export function ReceivablesChart({ data, isLoading }: ReceivablesChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <span>Recebíveis - Aging Report</span>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-sm font-normal text-muted-foreground">Total em Aberto</p>
             <p className="text-lg font-bold text-primary">
               R$ {totalValor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -128,7 +128,8 @@ export function ReceivablesChart({ data, isLoading }: ReceivablesChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[280px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis dataKey="bucket" className="text-xs" tick={{ fontSize: 12 }} />
@@ -145,6 +146,7 @@ export function ReceivablesChart({ data, isLoading }: ReceivablesChartProps) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Alertas de Risco */}
         {percentualRisco > 0 && (
@@ -197,7 +199,7 @@ export function ReceivablesChart({ data, isLoading }: ReceivablesChartProps) {
 
         {/* KPIs Resumo */}
         <div className="mt-4 pt-4 border-t">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-xs text-muted-foreground">Total de Parcelas</p>
               <p className="text-2xl font-bold">{totalParcelas}</p>

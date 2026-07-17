@@ -74,11 +74,11 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
   return (
     <div className="space-y-4">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg sm:text-xl font-semibold">
           {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={handleToday}>
             Hoje
           </Button>
@@ -92,11 +92,11 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-medium text-muted-foreground py-2"
+            className="text-center text-[11px] sm:text-sm font-medium text-muted-foreground py-1 sm:py-2 truncate"
           >
             {day}
           </div>
@@ -104,7 +104,7 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {calendarDays.map((day) => {
           const dateKey = format(day, "yyyy-MM-dd");
           const dayAnotacoes = anotacoesByDate.get(dateKey) || [];
@@ -114,13 +114,13 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
           return (
             <Card
               key={day.toISOString()}
-              className={`min-h-[120px] p-2 ${
+              className={`min-h-[76px] p-1 sm:min-h-[120px] sm:p-2 overflow-hidden ${
                 !isCurrentMonth ? "opacity-40" : ""
               } ${isToday ? "ring-2 ring-primary" : ""}`}
             >
               <div className="space-y-1">
                 {/* Day Number */}
-                <div className="text-sm font-medium text-right">
+                <div className="text-xs sm:text-sm font-medium text-right">
                   {format(day, "d")}
                 </div>
 
@@ -130,12 +130,12 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
                     <button
                       key={anotacao.id}
                       onClick={() => onEdit(anotacao.id)}
-                      className={`w-full text-left text-xs p-1 rounded border-l-2 ${
+                      className={`w-full text-left text-[10px] sm:text-xs p-0.5 sm:p-1 rounded border-l-2 ${
                         priorityColors[anotacao.priority]
                       } hover:shadow-sm transition-shadow`}
                     >
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-[18px] w-[18px] flex-shrink-0" />
+                      <div className="flex min-w-0 items-center gap-1">
+                        <Clock className="h-3 w-3 sm:h-[18px] sm:w-[18px] flex-shrink-0" />
                         <span className="truncate">
                           {format(new Date(anotacao.reminder_datetime!), "HH:mm")} {anotacao.title}
                         </span>
@@ -143,7 +143,7 @@ export function AnotacoesCalendarView({ anotacoes, isLoading, onEdit }: Anotacoe
                     </button>
                   ))}
                   {dayAnotacoes.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center">
+                    <div className="text-[10px] sm:text-xs text-muted-foreground text-center">
                       +{dayAnotacoes.length - 3} mais
                     </div>
                   )}

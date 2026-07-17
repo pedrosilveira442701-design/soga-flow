@@ -224,11 +224,11 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto [&>button]:h-10 [&>button]:w-10 [&>button>svg]:h-6 [&>button>svg]:w-6">
+        <DialogContent className="max-w-4xl [&>button]:h-10 [&>button]:w-10 [&>button>svg]:h-6 [&>button>svg]:w-6">
           <DialogHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <DialogTitle className="text-2xl mb-2">{cliente.nome}</DialogTitle>
+            <div className="flex items-start justify-between pr-8">
+              <div className="flex-1 min-w-0">
+                <DialogTitle className="text-xl mb-2 sm:text-2xl">{cliente.nome}</DialogTitle>
                 <Badge variant={cliente.status === "ativo" ? "default" : "secondary"}>
                   {cliente.status === "ativo" ? "Ativo" : "Inativo"}
                 </Badge>
@@ -237,7 +237,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
           </DialogHeader>
 
           <Tabs defaultValue="info" className="mt-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="w-full justify-start overflow-x-auto no-scrollbar sm:grid sm:grid-cols-3">
               <TabsTrigger value="info">Informações</TabsTrigger>
               <TabsTrigger value="propostas">Propostas ({propostas.length})</TabsTrigger>
               <TabsTrigger value="contratos">Contratos ({contratos.length})</TabsTrigger>
@@ -283,18 +283,18 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
 
                 <div className="border-t pt-4">
                   <h3 className="text-sm font-semibold mb-3">Estatísticas</h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                    <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 sm:p-3">
                       <FileText className="h-5 w-5 text-muted-foreground mb-1" />
                       <span className="text-2xl font-bold">{propostasCount}</span>
                       <span className="text-xs text-muted-foreground">Propostas</span>
                     </div>
-                    <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 sm:p-3">
                       <Users className="h-5 w-5 text-muted-foreground mb-1" />
                       <span className="text-2xl font-bold">{leadsCount}</span>
                       <span className="text-xs text-muted-foreground">Leads</span>
                     </div>
-                    <div className="flex flex-col items-center p-3 rounded-lg bg-muted/50">
+                    <div className="flex flex-col items-center p-2 rounded-lg bg-muted/50 text-center sm:p-3">
                       <Calendar className="h-5 w-5 text-muted-foreground mb-1" />
                       <span className="text-xs font-medium mt-1">Cliente desde</span>
                       <span className="text-xs text-muted-foreground">
@@ -338,24 +338,24 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t">
+                <div className="flex flex-col gap-3 pt-4 border-t sm:flex-row">
                   <Button
                     onClick={() => {
                       onEdit(cliente);
                       onOpenChange(false);
                     }}
                     variant="outline"
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                   >
                     <Edit className="h-5 w-5 mr-2" />
                     Editar
                   </Button>
-                  <Button onClick={() => setDeleteDialogOpen(true)} variant="outline" className="flex-1">
+                  <Button onClick={() => setDeleteDialogOpen(true)} variant="outline" className="w-full sm:flex-1">
                     <Trash2 className="h-5 w-5 mr-2" />
                     Deletar
                   </Button>
                   {cliente.telefone && (
-                    <Button onClick={handleWhatsApp} className="flex-1">
+                    <Button onClick={handleWhatsApp} className="w-full sm:flex-1">
                       <MessageCircle className="h-5 w-5 mr-2" />
                       WhatsApp
                     </Button>
@@ -372,7 +372,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <Skeleton className="h-64" />
                   </div>
                 ) : propostas.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-12 text-center">
+                  <div className="rounded-lg border border-dashed p-8 text-center sm:p-12">
                     <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Nenhuma proposta encontrada</h3>
                     <p className="text-sm text-muted-foreground">Este cliente ainda não possui propostas</p>
@@ -380,7 +380,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                 ) : (
                   <>
                     {/* Estatísticas das Propostas */}
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <FileText className="h-[18px] w-[18px] text-muted-foreground" />
@@ -428,7 +428,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <div>
                       <h3 className="font-semibold mb-4">Histórico de Propostas</h3>
                       <div className="rounded-lg border">
-                        <Table>
+                        <Table className="min-w-[760px]">
                           <TableHeader>
                             <TableRow>
                               <TableHead>Data</TableHead>
@@ -528,7 +528,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <Skeleton className="h-64" />
                   </div>
                 ) : contratos.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-12 text-center">
+                  <div className="rounded-lg border border-dashed p-8 text-center sm:p-12">
                     <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Nenhum contrato encontrado</h3>
                     <p className="text-sm text-muted-foreground">Este cliente ainda não possui contratos</p>
@@ -536,7 +536,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                 ) : (
                   <>
                     {/* Resumo Financeiro */}
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                       <div className="rounded-lg border p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <FileText className="h-[18px] w-[18px] text-muted-foreground" />
@@ -578,7 +578,7 @@ export function ClienteDetailsDialog({ cliente, open, onOpenChange, onEdit, onDe
                     <div>
                       <h3 className="font-semibold mb-4">Histórico de Contratos</h3>
                       <div className="rounded-lg border">
-                        <Table>
+                        <Table className="min-w-[680px]">
                           <TableHeader>
                             <TableRow>
                               <TableHead>Data</TableHead>

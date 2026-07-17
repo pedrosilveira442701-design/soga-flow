@@ -45,7 +45,7 @@ const faqs = [
 
 export default function Ajuda() {
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-4xl">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 max-w-4xl">
       <div>
         <h1 className="text-h1 flex items-center gap-2">
           <HelpCircle className="h-5 w-5" />
@@ -66,9 +66,9 @@ export default function Ajuda() {
           </div>
           <div className="space-y-3">
             {atalhos.map((atalho, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <span className="text-sm">{atalho.descricao}</span>
-                <kbd className="px-2 py-1 text-xs font-semibold bg-muted rounded">
+              <div key={index} className="flex items-center justify-between gap-3">
+                <span className="text-sm min-w-0">{atalho.descricao}</span>
+                <kbd className="px-2 py-1 text-xs font-semibold bg-muted rounded shrink-0">
                   {atalho.keys}
                 </kbd>
               </div>

@@ -44,8 +44,8 @@ export function WhatsAppChatIA() {
   };
 
   return (
-    <Card className="flex flex-col h-[600px] overflow-hidden">
-      <div className="px-5 py-4 border-b shrink-0">
+    <Card className="flex flex-col h-[70dvh] min-h-[420px] sm:h-[600px] overflow-hidden">
+      <div className="px-4 sm:px-5 py-4 border-b shrink-0">
         <h3 className="text-h3 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-violet-500" /> Análise com IA
         </h3>
@@ -54,7 +54,7 @@ export function WhatsAppChatIA() {
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-3 bg-muted/10">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-4 space-y-3 bg-muted/10">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-center">
             <Sparkles className="h-10 w-10 text-violet-400" />

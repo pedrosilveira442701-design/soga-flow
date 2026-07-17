@@ -25,7 +25,7 @@ export function AnotacoesKanbanColumn({
   const itemIds = anotacoes.map((a) => a.id);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-[280px] shrink-0 md:w-auto">
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h3 className="font-semibold text-sm">{label}</h3>

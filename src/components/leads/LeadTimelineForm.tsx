@@ -113,11 +113,11 @@ export function LeadTimelineForm({ leadId, onSubmit, onCancel, isLoading }: Lead
           )}
         />
 
-        <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={onCancel}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
             {isLoading ? "Salvando..." : "Adicionar Interação"}
           </Button>
         </div>

@@ -24,7 +24,9 @@ const CustomBoxplot = ({ data }: { data: BoxplotData[] }) => {
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
+    <div className="overflow-x-auto">
+    <div className="min-w-[560px] h-[400px]">
+    <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={chartData}
         layout="vertical"
@@ -79,6 +81,8 @@ const CustomBoxplot = ({ data }: { data: BoxplotData[] }) => {
         ))}
       </BarChart>
     </ResponsiveContainer>
+    </div>
+    </div>
   );
 };
 

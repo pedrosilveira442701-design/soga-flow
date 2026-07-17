@@ -229,7 +229,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
   return (
     <>
       <div className="rounded-md border">
-        <Table>
+        <Table className="min-w-[1100px]">
           <TableHeader>
             <TableRow>
               <TableHead 
@@ -344,7 +344,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
                           href={formatGoogleMapsUrl(endereco)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-primary hover:underline max-w-[200px] truncate"
+                          className="flex min-w-0 items-center gap-2 text-primary hover:underline max-w-[200px]"
                         >
                           <MapPin className="h-[18px] w-[18px] flex-shrink-0" />
                           <span className="truncate">{endereco}</span>
@@ -488,7 +488,7 @@ export function VisitasListView({ visitas, onEdit, onToggleRealizada, onDelete }
 
       {/* Dialog para Adicionar Cliente */}
       <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Cliente a partir da Visita</DialogTitle>
           </DialogHeader>

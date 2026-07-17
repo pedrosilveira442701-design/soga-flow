@@ -155,7 +155,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto p-4 sm:max-w-[600px] sm:p-6">
         <SheetHeader>
           <SheetTitle>{anotacaoId ? "Editar Anotação" : "Nova Anotação"}</SheetTitle>
           <SheetDescription>Preencha os detalhes da anotação e configure lembretes</SheetDescription>
@@ -178,7 +178,7 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
           </div>
 
           {/* Status / Prioridade / Tipo */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label>Status</Label>
               <Select value={form.watch("status")} onValueChange={(value) => form.setValue("status", value as any)}>
@@ -297,18 +297,23 @@ export function AnotacaoDrawer({ open, onOpenChange, anotacaoId }: AnotacaoDrawe
           </div>
 
           {/* Ações */}
-          <div className="flex justify-between pt-4">
+          <div className="flex flex-col-reverse gap-3 pt-4 sm:flex-row sm:justify-between">
             {anotacaoId && (
-              <Button type="button" variant="destructive" onClick={handleDelete}>
+              <Button type="button" variant="destructive" onClick={handleDelete} className="w-full sm:w-auto">
                 <Trash2 className="h-5 w-5 mr-2" />
                 Excluir
               </Button>
             )}
-            <div className="flex gap-2 ml-auto">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex gap-2 sm:ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 sm:flex-none"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isCreating || isUpdating}>
+              <Button type="submit" disabled={isCreating || isUpdating} className="flex-1 sm:flex-none">
                 <Save className="h-5 w-5 mr-2" />
                 Salvar
               </Button>

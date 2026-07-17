@@ -62,7 +62,7 @@ export function VisitasKanbanBoard({
 
   return (
     <DndContext collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0">
         {COLUMNS.map((column) => (
           <VisitasKanbanColumn
             key={column.id}

@@ -110,16 +110,17 @@ export function WaterfallChart({ data, isLoading }: WaterfallChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <span>Waterfall de Margem</span>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-sm font-normal text-muted-foreground">Margem Líquida</p>
             <p className="text-lg font-bold text-primary">{margemPercentual.toFixed(1)}%</p>
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[280px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={waterfallData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
@@ -146,6 +147,7 @@ export function WaterfallChart({ data, isLoading }: WaterfallChartProps) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Insights */}
         <div className="mt-4 pt-4 border-t">
@@ -178,7 +180,7 @@ export function WaterfallChart({ data, isLoading }: WaterfallChartProps) {
 
         {/* Resumo */}
         <div className="mt-4 pt-4 border-t">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div className="text-center p-3 rounded-lg bg-muted/50">
               <p className="text-xs text-muted-foreground">Valor Bruto</p>
               <p className="text-lg font-semibold">

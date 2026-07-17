@@ -46,7 +46,7 @@ export function QuickActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-8 w-8 shrink-0 opacity-100 transition-opacity sm:h-6 sm:w-6 sm:opacity-0 sm:group-hover:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           <MoreVertical className="icon-md" />

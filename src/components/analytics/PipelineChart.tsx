@@ -68,7 +68,7 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px] max-w-[calc(100vw-2rem)]">
           <p className="font-semibold text-base mb-3">{data.estagio}</p>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
@@ -95,9 +95,9 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <span>Pipeline Ponderado</span>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-sm font-normal text-muted-foreground">Total Ponderado</p>
             <p className="text-lg font-bold text-primary">
               R$ {totalPonderado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -106,7 +106,8 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[280px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <defs>
               {data.map((entry, index) => {
@@ -149,6 +150,7 @@ export function PipelineChart({ data, isLoading }: PipelineChartProps) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Insights */}
         <div className="mt-4 pt-4 border-t">

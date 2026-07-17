@@ -145,16 +145,17 @@ export function LossReasonDialog({
               )}
             />
 
-            <div className="flex gap-2 justify-end pt-4">
+            <div className="flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleCancel}
                 disabled={isLoading}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
                 {isLoading ? "Salvando..." : "Confirmar Perda"}
               </Button>
             </div>

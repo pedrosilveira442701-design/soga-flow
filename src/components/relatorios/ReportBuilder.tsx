@@ -212,8 +212,8 @@ export function ReportBuilder({
   return (
     <Card className="border-border/50">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="flex items-center gap-2 text-lg">
               <FileSpreadsheet className="h-5 w-5 text-primary" />
               Construtor de Relatório
@@ -222,7 +222,7 @@ export function ReportBuilder({
               Configure os parâmetros e exporte seus dados
             </CardDescription>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs self-start sm:self-auto shrink-0">
             {DATASET_LABELS[dataset]}
           </Badge>
         </div>
@@ -236,7 +236,7 @@ export function ReportBuilder({
             Selecionar Dados
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-7">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-0 sm:pl-7">
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Dataset</Label>
               <Select value={dataset} onValueChange={(v) => handleDatasetChange(v as DatasetType)}>
@@ -259,7 +259,7 @@ export function ReportBuilder({
                   onUserInteraction?.();
                   setScope(v as "global" | "periodo");
                 }} 
-                className="flex gap-4 h-10 items-center"
+                className="flex flex-wrap gap-x-4 gap-y-2 min-h-10 items-center"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="global" id="global" />
@@ -275,7 +275,7 @@ export function ReportBuilder({
 
           {/* Date Range */}
           {scope === "periodo" && (
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg ml-7 border border-border/50">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-muted/30 rounded-lg ml-0 sm:ml-7 border border-border/50">
               <Calendar className="h-[18px] w-[18px] text-muted-foreground" />
               <Popover>
                 <PopoverTrigger asChild>
@@ -332,7 +332,7 @@ export function ReportBuilder({
 
           {/* Active filter chips */}
           {filterChips.length > 0 && (
-            <div className="flex flex-wrap gap-2 pl-7">
+            <div className="flex flex-wrap gap-2 pl-0 sm:pl-7">
               {filterChips.map((chip, idx) => (
                 <Badge 
                   key={`${chip.key}-${chip.value}-${idx}`}
@@ -360,7 +360,7 @@ export function ReportBuilder({
             </div>
           )}
 
-          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen} className="pl-7">
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen} className="pl-0 sm:pl-7">
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" className="w-full justify-between h-9">
                 <span className="flex items-center gap-2 text-sm">
@@ -489,7 +489,7 @@ export function ReportBuilder({
             Colunas e Ordenação
           </div>
 
-          <div className="pl-7 space-y-4">
+          <div className="pl-0 sm:pl-7 space-y-4">
             {/* Columns Selection */}
             <Collapsible open={columnsOpen} onOpenChange={setColumnsOpen}>
               <CollapsibleTrigger asChild>
@@ -580,12 +580,12 @@ export function ReportBuilder({
         <Separator />
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3 pt-2">
-          <Button onClick={handlePreview} disabled={isLoading} size="lg" className="gap-2 flex-1 md:flex-none">
+        <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap">
+          <Button onClick={handlePreview} disabled={isLoading} size="lg" className="gap-2 w-full sm:w-auto sm:flex-1 md:flex-none">
             <Eye className="h-[18px] w-[18px]" />
             {isLoading ? "Carregando..." : "Visualizar Prévia"}
           </Button>
-          <div className="flex gap-2 flex-1 md:flex-none">
+          <div className="flex gap-2 w-full sm:w-auto sm:flex-1 md:flex-none">
             <Button onClick={handleExportExcel} disabled={isExporting} variant="outline" size="lg" className="gap-2 flex-1">
               <FileSpreadsheet className="h-[18px] w-[18px]" />
               {isExporting ? "..." : "Excel"}

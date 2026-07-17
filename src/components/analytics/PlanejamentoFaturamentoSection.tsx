@@ -41,7 +41,7 @@ export function PlanejamentoFaturamentoSection() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-primary" />
           Planejamento de Faturamento
         </h2>
@@ -119,7 +119,8 @@ export function PlanejamentoFaturamentoSection() {
               Sem propostas abertas para projetar
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={350}>
+            <div className="h-[280px] sm:h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={projecaoMensal} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="mes" className="text-xs" />
@@ -170,6 +171,7 @@ export function PlanejamentoFaturamentoSection() {
                 />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -185,7 +187,8 @@ export function PlanejamentoFaturamentoSection() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <div className="h-[260px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={volumeHistorico} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="mes" className="text-xs" />
@@ -217,6 +220,7 @@ export function PlanejamentoFaturamentoSection() {
                 />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 

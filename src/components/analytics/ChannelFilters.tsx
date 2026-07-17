@@ -84,15 +84,15 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
 
       {/* Custom Date Range */}
       {filters.period === "custom" && (
-        <div className="flex flex-wrap gap-4">
-          <div className="space-y-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">De</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className={cn("w-[140px] justify-start", !filters.startDate && "text-muted-foreground")}
+                  className={cn("w-full sm:w-[140px] justify-start", !filters.startDate && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-5 w-5" />
                   {filters.startDate ? format(filters.startDate, "dd/MM/yyyy", { locale: ptBR }) : "Início"}
@@ -108,14 +108,14 @@ export function ChannelFilters({ filters, onChange, availableCanais, availableBa
               </PopoverContent>
             </Popover>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label className="text-xs text-muted-foreground">Até</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className={cn("w-[140px] justify-start", !filters.endDate && "text-muted-foreground")}
+                  className={cn("w-full sm:w-[140px] justify-start", !filters.endDate && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-5 w-5" />
                   {filters.endDate ? format(filters.endDate, "dd/MM/yyyy", { locale: ptBR }) : "Fim"}

@@ -32,7 +32,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
           <CardTitle>Canal x Bairros</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[280px] w-full sm:h-[400px]" />
         </CardContent>
       </Card>
     );
@@ -201,14 +201,14 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:flex-wrap sm:gap-2">
         <div>
           <CardTitle>Canal x Bairros (Top 15)</CardTitle>
           <CardDescription className="text-sm text-muted-foreground mt-1">
             Exibindo {getViewModeLabel()} por canal de origem e bairro do cliente
           </CardDescription>
         </div>
-        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)}>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as ViewMode)} className="flex-wrap justify-start">
           <ToggleGroupItem value="leads" size="sm">Leads</ToggleGroupItem>
           <ToggleGroupItem value="propostas" size="sm">Propostas</ToggleGroupItem>
           <ToggleGroupItem value="fechados" size="sm">Fechados</ToggleGroupItem>
@@ -217,7 +217,7 @@ export function ChannelBairroTable({ data, isLoading }: ChannelBairroTableProps)
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 bg-card z-10">Bairro</TableHead>

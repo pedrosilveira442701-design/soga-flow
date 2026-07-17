@@ -18,7 +18,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const taxaPropFech = data.propostas > 0 ? ((data.fechados / data.propostas) * 100).toFixed(1) : 0;
 
     return (
-      <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+      <div className="bg-card border border-border rounded-lg p-3 sm:p-4 shadow-xl min-w-[160px] sm:min-w-[180px] max-w-[calc(100vw-2rem)]">
         <p className="font-semibold text-base mb-3">{label}</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
@@ -57,7 +57,7 @@ export function ChannelFunnelChart({ data, isLoading }: ChannelFunnelChartProps)
           <CardTitle>Funil de Conversão por Canal</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[300px] w-full" />
+          <Skeleton className="h-[260px] w-full sm:h-[350px]" />
         </CardContent>
       </Card>
     );
@@ -91,7 +91,7 @@ export function ChannelFunnelChart({ data, isLoading }: ChannelFunnelChartProps)
         <CardTitle>Funil de Conversão por Canal</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[350px]">
+        <div className="h-[260px] sm:h-[350px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={topChannels} layout="vertical">
               <defs>
@@ -147,7 +147,7 @@ export function ChannelFunnelChart({ data, isLoading }: ChannelFunnelChartProps)
         </div>
 
         {/* Legenda com gradientes */}
-        <div className="flex justify-center gap-6 mt-4">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-6 mt-4">
           <div className="flex items-center gap-2">
             <div 
               className="w-4 h-4 rounded" 

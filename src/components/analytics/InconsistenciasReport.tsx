@@ -106,7 +106,7 @@ export function InconsistenciasReport() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between">
+      <CardHeader className="flex flex-col items-start gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
             {hasInconsistencias ? (
@@ -120,7 +120,7 @@ export function InconsistenciasReport() {
             Leads e propostas com status divergentes que precisam de atenção
           </CardDescription>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
@@ -173,7 +173,7 @@ export function InconsistenciasReport() {
 
             {/* Tabela de inconsistências */}
             <div className="rounded-md border">
-              <Table>
+              <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cliente</TableHead>

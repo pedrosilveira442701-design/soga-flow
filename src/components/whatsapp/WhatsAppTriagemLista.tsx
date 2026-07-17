@@ -45,13 +45,13 @@ export function WhatsAppTriagemLista() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nome, telefone ou texto…" className="pl-9 h-10" />
         </div>
-        <div className="flex rounded-lg border p-0.5">
+        <div className="flex w-full rounded-lg border p-0.5 sm:w-auto">
           {(["todos", "potencial", "pendente", "ruido"] as const).map((f) => (
-            <Button key={f} size="sm" variant={filtro === f ? "default" : "ghost"} className="h-8 text-xs px-3"
+            <Button key={f} size="sm" variant={filtro === f ? "default" : "ghost"} className="h-9 flex-1 text-xs px-2 sm:h-8 sm:flex-none sm:px-3"
               onClick={() => setFiltro(f)}>
               {f === "todos" ? "Todos" : STATUS_LABEL[f]}
             </Button>
@@ -79,12 +79,12 @@ export function WhatsAppTriagemLista() {
                   {/* Info */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium text-sm truncate">{c.nome || "Sem nome"}</span>
+                      <span className="font-medium text-sm truncate min-w-0">{c.nome || "Sem nome"}</span>
                       {prio && <Badge variant="outline" className={`text-[10px] h-5 ${prio.cls}`}>{prio.label}</Badge>}
                       {c.canal_detectado && <Badge variant="secondary" className="text-[10px] h-5">{c.canal_detectado}</Badge>}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1 tabular-nums"><Phone className="h-3.5 w-3.5" />{c.telefone}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1 tabular-nums"><Phone className="h-3.5 w-3.5 shrink-0" />{c.telefone}</span>
                       <span className="tabular-nums">{c.data_hora ? format(new Date(c.data_hora), "dd/MM HH:mm", { locale: ptBR }) : ""}</span>
                     </div>
                     {(c.triagem_motivo || c.texto_conversa) && (
@@ -98,7 +98,7 @@ export function WhatsAppTriagemLista() {
                 {/* Ações */}
                 <div className="flex items-center gap-2 mt-3 sm:pl-[52px] flex-wrap">
                   <Select value={c.triagem_status} onValueChange={(v) => mover(c.id, v as TriagemStatus)}>
-                    <SelectTrigger className="h-9 w-[140px] text-xs font-medium" aria-label="Classificação">
+                    <SelectTrigger className="h-10 w-[140px] max-w-full shrink-0 text-xs font-medium sm:h-9" aria-label="Classificação">
                       <span className="flex items-center gap-2">
                         <span className={`h-2 w-2 rounded-full ${STATUS_DOT[c.triagem_status]}`} />
                         <SelectValue />
@@ -111,18 +111,18 @@ export function WhatsAppTriagemLista() {
                     </SelectContent>
                   </Select>
 
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => setConversa(c)}>
+                  <Button variant="outline" size="sm" className="h-10 gap-1.5 sm:h-9" onClick={() => setConversa(c)}>
                     <MessageSquare className="h-[18px] w-[18px] text-green-600" /> Conversa
                   </Button>
 
-                  <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => navigate(`/leads?contato=${c.id}`)}>
+                  <Button variant="outline" size="sm" className="h-10 gap-1.5 sm:h-9" onClick={() => navigate(`/leads?contato=${c.id}`)}>
                     <ArrowRightCircle className="h-[18px] w-[18px] text-blue-600" />
                     <span className="hidden sm:inline">Funil</span>
                   </Button>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Mais ações">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9" aria-label="Mais ações">
                         <MoreVertical className="h-[18px] w-[18px]" />
                       </Button>
                     </DropdownMenuTrigger>

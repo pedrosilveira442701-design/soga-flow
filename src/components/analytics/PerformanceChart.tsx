@@ -70,7 +70,7 @@ export function PerformanceChart({ data, isLoading }: PerformanceChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px] max-w-[calc(100vw-2rem)]">
           <p className="font-semibold text-base mb-3">{data.responsavel}</p>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
@@ -152,7 +152,8 @@ export function PerformanceChart({ data, isLoading }: PerformanceChartProps) {
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[320px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <defs>
               {data.map((_, index) => {
@@ -190,12 +191,13 @@ export function PerformanceChart({ data, isLoading }: PerformanceChartProps) {
             <Bar dataKey="taxa_conversao" name="Taxa Conversão %" fill="hsl(142, 65%, 42%)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Tabela Detalhada */}
         <div className="mt-6 pt-6 border-t">
           <p className="text-sm font-semibold mb-3">Detalhamento Completo:</p>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[660px] text-sm">
               <thead className="border-b">
                 <tr className="text-left">
                   <th className="pb-2 font-semibold">Responsável</th>

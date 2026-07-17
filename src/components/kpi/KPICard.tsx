@@ -46,13 +46,13 @@ export function KPICard({ title, value, subValue, delta, variant = "default", ic
   const styles = variantStyles[variant];
 
   return (
-    <Card className="p-5 hover:shadow-elev2 transition-shadow duration-300">
+    <Card className="p-4 sm:p-5 hover:shadow-elev2 transition-shadow duration-300">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-caption mb-2 truncate">{title}</p>
           <p
             className={cn(
-              "text-[26px] leading-[32px] text-kpi",
+              "text-[22px] leading-[28px] break-words sm:text-[26px] sm:leading-[32px] text-kpi",
               styles.valueColor
             )}
           >

@@ -55,7 +55,7 @@ export function ForecastSection() {
       {/* Header + Controle de Outlier */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-primary" />
             Previsibilidade de Fechamento
           </h2>
@@ -63,13 +63,13 @@ export function ForecastSection() {
             Projeção mensal de receita baseada em histórico real com tratamento de outliers
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <span className="text-sm text-muted-foreground whitespace-nowrap">Limite outlier:</span>
           <Select
             value={String(outlierLimit)}
             onValueChange={(v) => setOutlierLimit(Number(v))}
           >
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -170,7 +170,8 @@ export function ForecastSection() {
               Sem propostas abertas para projetar
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={350}>
+            <div className="h-[280px] sm:h-[350px]">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={forecastData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="mes" className="text-xs" />
@@ -218,6 +219,7 @@ export function ForecastSection() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -239,7 +241,8 @@ export function ForecastSection() {
               </div>
             ) : (
               <>
-                <ResponsiveContainer width="100%" height={300}>
+                <div className="h-[260px] sm:h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={metaGapData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="mes" className="text-xs" />
@@ -264,6 +267,7 @@ export function ForecastSection() {
                     <Bar dataKey="gap" name="Gap" fill="hsl(var(--destructive))" fillOpacity={0.6} radius={[4, 4, 0, 0]} />
                   </ComposedChart>
                 </ResponsiveContainer>
+                </div>
 
                 {/* Propostas necessárias */}
                 <Separator className="my-4" />
@@ -295,7 +299,8 @@ export function ForecastSection() {
                 Sem dados para exibir
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <div className="h-[260px] sm:h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={histogram} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="range" className="text-xs" label={{ value: "Dias", position: "insideBottom", offset: -2 }} />
@@ -341,6 +346,7 @@ export function ForecastSection() {
                   />
                 </BarChart>
               </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>

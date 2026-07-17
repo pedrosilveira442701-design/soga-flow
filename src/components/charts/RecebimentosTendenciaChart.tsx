@@ -34,7 +34,7 @@ export function RecebimentosTendenciaChart({ data }: RecebimentosTendenciaChartP
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-elev2">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-elev2 max-w-[calc(100vw-2rem)]">
           <p className="text-caption text-muted-foreground mb-1">{data.mes}</p>
           <p className="text-body font-semibold text-foreground">
             {formatCurrency(data.valor)}
@@ -62,7 +62,8 @@ export function RecebimentosTendenciaChart({ data }: RecebimentosTendenciaChartP
         </p>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="h-[220px] sm:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted/20" />
             <XAxis
@@ -110,6 +111,7 @@ export function RecebimentosTendenciaChart({ data }: RecebimentosTendenciaChartP
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

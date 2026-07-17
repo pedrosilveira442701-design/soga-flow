@@ -110,7 +110,7 @@ const [dialogOpen, setDialogOpen] = useState(false);
   return (
     <div className="space-y-6 pt-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-h1 flex items-center gap-3">
             <Calendar className="page-icon" />
@@ -312,7 +312,7 @@ const [dialogOpen, setDialogOpen] = useState(false);
 
       {/* Dialog de Criar/Editar */}
       <Dialog open={dialogOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? "Editar Visita" : "Nova Visita"}</DialogTitle>
           </DialogHeader>

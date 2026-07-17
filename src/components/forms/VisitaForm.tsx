@@ -199,9 +199,9 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
       {/* Cliente */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Label>Cliente *</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setUseManualName(!useManualName)}>
               {useManualName ? "Selecionar da lista" : "Digitar nome"}
             </Button>
@@ -239,7 +239,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
 
       {/* Mini Dialog - Cadastro Rápido de Cliente */}
       <Dialog open={clienteDialogOpen} onOpenChange={setClienteDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
           </DialogHeader>
@@ -279,7 +279,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       </div>
 
       {/* Opção de deixar sem data (AGENDAR depois) */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <Checkbox
           id="sem-data"
           checked={semDataDefinida}
@@ -298,14 +298,14 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
       </div>
 
       {/* Data e Hora */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Data
           </Label>
           <Input type="date" disabled={semDataDefinida} {...register("data")} />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -338,7 +338,7 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
 
       {/* Endereço por CEP */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <Label className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Endereço
@@ -385,8 +385,8 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="space-y-1 col-span-2 md:col-span-1">
             <Label>Bairro</Label>
             <Input value={enderecoBairro} onChange={(e) => setEnderecoBairro(e.target.value)} />
           </div>
@@ -440,8 +440,8 @@ export function VisitaForm({ visita, onSubmit, isLoading }: VisitaFormProps) {
         </div>
       )}
 
-      <div className="flex justify-end gap-3 pt-4">
-        <Button type="submit" disabled={isLoading}>
+      <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
+        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
           {isLoading ? "Salvando..." : visita ? "Atualizar Visita" : "Agendar Visita"}
         </Button>
       </div>

@@ -41,10 +41,10 @@ export function LeadFilters({ filters, onFiltersChange, totalCount, filteredCoun
   const hasActiveFilters = filters.searchQuery !== "" || filters.sortBy !== "date-newest";
 
   return (
-    <Card className="p-4">
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+    <Card className="p-3 sm:p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         {/* Busca por Cliente */}
-        <div className="relative flex-1 w-full sm:w-auto">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px] sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 icon-md text-muted-foreground" />
           <Input
             placeholder="Buscar por cliente..."
@@ -73,7 +73,7 @@ export function LeadFilters({ filters, onFiltersChange, totalCount, filteredCoun
             variant="outline"
             size="sm"
             onClick={handleClearFilters}
-            className="gap-2 h-10 shrink-0"
+            className="gap-2 h-10 w-full shrink-0 sm:w-auto"
           >
             <X className="icon-md" />
             Limpar

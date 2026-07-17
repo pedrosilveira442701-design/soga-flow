@@ -78,7 +78,7 @@ export function KanbanCard({
       }).join(", ");
 
       return (
-        <div className="flex flex-wrap gap-1.5" title={servicosTexto}>
+        <div className="flex flex-wrap gap-1.5 min-w-0" title={servicosTexto}>
           {produtos.slice(0, 2).map((produto, index) => {
             let displayTipo = produto.tipo;
             if (produto.tipo?.startsWith("Outro:")) {
@@ -124,7 +124,7 @@ export function KanbanCard({
       }).join(", ");
 
       return (
-        <div className="flex flex-wrap gap-1.5" title={servicosTexto}>
+        <div className="flex flex-wrap gap-1.5 min-w-0" title={servicosTexto}>
           {tipos.slice(0, 2).map((tipo, index) => {
             let displayTipo = tipo;
             if (tipo?.startsWith("Outro:")) {
@@ -183,8 +183,8 @@ export function KanbanCard({
         }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <h4 className={`${headerSize} font-medium text-foreground flex-1`}>{cliente}</h4>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h4 className={`${headerSize} font-medium text-foreground flex-1 min-w-0 break-words`}>{cliente}</h4>
           <div className="flex items-center gap-1">
             {currentStage && onMoveToStage && onMarkAsLost && (
               <QuickActionsMenu
@@ -194,7 +194,7 @@ export function KanbanCard({
               stages={stages}
             />
             )}
-            <span className="text-caption text-muted-foreground">
+            <span className="text-caption text-muted-foreground text-right">
               {lastInteraction && !isNaN(lastInteraction.getTime())
                 ? formatDistanceToNow(lastInteraction, { addSuffix: true, locale: ptBR })
                 : "—"}
@@ -203,7 +203,7 @@ export function KanbanCard({
         </div>
 
         {/* Value and Services */}
-        <div className="flex items-start gap-2 mb-4">
+        <div className="flex flex-wrap items-start gap-2 mb-4">
           <span className="text-body font-semibold text-primary whitespace-nowrap">
             {formatCurrency(valorEstimado)}
           </span>

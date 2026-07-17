@@ -46,7 +46,11 @@ export function KanbanColumn({
   };
 
   const columnWidth =
-    viewMode === "compact" ? "min-w-[240px]" : viewMode === "detailed" ? "min-w-[400px]" : "min-w-[320px]";
+    viewMode === "compact"
+      ? "min-w-[240px]"
+      : viewMode === "detailed"
+        ? "min-w-[280px] sm:min-w-[400px]"
+        : "min-w-[280px] sm:min-w-[320px]";
   const spacing = viewMode === "compact" ? "space-y-2" : "space-y-3";
   const padding = viewMode === "compact" ? "p-2" : "p-3";
 
@@ -66,11 +70,11 @@ export function KanbanColumn({
         .filter(Boolean);
 
   return (
-    <div ref={columnRef} className={`flex flex-col h-full ${columnWidth} scroll-mt-4`}>
+    <div ref={columnRef} className={`flex flex-col h-full shrink-0 ${columnWidth} scroll-mt-4`}>
       {/* Column Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <h3 className="text-body font-medium text-foreground">{title}</h3>
-        <Badge variant="secondary" className="text-caption">
+      <div className="flex items-center justify-between gap-2 mb-4 px-1">
+        <h3 className="text-body font-medium text-foreground truncate min-w-0">{title}</h3>
+        <Badge variant="secondary" className="text-caption shrink-0">
           {count}
         </Badge>
       </div>

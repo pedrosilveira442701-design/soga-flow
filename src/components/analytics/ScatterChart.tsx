@@ -218,7 +218,7 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <span>Preço x Margem por Tipo de Serviço</span>
           <div className="flex items-center gap-2">
             <Filter className="h-[18px] w-[18px] text-muted-foreground" />
@@ -251,7 +251,8 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
         </div>
 
         {/* Gráfico */}
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[300px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <RechartsScatter>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis 
@@ -300,6 +301,7 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
             )}
           </RechartsScatter>
         </ResponsiveContainer>
+        </div>
 
         {/* Estatísticas do filtro atual */}
         <div className="pt-4 border-t">
@@ -312,7 +314,7 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
             </span>
           </div>
           
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-1 gap-3 mb-4 sm:grid-cols-3">
             <div className="p-3 rounded-lg bg-muted/50 border">
               <p className="text-xs text-muted-foreground">Preço/m² médio</p>
               <p className="text-lg font-semibold text-primary">
@@ -337,8 +339,8 @@ export function ScatterChart({ data, isLoading }: ScatterChartProps) {
           {selectedType === "all" && estatisticasPorTipo.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">📋 Comparativo por Tipo de Serviço:</h4>
-              <div className="border rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="border rounded-lg overflow-x-auto">
+                <table className="w-full min-w-[560px] text-sm">
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="text-left p-2 font-medium">Tipo</th>

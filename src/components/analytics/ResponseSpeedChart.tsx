@@ -81,16 +81,17 @@ export function ResponseSpeedChart({ data, isLoading }: ResponseSpeedChartProps)
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <span>Velocidade de Resposta vs Taxa de Conversão</span>
-          <div className="text-right">
+          <div className="shrink-0 sm:text-right">
             <p className="text-sm font-normal text-muted-foreground">Taxa Média</p>
             <p className="text-lg font-bold text-primary">{avgConversao.toFixed(1)}%</p>
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[280px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
@@ -119,6 +120,7 @@ export function ResponseSpeedChart({ data, isLoading }: ResponseSpeedChartProps)
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Insights */}
         <div className="mt-4 pt-4 border-t space-y-3">

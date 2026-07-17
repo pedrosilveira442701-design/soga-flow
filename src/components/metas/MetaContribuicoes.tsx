@@ -36,7 +36,7 @@ function GrupoTabela({ grupo, mostrarLabel }: { grupo: ContribuicaoGrupo; mostra
         </div>
       ) : (
         <div className="border rounded-lg max-h-72 overflow-y-auto">
-          <Table>
+          <Table className="min-w-[420px]">
             <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
                 <TableHead>Cliente</TableHead>

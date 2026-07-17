@@ -19,7 +19,7 @@ export default function Preferencias() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6 max-w-4xl">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 max-w-4xl">
       <div>
         <h1 className="text-h1 flex items-center gap-2">
           <Settings className="h-5 w-5" />
@@ -31,7 +31,7 @@ export default function Preferencias() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 text-xs sm:text-sm">
           <TabsTrigger value="geral">Geral</TabsTrigger>
           <TabsTrigger value="tema">Tema</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>

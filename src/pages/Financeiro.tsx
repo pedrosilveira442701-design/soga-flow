@@ -361,7 +361,7 @@ export default function Financeiro() {
             </div>
           ) : (
             <div className="rounded-md border">
-              <Table>
+              <Table className="min-w-[1040px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]">

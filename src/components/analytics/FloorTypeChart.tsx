@@ -74,7 +74,7 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px]">
+        <div className="bg-card border border-border rounded-lg p-4 shadow-xl min-w-[180px] max-w-[calc(100vw-2rem)]">
           <p className="font-semibold text-base mb-3">{data.tipo_piso}</p>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
@@ -123,7 +123,7 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
       </CardHeader>
       <CardContent>
         {/* KPIs Overview */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-3 sm:gap-4">
           <div className="p-3 rounded-lg bg-muted/50 border">
             <div className="flex items-center gap-2 mb-1">
               <Package className="h-5 w-5 text-muted-foreground" />
@@ -152,7 +152,8 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
         </div>
 
         {/* Gráfico de Barras */}
-        <ResponsiveContainer width="100%" height={350}>
+        <div className="h-[300px] sm:h-[350px]">
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <defs>
               {data.map((entry, index) => {
@@ -210,6 +211,7 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
             />
           </BarChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Insights */}
         <div className="mt-6 pt-6 border-t space-y-3">
@@ -226,7 +228,7 @@ export function FloorTypeChart({ data, isLoading }: FloorTypeChartProps) {
           <div>
             <p className="text-sm font-semibold mb-3">Mix de Produtos:</p>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[660px] text-sm">
                 <thead className="border-b">
                   <tr className="text-left">
                     <th className="pb-2 font-semibold">Tipo</th>

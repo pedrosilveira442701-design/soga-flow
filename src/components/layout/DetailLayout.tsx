@@ -15,7 +15,7 @@ export function DetailLayout({ children, financialSummary }: DetailLayoutProps) 
       {/* Financial Summary - 30% - Fixed on scroll */}
       <div className="lg:col-span-4">
         <div className="sticky top-24">
-          <Card className="p-6 shadow-elev2">{financialSummary}</Card>
+          <Card className="p-4 shadow-elev2 sm:p-6">{financialSummary}</Card>
         </div>
       </div>
     </div>

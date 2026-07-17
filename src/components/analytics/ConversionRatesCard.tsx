@@ -137,14 +137,14 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
   const recommendations = getRecommendations();
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="flex items-center gap-2 mb-6">
         <TrendingUp className="h-5 w-5 text-primary" />
         <h3 className="text-h3">Taxas de Conversão</h3>
       </div>
 
       {/* Totais absolutos */}
-      <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
+      <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-muted/50 rounded-lg sm:grid-cols-4 sm:gap-4">
         <div className="text-center">
           <p className="text-caption text-muted-foreground mb-1">Contatos</p>
           <p className="text-2xl font-bold text-foreground">{total_contatos}</p>
@@ -166,9 +166,9 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
       {/* Taxas de conversão */}
       <div className="space-y-4 mb-6">
         {/* Contatos → Leads */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-full", contatosIndicator.bgColor)}>
+        <div className="flex items-center justify-between gap-3 p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={cn("p-2 rounded-full shrink-0", contatosIndicator.bgColor)}>
               <contatosIndicator.icon className={cn("h-[18px] w-[18px]", contatosIndicator.color)} />
             </div>
             <div>
@@ -176,15 +176,15 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
               <p className="text-caption text-muted-foreground">{contatosIndicator.label}</p>
             </div>
           </div>
-          <p className={cn("text-2xl font-bold", contatosIndicator.color)}>
+          <p className={cn("text-2xl font-bold shrink-0", contatosIndicator.color)}>
             {contatosToLeads.toFixed(1)}%
           </p>
         </div>
 
         {/* Leads → Propostas */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-full", leadsIndicator.bgColor)}>
+        <div className="flex items-center justify-between gap-3 p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={cn("p-2 rounded-full shrink-0", leadsIndicator.bgColor)}>
               <leadsIndicator.icon className={cn("h-[18px] w-[18px]", leadsIndicator.color)} />
             </div>
             <div>
@@ -192,15 +192,15 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
               <p className="text-caption text-muted-foreground">{leadsIndicator.label}</p>
             </div>
           </div>
-          <p className={cn("text-2xl font-bold", leadsIndicator.color)}>
+          <p className={cn("text-2xl font-bold shrink-0", leadsIndicator.color)}>
             {leadsToPropostas.toFixed(1)}%
           </p>
         </div>
 
         {/* Propostas → Contratos */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2 rounded-full", propostasIndicator.bgColor)}>
+        <div className="flex items-center justify-between gap-3 p-4 rounded-lg border border-border">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={cn("p-2 rounded-full shrink-0", propostasIndicator.bgColor)}>
               <propostasIndicator.icon className={cn("h-[18px] w-[18px]", propostasIndicator.color)} />
             </div>
             <div>
@@ -208,7 +208,7 @@ export function ConversionRatesCard({ data, isLoading }: ConversionRatesCardProp
               <p className="text-caption text-muted-foreground">{propostasIndicator.label}</p>
             </div>
           </div>
-          <p className={cn("text-2xl font-bold", propostasIndicator.color)}>
+          <p className={cn("text-2xl font-bold shrink-0", propostasIndicator.color)}>
             {propostasToContratos.toFixed(1)}%
           </p>
         </div>

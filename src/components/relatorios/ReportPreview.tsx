@@ -1,7 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TableIcon, TrendingUp, BarChart3, Download } from "lucide-react";
 
@@ -189,8 +188,8 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
 
         {/* Data Table */}
         <div className="rounded-lg border border-border/50 overflow-hidden">
-          <ScrollArea className="h-[450px]">
-            <Table>
+          <div className="max-h-[360px] sm:max-h-[450px] overflow-auto">
+            <Table className="min-w-[900px]">
               <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                 <TableRow className="hover:bg-transparent">
                   {columns.slice(0, 12).map((col) => (
@@ -215,11 +214,11 @@ export function ReportPreview({ data, totals, isLoading }: ReportPreviewProps) {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
         </div>
 
         {/* Footer info */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
+        <div className="flex flex-col gap-1 text-xs text-muted-foreground pt-2 sm:flex-row sm:items-center sm:justify-between">
           <span>
             {columns.length > 12 && `Mostrando 12 de ${columns.length} colunas • `}
             {data.length > 100 

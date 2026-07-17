@@ -170,13 +170,13 @@ export default function ClienteCombobox({
           className="w-full justify-between"
           disabled={disabled || isLoading}
         >
-          <span className="truncate">
+          <span className="min-w-0 truncate text-left">
             {isLoading ? "Carregando clientes..." : selectedLabel}
           </span>
           <ChevronsUpDown className="ml-2 icon-md shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[600px] p-0 z-50" align="start">
+      <PopoverContent className="w-[calc(100vw-2rem)] max-w-[600px] p-0 z-50" align="start">
         <Command shouldFilter={false}>
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 icon-md shrink-0 opacity-50" />
@@ -208,7 +208,7 @@ export default function ClienteCombobox({
                     }}
                     className="flex items-center justify-between cursor-pointer"
                   >
-                    <div className="flex-1 truncate">
+                    <div className="min-w-0 flex-1 truncate">
                       <span className="font-medium">
                         {highlightMatch(cliente.nome, debouncedSearch)}
                       </span>

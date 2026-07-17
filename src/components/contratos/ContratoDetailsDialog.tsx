@@ -57,13 +57,13 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" />
-              <div>
-                <DialogTitle className="text-2xl">Contrato - {contrato.cliente?.nome}</DialogTitle>
+          <div className="flex flex-col items-start gap-2 pr-8 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <FileText className="h-6 w-6 shrink-0 text-primary" />
+              <div className="min-w-0">
+                <DialogTitle className="text-xl sm:text-2xl">Contrato - {contrato.cliente?.nome}</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   Criado em{" "}
                   {format(parseISO(contrato.created_at), "dd/MM/yyyy", {
@@ -78,7 +78,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
 
         <div className="space-y-6 pt-4">
           {/* Informações Principais */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Cliente</p>
@@ -99,7 +99,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
               {(contrato.cliente?.logradouro || contrato.cliente?.bairro || contrato.cliente?.cidade) && (
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">Endereço</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">
                       {[
                         contrato.cliente?.logradouro,
@@ -120,7 +120,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
+                      className="inline-flex shrink-0 items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors text-xs font-medium"
                       title="Abrir no Google Maps"
                     >
                       <MapPin className="h-5 w-5" />
@@ -185,29 +185,29 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
               Resumo Financeiro
             </h3>
 
-            <div className="grid grid-cols-4 gap-4 mb-4">
-              <div className="rounded-lg border p-4">
+            <div className="grid grid-cols-2 gap-3 mb-4 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-lg border p-3 sm:p-4">
                 <p className="text-sm text-muted-foreground mb-1">Valor Total</p>
-                <p className="text-2xl font-bold">{formatCurrency(Number(contrato.valor_negociado))}</p>
+                <p className="text-lg font-bold sm:text-2xl">{formatCurrency(Number(contrato.valor_negociado))}</p>
               </div>
 
-              <div className="rounded-lg border p-4 bg-green-50 dark:bg-green-950/20">
+              <div className="rounded-lg border p-3 bg-green-50 dark:bg-green-950/20 sm:p-4">
                 <p className="text-sm text-muted-foreground mb-1">Total Pago</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-lg font-bold text-green-600 sm:text-2xl">
                   {formatCurrency(contrato.parcelas?.valor_pago || 0)}
                 </p>
               </div>
 
-              <div className="rounded-lg border p-4 bg-blue-50 dark:bg-blue-950/20">
+              <div className="rounded-lg border p-3 bg-blue-50 dark:bg-blue-950/20 sm:p-4">
                 <p className="text-sm text-muted-foreground mb-1">Saldo Restante</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-lg font-bold text-blue-600 sm:text-2xl">
                   {formatCurrency(contrato.parcelas?.valor_restante || 0)}
                 </p>
               </div>
 
-              <div className="rounded-lg border p-4">
+              <div className="rounded-lg border p-3 sm:p-4">
                 <p className="text-sm text-muted-foreground mb-1">Parcelas</p>
-                <p className="text-2xl font-bold">
+                <p className="text-lg font-bold sm:text-2xl">
                   {contrato.parcelas?.pagas || 0}/{contrato.parcelas?.total || 0}
                 </p>
               </div>
@@ -237,9 +237,9 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
           {/* Gerenciador de Recebimentos do Lucro */}
           <Collapsible open={recebiveisOpen} onOpenChange={setRecebiveisOpen}>
             <CollapsibleTrigger asChild>
-              <button className="flex items-center justify-between w-full py-2 group text-left">
-                <div className="flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-primary" />
+              <button className="flex items-center justify-between gap-2 w-full py-2 group text-left">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Wallet className="h-5 w-5 shrink-0 text-primary" />
                   <span className="font-semibold">Meus Recebimentos (Lucro)</span>
                   {margemTotal > 0 && (
                     <Badge variant="secondary" className="text-xs">
@@ -247,7 +247,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
                     </Badge>
                   )}
                 </div>
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${recebiveisOpen ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${recebiveisOpen ? "rotate-180" : ""}`} />
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2">
@@ -272,10 +272,10 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
           <Separator />
 
           {/* Footer com Ações */}
-          <div className="flex justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <div className="flex gap-2">
               {contrato.status === "ativo" && onEdit && (
-                <Button variant="outline" onClick={() => onEdit(contrato)}>
+                <Button variant="outline" onClick={() => onEdit(contrato)} className="w-full sm:w-auto">
                   <Edit className="h-5 w-5 mr-2" />
                   Editar Contrato
                 </Button>
@@ -286,7 +286,7 @@ export function ContratoDetailsDialog({ contrato, open, onOpenChange, onEdit, on
               {contrato.status === "ativo" && onCancel && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
+                    <Button variant="destructive" className="w-full sm:w-auto">
                       <XCircle className="h-5 w-5 mr-2" />
                       Cancelar Contrato
                     </Button>

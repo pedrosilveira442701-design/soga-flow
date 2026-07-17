@@ -28,7 +28,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
           <CardTitle>Burndown de Metas</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[400px] w-full" />
+          <Skeleton className="h-[280px] w-full sm:h-[400px]" />
         </CardContent>
       </Card>
     );
@@ -41,7 +41,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
           <CardTitle>Burndown de Metas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[280px] sm:h-[400px] flex items-center justify-center text-muted-foreground">
             <div className="text-center">
               <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma meta cadastrada ou sem dados de realização</p>
@@ -56,7 +56,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-background border rounded-lg p-3 shadow-lg">
+        <div className="bg-background border rounded-lg p-3 shadow-lg max-w-[calc(100vw-2rem)]">
           <p className="font-semibold mb-2">{data.mes}</p>
           <p className="text-sm">
             <span className="text-muted-foreground">Meta:</span>{" "}
@@ -117,9 +117,9 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span>Burndown de Metas</span>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-sm font-normal text-muted-foreground">Performance Acumulada</p>
             <p
               className={`text-lg font-bold ${
@@ -132,7 +132,8 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+        <div className="h-[280px] sm:h-[400px]">
+        <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis dataKey="mes" className="text-xs" tick={{ fontSize: 11 }} />
@@ -172,6 +173,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
             />
           </ComposedChart>
         </ResponsiveContainer>
+        </div>
 
         {/* Insights e Tendências */}
         <div className="mt-4 pt-4 border-t space-y-3">
@@ -194,10 +196,10 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
           </div>
 
           {/* KPIs */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
               <p className="text-xs text-muted-foreground">Meta Total</p>
-              <p className="text-lg font-semibold text-primary">
+              <p className="text-base sm:text-lg font-semibold text-primary">
                 R$ {totalMeta.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
               </p>
             </div>
@@ -209,7 +211,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
               }`}
             >
               <p className="text-xs text-muted-foreground">Realizado</p>
-              <p className="text-lg font-semibold">
+              <p className="text-base sm:text-lg font-semibold">
                 R$ {totalRealizado.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
               </p>
             </div>
@@ -224,7 +226,7 @@ export function BurndownChart({ data, isLoading }: BurndownChartProps) {
                 {gap > 0 ? "Falta Atingir" : "Superou"}
               </p>
               <p
-                className={`text-lg font-semibold ${
+                className={`text-base sm:text-lg font-semibold ${
                   gap > 0 ? "text-destructive" : "text-green-500"
                 }`}
               >

@@ -108,10 +108,10 @@ export function ArquivoPreviewDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-6xl max-h-[90dvh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Preview do Arquivo</span>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate">Preview do Arquivo</span>
               <Button
                 variant="ghost"
                 size="icon"
@@ -122,9 +122,9 @@ export function ArquivoPreviewDialog({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 flex gap-6 overflow-hidden">
+          <div className="flex-1 flex flex-col gap-4 overflow-y-auto md:flex-row md:gap-6 md:overflow-hidden">
             {/* Preview Area */}
-            <div className="flex-1 bg-muted/30 rounded-lg flex items-center justify-center overflow-auto">
+            <div className="flex-1 min-h-[220px] md:min-h-0 bg-muted/30 rounded-lg flex items-center justify-center overflow-auto">
               {isImage && signedUrl ? (
                 <img
                   src={signedUrl}
@@ -157,7 +157,7 @@ export function ArquivoPreviewDialog({
             </div>
 
             {/* Sidebar de Informações */}
-            <div className="w-80 space-y-6 overflow-y-auto">
+            <div className="w-full shrink-0 md:w-80 space-y-6 md:overflow-y-auto">
               {/* Nome e Tipo */}
               <div className="space-y-3">
                 {renameMode ? (

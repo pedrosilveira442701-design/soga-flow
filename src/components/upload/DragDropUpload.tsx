@@ -59,7 +59,7 @@ export function DragDropUpload({ onUpload, maxFiles = 5, accept = "*", className
     <div className={cn("space-y-4", className)}>
       <div
         className={cn(
-          "relative border-2 border-dashed rounded-lg p-8 transition-colors duration-200",
+          "relative border-2 border-dashed rounded-lg p-6 sm:p-8 transition-colors duration-200",
           isDragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50",
         )}
         onDragEnter={handleDrag}
@@ -81,15 +81,15 @@ export function DragDropUpload({ onUpload, maxFiles = 5, accept = "*", className
         <div className="space-y-2">
           <p className="text-caption font-medium">Arquivos selecionados:</p>
           {files.map((file, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <File className="h-5 w-5 text-primary icon-thin" />
-                <div>
-                  <p className="text-body font-medium">{file.name}</p>
+            <div key={index} className="flex items-center justify-between gap-2 p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-3 min-w-0">
+                <File className="h-5 w-5 text-primary icon-thin shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-body font-medium truncate">{file.name}</p>
                   <p className="text-caption text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => removeFile(index)} title="Remover arquivo">
+              <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeFile(index)} title="Remover arquivo">
                 <X className="h-5 w-5" />
               </Button>
             </div>

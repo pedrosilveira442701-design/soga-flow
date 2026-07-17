@@ -56,7 +56,7 @@ export function KanbanControls({
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border pb-4 mb-4">
       {/* Main Controls Row */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         {/* Left: Navigation */}
         <div className="flex items-center gap-2">
           <Button
@@ -77,15 +77,15 @@ export function KanbanControls({
           >
             <ChevronRight className="h-[18px] w-[18px]" />
           </Button>
-          <div className="text-caption text-muted-foreground ml-2">
+          <div className="hidden lg:block text-caption text-muted-foreground ml-2">
             Use ← → para navegar
           </div>
         </div>
 
         {/* Center: View Mode */}
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <Select value={viewMode} onValueChange={(v) => onViewModeChange(v as any)}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-full sm:w-[140px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -112,7 +112,7 @@ export function KanbanControls({
         </div>
 
         {/* Right: Zoom Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="icon"
@@ -123,18 +123,18 @@ export function KanbanControls({
               }
             }}
             disabled={zoom <= zoomLevels[0]}
-            className="h-9 w-9"
+            className="h-9 w-9 shrink-0"
           >
             <ZoomOut className="h-[18px] w-[18px]" />
           </Button>
-          <div className="flex gap-1">
+          <div className="flex flex-1 gap-1 overflow-x-auto no-scrollbar sm:flex-none">
             {zoomLevels.map((level) => (
               <Button
                 key={level}
                 variant={zoom === level ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onZoomChange(level)}
-                className="h-9 min-w-[50px]"
+                className="h-9 min-w-[50px] shrink-0"
               >
                 {level}%
               </Button>
@@ -150,7 +150,7 @@ export function KanbanControls({
               }
             }}
             disabled={zoom >= zoomLevels[zoomLevels.length - 1]}
-            className="h-9 w-9"
+            className="h-9 w-9 shrink-0"
           >
             <ZoomIn className="h-[18px] w-[18px]" />
           </Button>
@@ -158,7 +158,7 @@ export function KanbanControls({
       </div>
 
       {/* Minimapa - Visual Overview */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch]">
         {stages.map((stage, index) => {
           const colorClasses = {
             contato: "bg-purple-500/10 border-purple-500/30 hover:bg-purple-500/20",
